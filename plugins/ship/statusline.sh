@@ -170,18 +170,15 @@ if [ -n "$weekly_pct" ]; then
     [ -n "$rs" ] && printf " $(c '38;5;245')↻ %s$(rst)" "$rs"
   fi
 fi
-# effort — reasoning tier (low/medium/high/xhigh/max), straight from the harness.
-[ -n "$effort" ] && printf "  $(c '38;5;147')⚡ %s$(rst)" "$effort"   # light purple
-# ultracode is a SEPARATE mode (autoDreamEnabled), NOT an effort value — the harness
-# reports it as xhigh, so it's invisible in the statusline JSON. Read the setting
-# instead (project overrides user; first definition wins).
-if [ "$HAS_JQ" -eq 1 ]; then
-  for s in "$git_root/.claude/settings.local.json" "$git_root/.claude/settings.json" \
-           "$HOME/.claude/settings.local.json" "$HOME/.claude/settings.json"; do
-    [ -f "$s" ] || continue
-    ud=$(jq -r '.autoDreamEnabled // empty' "$s" 2>/dev/null)
-    [ -n "$ud" ] && { [ "$ud" = "true" ] && printf "  $(c '1;38;5;170')✦ ultra$(rst)"; break; }
-  done
+# effort — reasoning tier. The harness exposes no real ultracode bit (it reports as
+# xhigh, same as plain extra-high). Pete never uses plain xhigh on Opus, so for him
+# xhigh ≡ ultracode — render it as the ultra badge: three rainbow ⚡. Other tiers plain.
+# ponytail: xhigh==ultracode is a deliberate convention, not detection — the only honest
+# proxy available. If plain xhigh ever gets used, this over-claims; swap the convention then.
+if [ "$effort" = "xhigh" ]; then
+  printf "  $(c '38;5;196')⚡$(c '38;5;220')⚡$(c '38;5;51')⚡$(rst)$(c '1;38;5;207') ultra$(rst)"
+elif [ -n "$effort" ]; then
+  printf "  $(c '38;5;147')⚡ %s$(rst)" "$effort"              # light purple
 fi
 [ -n "$update_available" ] && printf "  $(update_c)⬆ update$(rst)"
 printf "\n"
