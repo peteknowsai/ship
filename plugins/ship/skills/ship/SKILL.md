@@ -50,6 +50,11 @@ If the repo has a `.config/wt.toml`, it auto-provisions the worktree (gitignored
 files — node_modules, .env, .dev.vars — via reflink). Write the first marker:
 `printf 'discover' > <root>/.ship-stage`. Never build on main.
 
+**Opportunistic tidy (anti-accumulation):** glance at `git worktree list` first and
+`wt remove <branch> -f` any worktree whose branch is already merged and its remote shows
+`[gone]` (a finished ship that wasn't torn down). Only ever touch merged+gone worktrees —
+never one with unmerged work. This + stage 4's teardown means ship worktrees never pile up.
+
 ### 1 · DISCOVER — Pete's taste, up front  → marker: `discover`, then `gate:1`
 
 - Invoke `superpowers:brainstorming`. PM-framed, one question at a time.
@@ -96,9 +101,18 @@ files — node_modules, .env, .dev.vars — via reflink). Write the first marker
   and answers in Claude Code.
 - **Tiny & watched → merge directly** (`wt merge`). **Substantial → open the PR *and* the
   review card, then end with a `needs input:` line ("review: <feature> — merge?").** Wait.
-- On "merge": `wt merge` (or squash-merge the PR with `--delete-branch`) — runs the
-  pre-merge test gate (whatever the repo's `wt.toml` defines), lands spec + plan + code,
-  deletes the branch, removes the worktree. Then `rm .ship-stage`.
+- On "merge", land it and **let worktrunk own teardown — a leftover worktree is a bug**:
+  - **Tiny & watched →** `wt merge` (runs the repo's `wt.toml` pre-merge gate, squashes,
+    ff's main, removes the worktree), then `ExitWorktree({action:"keep"})` to point the
+    session back at the main checkout (wt already deleted the dir).
+  - **Substantial (PR path) →** `gh pr merge --squash --delete-branch` — this deletes only
+    the *remote* branch, so clean up locally so nothing piles up: `ExitWorktree({action:"keep"})`,
+    then `wt remove feature/<slug> -f` to tear down the *local* worktree + branch, then
+    `git -C <main-checkout> pull --ff-only` so local main matches. Nothing left on disk.
+  - Then `rm .ship-stage`. Verify with `wt list` / `git worktree list` — zero ship worktrees
+    should remain afterward.
+- If the repo auto-deploys on merge to main (CI), say so and hand back the live URL once it's
+  up; otherwise just confirm merged. Never make Pete run a deploy himself.
 - End with a `result:` line: what shipped, one sentence.
 
 ## The review card (REVIEW artifact)
