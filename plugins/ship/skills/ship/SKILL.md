@@ -34,6 +34,12 @@ FleetView row read it). The marker format is below each stage.
 
 ### 0 · Worktree (invisible)
 
+**Prereqs:** a git repo with a `main` branch and at least one commit (the PR-merge path
+also needs a GitHub remote; `wt merge` to local main works without one). If the repo is
+empty (no commits / no `main`), make the first commit before branching — `git add -A &&
+git commit -m "init"` — then continue. These are generic git setup, not ship's job to
+invent, but stage 0 fails on a zero-commit repo, so handle it here.
+
 Create an isolated worktree off main and enter it (the worktrunk `wt-switch-create` flow):
 
 ```
