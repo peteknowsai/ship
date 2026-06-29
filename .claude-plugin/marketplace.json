@@ -1,0 +1,17 @@
+{
+  "name": "ship",
+  "owner": {
+    "name": "Pete McCarthy",
+    "email": "petefromsf@gmail.com"
+  },
+  "metadata": {
+    "description": "/ship — take a feature from idea to merged in one command. Two gates, auto-opening review cards, gate notifications, a stage-aware status line, and a model-routed build."
+  },
+  "plugins": [
+    {
+      "name": "ship",
+      "description": "/ship — idea to merged in one command: worktree → discover → plan → build → review, gating only on design direction and 'go'. Auto-opening HTML cards, gate desktop notifications, a stage-aware status line, and a BUILD stage routed ~50/50 across Opus and GPT-5.5. Bundles the router skill.",
+      "source": "./plugins/ship"
+    }
+  ]
+}
