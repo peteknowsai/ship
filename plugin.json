@@ -1,0 +1,18 @@
+{
+  "name": "ship",
+  "description": "/ship — take a feature from idea to merged in one command: worktree → discover → plan → build → review, gating only on design direction and 'go'. Auto-opening HTML design/go/review cards, gate desktop notifications, a stage-aware status line, and a BUILD stage routed ~50/50 across Opus and GPT-5.5. Bundles the router skill.",
+  "author": {
+    "name": "Pete McCarthy"
+  },
+  "skills": [
+    "./skills/ship",
+    "./skills/router"
+  ],
+  "hooks": "./hooks/hooks.json",
+  "statusLine": "./statusline.sh",
+  "dependencies": [
+    "superpowers",
+    "ponytail",
+    "worktrunk"
+  ]
+}

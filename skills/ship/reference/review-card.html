@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Review — {{FEATURE}}</title>
+<!--
+  /ship REVIEW template. Fill the {{SLOTS}}, write to specs/plans/review-<slug>.html,
+  and `open` it automatically. This is what Pete reviews — NOT the raw PR diff. PM-framed:
+  what it DOES, what's already checked, what only he can confirm. The meta, one screen.
+-->
+<style>
+  :root{--cream:#f6f1e7;--card:#fffdf8;--ink:#23262d;--slate:#5a5e6b;--mut:#8a8d99;
+    --line:#e3dccb;--amber:#c8892b;--grn:#3f7d4e;--red:#b4543a;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--cream);color:var(--ink);
+    font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    -webkit-font-smoothing:antialiased;padding:40px 20px}
+  .wrap{max-width:700px;margin:0 auto}
+  .kicker{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--grn);font-weight:700}
+  h1{font-family:Georgia,serif;font-size:36px;line-height:1.05;margin:6px 0 2px;font-weight:600}
+  .sub{color:var(--slate);margin:0 0 22px;font-size:15px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin:14px 0}
+  .card h2{font-family:Georgia,serif;margin:0 0 12px;text-transform:uppercase;color:var(--mut);
+    font-weight:700;font-size:12px;letter-spacing:.14em}
+  ul{margin:0;padding-left:18px} li{margin:7px 0}
+  li b{color:var(--ink)}
+  .shipped li::marker{color:var(--grn)}
+  .eye{border-left:3px solid var(--amber);padding:8px 0 8px 14px;margin:10px 0}
+  .eye .q{font-weight:700;margin:0 0 2px}
+  .eye .d{color:var(--slate);font-size:14px;margin:0}
+  .pill{display:inline-block;background:#e7f0e7;color:#2f6a3e;border:1px solid #cfe3cf;
+    border-radius:20px;padding:2px 11px;font-size:13px;font-weight:600;margin:2px 4px 2px 0}
+  .verdict{text-align:center;font-family:Georgia,serif;font-size:22px;margin:26px 0 4px;font-weight:600}
+  .foot{color:var(--mut);font-size:13px;margin-top:16px;text-align:center}
+  code{background:#efe9dc;border-radius:5px;padding:1px 6px;font-size:13px;font-family:ui-monospace,Menlo,monospace}
+  a{color:var(--amber)}
+  .thumb{width:100%;border-radius:8px;border:1px solid var(--line);margin-top:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="kicker">║ Review ║ &nbsp;·&nbsp; ready to merge</div>
+  <h1>Review: {{FEATURE}}</h1>
+  <p class="sub">What shipped, in plain terms. Glance, then answer in Claude Code — merge, or call a change.</p>
+
+  <div class="card shipped">
+    <h2>What you got</h2>
+    <ul>{{SHIPPED_BULLETS}}</ul>
+  </div>
+
+  <!-- VISUAL: include only for user-facing/visual features, else delete this card -->
+  <div class="card">
+    <h2>What it looks like</h2>
+    <img class="thumb" src="{{SCREENSHOT_SRC}}" alt="result">
+  </div>
+
+  <div class="card">
+    <h2>Already checked for you</h2>
+    {{CHECKED_PILLS}}
+    <p style="margin:10px 0 0;font-size:14px;color:var(--slate)">{{RISK_NOTE}}</p>
+  </div>
+
+  <div class="card">
+    <h2>{{CONFIRM_HEADING}}</h2>
+    {{CONFIRM_ITEMS}}
+  </div>
+
+  <div class="verdict">Merge? &nbsp;·&nbsp; or call a change?</div>
+  <p class="foot">The diff, if you want it: <a href="{{PR_URL}}">{{PR_LABEL}}</a> · but you shouldn't need to.</p>
+</div>
+</body>
+</html>

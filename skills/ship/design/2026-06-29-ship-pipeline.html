@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>/ship — the homezero feature pipeline</title>
+<style>
+  :root{
+    --cream:#f6f3ec; --paper:#fffdf8; --ink:#1c1d22;
+    --slate:#5a5e6b; --line:#e3ddd0; --amber:#c8841f; --amber-soft:#f2e6cf;
+    --green:#3f7d54; --mut:#8b8f9a; --mono:'SF Mono',ui-monospace,Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--cream);color:var(--ink);
+    font:16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;padding:0 0 120px}
+  .wrap{max-width:880px;margin:0 auto;padding:0 28px}
+  h1,h2,h3{font-family:Georgia,'Times New Roman',serif;font-weight:600;letter-spacing:-.01em;line-height:1.15}
+  h1{font-size:46px;margin:0 0 6px}
+  h2{font-size:28px;margin:64px 0 18px;padding-top:18px;border-top:1px solid var(--line)}
+  h3{font-size:19px;margin:30px 0 8px;font-family:-apple-system,sans-serif;font-weight:700}
+  p{margin:0 0 14px}
+  .lede{font-size:20px;line-height:1.55;color:#34363d;margin:18px 0 8px}
+  .eyebrow{font:600 12px/1 var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--amber)}
+  a{color:var(--amber)}
+  code{font:13px/1.5 var(--mono);background:var(--amber-soft);padding:1px 6px;border-radius:5px;color:#7a5212}
+  strong{font-weight:700}
+  .hero{margin:36px 0 8px;border-radius:16px;overflow:hidden;border:1px solid var(--line);
+    background:linear-gradient(105deg,#fffdf8 0%,#f3ece0 55%,#ece3d2 100%);position:relative;height:230px}
+  .hero .flow{position:absolute;inset:0;display:flex;align-items:center;gap:0;padding:0 38px;justify-content:space-between}
+  .hero .node{display:flex;flex-direction:column;align-items:center;gap:9px;z-index:2}
+  .hero .dot{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;font-size:20px;
+    background:var(--paper);border:1px solid var(--line);box-shadow:0 6px 18px rgba(70,55,20,.07)}
+  .hero .node.spark .dot{background:radial-gradient(circle at 40% 35%,#ffe6ad,#c8841f);border-color:#c8841f;color:#fff}
+  .hero .node.done .dot{width:58px;height:58px;border-radius:14px;background:#1c1d22;color:#f6f3ec;font-size:22px}
+  .hero .cap{font:600 10.5px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--mut)}
+  .hero .rail{position:absolute;left:60px;right:60px;top:50%;height:2px;background:repeating-linear-gradient(90deg,#cdbfa3 0 8px,transparent 8px 16px);z-index:1}
+  .tag{display:inline-block;font:600 11px/1 var(--mono);letter-spacing:.04em;padding:4px 9px;border-radius:20px;vertical-align:middle}
+  .tag.you{background:var(--amber-soft);color:#7a5212}
+  .tag.auto{background:#e7ede8;color:var(--green)}
+  .tag.gate{background:#1c1d22;color:#f6f3ec}
+
+  /* pipeline */
+  .pipe{margin:22px 0 8px;border:1px solid var(--line);border-radius:14px;background:var(--paper);overflow:hidden}
+  .stage{display:grid;grid-template-columns:128px 1fr;gap:0;border-top:1px solid var(--line)}
+  .stage:first-child{border-top:none}
+  .stage .l{padding:16px 16px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:7px;background:#fbf8f1}
+  .stage .l b{font:700 14px/1.2 -apple-system,sans-serif}
+  .stage .l .n{font:600 11px/1 var(--mono);color:var(--mut)}
+  .stage .r{padding:16px 18px;font-size:14.5px;color:#3a3c44}
+  .stage.g{background:#fbf6ec}
+  .glyph{font-size:15px}
+
+  /* terminal cards */
+  .term{background:#16171c;border-radius:12px;padding:18px 20px;margin:14px 0;
+    font:13.5px/1.7 var(--mono);color:#d7d3c8;box-shadow:0 14px 40px rgba(20,16,8,.16);overflow-x:auto}
+  .term .dim{color:#6f7280}
+  .term .a{color:#e0a44a}
+  .term .amb{color:#e3a44a}
+  .term .grn{color:#7bbd87}
+  .term .wht{color:#f3f0e8}
+  .term .lbl{color:#8b8f9a}
+  .caption{font:13px/1.5 -apple-system,sans-serif;color:var(--mut);margin:-4px 0 22px;text-align:center}
+
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin:16px 0;
+    box-shadow:0 10px 30px rgba(70,55,20,.05)}
+  .gocard{border:1.5px solid #d8c9a8;background:linear-gradient(180deg,#fffdf8,#fbf6ec)}
+  .gocard .h{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  .gocard .h .ttl{font:700 16px/1 -apple-system,sans-serif}
+  .gocard .h .thumb{margin-left:auto;width:64px;height:42px;border-radius:7px;
+    background:linear-gradient(120deg,#ece3d2,#d9cfba);border:1px solid var(--line);
+    display:grid;place-items:center;font-size:9px;color:var(--mut);font-family:var(--mono)}
+  .gocard .row{display:grid;grid-template-columns:96px 1fr;gap:10px;padding:7px 0;border-top:1px dotted var(--line);font-size:14px}
+  .gocard .row .k{font:600 11px/1.5 var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--mut);padding-top:2px}
+  .gocard .cut{color:#9a4b3f}.gocard .keep{color:var(--green)}
+  .gocard .btns{display:flex;gap:10px;margin-top:16px}
+  .btn{font:600 13px/1 -apple-system,sans-serif;padding:11px 20px;border-radius:9px;border:1px solid var(--line);background:#fff}
+  .btn.go{background:#1c1d22;color:#f6f3ec;border-color:#1c1d22}
+
+  ul{margin:6px 0 14px;padding-left:22px}li{margin:4px 0}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0}
+  @media(max-width:640px){.two{grid-template-columns:1fr}.stage{grid-template-columns:96px 1fr}}
+  .note{background:#fbf6ec;border-left:3px solid var(--amber);padding:12px 16px;border-radius:0 9px 9px 0;margin:16px 0;font-size:14.5px}
+  .ledger{width:100%;border-collapse:collapse;margin:14px 0;font-size:14px}
+  .ledger td{padding:9px 12px;border-top:1px solid var(--line);vertical-align:top}
+  .ledger td:first-child{font-weight:700;width:200px}
+  footer{max-width:880px;margin:60px auto 0;padding:24px 28px 0;border-top:1px solid var(--line);color:var(--mut);font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header style="padding-top:54px">
+    <div class="eyebrow">homezero · design doc · 2026-06-29</div>
+    <h1>/ship</h1>
+    <p class="lede">One command that takes a feature from idea to merged — and keeps <em>you</em> out of everything except the two decisions that are actually yours: <strong>the design direction</strong>, and <strong>go</strong>.</p>
+  </header>
+
+  <div class="hero" aria-label="idea flowing through five stages into a shipped feature">
+    <div class="rail"></div>
+    <div class="flow">
+      <div class="node spark"><div class="dot">✦</div><div class="cap">idea</div></div>
+      <div class="node"><div class="dot">🔍</div><div class="cap">discover</div></div>
+      <div class="node"><div class="dot">📐</div><div class="cap">plan</div></div>
+      <div class="node"><div class="dot">🔨</div><div class="cap">build</div></div>
+      <div class="node"><div class="dot">👀</div><div class="cap">review</div></div>
+      <div class="node done"><div class="dot">▦</div><div class="cap">shipped</div></div>
+    </div>
+  </div>
+  <p class="caption">An idea enters on the left; a reviewed feature lands on <code>main</code> on the right. You touch three points; the machine does the rest.</p>
+
+  <h2>The whole thing in one breath</h2>
+  <p><strong>DISCOVER (your taste, up front) → the machine plans, checks in once, builds, verifies, and merges.</strong> You're heavy in stage 1, glance at one card in the middle, and come back at the end. Everything you see is HTML; you only ever read the <em>meta</em>, never the full spec.</p>
+  <p>Underneath, every feature runs in its own <strong>worktrunk worktree</strong> — isolated, auto-provisioned, merged and cleaned up in one step. You never touch git. <code>main</code> only ever moves in clean, reviewed chunks.</p>
+
+  <h2>The pipeline</h2>
+  <div class="pipe">
+    <div class="stage">
+      <div class="l"><span class="n glyph">⌂ 0</span><b>Worktree</b><span class="tag auto">auto · invisible</span></div>
+      <div class="r"><code>wt</code> opens a provisioned worktree off fresh <code>main</code> (~6s, deps + env cloned). Everything below happens inside it.</div>
+    </div>
+    <div class="stage g">
+      <div class="l"><span class="n glyph">🔍 1</span><b>Discover</b><span class="tag you">your lane</span></div>
+      <div class="r"><strong>brainstorm + impeccable, interleaved.</strong> PM-framed questions one at a time; HTML mockups (pix imagery) you react to; iterate. Crystallizes into the <strong>spec</strong> (HTML artifact, committed — you are <em>not</em> asked to read it). Non-visual feature? Just the brainstorm, no mockups.<br><span class="tag gate">║ GATE 1 — approve the direction ║</span></div>
+    </div>
+    <div class="stage">
+      <div class="l"><span class="n glyph">📐 2</span><b>Plan</b><span class="tag auto">auto · invisible</span></div>
+      <div class="r">writing-plans drafts the implementation plan. <strong>ponytail runs as scope critic</strong> — cuts speculative features, picks native/existing over custom, and records <em>what it cut</em>.</div>
+    </div>
+    <div class="stage g">
+      <div class="l"><span class="n glyph">✅ 3</span><b>Check-in</b><span class="tag you">10-sec glance</span></div>
+      <div class="r">One condensed <strong>HTML go-card</strong> — the meta only: what gets built · ponytail's cuts · the 1–3 calls that are yours (each with a rec) · risk · mockup thumbnail.<br><span class="tag gate">║ GATE 2 — go ║</span></div>
+    </div>
+    <div class="stage">
+      <div class="l"><span class="n glyph">🔨 4</span><b>Build</b><span class="tag auto">auto</span></div>
+      <div class="r">subagent-driven-development, driven by <strong>Opus</strong>, which <strong>routes each build task ~50/50 to Opus or GPT-5.5</strong> (the <code>router</code> skill — judgment/integration/risk → Opus, well-specified self-contained coding → GPT-5.5 via codex). + <strong>ponytail posture</strong> (shortest diff, reuse, no reinventing the wheel) + <strong>verify-before-done</strong> (actually runs it) + <strong>systematic-debugging</strong> on any failure. Can raise its hand for a real fork; you can jump in anytime from FleetView.</div>
+    </div>
+    <div class="stage">
+      <div class="l"><span class="n glyph">👀 5</span><b>Review / merge</b><span class="tag auto">auto</span></div>
+      <div class="r">/code-review (correctness) + ponytail-review (over-build) → an <strong>auto-opening review card</strong> (HTML, PM-framed: what shipped · what's checked · what only you confirm · merge?) — never "go read the PR." → <code>wt merge</code> (runs tests, lands spec+design+code together, deletes branch, removes worktree). <strong>Tiny &amp; watched → merge. Substantial → PR + card + wait.</strong></div>
+    </div>
+  </div>
+
+  <h2>Your status line, reimagined</h2>
+  <p>It stops being branch-centric and starts telling you <strong>which feature, what stage, which tree</strong>. The stage is written into the worktree's state as <code>/ship</code> advances; the line just reads it (fast, local — no lag).</p>
+
+  <div class="term">
+<span class="dim"># idle on main</span>
+📁 homezero · Opus 4.8 · ⚡ high
+🌳 <span class="wht">main</span> · <span class="dim">clean</span>
+
+<span class="dim"># mid-build</span>
+📁 homezero · Opus 4.8 · ⚡ high
+🚢 <span class="wht">saved-filters</span> · <span class="amb">🔨 build 4/5</span> · <span class="grn">+42 −8</span>
+
+<span class="dim"># waiting on your design call</span>
+📁 homezero · Opus 4.8 · ⚡ high
+🚢 <span class="wht">saved-filters</span> · <span class="amb">🔍 discover</span> · 💬 <span class="amb">your call</span>
+
+<span class="dim"># PR up for review</span>
+📁 homezero · Opus 4.8 · ⚡ high
+🚢 <span class="wht">saved-filters</span> · <span class="amb">👀 review</span> · <span class="grn">PR #128</span>
+  </div>
+  <p class="caption">Dropped: version, "20m ago", the bare branch line, "2 uncommitted" (→ real diff count). Stage glyphs: 🔍 discover → 📐 plan → ✅ go → 🔨 build → 👀 review. The all-trees view stays <code>wt list</code> + FleetView.</p>
+
+  <h2>The go-card (Gate 2)</h2>
+  <p>The <em>only</em> thing you read before a build starts. Not the spec — the meta.</p>
+  <div class="card gocard">
+    <div class="h"><span>🚢</span><span class="ttl">Saved-homes quick filters</span><span class="thumb">mockup</span></div>
+    <div class="row"><div class="k">Buyer gets</div><div>Filter saved homes by status — live · pending · sold.</div></div>
+    <div class="row"><div class="k">Design</div><div>Approved — your direction, the chip row from mock B.</div></div>
+    <div class="row"><div class="k">Ponytail cut</div><div><span class="cut">✕ custom filter engine</span> → <span class="keep">native array filter</span> (the list is small).<br><span class="cut">✕ "saved searches"</span> → not asked for, deferred.</div></div>
+    <div class="row"><div class="k">Your call</div><div>Empty-state copy: <em>"Nothing saved yet"</em> vs <em>"Start saving homes"</em> — <strong>rec: the 2nd</strong>.</div></div>
+    <div class="row"><div class="k">Risk</div><div>None.</div></div>
+    <div class="btns"><span class="btn go">Go</span><span class="btn">Hold — change something</span></div>
+  </div>
+
+  <h2>Where each skill fires</h2>
+  <table class="ledger">
+    <tr><td>brainstorming</td><td>Discover — pins intent, PM-framed, one question at a time.</td></tr>
+    <tr><td>impeccable</td><td>Discover — HTML design sprint (pix imagery). Skipped for non-visual features. <code>init</code> already done for homezero.</td></tr>
+    <tr><td>writing-plans</td><td>Plan — the implementation plan (HTML artifact).</td></tr>
+    <tr><td>ponytail ×2</td><td>Plan (scope critic, primary) + Build (posture). The cut-list rides onto the go-card.</td></tr>
+    <tr><td>router</td><td>Build only — Opus driver splits each build task ~50/50 Opus ↔ GPT-5.5 (codex). Two engines, no Sonnet/Gemini. Self-tunes via a ledger. <em>Never fires outside Build.</em></td></tr>
+    <tr><td>verify-before-done</td><td>Build→Review — the agent runs the thing and watches it work before claiming done. <em>The trust guard.</em></td></tr>
+    <tr><td>systematic-debugging</td><td>Build — the failure fallback when a test goes red.</td></tr>
+    <tr><td>/code-review + ponytail-review</td><td>Review — correctness + over-build, one automated pass.</td></tr>
+    <tr><td>worktrunk (wt)</td><td>Stage 0 + merge — isolation, provisioning, one-step merge/cleanup. Invisible.</td></tr>
+  </table>
+  <h3>Deliberately left out</h3>
+  <p><code>executing-plans</code> (checkpoint-heavy — the opposite of hands-off), <code>writing-skills</code> (only used once, to build <code>/ship</code> itself), <code>finishing-a-development-branch</code> &amp; <code>using-git-worktrees</code> (wt replaces both), strict TDD (tests as a build deliverable + the <code>pre-merge npm test</code> gate is enough; reserve test-first for money/auth), <code>dispatching-parallel-agents</code> (a power-up for big features, not a default).</p>
+
+  <h2>How you're treated, and what you decide</h2>
+  <div class="two">
+    <div class="card"><h3 style="margin-top:0">Your lane</h3>Product direction · design &amp; taste · scope priorities · what the buyer experiences. Surfaced richly. Hard stops live here. <strong>You're a technical PM, not an engineer</strong> — technical decisions come translated, with a rec, for your call.</div>
+    <div class="card"><h3 style="margin-top:0">The machine's lane</h3>Library choices, code structure, mechanics — handled, summarized in one plain line. Built on the <strong>standing stack</strong> (flue · Cloudflare · Convex · Clerk · Stripe · Next 16) without asking. Escalates only a choice that's both architectural <em>and</em> outside the canon.</div>
+  </div>
+
+  <h2>Always-ship (no slash command required)</h2>
+  <p>You won't have to type <code>/ship</code>. The skill auto-triggers on feature-shaped requests, and homezero's <code>AGENTS.md</code> makes it the default: <em>"feature and multi-step change work runs through the ship flow — worktree, discover → plan → build → review; never edit main directly."</em> A typo fix or a question still just gets done — no ceremony for the trivial.</p>
+
+  <h2>v2 — the dockmaster loop</h2>
+  <p>Once the single-feature engine is solid, wrap it in a <strong>self-paced supervisor loop</strong> — one long-lived <code>/loop</code> session in your FleetView fleet, running on your always-on Mac (it <em>must</em> be local — that's where the worktrees live). Each wake it advances every ship that can move without you, parks the ones at gates, and paces itself: tighten when busy, drift toward the 1h ceiling when idle, wake instantly on your replies.</p>
+  <div class="note"><strong>The loop changes the clock, not the control.</strong> Your gates still gate — it advances work <em>to</em> them and stacks decisions for you to handle in batches. The tiny/safe class you already trust → it ships end-to-end; substantial → it parks for you. You stop being the thing that pushes the pipeline forward between gates.</div>
+
+  <h2>Decisions locked this session</h2>
+  <table class="ledger">
+    <tr><td>Gating model</td><td>Two gates — design direction, then go. Spec/plan never gate. Scales out for non-visual features.</td></tr>
+    <tr><td>Ponytail placement</td><td>Both — scope critic at Plan (primary), posture at Build.</td></tr>
+    <tr><td>Model routing</td><td>Build-only. Opus driver, ~50/50 Opus ↔ GPT-5.5. Router rewritten to two engines (Sonnet/Gemini cut). Opus owns brief/review/gates/git; one writer per branch.</td></tr>
+    <tr><td>Persona</td><td>Technical PM, not engineer. Guide + recommend; taste leads.</td></tr>
+    <tr><td>Library threshold</td><td>Standing stack never re-asked; escalate only architectural + outside-canon.</td></tr>
+    <tr><td>Shape</td><td>Design up front (interleaved with brainstorm); spec is Discover's artifact, not a stage.</td></tr>
+    <tr><td>Status line</td><td>Stage-aware, tree-centric; drop branch/version/time noise.</td></tr>
+    <tr><td>Adds</td><td>verify-before-done, systematic-debugging fallback, /code-review + ponytail-review pass.</td></tr>
+    <tr><td>worktrunk</td><td>Invisible substrate; bgIsolation stays "none"; durable worktrees via the skill flow.</td></tr>
+    <tr><td>v2 loop</td><td>Local FleetView dockmaster, always-on Mac, 1min–1h adaptive band.</td></tr>
+  </table>
+
+  <h2>This doc, by its own rules</h2>
+  <p>It was written by <em>simulating</em> <code>/ship</code>: DISCOVER was this whole conversation; this file is the spec artifact for <strong>Gate 1</strong>; it's living in a worktree (<code>homezero.feature-ship-skill</code>); next is the plan + go-card, then the build. <span style="color:var(--mut)">(The hero is CSS, not pix — your pix service is down right now; bootstrap I/O error, a separate fix.)</span></p>
+
+</div>
+<footer>
+  /ship — homezero feature pipeline · design doc · 2026-06-29 · branch <code style="background:#efe9dc">feature/ship-skill</code><br>
+  Gate 1 of the simulated /ship build. Approve the direction, or call for changes.
+</footer>
+</body>
+</html>
