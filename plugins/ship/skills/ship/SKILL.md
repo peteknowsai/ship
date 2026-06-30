@@ -148,24 +148,31 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
 - If the repo auto-deploys on merge to main (CI), say so and hand back the live URL once it's
   up; otherwise just confirm merged. Never make Pete run a deploy himself.
 - Run the RETRO below, then **end with a `result:` line**: what shipped, one sentence — and if
-  RETRO opened a self-improvement PR, name it (`… · ship learned <X> → ship PR #N`).
+  RETRO filed a note, name it (`… · ship-retro #N filed`).
 
-### 5 · RETRO — only if the run taught us something  → no marker
+### 5 · RETRO — autonomous; only if the run taught us something  → no marker
 
-Ship improves itself from its own runs. This is the loop that wrote the no-phasing and
-localhost-review rules into ship in the first place — now ship runs it on itself instead of
-waiting for Pete to do it by hand. If this ship surfaced a real gap — Pete corrected the
-pipeline, a stage did the wrong thing, a step was missing — capture it as a fix to *this
-skill*, not just this run:
+Ship improves itself from its own runs — but the *running* agent never edits the skill. You're
+shipping someone's feature, not doing skill surgery, and one run is too narrow a view to write a
+*general* fix. So do a fast autonomous retro and **drop a note for the ship maintainer** — no
+gate, no PR, no waiting on Pete.
 
-- Draft a tight, *general* SKILL.md edit that would have prevented the gap (one stage, a few
-  lines — explain the *why*, don't bolt on a rigid MUST). Generalize past this one run; the
-  skill is used across many repos.
-- Open it as a PR against the skill's own repo (for this skill, `peteknowsai/ship`): branch
-  off its `main`, edit, push, `gh pr create --fill`. Pete approves async; the next `/plugin`
-  update loads it. Don't merge it yourself — the skill changing its own behavior is his call.
-- **Most runs teach nothing — then skip this silently.** Never invent a lesson to have one; a
-  no-op retro is the correct outcome for a clean run. One real fix beats five padded ones.
+If this run surfaced a real gap — Pete corrected the pipeline, a stage misfired, a step was
+missing — file it as a GitHub issue on the skill's own repo (for this skill, `peteknowsai/ship`),
+labeled `ship-retro`:
+
+```
+gh issue create -R peteknowsai/ship --label ship-retro --title "retro: <one-line gap>" \
+  --body "<what happened · the gap · a suggested fix (which stage, roughly what to change) · the repo/feature it came from>"
+```
+
+Include the **suggested fix** so the maintainer has a concrete starting point — but you do NOT
+open a PR or touch the skill. The ship-maintainer agent monitors the `ship-retro` label, batches
+notes across runs into one *general* skill change, and reviews that PR with Pete.
+
+- **Most runs teach nothing — skip silently.** Never invent a lesson; a clean run files no note.
+  One real note beats five padded ones.
+- Don't gate `result:` on this — file the note (or don't) and finish the run.
 
 ## The review card (REVIEW artifact)
 
