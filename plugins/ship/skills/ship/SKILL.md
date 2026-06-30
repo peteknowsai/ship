@@ -9,6 +9,15 @@ You run a feature from idea to merged. Pete is heavy in DISCOVER (his taste), gl
 at one card mid-way (go), and comes back at the end. Everything between and after the
 two gates is automatic.
 
+**Scope is the spec — Pete's dial, not yours.** Ship builds *exactly* what the design
+spec covers: the whole thing, in one pass — one plan, one build, one review, one merge.
+If Pete wants less he specs less; if he specs a big feature you plan and build the
+*entire* feature and do not slice it down. Never decompose a specced feature into
+"Ship 1 of 4" and stop, never defer specced surfaces to a "later phase," never let the
+plan shrink the destination. A bigger spec means a bigger plan and a longer build — that
+is wanted, not a problem to manage away. Phasing is Pete's to ask for, never yours to
+impose. The models can hold a big plan; trust that.
+
 **Two principles, always:**
 
 1. **The meta rule.** Every artifact Pete sees is a condensed HTML page — he reads the
@@ -61,7 +70,10 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
 - For any visual/UI feature, also run `impeccable` — the HTML design sprint (use `/pix`
   for imagery freely). The spec *is* the prototype.
 - Produce ONE self-contained HTML spec in the repo's docs home (`specs/` or `docs/`,
-  whichever it uses) — e.g. `specs/designs/YYYY-MM-DD-<slug>.html`.
+  whichever it uses) — e.g. `specs/designs/YYYY-MM-DD-<slug>.html`. Design the **whole**
+  feature here — every surface and behavior Pete wants in scope — because this spec is the
+  scope contract PLAN and BUILD execute in full. A big feature is a big spec; don't trim
+  it to a slice.
 - Write `gate:1` to `.ship-stage`, fire the gate notification (see "Gate signals"),
   `open` the spec, and **end the turn with a `needs input:` line** naming the ship +
   "design direction?". **HARD STOP — GATE 1.** Wait for approval.
@@ -69,9 +81,13 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
 ### 2 · PLAN — automatic  → marker: `plan`, then `gate:2`
 
 - Write `plan` to `.ship-stage`.
-- Invoke `superpowers:writing-plans`. Run `ponytail` as the scope critic — produce a
-  cut-list. Save the markdown execution plan to the repo's docs home (e.g.
-  `specs/plans/YYYY-MM-DD-<slug>.md`).
+- Invoke `superpowers:writing-plans` to produce ONE execution plan covering the **entire
+  spec** — every task to build the whole feature, however many that is. Do **not** slice
+  the feature into sequential ships/phases or defer specced surfaces; one plan, built in
+  one pass. Run `ponytail` as the *waste* critic, not a scope critic — it cuts
+  reinvention, over-abstraction, unneeded deps, and gold-plating, but never amputates
+  specced scope (the spec is the floor). Save its cut-list of dropped *waste* and the
+  markdown execution plan to the repo's docs home (e.g. `specs/plans/YYYY-MM-DD-<slug>.md`).
 - Render the HTML **go-card** from `reference/go-card.html` — the meta only (contract
   below). Write `gate:2`, fire the gate notification, `open` the go-card, and **end the
   turn with a `needs input:` line** naming the ship + "go? (flip `/effort ultracode`
@@ -81,7 +97,10 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
 
 ### 3 · BUILD — automatic  → marker: `build:N:M` (N done of M tasks)
 
-- Write `build:0:<M>` to `.ship-stage`; bump N as each task completes.
+- Write `build:0:<M>` to `.ship-stage`; bump N as each task completes. Build **all M
+  tasks** in one session — a big plan means a long build, and that is the job; don't stop
+  partway or hand back a half-built feature. Commit each task on the branch as it lands
+  (durable, resumable progress), but don't merge until the whole plan is built.
 - Invoke `superpowers:subagent-driven-development`, driven by Opus.
 - Invoke `router` to split each build task ~50/50 Opus ↔ GPT-5.5 (codex). Opus owns the
   brief, the diff review, the gates, and git. One writer per branch at a time.
@@ -170,7 +189,9 @@ It is the *only* thing Pete reads before a build starts. Never make him read the
 
 ## What this skill deliberately does NOT do
 
-No `executing-plans` (checkpoint-heavy — the opposite of hands-off). No strict TDD by
-default (tests are a build deliverable; the pre-merge test gate is the backstop;
+No arbitrary phasing — ship plans and builds the whole spec in one pass, never slicing a
+specced feature into "Ship 1 of N" and stopping (phasing is Pete's to request, not ship's
+to impose). No `executing-plans` (checkpoint-heavy — the opposite of hands-off). No strict
+TDD by default (tests are a build deliverable; the pre-merge test gate is the backstop;
 reserve test-first for money/auth). No manual git worktree management — `wt` owns the
 worktree birth-to-death.
