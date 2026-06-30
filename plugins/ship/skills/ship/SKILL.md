@@ -137,14 +137,25 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
   directly.)
 - On "merge", land it and **let worktrunk own teardown — a leftover worktree is a bug**:
   - **Tiny & watched →** `wt merge` (runs the repo's `wt.toml` pre-merge gate, squashes,
-    ff's main, removes the worktree), then `ExitWorktree({action:"keep"})` to point the
-    session back at the main checkout (wt already deleted the dir).
-  - **Substantial (PR path) →** `gh pr merge --squash --delete-branch` — this deletes only
-    the *remote* branch, so clean up locally so nothing piles up: `ExitWorktree({action:"keep"})`,
-    then `wt remove feature/<slug> -f` to tear down the *local* worktree + branch, then
-    `git -C <main-checkout> pull --ff-only` so local main matches. Nothing left on disk.
+    ff's main, removes the worktree — worktrunk merges *from* the worktree safely), then
+    `ExitWorktree({action:"keep"})` to point the session back at the main checkout (wt already
+    deleted the dir).
+  - **Substantial (PR path) → the merge must run from the MAIN CHECKOUT, never from inside the
+    worktree.** `gh pr merge` checks out the base branch locally after merging; run from inside
+    the worktree it dies with `fatal: 'main' is already used by worktree …` — the PR merges on
+    GitHub but the local step fails, so teardown never runs and Pete is stranded in an orphan
+    worktree (this has bitten real runs). So **tear down FIRST, then merge:**
+    1. `ExitWorktree({action:"keep"})` — return the session to the main checkout.
+    2. `wt remove feature/<slug> -f` — remove the local worktree now (frees the branch so
+       `--delete-branch` can delete it; you're about to merge it anyway).
+    3. `gh pr merge <#> --squash --delete-branch` — now from the main checkout: merges + deletes
+       the *remote* branch, no checkout conflict.
+    4. `git pull --ff-only` so local main matches (+ `git branch -D feature/<slug>` if the squash
+       left an "unmerged" local branch behind). Nothing left on disk.
   - Then `rm .ship-stage` and **stop the review dev server you booted** (its worktree is being
-    removed). Verify with `wt list` / `git worktree list` — zero ship worktrees should remain.
+    removed). **Verify with `git worktree list` — zero ship worktrees must remain. A leftover
+    worktree means the teardown failed (usually the merge ran inside the worktree) — recover it
+    before you declare done.**
 - If the repo auto-deploys on merge to main (CI), say so and hand back the live URL once it's
   up; otherwise just confirm merged. Never make Pete run a deploy himself.
 - Run the RETRO below, then **end with a `result:` line**: what shipped, one sentence — and if
