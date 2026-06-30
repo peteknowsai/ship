@@ -22,6 +22,19 @@ phase_c()    { c '38;5;245'; }   # dim gray — the phase word
 gate_c()     { c '1;38;5;214'; } # bold amber — needs you
 update_c()   { c '38;5;179'; }   # muted gold
 
+# the stage breadcrumb — design · plan · build · review, active stage lit amber.
+# Shown from design through review (and at gates), next to the brain on line 2,
+# so which stage we're in always reads — not just a single dim word.
+stage_bar() {
+  active="$1"; out=""
+  for s in design plan build review; do
+    [ -n "$out" ] && out="$out$(c '38;5;239') · $(rst)"
+    if [ "$s" = "$active" ]; then out="$out$(c '1;38;5;215')$s$(rst)"
+    else out="$out$(c '38;5;242')$s$(rst)"; fi
+  done
+  printf '%s' "$out"
+}
+
 # ---- extract data ----
 if [ "$HAS_JQ" -eq 1 ]; then
   current_dir=$(echo "$input" | jq -r '.workspace.current_dir // .cwd // "~"' 2>/dev/null | sed "s|^$HOME|~|g")
@@ -142,12 +155,12 @@ weekly_color() {
 is_gate=0; phase=""
 if [ -n "$ship_stage" ]; then
   case "$ship_stage" in
-    gate:1*) printf "$(gate_c)✋ %s — design?$(rst)" "$ship_slug"; is_gate=1 ;;
-    gate:2*) printf "$(gate_c)✋ %s — go?$(rst)" "$ship_slug"; is_gate=1 ;;
-    discover*) printf "$(ship_c)🚢 %s$(rst)" "$ship_slug"; phase="🔍 designing" ;;
-    plan*)     printf "$(ship_c)🚢 %s$(rst)" "$ship_slug"; phase="📐 planning" ;;
-    build*)    printf "$(ship_c)🚢 %s$(rst)" "$ship_slug"; phase="🔨 building" ;;
-    review*)   printf "$(ship_c)🚢 %s$(rst)" "$ship_slug"; phase="👀 reviewing" ;;
+    gate:1*) printf "$(gate_c)✋ %s — design?$(rst)" "$ship_slug"; is_gate=1; phase="$(stage_bar design)" ;;
+    gate:2*) printf "$(gate_c)✋ %s — go?$(rst)" "$ship_slug"; is_gate=1; phase="$(stage_bar plan)" ;;
+    discover*) printf "$(ship_c)🚢 %s$(rst)" "$ship_slug"; phase="$(stage_bar design)" ;;
+    plan*)     printf "$(ship_c)🚢 %s$(rst)" "$ship_slug"; phase="$(stage_bar plan)" ;;
+    build*)    printf "$(ship_c)🚢 %s$(rst)" "$ship_slug"; phase="$(stage_bar build)" ;;
+    review*)   printf "$(ship_c)🚢 %s$(rst)" "$ship_slug"; phase="$(stage_bar review)" ;;
     *)         printf "$(ship_c)🚢 %s$(rst)" "$ship_slug" ;;
   esac
 else

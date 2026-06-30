@@ -69,6 +69,12 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
 - Invoke `superpowers:brainstorming`. PM-framed, one question at a time.
 - For any visual/UI feature, also run `impeccable` — the HTML design sprint (use `/pix`
   for imagery freely). The spec *is* the prototype.
+- **Ground the design in the *live* product, not stale artifacts.** Before designing any
+  visual feature, look at what's actually shipped — boot the app (its dev script) or open
+  the deployed URL and *see* the current surface and its real theme/CSS. In-repo mockups
+  (`design/`, old specs) drift and read as current when they're not; the running app is the
+  design source of truth. (A run once designed against a repo's old cream mockups while the
+  live product had moved to a dark terminal UI — caught only at GATE 1, the whole spec redone.)
 - Produce ONE self-contained HTML spec in the repo's docs home (`specs/` or `docs/`,
   whichever it uses) — e.g. `specs/designs/YYYY-MM-DD-<slug>.html`. Design the **whole**
   feature here — every surface and behavior Pete wants in scope — because this spec is the
@@ -104,6 +110,15 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
 - Invoke `superpowers:subagent-driven-development`, driven by Opus.
 - Invoke `router` to split each build task ~50/50 Opus ↔ GPT-5.5 (codex). Opus owns the
   brief, the diff review, the gates, and git. One writer per branch at a time.
+- **Single-writer vs fan-out — pick by the diff, not by reflex** (matters most under
+  ultracode, where "always orchestrate" tempts you to parallelize the build). The default is
+  one writer on the branch: right for a small, interdependent, or design-coherent feature,
+  where parallel writers just race on the shared checkout for no gain. Fan out writers (each
+  in its own worktree, merged back) ONLY when tasks are genuinely independent *and* numerous
+  enough that isolation + merge beats serialized commits — a large migration, a broad
+  mechanical sweep. The high-value place to fan out is the **review**, regardless of build
+  size: independent reviewers per dimension + adversarial verification (see REVIEW). Don't
+  parallelize 5 small edits; do parallelize 5 verifiers.
 - Apply `ponytail` posture (shortest diff, reuse, no reinvention).
 - Run `superpowers:verify-before-done` before claiming any task done — actually run it.
 - On a red test, `superpowers:systematic-debugging`.
