@@ -120,6 +120,61 @@
   ├─ render review card  (now carries the proof + any flags)
   └─ GATE: Pete reviews proof → merge / "fix those" / backlog</div>
 
+  <h2>How the verifier drives the app — Playwright</h2>
+  <p>
+    The driver is <strong>Playwright</strong> — already a homezero dependency, no new infra. The
+    trick is it's used <strong>two ways</strong>, which is what resolves "flexible exploration" vs.
+    "deterministic gate":
+  </p>
+  <div class="grid">
+    <div class="card">
+      <h3>① Live drive — prove the new feature</h3>
+      <p>The verifier sub-agent drives a real browser through Playwright and <strong>clicks through
+      the actual flow like a user</strong> — navigate the route, perform the feature's action,
+      observe the result. Being an agent, it finds its way even without pre-written selectors, and
+      judges <em>observed</em> vs. <em>intended</em>. It <strong>screenshots the meaningful beats</strong>
+      (start → action → success), not a random dump.</p>
+    </div>
+    <div class="card">
+      <h3>② Crystallize — the compounding net</h3>
+      <p>For a <strong>core journey</strong>, that same exploration is written out as a committed
+      Playwright <code>.spec.ts</code> — a deterministic, headless script that re-runs in the gate
+      forever after. Same tool, so "explore live" <em>becomes</em> the saved spec. That's why it
+      compounds for free, with no spec authored by hand.</p>
+    </div>
+  </div>
+  <p>
+    Playwright also captures <strong>video + trace</strong>, but those stay gitignored as debug
+    backup — the card leads with the glanceable screenshots, no video-hosting dance.
+  </p>
+
+  <h3>What "organized for PM review" means</h3>
+  <p>
+    The screenshots don't land as a folder of PNGs — they go into the review card as a
+    <strong>captioned storyboard</strong>: the verdict on top, each shot labeled in plain product
+    language. You scan a visual walkthrough, not a test log. Roughly:
+  </p>
+  <div class="card" style="background:#0b0e12">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+      <span class="pill ok">works</span>
+      <span class="mono" style="font-size:13px;color:#cdd9e5">Save a listing — verified by a fresh agent driving the live app</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+      <div>
+        <div style="aspect-ratio:16/10;border:1px solid var(--line);border-radius:8px;background:linear-gradient(135deg,#161b22,#1b2230);display:flex;align-items:center;justify-content:center;color:#3a4656;font-family:var(--mono);font-size:11px">screenshot</div>
+        <div class="mono muted" style="font-size:12px;margin-top:6px">1 · Board loads</div>
+      </div>
+      <div>
+        <div style="aspect-ratio:16/10;border:1px solid var(--line);border-radius:8px;background:linear-gradient(135deg,#161b22,#1b2230);display:flex;align-items:center;justify-content:center;color:#3a4656;font-family:var(--mono);font-size:11px">screenshot</div>
+        <div class="mono muted" style="font-size:12px;margin-top:6px">2 · Clicked Save on a listing</div>
+      </div>
+      <div>
+        <div style="aspect-ratio:16/10;border:1px solid var(--line);border-radius:8px;background:linear-gradient(135deg,#161b22,#1b2230);display:flex;align-items:center;justify-content:center;color:#3a4656;font-family:var(--mono);font-size:11px">screenshot</div>
+        <div class="mono muted" style="font-size:12px;margin-top:6px">3 · Now in Saved ✓</div>
+      </div>
+    </div>
+  </div>
+
   <h2>The light compounding (kept deliberately small)</h2>
   <p>
     When a feature is a genuine <strong>core journey</strong> — not every little thing — the verifier
@@ -165,7 +220,7 @@
 
   <h2>Open planning flags (resolve at plan time, not now)</h2>
   <ul>
-    <li><b>Verifier driver tool.</b> How the sub-agent drives the browser (Playwright CLI vs the in-harness browser tools) — pick one in the plan.</li>
+    <li><b>Playwright run mode.</b> <em>Decided: Playwright</em> (live drive + crystallized <code>.spec.ts</code>). Left for the plan: whether the agent drives via the <span class="mono">playwright-cli</span> skill step-by-step or runs a throwaway script — a mechanics detail, not a tool choice.</li>
     <li><b>"Core journey" trigger.</b> The exact rule for when the verifier commits an e2e spec vs just reports — keep it simple, decide the wording in the plan.</li>
     <li><b>Evidence into HTML.</b> Screenshots referenced by relative path vs inlined as data-URIs in the review card — a rendering detail for the card edit.</li>
     <li><b>Escalation copy.</b> What the <code>needs input:</code> line says when the verifier can't prove a feature after the cap.</li>
