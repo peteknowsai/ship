@@ -107,6 +107,11 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
 - Apply `ponytail` posture (shortest diff, reuse, no reinvention).
 - Run `superpowers:verify-before-done` before claiming any task done — actually run it.
 - On a red test, `superpowers:systematic-debugging`.
+- **Before BUILD is done, walk the whole feature end-to-end yourself** — invoke `verify`:
+  boot the app and drive its *real* user paths (the spec's happy path + key edge cases),
+  not just unit tests. *You* find the breakage, never Pete. Fix what breaks (loop with
+  `systematic-debugging`); only leave BUILD once the live flow actually works. The review
+  card's "walked it end-to-end" line is a promise — keep it true.
 - Raise a hand only for a genuine fork (PM-framed, with a rec). Pete can jump in from
   FleetView anytime.
 
@@ -114,12 +119,22 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
 
 - Write `review` to `.ship-stage`.
 - Run `/code-review` (correctness) + `ponytail-review` (over-build) — one pass.
+- **Put it in front of Pete, running — every time.** For any visual/interactive feature
+  (the default on this web stack), **boot the worktree's own dev server yourself** (its dev
+  script — e.g. `next dev` — in the background) and `open http://localhost:<port>` (usually
+  `:3000`) so the *live local app* is on his screen the instant he's asked to review. He
+  walks through it on the worktree. **Never deploy to let him review, and never tell him to
+  "go look at the live site"** — deploy is downstream of merge; the worktree's localhost is
+  the review surface. (Non-UI change — CLI/library — show the demo/test output instead.)
 - **Render a review card** from `reference/review-card.html` (contract below), write it to
-  the repo's docs home (e.g. `specs/plans/review-<slug>.html`), and `open` it. **Never tell
-  Pete to "go read the PR"** — the review comes to him, labeled, in plain terms. He glances
-  and answers in Claude Code.
-- **Tiny & watched → merge directly** (`wt merge`). **Substantial → open the PR *and* the
-  review card, then end with a `needs input:` line ("review: <feature> — merge?").** Wait.
+  the repo's docs home (e.g. `specs/plans/review-<slug>.html`), and `open` it. Point it at
+  the running localhost ("walk through it — it's already open"). **Never tell Pete to "go
+  read the PR"** — the review comes to him, running and labeled.
+- **The merge gate always holds for visual/substantial work.** Present the running app + the
+  review card, end with a `needs input:` line ("review: <feature> — merge?"), and **wait.
+  Never merge a UI Pete hasn't seen run** — a standing "go" authorizes the build, not the
+  merge of an unseen feature. (Only a tiny, non-visual, watched change may `wt merge`
+  directly.)
 - On "merge", land it and **let worktrunk own teardown — a leftover worktree is a bug**:
   - **Tiny & watched →** `wt merge` (runs the repo's `wt.toml` pre-merge gate, squashes,
     ff's main, removes the worktree), then `ExitWorktree({action:"keep"})` to point the
@@ -128,8 +143,8 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
     the *remote* branch, so clean up locally so nothing piles up: `ExitWorktree({action:"keep"})`,
     then `wt remove feature/<slug> -f` to tear down the *local* worktree + branch, then
     `git -C <main-checkout> pull --ff-only` so local main matches. Nothing left on disk.
-  - Then `rm .ship-stage`. Verify with `wt list` / `git worktree list` — zero ship worktrees
-    should remain afterward.
+  - Then `rm .ship-stage` and **stop the review dev server you booted** (its worktree is being
+    removed). Verify with `wt list` / `git worktree list` — zero ship worktrees should remain.
 - If the repo auto-deploys on merge to main (CI), say so and hand back the live URL once it's
   up; otherwise just confirm merged. Never make Pete run a deploy himself.
 - End with a `result:` line: what shipped, one sentence.
@@ -140,11 +155,14 @@ Render `reference/review-card.html` filled with the meta only — PM-framed, one
 Pete reviews *this*, not the diff:
 
 - **What you got** — plain-English bullets of what now works (what it *does*, not a file list).
-- **What it looks like** — a screenshot/mockup, for any user-facing or visual change.
-- **Already checked for you** — gates/tests green; what was NOT touched (schema / money /
-  public surfaces). Set his risk expectation.
-- **Only you can confirm** — the 1–2 things that need his eye (a visual, a behavior).
-- **Merge?** — the PR link is there for the curious, but he shouldn't need it.
+- **What it looks like** — it's already **running for him at localhost** (you booted it); a
+  screenshot/mockup goes here for the record.
+- **Already checked for you** — gates/tests green, **the flow walked end-to-end (it runs)**;
+  what was NOT touched (schema / money / public surfaces). Set his risk expectation.
+- **Only you can confirm** — the 1–2 things that need his eye; walk through them on the open
+  localhost.
+- **Merge?** — the PR link is there for the curious, but he shouldn't need it. Merge is the
+  point of no return (it deploys, if the repo auto-deploys) — only after he's seen it run.
 
 ## Gate signals — how a parked ship reaches Pete
 
