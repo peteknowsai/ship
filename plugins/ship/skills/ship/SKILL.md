@@ -59,6 +59,17 @@ If the repo has a `.config/wt.toml`, it auto-provisions the worktree (gitignored
 files — node_modules, .env, .dev.vars — via reflink). Write the first marker:
 `printf 'discover' > <root>/.ship-stage`. Never build on main.
 
+**Cross-repo case — narrate the fork or it looks like nothing happened.** `EnterWorktree`
+only adopts worktrees of the **session's primary repo**. When ship runs against a *different*
+repo (iterating on the ship plugin itself, or any repo that isn't this session's primary),
+`EnterWorktree` silently won't take, the session cwd never moves, and the status line stays
+pinned to the primary repo — `.ship-stage` is written in the feature repo the status line
+isn't watching, so the worktree + stage are **real but invisible**. In that case: work the
+worktree by **absolute path**, and **state the forked branch + worktree path in your narration
+the moment you create it** (`forked feature/<slug> off main @ <path>`) — a blind status line
+must never make it look like nothing forked. Pete watches for the worktree from the get-go; if
+the breadcrumb can't show it, your words must.
+
 **Opportunistic tidy (anti-accumulation):** glance at `git worktree list` first and
 `wt remove <branch> -f` any worktree whose branch is already merged and its remote shows
 `[gone]` (a finished ship that wasn't torn down). Only ever touch merged+gone worktrees —
