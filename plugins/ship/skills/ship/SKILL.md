@@ -61,6 +61,15 @@ is load-bearing. If the repo has a `.config/wt.toml`, it auto-provisions the wor
 files — node_modules, .env, .dev.vars — via reflink). Write the first marker:
 `printf 'discover' > <root>/.ship-stage`. Never build on main.
 
+**Isolate the branch's backend if the repo has a preview lane.** A worktree that builds against
+a *shared* backend (one Convex/DB deployment serving every branch) corrupts it — pushing this
+branch's schema reconciles the shared plane to *this* branch and drops indexes other branches
+added (the clobbering bug). So if the repo provisions a **per-branch backend**, do it now and
+point the worktree at it, so BUILD and REVIEW never touch a shared plane (homezero:
+`scripts/new-preview.sh <branch>` — spins up an isolated Convex preview seeded with real
+content, prints the deploy key + backend URL to export into the worktree; see its `## Deploy
+lanes` in AGENTS.md). No preview lane → just build against whatever dev stack the repo gives you.
+
 **Cross-repo case — narrate the fork or it looks like nothing happened.** `EnterWorktree`
 only adopts worktrees of the **session's primary repo**. When ship runs against a *different*
 repo (iterating on the ship plugin itself, or any repo that isn't this session's primary),
@@ -195,8 +204,18 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
     removed). **Verify with `git worktree list` — zero ship worktrees must remain. A leftover
     worktree means the teardown failed (usually the merge ran inside the worktree) — recover it
     before you declare done.**
-- If the repo auto-deploys on merge to main (CI), say so and hand back the live URL once it's
-  up; otherwise just confirm merged. Never make Pete run a deploy himself.
+- **Ship deploys to the integration lane, never to production.** After the merge, push merged
+  main to the repo's shared *dev/integration* lane if it has one — run its dev-deploy step **from
+  the main checkout** (homezero: `scripts/deploy-dev.sh`, the single serialized writer for the
+  shared dev plane; never run it from a worktree — that's the clobbering bug again), then hand
+  back that lane's URL (homezero: `dev.homezero.md`). If the repo just auto-deploys on merge via
+  CI, say so and hand back the URL once it's up; if it has no deploy step, confirm merged. Never
+  make Pete run a deploy himself.
+- **Promotion to production is NOT ship's job — shipping ends at the integration lane.**
+  "Merged" means live on *dev*, not live for users. Never deploy or promote to prod / `www`, and
+  never add a promote gate or offer to promote (homezero: `scripts/promote-to-prod.sh` is a
+  separate, human-gated ritual Pete runs on his own cadence — deliberately outside the pipeline).
+  Hand back the dev URL and stop there.
 - Run the RETRO below, then **end with a `result:` line**: what shipped, one sentence — and if
   RETRO filed a note, name it (`… · ship-retro #N filed`).
 
@@ -242,8 +261,10 @@ Pete reviews *this*, not the diff:
   confirm"), if any. These are *reports, not work* — Pete decides: fix now / backlog / ignore.
 - **Only you can confirm** — the 1–2 things that need his eye; walk through them on the open
   localhost.
-- **Merge?** — the PR link is there for the curious, but he shouldn't need it. Merge is the
-  point of no return (it deploys, if the repo auto-deploys) — only after he's seen it run.
+- **Merge?** — the PR link is there for the curious, but he shouldn't need it. Merge lands the
+  feature on the **integration lane** (dev), not on users — reversible, so it's a low-stakes yes
+  once he's seen it run. (On a repo where merge auto-deploys straight to prod, it *is* the point
+  of no return — treat it that way; but where prod is a separate promote, merge is not.)
 
 ## Gate signals — how a parked ship reaches Pete
 
