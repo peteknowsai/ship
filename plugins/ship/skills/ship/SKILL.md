@@ -1,6 +1,6 @@
 ---
 name: ship
-description: Use for any feature or multi-step change in a product/web repo — takes it from idea to merged through one pipeline (worktree → discover → plan → build → review), gating only on design direction and "go". Auto-triggers on feature-shaped requests; you never type it. Do NOT use for a typo fix, a one-line change, or a question — those just get done. Never edit main directly.
+description: Use for any code change in a product/web repo, small fix to full feature — ship sizes the ceremony itself. Small taste-free changes take the EXPRESS lane (worktree → change → verify → merge → dev, zero gates); feature-shaped work runs the full pipeline (worktree → discover → plan → build → review) gating only on design direction and "go"; express promotes to full the moment design, taste, or sprawl appears. Auto-triggers on change requests; you never type it. Do NOT use for a question or pure analysis. Never edit main directly.
 ---
 
 # /ship — idea to merged, in one command
@@ -17,6 +17,30 @@ If Pete wants less he specs less; if he specs a big feature you plan and build t
 plan shrink the destination. A bigger spec means a bigger plan and a longer build — that
 is wanted, not a problem to manage away. Phasing is Pete's to ask for, never yours to
 impose. The models can hold a big plan; trust that.
+
+## Sizing — every change ships; not every change gets the ceremony
+
+Everything runs on ship's rails — worktree off main, commit, merge, dev lane;
+**nothing ever edits main directly, however tiny**. What scales with the request is
+the *ceremony*, and **you size it, not Pete** — he just asks for what he wants:
+
+- **EXPRESS** — the change has no design surface or taste question, touches no
+  schema/auth/money, is roughly a-few-files-one-sitting, and you can see the whole
+  diff before you start → skip DISCOVER and PLAN entirely. No spec, no go-card, no
+  gates: stage 0 worktree → make the change → repo gates (tsc/tests) → self-drive
+  the affected flow → merge per REVIEW's standing rules → dev lane → `result:` line.
+  The merge rules don't relax: tiny + non-visual + watched goes straight through
+  (`wt merge`); anything **visual** still gets shown running for a quick confirm
+  first. Markers: skip `discover`/`plan`, write `build:*` → `review` as usual.
+- **FULL** — anything feature-shaped, multi-surface, or where Pete's taste is in
+  play → the two-gate pipeline below, unchanged.
+
+**When unsure, or when express outgrows itself mid-flight** — a design question
+surfaces, the diff sprawls into a second surface, you catch yourself making a taste
+call that's Pete's — **promote to FULL**: park, write the spec from what you've
+learned, present GATE 1. Bias toward promoting; the cost of a needless gate is one
+click, the cost of an unspecced feature is a redo. Never use express to slip scope
+past the gates.
 
 **Two principles, always:**
 
@@ -47,6 +71,11 @@ architectural *and* outside the repo's canon.
 
 Each stage writes its marker to `.ship-stage` at the git root (the status line + the
 FleetView row read it). The marker format is below each stage.
+
+The pipeline below is written for Claude Code (the primary harness). When the driver
+is a **Codex Desktop** session, the same pipeline runs with different mechanics —
+see **"Running under Codex Desktop"** near the end; its swaps override the
+worktree/browser/merge specifics below.
 
 ### 0 · Worktree (invisible)
 
@@ -296,6 +325,35 @@ never a file tour. Pete reviews *this*, not the diff:
   users, so it's a reversible, low-stakes yes once he's seen it run. (Only where merge
   auto-deploys straight to prod is it the point of no return — treat it that way there.)
 
+## Running under Codex Desktop
+
+Same pipeline, same gates, same artifacts — these mechanical swaps apply **only when
+the driver is a Codex Desktop session** (they override the Claude Code specifics above):
+
+- **Worktrees: Codex owns birth and cleanup — never run `wt` against a Codex-managed
+  worktree** (no `wt switch --create`, no `wt merge`, no `wt remove`, no nesting a wt
+  worktree inside one). Preferred start: the thread already in **Worktree mode** off
+  `main` — Codex creates the worktree (usually detached HEAD) under
+  `$CODEX_HOME/worktrees`. Sanity-check where you are (`git rev-parse --show-toplevel`,
+  `git branch --show-current`); if detached, make the branch real before the first
+  commit: `git switch -c feature/<slug>`. If the thread is **Local on `main`**, do NOT
+  edit — stop with `needs input: click Fork into new worktree for this ship`. (**Fork
+  into local** is only for when Pete explicitly wants the work in his foreground
+  checkout.)
+- **Artifacts open in Codex's in-app Browser**, not via macOS `open`: serve the
+  artifact's directory on localhost and navigate the in-app Browser there (raw
+  `file://` URLs are unreliable in Codex); a running app's localhost URL opens
+  directly. Fall back to `open`/Chrome only if the in-app Browser is unavailable or
+  Pete asks.
+- **Merge is the PR path only**: push the branch, open the PR, merge via Codex's Git
+  UI or `gh pr merge <#> --squash --delete-branch` — never from inside the branch's
+  own worktree. Then `rm .ship-stage`, stop the review dev server, deprovision the
+  preview backend — but **leave worktree cleanup to Codex** (archive the thread).
+- **No status line, no FleetView** — narration carries the load alone. Every status /
+  `needs input:` / `result:` line ends with the `branch <branch> · worktree <path>`
+  breadcrumb (see the narration contract), and `hooks/gate-notify.sh` isn't auto-wired
+  — run it manually at gates if it's present.
+
 ## Gate signals — how a parked ship reaches Pete
 
 When you hit a gate, three things fire so Pete notices whether he's watching or away:
@@ -320,6 +378,10 @@ The dashboard can't be styled, but it reflects the session. Make it a ship board
 - **At a gate, the closing line starts `needs input:`** → row moves to *awaiting input*.
   **At merge, it starts `result:`** → row moves to *completed*. Mid-work narration keeps
   it in *working*.
+- **End `needs input:` and `result:` lines with `branch <branch> · worktree <path>`**
+  (`detached@<short-sha>` until a branch exists). Pete must always know which checkout
+  he's looking at — this is what catches the cross-repo case where no status line is
+  watching, and under Codex Desktop it's the only location signal there is.
 
 ## The go-card contract (GATE 2 artifact)
 
@@ -333,6 +395,7 @@ scope, calls, risk — everything else stays in the machine-facing plan):
   then say "nothing needs you" and it's a pure confirm.)
 - **Risk** — one line.
 - **Mockup thumbnail** — if the feature is visual, pulled from the design spec.
+- **Go** — one line: BUILD starts the moment Pete says go.
 
 It is the *only* thing Pete reads before a build starts. Never make him read the plan.
 
@@ -343,6 +406,7 @@ specced feature into "Ship 1 of N" and stopping (phasing is Pete's to request, n
 to impose). No `executing-plans` (checkpoint-heavy — the opposite of hands-off). No strict
 TDD by default (tests are a build deliverable; the pre-merge test gate is the backstop;
 reserve test-first — `superpowers:test-driven-development` — for money/auth paths). No manual git worktree management — `wt` owns the
-worktree birth-to-death. No promoting to production — ship ends at the integration lane (dev);
+worktree birth-to-death in Claude Code, Codex Desktop owns its own managed worktrees
+(never `wt` inside one). No promoting to production — ship ends at the integration lane (dev);
 promotion to prod / `www` is a separate, human-gated ritual Pete runs, never ship's to deploy,
 gate, or offer.

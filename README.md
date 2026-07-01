@@ -7,6 +7,7 @@ It's opinionated. Built for a hands-off, PM-style workflow: you stay in your lan
 ## What it does
 
 - **Two gates, only two.** Design direction (after discovery), then "go" (after planning). Everything else runs without you.
+- **Sized to the ask.** Small, taste-free changes take an **express lane** — same worktree → merge → dev rails, zero gates — and ship promotes to the full pipeline the moment design, taste, or sprawl appears. You never pick the lane; it does.
 - **You read the meta, never the diff.** Every checkpoint auto-opens a condensed HTML card in your browser — a design spec, a go-card, and a **review card** at merge. Never "go read the PR."
 - **Gate notifications.** When a ship parks at a gate, a desktop notification taps you on the shoulder (Ghostty-native, with a macOS fallback) — so you can walk away.
 - **Stage-aware status line.** Which ship, what phase (`designing → planning → building → reviewing`), ships-in-flight, your context + weekly budget, effort level. A bold banner when a ship needs you.
@@ -20,6 +21,7 @@ It's opinionated. Built for a hands-off, PM-style workflow: you stay in your lan
 - `skills/verify` — fresh read-only verification against the running app before merge.
 - `hooks/` — the gate desktop-notification hook.
 - `statusline.sh` — the stage-aware status line.
+- `.codex-plugin/plugin.json` — the Codex Desktop manifest (see below).
 
 ## Requires
 
@@ -37,3 +39,7 @@ Declared as plugin `dependencies` (Claude Code will prompt/handle them): **super
 ```
 
 If you want the bundled status line, point your `statusLine` at it (or let the plugin's `statusLine` field wire it).
+
+## Codex Desktop
+
+Ship also runs under Codex Desktop — `.codex-plugin/plugin.json` is the manifest Codex reads. Same pipeline, same gates; the mechanics swap: Codex owns worktree birth/cleanup (no `wt` against Codex-managed worktrees), artifacts open in the in-app Browser (served over localhost), merges go through the PR path, and — with no status line or FleetView there — every status line carries a `branch <branch> · worktree <path>` breadcrumb. The full swap list lives in the ship skill under **"Running under Codex Desktop"**.

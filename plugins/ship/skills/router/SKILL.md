@@ -18,8 +18,10 @@ Two engines:
   `~/.codex/config.toml` — global, every `codex exec` inherits it; ~1.5× faster for
   2.5× the credit burn, and Pete has chosen to spend it — never turn it off to save
   codex credits). On Pete's Codex plan: effectively **unlimited and off-Max entirely**.
-- **Opus** — an Opus subagent (`Agent(model: opus)`). On Claude Max, drawing on the
-  weekly Opus quota.
+- **Opus** — an Opus subagent: `Agent(model: opus)` in Claude Code; under Codex
+  Desktop, an Opus-capable subagent tool if the harness exposes one (search the
+  available tools first) — if none, keep the task on the driver and log
+  `driver-no-opus`. On Claude Max, drawing on the weekly Opus quota.
 
 **Never route to Sonnet** — Sonnet 5 is retired from this pipeline entirely (Pete's
 call), whatever the current mix.
@@ -88,8 +90,9 @@ For each build task, ask in order:
 `codex exec` buffers output and can sit silent for many minutes at xhigh — past
 runs were killed at a 2-minute timeout before codex had written a single file, and
 those got mislogged as failures. They weren't; they were impatience. **We have
-time: run codex in the background (`run_in_background`) with a generous window —
-think 15–30 minutes, not 2 — and check in on it rather than killing it.** Don't
+time: run codex in the background (Claude Code: `run_in_background`; Codex Desktop:
+a long-lived shell session you poll) with a generous window — think 15–30 minutes,
+not 2 — and check in on it rather than killing it.** Don't
 drop effort to make it faster; xhigh + patience is the deal. The one true
 exception: a **tiny verbatim write whose exact content is already in the brief** —
 that's not a codex task at any speed, the driver writes it inline (heuristic #4).
@@ -133,8 +136,10 @@ cd <repo> && codex exec -c model_reasoning_effort=xhigh "<full task brief>"
 
 **Opus:**
 ```
-Agent(model: opus, prompt: "<full task brief>")
+Agent(model: opus, prompt: "<full task brief>")   // Claude Code
 ```
+- Codex Desktop: use an Opus-capable subagent tool if one is exposed; otherwise keep
+  the task on the driver and log the engine as `driver-no-opus` in the ledger.
 
 ## The metric — the ledger
 

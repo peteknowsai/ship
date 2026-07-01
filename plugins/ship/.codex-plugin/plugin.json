@@ -1,0 +1,26 @@
+{
+  "name": "ship",
+  "version": "0.1.0",
+  "description": "Feature pipeline for Codex Desktop worktrees: discover, plan, build, review, with only design and go gates.",
+  "author": {
+    "name": "Pete McCarthy"
+  },
+  "homepage": "https://github.com/peteknowsai/ship",
+  "repository": "https://github.com/peteknowsai/ship",
+  "keywords": ["workflow", "worktree", "feature", "codex"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Ship",
+    "shortDescription": "Idea to reviewed feature through a gated Codex flow.",
+    "longDescription": "Ship gives Codex a feature pipeline around Codex-managed worktrees: produce an HTML design spec, plan the whole feature, build it, verify it, open a review card, and land through a PR.",
+    "developerName": "Pete McCarthy",
+    "category": "Productivity",
+    "capabilities": ["Interactive", "Write"],
+    "defaultPrompt": [
+      "Ship this feature from idea to PR.",
+      "Run the ship flow for this UI change.",
+      "Design, build, and review this feature."
+    ],
+    "brandColor": "#0EA5E9"
+  }
+}
