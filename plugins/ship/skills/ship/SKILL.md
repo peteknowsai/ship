@@ -118,10 +118,9 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
   markdown execution plan to the repo's docs home (e.g. `specs/plans/YYYY-MM-DD-<slug>.md`).
 - Render the HTML **go-card** from `reference/go-card.html` — the meta only (contract
   below). Write `gate:2`, fire the gate notification, `open` the go-card, and **end the
-  turn with a `needs input:` line** naming the ship + "go? (flip `/effort ultracode`
-  first)". **HARD STOP — GATE 2.** Ultracode can't be auto-set mid-session (it's
-  session-only, settable only via the interactive `/effort` picker), so GATE 2 — the
-  last stop before BUILD — is where Pete flips it. Nudge, never assume he did.
+  turn with a `needs input:` line** naming the ship + "go?". **HARD STOP — GATE 2.**
+  (No effort/ultracode nudge — BUILD's writers are mostly codex now; run at whatever
+  effort the session already has.)
 
 ### 3 · BUILD — automatic  → marker: `build:N:M` (N done of M tasks)
 
@@ -130,8 +129,8 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
   partway or hand back a half-built feature. Commit each task on the branch as it lands
   (durable, resumable progress), but don't merge until the whole plan is built.
 - Invoke `superpowers:subagent-driven-development`, driven by the harness model (the driver).
-- Invoke `router` to route each build task — GPT-5.5 (codex, xhigh) is the default
-  (≥75%), Opus the justified exception (<25%), Sonnet never. The router skill owns the
+- Invoke `router` to route each build task — GPT-5.5 (codex, xhigh, Fast mode) is the
+  default (~95%), Opus the rare exception (~5%), Sonnet never. The router skill owns the
   mix — don't restate it here. The driver owns the brief, the diff review, the gates,
   and git. One writer per branch at a time.
 - **Single-writer vs fan-out — pick by the diff, not by reflex** (matters most under
@@ -307,9 +306,6 @@ Render `reference/go-card.html` filled with the meta only — one screen, nothin
   then say "nothing needs you" and it's a pure confirm.)
 - **Risk** — one line.
 - **Mockup thumbnail** — if the feature is visual, pulled from the design spec.
-- **Flip to ultracode** — one line: BUILD runs at full power on ultracode; flip
-  `/effort ultracode` before saying go (it can't be auto-set mid-session). The rainbow
-  `⚡⚡⚡ ultra` badge in the status line confirms it took.
 
 It is the *only* thing Pete reads before a build starts. Never make him read the plan.
 

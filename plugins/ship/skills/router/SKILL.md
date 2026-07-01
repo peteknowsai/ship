@@ -1,6 +1,6 @@
 ---
 name: router
-description: Use ONLY when executing the build tasks of an implementation plan (the BUILD stage of /ship) — deciding, per task, whether the work goes to GPT-5.5 (codex, the default) or Opus. Two engines, ≥75% GPT-5.5 / <25% Opus, self-tuning via a ledger. Do NOT invoke for planning, design, review, merge, or normal work — that all stays on the driver (the harness model). Never route to Sonnet.
+description: Use ONLY when executing the build tasks of an implementation plan (the BUILD stage of /ship) — deciding, per task, whether the work goes to GPT-5.5 (codex, the default) or Opus. Two engines, ~95% GPT-5.5 / ~5% Opus, self-tuning via a ledger. Do NOT invoke for planning, design, review, merge, or normal work — that all stays on the driver (the harness model). Never route to Sonnet.
 ---
 
 # router — send BUILD-stage coding to GPT-5.5 first, Opus sparingly
@@ -13,9 +13,12 @@ Outside build, there is no routing decision.
 
 Two engines:
 
-- **GPT-5.5** — via `codex exec "<brief>"` (cwd = repo), **default effort `xhigh`**.
-  On Pete's Codex plan: effectively **unlimited and off-Max entirely**. This is the
-  default engine for build tasks.
+- **GPT-5.5** — via `codex exec "<brief>"` (cwd = repo), **default effort `xhigh`,
+  Fast mode on** (`service_tier = "fast"` + `[features] fast_mode = true` in
+  `~/.codex/config.toml` — global, every `codex exec` inherits it; ~1.5× faster for
+  2.5× the credit burn, and Pete has chosen to spend it — never turn it off to save
+  codex credits). On Pete's Codex plan: effectively **unlimited and off-Max
+  entirely**. This is the default engine for build tasks.
 - **Opus** — an Opus subagent (`Agent(model: opus)`). On Claude Max, where the
   **weekly Opus credits are the scarce resource** — spend them only where the task
   genuinely needs Opus-grade judgment.
@@ -35,7 +38,7 @@ per-call). On first use each session, sanity-check codex is logged into Pete's p
 
 ## Prime directive: success over the mix
 
-The ≥75/<25 is a **floor on codex usage, not a straitjacket.** You (the driver)
+The 95/5 is a **floor on codex usage, not a straitjacket.** You (the driver)
 decide each assignment — optimize for the work getting done *well* and for Opus
 credits surviving the week, and **self-adjust freely** as the ledger shows what
 works. If a task wants a different engine than the split suggests, follow the task
@@ -46,21 +49,22 @@ what's important."*
 
 | Engine | Invoke | Best at |
 |--------|--------|---------|
-| **GPT-5.5** | `codex exec "<brief>"` (cwd = repo), `-c model_reasoning_effort=xhigh` by default | **The default for build tasks.** Well-briefed coding of every stripe: implement a component, write tests against known types, careful refactors, self-contained problems with real exploration. Unlimited, off-Max — when in doubt and the brief is solid, send it here |
-| **Opus** | `Agent(model: opus)` | The minority (<25%): design still open mid-task, gnarly cross-file integration, real risk, irreversible surfaces, ambiguity a brief can't close — the tasks where a wrong diff is expensive |
+| **GPT-5.5** | `codex exec "<brief>"` (cwd = repo), `-c model_reasoning_effort=xhigh`, Fast mode on by default | **The default for build tasks — nearly all of them.** Well-briefed coding of every stripe: implement a component, write tests against known types, careful refactors, self-contained problems with real exploration. Unlimited, off-Max — when in doubt and the brief is solid, send it here |
+| **Opus** | `Agent(model: opus)` | The rare exception (~5% — a task or two per plan, often zero): design still open mid-task, gnarly cross-file integration, real risk, irreversible surfaces, ambiguity a brief can't close — the tasks where a wrong diff is expensive |
 
 Dial **codex thinking per task**: `xhigh` is the default (usage is unlimited — spend
-it); drop to high/medium only for verbatim-heavy writes where xhigh's latency hurts
-(see the latency note). Opus subagents get effort matched to the task's difficulty.
+it), and **slow is fine — the answer to codex taking a while is a longer timeout,
+not less thinking or a different engine** (see the latency note). Opus subagents get
+effort matched to the task's difficulty.
 
 ## Target mix
 
-Across the build tasks of one plan: **GPT-5.5 ≥ 75 / Opus < 25.**
+Across the build tasks of one plan: **GPT-5.5 ~95 / Opus ~5.**
 
-Assign by **fit first**, then glance at the running split. The bias has flipped from
-the old 40/40/20: codex is no longer the "when it fits" engine, it's the **default**,
-and Opus is the exception you justify. When torn, lean **GPT-5.5 with a tighter
-brief** — a better brief is cheaper than an Opus credit. Never hand a genuine
+Assign by **fit first**, but the prior is strong: codex is the default for
+*everything*, and each Opus assignment is an exception you justify in the ledger —
+expect a task or two per plan at most, often zero. When torn, lean **GPT-5.5 with a
+tighter brief** — a better brief is cheaper than an Opus credit. Never hand a genuine
 judgment task to codex just to protect the number — log the drift and why.
 
 ## The assignment heuristic
@@ -69,23 +73,25 @@ For each build task, ask in order:
 
 1. **Can a tight brief close every open question?** If you can write exact files,
    signatures, test cases, and constraints → **GPT-5.5 (codex, xhigh).** This
-   should be ≥75% of tasks — most build tasks from a good plan are briefable.
+   should be ~95% of tasks — nearly every build task from a good plan is briefable.
 2. **Judgment can't be briefed away** — design still open, gnarly cross-file
    integration, real risk, irreversible, ambiguous mid-flight? → **Opus.**
 3. **Tiny verbatim write, content already authored in the brief?** → the **driver
    writes it inline** — faster than spinning up any subagent or waiting on codex.
-4. **codex failed twice on a task?** → escalate to **Opus**, log `escalated→opus`.
-   A third fix round costs more than the credit.
+4. **codex produced a *wrong* diff twice on a task?** → escalate to **Opus**, log
+   `escalated→opus`. A third fix round costs more than the credit. **Slow is not
+   failure** — never escalate (or kill a run) because codex is taking a while.
 
-### Latency note (hard-won — read before sending to codex)
+### Patience note (hard-won — read before sending to codex)
 
-`codex exec` buffers output and is **slow on deterministic writes**: for a fully-
-specified file whose exact content is already known, writing it inline beats codex
-on wall-clock by minutes — `xhigh` has timed out before writing a single file.
-**codex earns its keep when it genuinely *explores*** — figures out signatures,
-writes tests against real types, works through a self-contained problem. For
-verbatim-heavy tasks: tiny → driver-inline (heuristic #3); big → still codex, but
-drop effort to high/medium and give it a longer timeout.
+`codex exec` buffers output and can sit silent for many minutes at xhigh — past
+runs were killed at a 2-minute timeout before codex had written a single file, and
+those got mislogged as failures. They weren't; they were impatience. **We have
+time: run codex in the background (`run_in_background`) with a generous window —
+think 15–30 minutes, not 2 — and check in on it rather than killing it.** Don't
+drop effort to make it faster; xhigh + patience is the deal. The one true
+exception: a **tiny verbatim write whose exact content is already in the brief** —
+that's not a codex task at any speed, the driver writes it inline (heuristic #3).
 
 ## The discipline (non-negotiable, both engines)
 
@@ -116,6 +122,11 @@ cd <repo> && codex exec -c model_reasoning_effort=xhigh "<full task brief>"
 - Non-interactive, edits files autonomously. `codex exec resume --last` to
   continue. If it needs write access beyond its sandbox, pass the appropriate
   `-c sandbox_*` / approval config.
+- Fast mode rides along from `~/.codex/config.toml` (`service_tier = "fast"`,
+  `[features] fast_mode = true`) — don't override it, and if codex ever errors with
+  `Unsupported service_tier`, flag it to Pete instead of silently downgrading.
+- Launch long tasks in the background with a 15–30 min window — never kill a run
+  for slowness alone (see the patience note).
 - Runs in the repo cwd and edits the working tree directly → obey "one writer per
   branch."
 
@@ -146,7 +157,7 @@ Row: `date | project | task (short) | task-type | engine | outcome | fix-rounds 
 - codex cleaning a task-type first-pass → send it *more* of that type.
 - codex keeps getting `escalated→opus` on a type → keep that type on Opus and
   say so when reporting the mix.
-- Report realized mix vs the ≥75/<25 target and per-engine hit-rates when
+- Report realized mix vs the 95/5 target and per-engine hit-rates when
   summarizing a plan's execution.
 
 The mix is a floor on codex; the ledger is the evidence; refine over time.
