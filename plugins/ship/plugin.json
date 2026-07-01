@@ -1,6 +1,6 @@
 {
   "name": "ship",
-  "description": "/ship — take a feature from idea to merged in one command: worktree → discover → plan → build → review, gating only on design direction and 'go'. Auto-opening HTML design/go/review cards, gate desktop notifications, a stage-aware status line, BUILD routing across Opus/GPT-5.5/Sonnet, and fresh-agent verification before merge. Bundles router + verify.",
+  "description": "/ship — take a feature from idea to merged in one command: worktree → discover → plan → build → review, gating only on design direction and 'go'. Auto-opening HTML design/go/review cards, gate desktop notifications, a stage-aware status line, GPT-5.5-first BUILD routing (Opus for the judgment-heavy minority), and fresh-agent verification before merge. Bundles router + verify.",
   "author": {
     "name": "Pete McCarthy"
   },
