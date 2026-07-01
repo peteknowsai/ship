@@ -35,7 +35,14 @@
   .foot{color:var(--mut);font-size:13px;margin-top:16px;text-align:center}
   code{background:#efe9dc;border-radius:5px;padding:1px 6px;font-size:13px;font-family:ui-monospace,Menlo,monospace}
   a{color:var(--amber)}
-  .thumb{width:100%;border-radius:8px;border:1px solid var(--line);margin-top:6px}
+  .vpill{display:inline-block;background:#e7f0e7;color:#2f6a3e;border:1px solid #cfe3cf;
+    border-radius:6px;padding:2px 9px;font-size:12px;font-weight:700;letter-spacing:.04em;
+    text-transform:uppercase;margin-left:8px;vertical-align:1px}
+  .storyboard{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .beat{margin:0}
+  .beat img{width:100%;aspect-ratio:16/10;object-fit:cover;border:1px solid var(--line);
+    border-radius:8px;display:block}
+  .beat figcaption{font-size:12px;color:var(--slate);margin-top:6px}
 </style>
 </head>
 <body>
@@ -49,16 +56,30 @@
     <ul>{{SHIPPED_BULLETS}}</ul>
   </div>
 
-  <!-- VISUAL: include only for user-facing/visual features, else delete this card -->
+  <!-- PROOF: the verifier's storyboard. Include for any user-facing feature; for a non-visual
+       change, swap the beats for demo/test output. Repeat the beat block per screenshot. -->
   <div class="card">
-    <h2>What it looks like</h2>
-    <img class="thumb" src="{{SCREENSHOT_SRC}}" alt="result">
+    <h2>Proof it works <span class="vpill">{{VERDICT}}</span></h2>
+    <div class="storyboard">
+      <figure class="beat">
+        <img src="{{SHOT_1_SRC}}" alt="{{SHOT_1_CAP}}">
+        <figcaption>{{SHOT_1_CAP}}</figcaption>
+      </figure>
+      <!-- one beat block per screenshot: start then action then success -->
+    </div>
   </div>
 
   <div class="card">
     <h2>Already checked for you</h2>
     {{CHECKED_PILLS}}
     <p style="margin:10px 0 0;font-size:14px;color:var(--slate)">{{RISK_NOTE}}</p>
+  </div>
+
+  <!-- FLAGGED: include only if the verifier returned taste notes, else delete this card -->
+  <div class="card">
+    <h2>Verifier flagged / suggested</h2>
+    <ul>{{FLAGGED_ITEMS}}</ul>
+    <p style="margin:10px 0 0;font-size:14px;color:var(--slate)">Reports, not work — say fix now / backlog / ignore.</p>
   </div>
 
   <div class="card">
