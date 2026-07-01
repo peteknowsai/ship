@@ -1,6 +1,6 @@
 ---
 name: ship
-description: Use for any feature or multi-step change in a product/web repo — takes it from idea to merged through one pipeline (worktree → discover → plan → build → review), gating only on design direction and "go". Auto-triggers on feature-shaped requests; you never type it. Do NOT use for a typo fix, a one-line change, or a question — those just get done. Never edit main directly.
+description: Use for any feature or multi-step change in a product/web repo — takes it from idea to merged through one Codex Desktop pipeline (worktree → discover → plan → build → review), gating only on design direction and "go". Auto-triggers on feature-shaped requests; you never type it. Do NOT use for a typo fix, a one-line change, or a question — those just get done. Never edit main directly.
 ---
 
 # /ship — idea to merged, in one command
@@ -22,7 +22,7 @@ impose. The models can hold a big plan; trust that.
 
 1. **The meta rule.** Every artifact Pete sees is a condensed HTML page — he reads the
    *meta*, never the full spec or plan. The spec (design) and the go-card are HTML he
-   opens in the browser. The execution plan is machine-facing markdown he never reads.
+   sees in Codex's in-app Browser. The execution plan is machine-facing markdown he never reads.
    HTML artifacts follow the **html-effectiveness patterns**
    (https://thariqs.github.io/html-effectiveness/): the thesis is that flows, options,
    and relationships are *spatial* information markdown flattens — so lead with a
@@ -37,35 +37,72 @@ impose. The models can hold a big plan; trust that.
 product terms, give a recommendation, let him decide. His lane = product, design,
 taste, scope. Your lane = mechanics — handle them, summarize in one line. The
 **standing stack is never re-asked** — it's Pete's default product/web stack, declared in
-his global instructions (`~/.claude/CLAUDE.md` in Claude Code, AGENTS.md / global
-Codex instructions in Codex): flue · Cloudflare · Convex · Clerk · Stripe · Next.
-**The repo's own `CLAUDE.md` / `AGENTS.md` overrides it** when that repo diverges
+his global Codex instructions / `~/.codex/AGENTS.md` (flue · Cloudflare · Convex · Clerk ·
+Stripe · Next). **The repo's own `AGENTS.md` overrides it** when that repo diverges
 (a non-web repo declares its own stack). Escalate a library choice only when it's both
 architectural *and* outside the repo's canon.
 
+**Codex prerequisites:** `superpowers`, `impeccable`, `ponytail`, and `router` must
+be available. `worktrunk`/`wt` is optional: use it only when Pete explicitly wants
+Worktrunk hooks/pathing/merge behavior for this run.
+
 ## The pipeline — create a todo for each stage
 
-Each stage writes its marker to `.ship-stage` at the git root (the status line + the
-FleetView row read it). The marker format is below each stage.
+Each stage writes its marker to `.ship-stage` at the git root. The marker format is
+below each stage.
 
-### 0 · Worktree (invisible)
+## Codex screen + location contract
 
-**Prereqs:** a git repo with a `main` branch and at least one commit (the PR-merge path
-also needs a GitHub remote; `wt merge` to local main works without one). If the repo is
-empty (no commits / no `main`), make the first commit before branching — `git add -A &&
-git commit -m "init"` — then continue. These are generic git setup, not ship's job to
-invent, but stage 0 fails on a zero-commit repo, so handle it here.
+Pete must always know which checkout he is looking at.
 
-Create an isolated worktree off main and enter it (the worktrunk `wt-switch-create` flow):
+- Include `branch <branch> · worktree <path>` in every normal status line, every
+  `needs input:` line, and the final `result:` line.
+- If Git is detached, label it `detached@<short-sha>` until a branch exists.
+- Codex app owns worktree birth/cleanup by default. Do not create nested `wt`
+  worktrees inside a Codex-managed worktree.
+- Use the visible Codex app labels:
+  - Project menu **Create permanent worktree** = long-lived reusable worktree project;
+    not the default for a ship.
+  - Chat menu **Fork into new worktree** = normal recovery path when the current
+    thread is Local/main but the ship needs isolation.
+  - Chat menu **Fork into local** = bring work back to Local only when Pete wants the
+    foreground checkout.
+- Prefer Codex's in-app Browser for every spec, go-card, review-card, and local app.
+  For generated HTML files, serve the artifact directory on `localhost` and navigate the
+  in-app Browser there. Raw `file://` URLs are not reliable in Codex.
+- If the app already runs at `localhost`, open that URL directly in the in-app Browser.
+- Fall back to macOS `open` or Chrome only when the in-app Browser is unavailable or Pete
+  explicitly asks for it.
+
+### 0 · Worktree sanity (invisible)
+
+**Preferred start:** the thread is in Codex **Worktree** mode, based on `main`.
+Codex creates a lightweight managed worktree, usually detached HEAD, under
+`$CODEX_HOME/worktrees`.
+
+Run:
 
 ```
-wt switch --create feature/<slug> --no-cd --format=json -y
+git rev-parse --show-toplevel
+git branch --show-current
+git rev-parse --short HEAD
 ```
-then enter/use the path from the JSON. Claude Code: `EnterWorktree({path})`. Codex:
-set subsequent tool working directories to that path (or use absolute paths). `--no-cd`
-is load-bearing. If the repo has a `.config/wt.toml`, it auto-provisions the worktree (gitignored runtime
-files — node_modules, .env, .dev.vars — via reflink). Write the first marker:
-`printf 'discover' > <root>/.ship-stage`. Never build on main.
+
+If this thread is already in a Codex-managed worktree or permanent worktree, proceed.
+If it is in Local on `main`, do not edit files there: use **Fork into new worktree**
+when available; otherwise stop with `needs input: click Fork into new worktree for
+this ship`.
+
+If Git is detached, make a real feature branch in the active Codex worktree before the
+first commit:
+
+```
+git switch -c feature/<slug>
+```
+
+If the worktree already has a non-`main` branch, keep it. Write the first marker:
+`printf 'discover' > <root>/.ship-stage`. Report `branch <branch|detached@sha> ·
+worktree <path>`.
 
 **Isolate the branch's backend if the repo has a preview lane.** A worktree that builds against
 a *shared* backend (one Convex/DB deployment serving every branch) corrupts it — pushing this
@@ -76,21 +113,12 @@ point the worktree at it, so BUILD and REVIEW never touch a shared plane (homeze
 content, prints the deploy key + backend URL to export into the worktree; see its `## Deploy
 lanes` in AGENTS.md). No preview lane → just build against whatever dev stack the repo gives you.
 
-**Cross-repo case — narrate the fork or it looks like nothing happened.** `EnterWorktree`
-only adopts worktrees of the **session's primary repo**. When ship runs against a *different*
-repo (iterating on the ship plugin itself, or any repo that isn't this session's primary),
-`EnterWorktree` silently won't take, the session cwd never moves, and the status line stays
-pinned to the primary repo — `.ship-stage` is written in the feature repo the status line
-isn't watching, so the worktree + stage are **real but invisible**. In that case: work the
-worktree by **absolute path**, and **state the forked branch + worktree path in your narration
-the moment you create it** (`forked feature/<slug> off main @ <path>`) — a blind status line
-must never make it look like nothing forked. Pete watches for the worktree from the get-go; if
-the breadcrumb can't show it, your words must.
-
-**Opportunistic tidy (anti-accumulation):** glance at `git worktree list` first and
-`wt remove <branch> -f` any worktree whose branch is already merged and its remote shows
-`[gone]` (a finished ship that wasn't torn down). Only ever touch merged+gone worktrees —
-never one with unmerged work. This + stage 4's teardown means ship worktrees never pile up.
+**Cross-repo case — narrate the fork or it looks like nothing happened.** When ship runs
+against a repo that is not the session's primary checkout, the Codex app may keep the visible
+thread label pinned to the primary repo. In that case: work by absolute path, and state the
+forked branch + worktree path in your narration the moment you create it
+(`forked feature/<slug> off main @ <path>`). Pete watches for the worktree from the get-go;
+if the app breadcrumb can't show it, your words must.
 
 ### 1 · DISCOVER — Pete's taste, up front  → marker: `discover`, then `gate:1`
 
@@ -117,8 +145,9 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
   the prototype; any flow or pipeline is a diagram (`13-flowchart-diagram`), never a
   paragraph pretending to be one.
 - Write `gate:1` to `.ship-stage`, fire the gate notification (see "Gate signals"),
-  `open` the spec, and **end the turn with a `needs input:` line** naming the ship +
-  "design direction?". **HARD STOP — GATE 1.** Wait for approval.
+  open the spec in the in-app Browser, and **end the turn with a `needs input:` line**
+  naming the ship + "design direction?" + `branch <branch> · worktree <path>`.
+  **HARD STOP — GATE 1.** Wait for approval.
 
 ### 2 · PLAN — automatic  → marker: `plan`, then `gate:2`
 
@@ -131,24 +160,23 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
   specced scope (the spec is the floor). Save its cut-list of dropped *waste* and the
   markdown execution plan to the repo's docs home (e.g. `specs/plans/YYYY-MM-DD-<slug>.md`).
 - Render the HTML **go-card** from `reference/go-card.html` — the meta only (contract
-  below). Write `gate:2`, fire the gate notification, `open` the go-card, and **end the
-  turn with a `needs input:` line** naming the ship + "go?". **HARD STOP — GATE 2.**
-  (No effort/ultracode nudge — BUILD's writers are mostly codex now; run at whatever
-  effort the session already has.)
+  below). Write `gate:2`, fire the gate notification, open the go-card in the in-app
+  Browser, and **end the turn with a `needs input:` line** naming the ship + "go?" +
+  `branch <branch> · worktree <path>`. **HARD STOP — GATE 2.** Codex effort is
+  configured outside the skill; do not invent an effort-gate ritual.
 
 ### 3 · BUILD — automatic  → marker: `build:N:M` (N done of M tasks)
 
 - Write `build:0:<M>` to `.ship-stage`; bump N as each task completes. Build **all M
   tasks** in one session — a big plan means a long build, and that is the job; don't stop
-  partway or hand back a half-built feature. Commit each task on the branch as it lands
-  (durable, resumable progress), but don't merge until the whole plan is built.
-- Invoke `superpowers:subagent-driven-development`, driven by the harness model (the driver).
-- Invoke `router` to route each build task — GPT-5.5 (codex, xhigh, Fast mode) is the
-  default (~95%), Opus the rare exception (~5%), Sonnet never. The router skill owns the
-  mix — don't restate it here. The driver owns the brief, the diff review, the gates,
-  and git. One writer per branch at a time.
-- **Single-writer vs fan-out — pick by the diff, not by reflex** (matters most under
-  ultracode, where "always orchestrate" tempts you to parallelize the build). The default is
+  partway or hand back a half-built feature. Commit each task on the active feature branch
+  as it lands (durable, resumable progress), but don't merge until the whole plan is built.
+- Invoke `superpowers:subagent-driven-development` when the plan has independent build
+  tasks.
+- Invoke `router` to decide which tasks stay in the current Codex session versus another
+  available engine. This session owns the brief, diff review, verification gates, and git.
+  One writer per branch at a time.
+- **Single-writer vs fan-out — pick by the diff, not by reflex**. The default is
   one writer on the branch: right for a small, interdependent, or design-coherent feature,
   where parallel writers just race on the shared checkout for no gain. Fan out writers (each
   in its own worktree, merged back) ONLY when tasks are genuinely independent *and* numerous
@@ -166,7 +194,7 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
   `systematic-debugging`); only leave BUILD once the live flow actually works. The review card's
   end-to-end promise ("it runs" — backed by REVIEW's verify pass) must stay true.
 - Raise a hand only for a genuine fork (PM-framed, with a rec). Pete can jump in from
-  FleetView anytime.
+  the thread anytime.
 
 ### 4 · REVIEW / MERGE — automatic  → marker: `review`, then remove the file
 
@@ -181,11 +209,12 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
   "Verifier flagged / suggested" for Pete to judge.
 - **Put it in front of Pete, running — every time.** For any visual/interactive feature
   (the default on this web stack), **boot the worktree's own dev server yourself** (its dev
-  script — e.g. `next dev` — in the background) and `open http://localhost:<port>` (usually
-  `:3000`) so the *live local app* is on his screen the instant he's asked to review. He
-  walks through it on the worktree. **Never deploy to let him review, and never tell him to
-  "go look at the live site"** — deploy is downstream of merge; the worktree's localhost is
-  the review surface. (Non-UI change — CLI/library — show the demo/test output instead.)
+  script — e.g. `next dev` — in the background) and open `http://localhost:<port>` (usually
+  `:3000`) in the in-app Browser so the *live local app* is on his screen the instant he's
+  asked to review. He walks through it on the worktree. **Never deploy to let him review,
+  and never tell him to "go look at the live site"** — deploy is downstream of merge; the
+  worktree's localhost is the review surface. (Non-UI change — CLI/library — show the
+  demo/test output instead.)
 - **Prove it actually works — invoke `verify` before the card.** With the app running,
   invoke the `verify` skill against the worktree's localhost. A fresh read-only sub-agent
   drives the feature, screenshots the beats, and returns `works | broken | unverifiable` +
@@ -195,42 +224,27 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
   verdict (with its screenshot storyboard + any taste notes) flows into the card below; if verify
   crystallized an e2e spec for a core journey, name that path in "Already checked for you".
 - **Render a review card** from `reference/review-card.html` (contract below), write it to
-  the repo's docs home (e.g. `specs/plans/review-<slug>.html`), and `open` it. Point it at
-  the running localhost ("walk through it — it's already open"). **Never tell Pete to "go
-  read the PR"** — the review comes to him, running and labeled.
+  the repo's docs home (e.g. `specs/plans/review-<slug>.html`), and open it in the in-app
+  Browser. Point it at the running localhost ("walk through it — it's already open").
+  **Never tell Pete to "go read the PR"** — the review comes to him, running and labeled.
 - **The merge gate always holds for visual/substantial work.** Present the running app + the
-  review card, end with a `needs input:` line ("review: <feature> — merge?"), and **wait.
-  Never merge a UI Pete hasn't seen run** — a standing "go" authorizes the build, not the
-  merge of an unseen feature. (Only a tiny, non-visual, watched change may `wt merge`
-  directly.)
+  review card, end with a `needs input:` line ("review: <feature> — merge?") that includes
+  `branch <branch> · worktree <path>`, and **wait. Never merge a UI Pete hasn't seen run**
+  — a standing "go" authorizes the build, not the merge of an unseen feature.
 - **When Pete asks for changes at the card, apply `superpowers:receiving-code-review`** —
   verify the ask against the code before implementing (his feedback is product-true but
   may be technically underspecified), do the work, then loop the changed flow back
   through `verify` before re-presenting. Never blind-implement and re-card.
-- On "merge", land it and **let worktrunk own teardown — a leftover worktree is a bug**:
-  - **Tiny & watched →** `wt merge` (runs the repo's `wt.toml` pre-merge gate, squashes,
-    ff's main, removes the worktree — worktrunk merges *from* the worktree safely), then
-    `ExitWorktree({action:"keep"})` in Claude Code, or point subsequent Codex tool calls at
-    the main checkout (wt already deleted the dir).
-  - **Substantial (PR path) → the merge must run from the MAIN CHECKOUT, never from inside the
-    worktree.** `gh pr merge` checks out the base branch locally after merging; run from inside
-    the worktree it dies with `fatal: 'main' is already used by worktree …` — the PR merges on
-    GitHub but the local step fails, so teardown never runs and Pete is stranded in an orphan
-    worktree (this has bitten real runs). So **tear down FIRST, then merge:**
-    1. Return to the main checkout: Claude Code `ExitWorktree({action:"keep"})`; Codex sets
-       subsequent tool calls to the main checkout path.
-    2. `wt remove feature/<slug> -f` — remove the local worktree now (frees the branch so
-       `--delete-branch` can delete it; you're about to merge it anyway).
-    3. `gh pr merge <#> --squash --delete-branch` — now from the main checkout: merges + deletes
-       the *remote* branch, no checkout conflict.
-    4. `git pull --ff-only` so local main matches (+ `git branch -D feature/<slug>` if the squash
-       left an "unmerged" local branch behind). Nothing left on disk.
-  - Then `rm .ship-stage`, **stop the review dev server you booted** (its worktree is being
-    removed), and **deprovision the per-branch preview backend if Stage 0 spun one up** — close
-    the resource you opened, or skip if the repo's previews auto-expire (don't leave orphaned
-    backends piling up). **Verify with `git worktree list` — zero ship worktrees must remain. A
-    leftover worktree means the teardown failed (usually the merge ran inside the worktree) —
-    recover it before you declare done.**
+- On "merge", land it through the Codex-app/PR path:
+  1. Push the feature branch and open a PR if one does not already exist.
+  2. Merge with Codex's Git UI or `gh pr merge <#> --squash --delete-branch` from a main
+     checkout. If local `main` is checked out elsewhere, do not run `gh pr merge` inside the
+     Codex-managed branch worktree; it can merge remotely and then fail locally on checkout.
+  3. Stop the review dev server, remove `.ship-stage`, and deprovision the per-branch preview
+     backend if Stage 0 spun one up. Leave Codex-managed worktree cleanup to Codex/archive.
+     Do not run `wt remove` for Codex-managed worktrees.
+  4. If Pete needs the work in Local, use **Fork into local** instead of checking out the same
+     branch in two places.
 - **Ship deploys to the integration lane, never to production.** After the merge, push merged
   main to the repo's shared *dev/integration* lane if it has one — run its dev-deploy step **from
   the main checkout** (homezero: `scripts/deploy-dev.sh`, the single serialized writer for the
@@ -300,26 +314,22 @@ never a file tour. Pete reviews *this*, not the diff:
 
 When you hit a gate, three things fire so Pete notices whether he's watching or away:
 
-1. **Status line** — the `gate:N` marker makes the line show `✋ <slug> — design?/go?` in
-   bold amber. His in-session and in-dashboard glance.
-2. **FleetView bucket** — end the turn with a line starting `needs input:` → the
-   dashboard row jumps to the **awaiting input** group. (See the narration contract.)
-3. **Desktop notification** — the gate Stop-hook fires a Ghostty notification
-   (`<slug> → GATE N`) so an away-from-keyboard Pete gets a tap on the shoulder. Gates
-   are rare, so this is never noisy.
+1. **Marker** — write `gate:N` to `.ship-stage` so the thread, scripts, and humans can
+   see the parked state.
+2. **Thread line** — end the turn with `needs input:` plus `branch <branch> · worktree
+   <path>`. At merge, end with `result:` plus the same label.
+3. **Desktop notification** — if the copied plugin has `hooks/gate-notify.sh`, run it
+   manually after writing the marker. Codex does not wire that script automatically.
 
-## FleetView narration contract
+## Codex narration contract
 
-The dashboard can't be styled, but it reflects the session. Make it a ship board:
+The app reflects the latest useful status. Make it a ship board:
 
-- **Name** the session `ship:<slug>` at spawn (Pete types it, or v2 dockmaster passes
-  `--name`). A running session can't rename itself reliably.
-- **End every turn with a clean one-line status** (`🔨 build 4/5 · <slug>`,
-  `📐 planning · <slug>`). The Haiku summarizer mirrors your latest line into the row —
-  give it status-of-work, not an echo of the last tool call.
-- **At a gate, the closing line starts `needs input:`** → row moves to *awaiting input*.
-  **At merge, it starts `result:`** → row moves to *completed*. Mid-work narration keeps
-  it in *working*.
+- **End every turn with a clean one-line status** (`build 4/5 · <slug>`,
+  `planning · <slug>`), ending with `branch <branch> · worktree <path>`. Give
+  status-of-work, not an echo of the last tool call.
+- **At a gate, the closing line starts `needs input:`**.
+- **At merge, it starts `result:`**.
 
 ## The go-card contract (GATE 2 artifact)
 
@@ -333,6 +343,7 @@ scope, calls, risk — everything else stays in the machine-facing plan):
   then say "nothing needs you" and it's a pure confirm.)
 - **Risk** — one line.
 - **Mockup thumbnail** — if the feature is visual, pulled from the design spec.
+- **Go** — one line: BUILD starts after Pete says go.
 
 It is the *only* thing Pete reads before a build starts. Never make him read the plan.
 
@@ -342,7 +353,7 @@ No arbitrary phasing — ship plans and builds the whole spec in one pass, never
 specced feature into "Ship 1 of N" and stopping (phasing is Pete's to request, not ship's
 to impose). No `executing-plans` (checkpoint-heavy — the opposite of hands-off). No strict
 TDD by default (tests are a build deliverable; the pre-merge test gate is the backstop;
-reserve test-first — `superpowers:test-driven-development` — for money/auth paths). No manual git worktree management — `wt` owns the
-worktree birth-to-death. No promoting to production — ship ends at the integration lane (dev);
-promotion to prod / `www` is a separate, human-gated ritual Pete runs, never ship's to deploy,
-gate, or offer.
+reserve test-first — `superpowers:test-driven-development` — for money/auth paths). No default
+Worktrunk birth/death inside Codex — Codex owns managed worktrees unless Pete explicitly chooses
+`wt`. No promoting to production — ship ends at the integration lane (dev); promotion to prod /
+`www` is a separate, human-gated ritual Pete runs, never ship's to deploy, gate, or offer.

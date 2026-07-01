@@ -1,13 +1,13 @@
 ---
 name: router
-description: Use ONLY when executing the build tasks of an implementation plan (the BUILD stage of /ship) — deciding, per task, whether the work goes to GPT-5.5 (codex, the default) or Opus. Two engines, ~95% GPT-5.5 / ~5% Opus, self-tuning via a ledger. Do NOT invoke for planning, design, review, merge, or normal work — that all stays on the driver (the harness model). Never route to Sonnet.
+description: Use ONLY when executing the build tasks of an implementation plan (the BUILD stage of /ship) — deciding, per task, whether the work goes to GPT-5.5 (codex, the default) or Opus. Two engines, ~95% GPT-5.5 / ~5% Opus, self-tuning via a ledger. Do NOT invoke for planning, design, review, merge, or normal work — that all stays on the current session. Never route to Sonnet.
 ---
 
 # router — send BUILD-stage coding to GPT-5.5 first, Opus sparingly
 
 **Scope: the BUILD stage only.** Discover, plan, design, review, merge, and every
-normal task stay on **the driver** — the harness model running the session (Fable) —
-as usual; do not invoke router for them. Router fires *only* when the driver is
+normal task stay on **the driver** — the current Codex Desktop session — as usual;
+do not invoke router for them. Router fires *only* when the driver is
 dispatching the concrete build tasks of an already-written implementation plan.
 Outside build, there is no routing decision.
 
@@ -19,17 +19,18 @@ Two engines:
   2.5× the credit burn, and Pete has chosen to spend it — never turn it off to save
   codex credits). On Pete's Codex plan: effectively **unlimited and off-Max
   entirely**. This is the default engine for build tasks.
-- **Opus** — an Opus subagent (`Agent(model: opus)`). On Claude Max, where the
-  **weekly Opus credits are the scarce resource** — spend them only where the task
-  genuinely needs Opus-grade judgment.
+- **Opus** — an Opus-capable subagent when the current harness exposes one (discover it
+  with `tool_search` if needed). Spend it only where the task genuinely needs
+  Opus-grade judgment. If no Opus-capable subagent is available, keep the task on the
+  driver and log `driver-no-opus`.
 
 **Never route to Sonnet** — Sonnet 5 is retired from this pipeline entirely (Pete's
 call). If a task feels "Sonnet-shaped" (solid, well-specified coding), that's a
 GPT-5.5 task now.
 
-The constraint is the **Opus credit pool**: codex costs nothing against it, Opus
-drains it. So the routing job: hand GPT-5.5 everything it can do well — which is
-most of a well-briefed build — and **keep Opus for the minority of tasks where
+The constraint is the **Opus credit pool**: codex costs nothing against that pool,
+Opus drains it. So the routing job: hand GPT-5.5 everything it can do well — which
+is most of a well-briefed build — and **keep Opus for the minority of tasks where
 judgment, cross-file integration, or risk truly demand it.**
 
 **Auth caveat:** the codex savings only hold if `codex` uses its *subscription*
@@ -50,7 +51,7 @@ what's important."*
 | Engine | Invoke | Best at |
 |--------|--------|---------|
 | **GPT-5.5** | `codex exec "<brief>"` (cwd = repo), `-c model_reasoning_effort=xhigh`, Fast mode on by default | **The default for build tasks — nearly all of them.** Well-briefed coding of every stripe: implement a component, write tests against known types, careful refactors, self-contained problems with real exploration. Unlimited, off-Max — when in doubt and the brief is solid, send it here |
-| **Opus** | `Agent(model: opus)` | The rare exception (~5% — a task or two per plan, often zero): design still open mid-task, gnarly cross-file integration, real risk, irreversible surfaces, ambiguity a brief can't close — the tasks where a wrong diff is expensive |
+| **Opus** | Opus-capable subagent, if the harness exposes one | The rare exception (~5% — a task or two per plan, often zero): design still open mid-task, gnarly cross-file integration, real risk, irreversible surfaces, ambiguity a brief can't close — the tasks where a wrong diff is expensive |
 
 Dial **codex thinking per task**: `xhigh` is the default (usage is unlimited — spend
 it), and **slow is fine — the answer to codex taking a while is a longer timeout,
@@ -87,11 +88,11 @@ For each build task, ask in order:
 `codex exec` buffers output and can sit silent for many minutes at xhigh — past
 runs were killed at a 2-minute timeout before codex had written a single file, and
 those got mislogged as failures. They weren't; they were impatience. **We have
-time: run codex in the background (`run_in_background`) with a generous window —
-think 15–30 minutes, not 2 — and check in on it rather than killing it.** Don't
-drop effort to make it faster; xhigh + patience is the deal. The one true
-exception: a **tiny verbatim write whose exact content is already in the brief** —
-that's not a codex task at any speed, the driver writes it inline (heuristic #3).
+time: run codex with a generous wait/polling window — think 15–30 minutes, not 2 —
+and check in on it rather than killing it.** Don't drop effort to make it faster;
+xhigh + patience is the deal. The one true exception: a **tiny verbatim write whose
+exact content is already in the brief** — that's not a codex task at any speed, the
+driver writes it inline (heuristic #3).
 
 ## The discipline (non-negotiable, both engines)
 
@@ -125,19 +126,19 @@ cd <repo> && codex exec -c model_reasoning_effort=xhigh "<full task brief>"
 - Fast mode rides along from `~/.codex/config.toml` (`service_tier = "fast"`,
   `[features] fast_mode = true`) — don't override it, and if codex ever errors with
   `Unsupported service_tier`, flag it to Pete instead of silently downgrading.
-- Launch long tasks in the background with a 15–30 min window — never kill a run
-  for slowness alone (see the patience note).
+- Launch long tasks as a shell session with a 15–30 min wait/polling window — never
+  kill a run for slowness alone (see the patience note).
 - Runs in the repo cwd and edits the working tree directly → obey "one writer per
   branch."
 
 **Opus:**
-```
-Agent(model: opus, prompt: "<full task brief>")
-```
+Use the current harness's Opus-capable subagent tool when one is exposed. In Codex
+Desktop, search for multi-agent tools first; if none are available, keep the task
+on the driver and log `driver-no-opus`.
 
 ## The metric — the ledger
 
-Maintain `~/.claude/skills/router/ledger.md` — the **single canonical ledger**,
+Maintain `~/.codex/skills/router/ledger.md` — the **single canonical ledger**,
 outside any repo or plugin directory (create it there if missing; never write a
 ledger into the plugin's own directory — an installed plugin isn't writable state).
 **After every delegated build task**, append a row and keep the rolling summary
@@ -149,7 +150,7 @@ Row: `date | project | task (short) | task-type | engine | outcome | fix-rounds 
 - **task-type**: `specific-coding` · `integration` · `mechanical`
 - **outcome**: `clean` (passed review + gates first pass) · `fixed-N` (N
   review→fix cycles) · `escalated→opus` (codex couldn't, reassigned up) ·
-  `abandoned`
+  `driver-no-opus` · `abandoned`
 - Headline metric: **first-pass-clean rate per engine and per task-type**, plus
   **escalation rate.**
 

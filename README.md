@@ -1,39 +1,40 @@
 # ship
 
-A Claude Code plugin: **`/ship`** takes a feature from **idea to merged in one command** — `worktree → discover → plan → build → review` — gating only on the two decisions that are actually yours: **the design direction**, and **"go"**. Everything in between is automatic.
+`ship` is a Codex Desktop plugin for taking a feature from idea to reviewed PR:
+`worktree -> discover -> plan -> build -> review`. It gates only on the two calls Pete
+actually needs to make: design direction, then "go".
 
-It's opinionated. Built for a hands-off, PM-style workflow: you stay in your lane (product, design, taste, scope); the machine handles the mechanics and only stops at the two gates.
+It is opinionated: Pete reviews compact HTML artifacts in the Codex in-app Browser, not
+raw plans or diffs. Codex handles the mechanics.
 
-## What it does
+## What It Does
 
-- **Two gates, only two.** Design direction (after discovery), then "go" (after planning). Everything else runs without you.
-- **You read the meta, never the diff.** Every checkpoint auto-opens a condensed HTML card in your browser — a design spec, a go-card, and a **review card** at merge. Never "go read the PR."
-- **Gate notifications.** When a ship parks at a gate, a desktop notification taps you on the shoulder (Ghostty-native, with a macOS fallback) — so you can walk away.
-- **Stage-aware status line.** Which ship, what phase (`designing → planning → building → reviewing`), ships-in-flight, your context + weekly budget, effort level. A bold banner when a ship needs you.
-- **BUILD routed across models.** Each build task is routed via the bundled `router` skill — GPT-5.5 (codex, xhigh) by default, Opus for the judgment-heavy minority — while the driving model owns the brief, review, gates, and git.
-- **Fresh-agent verification.** REVIEW invokes the bundled `verify` skill before the card so the running app is driven and judged before merge.
+- **Two gates.** Design direction after discovery, then "go" after planning.
+- **HTML decision cards.** A design spec, go-card, and review card open in the browser.
+- **Codex-managed worktrees.** Ship assumes Codex Desktop owns worktree birth and cleanup.
+- **BUILD routing.** The bundled `router` skill defaults build drafting to codex and uses
+  Opus-capable subagents only for rare judgment-heavy tasks.
+- **Fresh verification.** REVIEW invokes the bundled `verify` skill before the card so the
+  running app is driven and judged before merge.
 
-## What's in the plugin
+## What's In The Plugin
 
-- `skills/ship` — the pipeline playbook + the go-card / review-card templates + the design record.
-- `skills/router` — model delegation for the BUILD stage (bundled; BUILD-only).
+- `skills/ship` — the pipeline playbook plus go-card/review-card templates.
+- `skills/router` — BUILD-stage task routing.
 - `skills/verify` — fresh read-only verification against the running app before merge.
-- `hooks/` — the gate desktop-notification hook.
-- `statusline.sh` — the stage-aware status line.
+- `hooks/gate-notify.sh` — optional manual gate notification helper.
+- `.codex-plugin/plugin.json` — the Codex Desktop manifest.
+
+Legacy Claude plugin files may still exist in this repo, but Codex reads
+`.codex-plugin/plugin.json`.
 
 ## Requires
 
-Declared as plugin `dependencies` (Claude Code will prompt/handle them): **superpowers**, **ponytail**, **worktrunk** (`wt`). Optional but recommended: **impeccable** (HTML design sprints) and **pix** (image generation) for the discovery stage — without them, discovery degrades to text + CSS, still fine.
+`superpowers`, `ponytail`, and `impeccable` should be available in Codex. `router` and
+`verify` are bundled here. `worktrunk` is optional and should only be used when Pete
+explicitly wants Worktrunk behavior for a run.
 
-## Your standing stack stays personal
+## Standing Stack
 
-`/ship` reads your **standing stack** (your default frameworks — never re-asked) from your own agent instructions, *not* from this plugin. In Claude Code that's usually `~/.claude/CLAUDE.md`; in Codex it's AGENTS.md/global instructions. A repo's own `CLAUDE.md` / `AGENTS.md` overrides it. The plugin is the *process*; your stack is *you*.
-
-## Install
-
-```
-/plugin marketplace add peteknowsai/ship
-/plugin install ship@ship
-```
-
-If you want the bundled status line, point your `statusLine` at it (or let the plugin's `statusLine` field wire it).
+`ship` reads Pete's standing stack from Codex global instructions / `~/.codex/AGENTS.md`.
+A repo's own `AGENTS.md` overrides it. The plugin is the process; the stack is Pete's.

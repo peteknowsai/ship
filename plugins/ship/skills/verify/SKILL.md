@@ -6,7 +6,6 @@ description: >
   stage (it's invoked there automatically) or standalone when a change is ready and you
   want proof it works: "verify this", "prove it works", "/verify". Never declares a
   feature working off the diff alone — it drives the real app.
-user_invocable: true
 ---
 
 # /verify — prove the feature works, then hand proof to REVIEW
