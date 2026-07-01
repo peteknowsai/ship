@@ -1,6 +1,6 @@
 ---
 name: ship
-description: Use for any code change in a product/web repo, small fix to full feature — ship sizes the ceremony itself. Small taste-free changes take the EXPRESS lane (worktree → change → verify → merge → dev, zero gates); feature-shaped work runs the full pipeline (worktree → discover → plan → build → review) gating only on design direction and "go"; express promotes to full the moment design, taste, or sprawl appears. Auto-triggers on change requests; you never type it. Do NOT use for a question or pure analysis. Never edit main directly.
+description: Use for any code change in a product/web repo, quick fix to full feature — ship sizes the ceremony itself and stops only when Pete's taste is in play. EXPRESS (tweak — no spec/plan, straight through to dev), SELF-DIRECTED (writes its own spec+plan, builds, reviews, merges, deploys — zero stops), or GATED (design direction + "go" gates) — gates fire only when Pete's answer would change what gets built. Auto-triggers on change requests; you never type it. Do NOT use for a question or pure analysis. Never edit main directly.
 ---
 
 # /ship — idea to merged, in one command
@@ -18,29 +18,38 @@ plan shrink the destination. A bigger spec means a bigger plan and a longer buil
 is wanted, not a problem to manage away. Phasing is Pete's to ask for, never yours to
 impose. The models can hold a big plan; trust that.
 
-## Sizing — every change ships; not every change gets the ceremony
+## Sizing — every change ships; you pick the ceremony, and gates exist only for Pete's taste
 
-Everything runs on ship's rails — worktree off main, commit, merge, dev lane;
-**nothing ever edits main directly, however tiny**. What scales with the request is
-the *ceremony*, and **you size it, not Pete** — he just asks for what he wants:
+The rails are constant: worktree off main → change → prove it → merge → dev lane —
+**nothing ever edits main directly, however tiny, and Pete does nothing unless a
+gate genuinely needs him.** What scales is the ceremony, and **you size it, not
+Pete** — he asks for what he wants; you figure out what that takes. Three lanes:
 
-- **EXPRESS** — the change has no design surface or taste question, touches no
-  schema/auth/money, is roughly a-few-files-one-sitting, and you can see the whole
-  diff before you start → skip DISCOVER and PLAN entirely. No spec, no go-card, no
-  gates: stage 0 worktree → make the change → repo gates (tsc/tests) → self-drive
-  the affected flow → merge per REVIEW's standing rules → dev lane → `result:` line.
-  The merge rules don't relax: tiny + non-visual + watched goes straight through
-  (`wt merge`); anything **visual** still gets shown running for a quick confirm
-  first. Markers: skip `discover`/`plan`, write `build:*` → `review` as usual.
-- **FULL** — anything feature-shaped, multi-surface, or where Pete's taste is in
-  play → the two-gate pipeline below, unchanged.
+- **EXPRESS — a quick tweak or fix.** Whole diff visible before you start, no
+  schema/auth/money. No spec, no plan, no cards, no stops: worktree → change → repo
+  gates (tsc/tests) → self-drive the affected flow → `wt merge` → dev lane →
+  `result:` line. Bring a dab of `ponytail` (smallest diff that works) and, for
+  anything visual, a dab of `impeccable` (the tweak should look intentional, not
+  patched). Pete finds out it's done from the `result:` line, not before.
+- **SELF-DIRECTED — real work that doesn't need Pete's eye.** Too big to freehand,
+  but no product-direction or taste question in it: write whatever spec/plan *you*
+  need to build it well (machine-facing, in the docs home, `ponytail` as waste
+  critic; `impeccable` posture for any visual surface) — then build, run the REVIEW
+  machinery (code review + `verify` — a `works` verdict is the merge bar), merge,
+  deploy to dev, `result:` line. **Zero stops — the artifacts are for the record,
+  not for approval.**
+- **GATED — Pete's taste or direction is genuinely in play.** A new user-facing
+  surface, visual identity, a product tradeoff, ambiguous scope, schema/auth/money —
+  the two-gate pipeline below, unchanged.
 
-**When unsure, or when express outgrows itself mid-flight** — a design question
-surfaces, the diff sprawls into a second surface, you catch yourself making a taste
-call that's Pete's — **promote to FULL**: park, write the spec from what you've
-learned, present GATE 1. Bias toward promoting; the cost of a needless gate is one
-click, the cost of an unspecced feature is a redo. Never use express to slip scope
-past the gates.
+**The gate test is never size — it's whether Pete's answer would change what gets
+built** (or the change is risky/irreversible). If his input wouldn't change the
+outcome, don't stop; if it would, gate — that's the whole reason gates exist.
+**Autonomous lanes merge only on green gates + a `works` verdict** — anything less
+parks and asks instead of merging broken work. Mid-flight, promote the moment taste
+or direction appears (park, write the spec from what you've learned, present
+GATE 1); size alone just moves EXPRESS → SELF-DIRECTED, never to a gate. Never use
+an autonomous lane to slip a taste call past Pete.
 
 **Two principles, always:**
 
@@ -227,11 +236,12 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
   the repo's docs home (e.g. `specs/plans/review-<slug>.html`), and `open` it. Point it at
   the running localhost ("walk through it — it's already open"). **Never tell Pete to "go
   read the PR"** — the review comes to him, running and labeled.
-- **The merge gate always holds for visual/substantial work.** Present the running app + the
+- **The merge gate always holds for GATED ships.** Present the running app + the
   review card, end with a `needs input:` line ("review: <feature> — merge?"), and **wait.
-  Never merge a UI Pete hasn't seen run** — a standing "go" authorizes the build, not the
-  merge of an unseen feature. (Only a tiny, non-visual, watched change may `wt merge`
-  directly.)
+  Never merge a gated UI Pete hasn't seen run** — a standing "go" authorizes the build, not
+  the merge of an unseen feature. (EXPRESS / SELF-DIRECTED ships merge autonomously — their
+  bar is green gates + verify's `works`, per Sizing — and a tiny, non-visual, watched change
+  may `wt merge` directly.)
 - **When Pete asks for changes at the card, apply `superpowers:receiving-code-review`** —
   verify the ask against the code before implementing (his feedback is product-true but
   may be technically underspecified), do the work, then loop the changed flow back

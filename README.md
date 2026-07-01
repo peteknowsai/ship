@@ -7,7 +7,7 @@ It's opinionated. Built for a hands-off, PM-style workflow: you stay in your lan
 ## What it does
 
 - **Two gates, only two.** Design direction (after discovery), then "go" (after planning). Everything else runs without you.
-- **Sized to the ask.** Small, taste-free changes take an **express lane** — same worktree → merge → dev rails, zero gates — and ship promotes to the full pipeline the moment design, taste, or sprawl appears. You never pick the lane; it does.
+- **Sized to the ask.** Three lanes, ship picks: **express** (quick fix — no spec/plan, straight through to dev), **self-directed** (writes its own spec + plan, builds, reviews, merges — zero stops), **gated** (the two gates, when your taste is in play). Same worktree → merge → dev rails in all three; gates fire only when your answer would change what gets built.
 - **You read the meta, never the diff.** Every checkpoint auto-opens a condensed HTML card in your browser — a design spec, a go-card, and a **review card** at merge. Never "go read the PR."
 - **Gate notifications.** When a ship parks at a gate, a desktop notification taps you on the shoulder (Ghostty-native, with a macOS fallback) — so you can walk away.
 - **Stage-aware status line.** Which ship, what phase (`designing → planning → building → reviewing`), ships-in-flight, your context + weekly budget, effort level. A bold banner when a ship needs you.
