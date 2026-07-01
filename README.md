@@ -10,7 +10,7 @@ It's opinionated. Built for a hands-off, PM-style workflow: you stay in your lan
 - **You read the meta, never the diff.** Every checkpoint auto-opens a condensed HTML card in your browser — a design spec, a go-card, and a **review card** at merge. Never "go read the PR."
 - **Gate notifications.** When a ship parks at a gate, a desktop notification taps you on the shoulder (Ghostty-native, with a macOS fallback) — so you can walk away.
 - **Stage-aware status line.** Which ship, what phase (`designing → planning → building → reviewing`), ships-in-flight, your context + weekly budget, effort level. A bold banner when a ship needs you.
-- **BUILD routed across models.** Each build task is routed via the bundled `router` skill — GPT-5.5 (codex, xhigh) by default, Opus for the judgment-heavy minority — while the driving model owns the brief, review, gates, and git.
+- **BUILD routed across models.** Each build task is routed via the bundled `router` skill — split across Opus and GPT-5.5 (codex) per a tunable mix — while the driving model owns the brief, review, gates, and git.
 - **Fresh-agent verification.** REVIEW invokes the bundled `verify` skill before the card so the running app is driven and judged before merge.
 
 ## What's in the plugin

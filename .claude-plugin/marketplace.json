@@ -10,7 +10,7 @@
   "plugins": [
     {
       "name": "ship",
-      "description": "/ship — idea to merged in one command: worktree → discover → plan → build → review, gating only on design direction and 'go'. Auto-opening HTML cards, gate desktop notifications, a stage-aware status line, GPT-5.5-first BUILD routing (Opus for the judgment-heavy minority), and fresh-agent verification. Bundles router + verify.",
+      "description": "/ship — idea to merged in one command: worktree → discover → plan → build → review, gating only on design direction and 'go'. Auto-opening HTML cards, gate desktop notifications, a stage-aware status line, BUILD routing across Opus and GPT-5.5, and fresh-agent verification. Bundles router + verify.",
       "source": "./plugins/ship"
     }
   ]

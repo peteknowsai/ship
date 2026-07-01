@@ -143,10 +143,10 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
   partway or hand back a half-built feature. Commit each task on the branch as it lands
   (durable, resumable progress), but don't merge until the whole plan is built.
 - Invoke `superpowers:subagent-driven-development`, driven by the harness model (the driver).
-- Invoke `router` to route each build task — GPT-5.5 (codex, xhigh, Fast mode) is the
-  default (~95%), Opus the rare exception (~5%), Sonnet never. The router skill owns the
-  mix — don't restate it here. The driver owns the brief, the diff review, the gates,
-  and git. One writer per branch at a time.
+- Invoke `router` to route each build task across Opus and GPT-5.5 (codex, xhigh,
+  Fast mode) — Sonnet never. The router skill owns the mix (Pete's dial, currently
+  ~50/50) — don't restate it here. The driver owns the brief, the diff review, the
+  gates, and git. One writer per branch at a time.
 - **Single-writer vs fan-out — pick by the diff, not by reflex** (matters most under
   ultracode, where "always orchestrate" tempts you to parallelize the build). The default is
   one writer on the branch: right for a small, interdependent, or design-coherent feature,
