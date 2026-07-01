@@ -21,7 +21,7 @@ slug=$(git -C "$root" branch --show-current 2>/dev/null); slug="${slug#feature/}
 # `-w /dev/tty` test isn't enough — in a backgrounded session the device exists but the
 # write fails ("Device not configured"), so actually attempt the write and fall back to
 # a macOS notification on failure. That fallback is exactly the away-from-keyboard case.
-if ! { printf '\033]777;notify;HomeZero /ship;%s → %s\007' "$slug" "$what" > /dev/tty; } 2>/dev/null; then
-  osascript -e "display notification \"${slug} → ${what}\" with title \"HomeZero /ship\"" >/dev/null 2>&1
+if ! { printf '\033]777;notify;/ship;%s → %s\007' "$slug" "$what" > /dev/tty; } 2>/dev/null; then
+  osascript -e "display notification \"${slug} → ${what}\" with title \"/ship\"" >/dev/null 2>&1
 fi
 exit 0
