@@ -10,12 +10,14 @@ It's opinionated. Built for a hands-off, PM-style workflow: you stay in your lan
 - **You read the meta, never the diff.** Every checkpoint auto-opens a condensed HTML card in your browser — a design spec, a go-card, and a **review card** at merge. Never "go read the PR."
 - **Gate notifications.** When a ship parks at a gate, a desktop notification taps you on the shoulder (Ghostty-native, with a macOS fallback) — so you can walk away.
 - **Stage-aware status line.** Which ship, what phase (`designing → planning → building → reviewing`), ships-in-flight, your context + weekly budget, effort level. A bold banner when a ship needs you.
-- **BUILD routed across models.** Each build task goes ~50/50 to Opus or GPT-5.5 (codex) via the bundled `router` skill — Opus owns the brief, review, gates, and git.
+- **BUILD routed across models.** Each build task is routed across Opus, GPT-5.5 (codex), and Sonnet via the bundled `router` skill — Opus owns the brief, review, gates, and git.
+- **Fresh-agent verification.** REVIEW invokes the bundled `verify` skill before the card so the running app is driven and judged before merge.
 
 ## What's in the plugin
 
 - `skills/ship` — the pipeline playbook + the go-card / review-card templates + the design record.
 - `skills/router` — model delegation for the BUILD stage (bundled; BUILD-only).
+- `skills/verify` — fresh read-only verification against the running app before merge.
 - `hooks/` — the gate desktop-notification hook.
 - `statusline.sh` — the stage-aware status line.
 
@@ -25,7 +27,7 @@ Declared as plugin `dependencies` (Claude Code will prompt/handle them): **super
 
 ## Your standing stack stays personal
 
-`/ship` reads your **standing stack** (your default frameworks — never re-asked) from your own `~/.claude/CLAUDE.md`, *not* from this plugin. A repo's own `CLAUDE.md` overrides it. The plugin is the *process*; your stack is *you*.
+`/ship` reads your **standing stack** (your default frameworks — never re-asked) from your own agent instructions, *not* from this plugin. In Claude Code that's usually `~/.claude/CLAUDE.md`; in Codex it's AGENTS.md/global instructions. A repo's own `CLAUDE.md` / `AGENTS.md` overrides it. The plugin is the *process*; your stack is *you*.
 
 ## Install
 

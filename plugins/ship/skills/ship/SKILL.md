@@ -31,10 +31,11 @@ impose. The models can hold a big plan; trust that.
 product terms, give a recommendation, let him decide. His lane = product, design,
 taste, scope. Your lane = mechanics — handle them, summarize in one line. The
 **standing stack is never re-asked** — it's Pete's default product/web stack, declared in
-his global `~/.claude/CLAUDE.md` (flue · Cloudflare · Convex · Clerk · Stripe · Next).
-**The repo's own `CLAUDE.md` overrides it** when that repo diverges (a non-web repo
-declares its own stack). Escalate a library choice only when it's both architectural
-*and* outside the repo's canon.
+his global instructions (`~/.claude/CLAUDE.md` in Claude Code, AGENTS.md / global
+Codex instructions in Codex): flue · Cloudflare · Convex · Clerk · Stripe · Next.
+**The repo's own `CLAUDE.md` / `AGENTS.md` overrides it** when that repo diverges
+(a non-web repo declares its own stack). Escalate a library choice only when it's both
+architectural *and* outside the repo's canon.
 
 ## The pipeline — create a todo for each stage
 
@@ -54,8 +55,9 @@ Create an isolated worktree off main and enter it (the worktrunk `wt-switch-crea
 ```
 wt switch --create feature/<slug> --no-cd --format=json -y
 ```
-then `EnterWorktree({path})` with the path from the JSON. `--no-cd` is load-bearing.
-If the repo has a `.config/wt.toml`, it auto-provisions the worktree (gitignored runtime
+then enter/use the path from the JSON. Claude Code: `EnterWorktree({path})`. Codex:
+set subsequent tool working directories to that path (or use absolute paths). `--no-cd`
+is load-bearing. If the repo has a `.config/wt.toml`, it auto-provisions the worktree (gitignored runtime
 files — node_modules, .env, .dev.vars — via reflink). Write the first marker:
 `printf 'discover' > <root>/.ship-stage`. Never build on main.
 
@@ -131,7 +133,7 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
   size: independent reviewers per dimension + adversarial verification (see REVIEW). Don't
   parallelize 5 small edits; do parallelize 5 verifiers.
 - Apply `ponytail` posture (shortest diff, reuse, no reinvention).
-- Run `superpowers:verify-before-done` before claiming any task done — actually run it.
+- Run `superpowers:verification-before-completion` before claiming any task done — actually run it.
 - On a red test, `superpowers:systematic-debugging`.
 - **Before BUILD is done, walk the whole feature end-to-end yourself** — a quick *self-driven*
   smoke-walk (the formal fresh-agent `verify` skill runs in REVIEW, not here — don't invoke it
@@ -145,7 +147,8 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
 ### 4 · REVIEW / MERGE — automatic  → marker: `review`, then remove the file
 
 - Write `review` to `.ship-stage`.
-- Run `/code-review` (correctness) + `ponytail-review` (over-build) — one pass.
+- Run a correctness code review (`/code-review` where available) + `ponytail-review`
+  (over-build) — one pass.
 - **Put it in front of Pete, running — every time.** For any visual/interactive feature
   (the default on this web stack), **boot the worktree's own dev server yourself** (its dev
   script — e.g. `next dev` — in the background) and `open http://localhost:<port>` (usually
@@ -173,14 +176,15 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
 - On "merge", land it and **let worktrunk own teardown — a leftover worktree is a bug**:
   - **Tiny & watched →** `wt merge` (runs the repo's `wt.toml` pre-merge gate, squashes,
     ff's main, removes the worktree — worktrunk merges *from* the worktree safely), then
-    `ExitWorktree({action:"keep"})` to point the session back at the main checkout (wt already
-    deleted the dir).
+    `ExitWorktree({action:"keep"})` in Claude Code, or point subsequent Codex tool calls at
+    the main checkout (wt already deleted the dir).
   - **Substantial (PR path) → the merge must run from the MAIN CHECKOUT, never from inside the
     worktree.** `gh pr merge` checks out the base branch locally after merging; run from inside
     the worktree it dies with `fatal: 'main' is already used by worktree …` — the PR merges on
     GitHub but the local step fails, so teardown never runs and Pete is stranded in an orphan
     worktree (this has bitten real runs). So **tear down FIRST, then merge:**
-    1. `ExitWorktree({action:"keep"})` — return the session to the main checkout.
+    1. Return to the main checkout: Claude Code `ExitWorktree({action:"keep"})`; Codex sets
+       subsequent tool calls to the main checkout path.
     2. `wt remove feature/<slug> -f` — remove the local worktree now (frees the branch so
        `--delete-branch` can delete it; you're about to merge it anyway).
     3. `gh pr merge <#> --squash --delete-branch` — now from the main checkout: merges + deletes

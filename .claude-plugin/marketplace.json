@@ -5,12 +5,12 @@
     "email": "petefromsf@gmail.com"
   },
   "metadata": {
-    "description": "/ship — take a feature from idea to merged in one command. Two gates, auto-opening review cards, gate notifications, a stage-aware status line, and a model-routed build."
+    "description": "/ship — take a feature from idea to merged in one command. Two gates, auto-opening cards, gate notifications, a stage-aware status line, model-routed build, and fresh-agent verification."
   },
   "plugins": [
     {
       "name": "ship",
-      "description": "/ship — idea to merged in one command: worktree → discover → plan → build → review, gating only on design direction and 'go'. Auto-opening HTML cards, gate desktop notifications, a stage-aware status line, and a BUILD stage routed ~50/50 across Opus and GPT-5.5. Bundles the router skill.",
+      "description": "/ship — idea to merged in one command: worktree → discover → plan → build → review, gating only on design direction and 'go'. Auto-opening HTML cards, gate desktop notifications, a stage-aware status line, BUILD routing across Opus/GPT-5.5/Sonnet, and fresh-agent verification. Bundles router + verify.",
       "source": "./plugins/ship"
     }
   ]

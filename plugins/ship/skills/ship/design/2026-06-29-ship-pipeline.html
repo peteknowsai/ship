@@ -134,7 +134,7 @@
     </div>
     <div class="stage">
       <div class="l"><span class="n glyph">🔨 4</span><b>Build</b><span class="tag auto">auto</span></div>
-      <div class="r">subagent-driven-development, driven by <strong>Opus</strong>, which <strong>routes each build task ~50/50 to Opus or GPT-5.5</strong> (the <code>router</code> skill — judgment/integration/risk → Opus, well-specified self-contained coding → GPT-5.5 via codex). + <strong>ponytail posture</strong> (shortest diff, reuse, no reinventing the wheel) + <strong>verify-before-done</strong> (actually runs it) + <strong>systematic-debugging</strong> on any failure. Can raise its hand for a real fork; you can jump in anytime from FleetView.</div>
+      <div class="r">subagent-driven-development, driven by <strong>Opus</strong>, which <strong>routes each build task ~50/50 to Opus or GPT-5.5</strong> (the <code>router</code> skill — judgment/integration/risk → Opus, well-specified self-contained coding → GPT-5.5 via codex). + <strong>ponytail posture</strong> (shortest diff, reuse, no reinventing the wheel) + <strong>verification-before-completion</strong> (actually runs it) + <strong>systematic-debugging</strong> on any failure. Can raise its hand for a real fork; you can jump in anytime from FleetView.</div>
     </div>
     <div class="stage">
       <div class="l"><span class="n glyph">👀 5</span><b>Review / merge</b><span class="tag auto">auto</span></div>
@@ -183,7 +183,7 @@
     <tr><td>writing-plans</td><td>Plan — the implementation plan (HTML artifact).</td></tr>
     <tr><td>ponytail ×2</td><td>Plan (scope critic, primary) + Build (posture). The cut-list rides onto the go-card.</td></tr>
     <tr><td>router</td><td>Build only — Opus driver splits each build task ~50/50 Opus ↔ GPT-5.5 (codex). Two engines, no Sonnet/Gemini. Self-tunes via a ledger. <em>Never fires outside Build.</em></td></tr>
-    <tr><td>verify-before-done</td><td>Build→Review — the agent runs the thing and watches it work before claiming done. <em>The trust guard.</em></td></tr>
+    <tr><td>verification-before-completion</td><td>Build→Review — the agent runs the thing and watches it work before claiming done. <em>The trust guard.</em></td></tr>
     <tr><td>systematic-debugging</td><td>Build — the failure fallback when a test goes red.</td></tr>
     <tr><td>/code-review + ponytail-review</td><td>Review — correctness + over-build, one automated pass.</td></tr>
     <tr><td>worktrunk (wt)</td><td>Stage 0 + merge — isolation, provisioning, one-step merge/cleanup. Invisible.</td></tr>
@@ -213,7 +213,7 @@
     <tr><td>Library threshold</td><td>Standing stack never re-asked; escalate only architectural + outside-canon.</td></tr>
     <tr><td>Shape</td><td>Design up front (interleaved with brainstorm); spec is Discover's artifact, not a stage.</td></tr>
     <tr><td>Status line</td><td>Stage-aware, tree-centric; drop branch/version/time noise.</td></tr>
-    <tr><td>Adds</td><td>verify-before-done, systematic-debugging fallback, /code-review + ponytail-review pass.</td></tr>
+    <tr><td>Adds</td><td>verification-before-completion, systematic-debugging fallback, /code-review + ponytail-review pass.</td></tr>
     <tr><td>worktrunk</td><td>Invisible substrate; bgIsolation stays "none"; durable worktrees via the skill flow.</td></tr>
     <tr><td>v2 loop</td><td>Local FleetView dockmaster, always-on Mac, 1min–1h adaptive band.</td></tr>
   </table>
