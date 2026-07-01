@@ -133,11 +133,12 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
 - Apply `ponytail` posture (shortest diff, reuse, no reinvention).
 - Run `superpowers:verify-before-done` before claiming any task done — actually run it.
 - On a red test, `superpowers:systematic-debugging`.
-- **Before BUILD is done, walk the whole feature end-to-end yourself** — invoke `verify`:
-  boot the app and drive its *real* user paths (the spec's happy path + key edge cases),
+- **Before BUILD is done, walk the whole feature end-to-end yourself** — a quick *self-driven*
+  smoke-walk (the formal fresh-agent `verify` skill runs in REVIEW, not here — don't invoke it
+  twice): boot the app and drive its *real* user paths (the spec's happy path + key edge cases),
   not just unit tests. *You* find the breakage, never Pete. Fix what breaks (loop with
-  `systematic-debugging`); only leave BUILD once the live flow actually works. The review
-  card's "walked it end-to-end" line is a promise — keep it true.
+  `systematic-debugging`); only leave BUILD once the live flow actually works. The review card's
+  end-to-end promise ("it runs" — backed by REVIEW's verify pass) must stay true.
 - Raise a hand only for a genuine fork (PM-framed, with a rec). Pete can jump in from
   FleetView anytime.
 
@@ -152,6 +153,14 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
   walks through it on the worktree. **Never deploy to let him review, and never tell him to
   "go look at the live site"** — deploy is downstream of merge; the worktree's localhost is
   the review surface. (Non-UI change — CLI/library — show the demo/test output instead.)
+- **Prove it actually works — invoke `verify` before the card.** With the app running,
+  invoke the `verify` skill against the worktree's localhost. A fresh read-only sub-agent
+  drives the feature, screenshots the beats, and returns `works | broken | unverifiable` +
+  taste notes; verify loops-to-fix (cap ~3). **`broken` after the cap, or `unverifiable`, →
+  do NOT proceed to merge: end the turn with a `needs input:` line ("review: <feature> —
+  couldn't prove it works: <reason>") and hand Pete the verdict + evidence.** Only a `works`
+  verdict (with its screenshot storyboard + any taste notes) flows into the card below; if verify
+  crystallized an e2e spec for a core journey, name that path in "Already checked for you".
 - **Render a review card** from `reference/review-card.html` (contract below), write it to
   the repo's docs home (e.g. `specs/plans/review-<slug>.html`), and `open` it. Point it at
   the running localhost ("walk through it — it's already open"). **Never tell Pete to "go
@@ -217,10 +226,16 @@ Render `reference/review-card.html` filled with the meta only — PM-framed, one
 Pete reviews *this*, not the diff:
 
 - **What you got** — plain-English bullets of what now works (what it *does*, not a file list).
-- **What it looks like** — it's already **running for him at localhost** (you booted it); a
-  screenshot/mockup goes here for the record.
-- **Already checked for you** — gates/tests green, **the flow walked end-to-end (it runs)**;
-  what was NOT touched (schema / money / public surfaces). Set his risk expectation.
+- **Proof it works** — the verifier's captioned screenshot **storyboard** (start → action →
+  success) with the `works` verdict on top. This replaces a static mockup: it's evidence the
+  running feature does what was intended, organized for a glance. It's also still **running for
+  him at localhost** (you booted it). (Non-visual change — show the demo/test output instead.)
+- **Already checked for you** — gates/tests green, **the flow driven end-to-end by a fresh
+  agent (it runs)**, plus any **e2e spec verify committed** for a core journey (name it — that
+  path is a standing test now); what was NOT touched (schema / money / public surfaces). Set his
+  risk expectation.
+- **Verifier flagged / suggested** — the verifier's taste notes ("looked off / couldn't
+  confirm"), if any. These are *reports, not work* — Pete decides: fix now / backlog / ignore.
 - **Only you can confirm** — the 1–2 things that need his eye; walk through them on the open
   localhost.
 - **Merge?** — the PR link is there for the curious, but he shouldn't need it. Merge is the

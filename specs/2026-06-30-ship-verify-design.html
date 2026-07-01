@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ship · verify — design spec</title>
+<style>
+  :root{
+    --bg:#0f1216; --panel:#161b22; --panel2:#1b2230; --ink:#e6edf3; --mut:#9aa7b4;
+    --line:#2a3340; --accent:#7ee787; --amber:#f0b75e; --blue:#79c0ff; --red:#ff7b72;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.6;
+       font-size:16px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:860px;margin:0 auto;padding:48px 24px 96px}
+  .tag{display:inline-block;font-family:var(--mono);font-size:12px;letter-spacing:.06em;
+       text-transform:uppercase;color:var(--mut);border:1px solid var(--line);
+       border-radius:999px;padding:3px 10px;margin-bottom:18px}
+  h1{font-size:30px;line-height:1.2;margin:.1em 0 .2em}
+  h1 .sub{color:var(--mut);font-weight:400}
+  h2{font-size:20px;margin:42px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+  h3{font-size:16px;margin:24px 0 6px;color:var(--blue)}
+  p{margin:10px 0}
+  .lead{font-size:18px;color:#cdd9e5;background:var(--panel);border:1px solid var(--line);
+        border-left:3px solid var(--accent);border-radius:10px;padding:18px 20px;margin:22px 0}
+  ul,ol{margin:10px 0;padding-left:22px}
+  li{margin:6px 0}
+  code{font-family:var(--mono);font-size:.88em;background:#0b0e12;border:1px solid var(--line);
+       border-radius:5px;padding:1px 6px;color:#d9e1e8}
+  .mono{font-family:var(--mono)}
+  .grid{display:grid;gap:14px;margin:18px 0}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px}
+  .card h3{margin-top:0}
+  .num{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;
+       border-radius:7px;background:var(--panel2);border:1px solid var(--line);color:var(--accent);
+       font-family:var(--mono);font-size:13px;margin-right:8px;vertical-align:2px}
+  .flow{font-family:var(--mono);font-size:13.5px;color:#cdd9e5;background:#0b0e12;
+        border:1px solid var(--line);border-radius:10px;padding:16px 18px;white-space:pre-wrap;overflow-x:auto}
+  .pill{font-family:var(--mono);font-size:12px;border-radius:6px;padding:1px 7px}
+  .ok{color:#0b0e12;background:var(--accent)} .bad{color:#0b0e12;background:var(--red)}
+  .warn{color:#0b0e12;background:var(--amber)}
+  .seam{border-left:3px solid var(--blue)} .out{border-left:3px solid var(--red)}
+  .muted{color:var(--mut)}
+  .kv{display:grid;grid-template-columns:130px 1fr;gap:6px 16px;margin:12px 0;font-size:15px}
+  .kv b{color:var(--mut);font-weight:600}
+  table{border-collapse:collapse;width:100%;margin:16px 0;font-size:14.5px}
+  th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);color:var(--mut);font-weight:600}
+  .foot{margin-top:48px;color:var(--mut);font-size:13px;border-top:1px solid var(--line);padding-top:16px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <span class="tag">Design spec · ship plugin · 2026-06-30</span>
+  <h1>Bake agentic verification into <span class="mono">/ship</span><br><span class="sub">prove the feature works before the review reaches Pete</span></h1>
+
+  <div class="lead">
+    Today ship's REVIEW stage shows Pete the running app and a <em>static</em> read of the diff —
+    nothing actually <strong>drives the feature he just built</strong> and confirms it works. We add a
+    <strong>verifier</strong>: an independent sub-agent that exercises the new feature on the running app,
+    screenshots that it works, loops to fix what's broken, and lays the proof into the review card —
+    so Pete reviews <strong>evidence it works</strong>, not faith. Borrowed from the
+    <span class="mono">AI-Builder-Club/skills</span> <span class="mono">pr</span> skill; everything in this
+    spec lives inside the ship plugin (<span class="mono">peteknowsai/ship</span>).
+  </div>
+
+  <h2>Why</h2>
+  <p>
+    ship's REVIEW runs <code>/code-review</code> + <code>ponytail-review</code> (both read the
+    <em>diff</em>) and boots the worktree's localhost so Pete can walk it. The only thing judging
+    <em>"does this feature actually do what was intended"</em> is Pete's eyes. That's how the
+    skeleton-shimmer contrast bug slipped through until it was caught by hand. The missing layer:
+    an <strong>independent</strong> agent (it didn't write the code) that <strong>drives the running
+    app</strong> and returns a verdict with proof — before Pete is asked to approve.
+  </p>
+
+  <h2>What we're building — three edits, all in <span class="mono">peteknowsai/ship</span></h2>
+
+  <div class="grid">
+    <div class="card">
+      <h3><span class="num">1</span>New skill: <span class="mono">verify</span></h3>
+      <p>A focused, self-contained skill — "prove the just-built feature actually works." REVIEW
+      <em>invokes</em> it, exactly as it already invokes <code>/code-review</code> and
+      <code>ponytail-review</code>. Keeping it its own file keeps the ship skill lean and lets it be
+      run on its own. (Mirrors how AIBC made <span class="mono">pr</span> standalone.)</p>
+    </div>
+    <div class="card">
+      <h3><span class="num">2</span>Edit: <span class="mono">ship</span> REVIEW stage</h3>
+      <p>Invoke <span class="mono">verify</span> after the static reviews and <em>before</em> the
+      review card reaches Pete. Fold the verdict + screenshots + taste notes into the card. Broken
+      after the fix-loop → escalate to Pete instead of merging.</p>
+    </div>
+    <div class="card">
+      <h3><span class="num">3</span>Edit: <span class="mono">review-card.html</span></h3>
+      <p>Add a <strong>"proof it works"</strong> block (screenshots + verdict) and a
+      <strong>"verifier flagged / suggested"</strong> block, so the evidence is laid out in the one
+      HTML Pete already reads.</p>
+    </div>
+  </div>
+
+  <h2>How the <span class="mono">verify</span> skill works</h2>
+  <div class="kv">
+    <b>Who runs it</b><div>A <strong>fresh, read-only verifier sub-agent</strong> — it did not write the code, so it judges honestly, and app-driving is verbose so context-isolation pays off.</div>
+    <b>What it does</b><div>Drives the running app through the feature's acceptance criteria (pulled from the spec/plan file), <strong>screenshots the success state</strong>, and returns <span class="pill ok">works</span> / <span class="pill bad">broken</span> / <span class="pill warn">unverifiable</span> plus a short "this looked off" taste note.</div>
+    <b>Fix loop</b><div>broken → the ship driver (Opus) fixes → a <strong>fresh</strong> verifier re-checks. Cap ~3 rounds. The driver never rubber-stamps its own work — only a fresh verifier can call it <span class="pill ok">works</span>.</div>
+    <b>Escalation</b><div>Still broken after the cap, or <span class="pill warn">unverifiable</span> (e.g. an authed surface it can't reach) → escalate to Pete with the verdict and evidence. It never silently merges a feature it couldn't prove.</div>
+    <b>Output</b><div>Returns <code>{ verdict, evidence paths, taste notes }</code> to REVIEW, which folds them into the review card.</div>
+  </div>
+
+  <div class="flow">REVIEW stage
+  ├─ /code-review + ponytail-review        (static — read the diff)
+  ├─ codified gate: tsc · lint · unit · e2e suite   (regression — did old stuff break?)
+  ├─ verify  ─────────────────────────────────────────────┐
+  │    fresh verifier drives the feature live             │ loop ≤ 3
+  │    works ✓  → capture screenshots + verdict           │
+  │    broken ✗ → driver fixes → fresh verifier ──────────┘
+  │    still broken (or unverifiable) → escalate to Pete
+  ├─ render review card  (now carries the proof + any flags)
+  └─ GATE: Pete reviews proof → merge / "fix those" / backlog</div>
+
+  <h2>How the verifier drives the app — Playwright</h2>
+  <p>
+    The driver is <strong>Playwright</strong> — already a homezero dependency, no new infra. The
+    trick is it's used <strong>two ways</strong>, which is what resolves "flexible exploration" vs.
+    "deterministic gate":
+  </p>
+  <div class="grid">
+    <div class="card">
+      <h3>① Live drive — prove the new feature</h3>
+      <p>The verifier sub-agent drives a real browser through Playwright and <strong>clicks through
+      the actual flow like a user</strong> — navigate the route, perform the feature's action,
+      observe the result. Being an agent, it finds its way even without pre-written selectors, and
+      judges <em>observed</em> vs. <em>intended</em>. It <strong>screenshots the meaningful beats</strong>
+      (start → action → success), not a random dump.</p>
+    </div>
+    <div class="card">
+      <h3>② Crystallize — the compounding net</h3>
+      <p>For a <strong>core journey</strong>, that same exploration is written out as a committed
+      Playwright <code>.spec.ts</code> — a deterministic, headless script that re-runs in the gate
+      forever after. Same tool, so "explore live" <em>becomes</em> the saved spec. That's why it
+      compounds for free, with no spec authored by hand.</p>
+    </div>
+  </div>
+  <p>
+    Playwright also captures <strong>video + trace</strong>, but those stay gitignored as debug
+    backup — the card leads with the glanceable screenshots, no video-hosting dance.
+  </p>
+
+  <h3>What "organized for PM review" means</h3>
+  <p>
+    The screenshots don't land as a folder of PNGs — they go into the review card as a
+    <strong>captioned storyboard</strong>: the verdict on top, each shot labeled in plain product
+    language. You scan a visual walkthrough, not a test log. Roughly:
+  </p>
+  <div class="card" style="background:#0b0e12">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+      <span class="pill ok">works</span>
+      <span class="mono" style="font-size:13px;color:#cdd9e5">Save a listing — verified by a fresh agent driving the live app</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+      <div>
+        <div style="aspect-ratio:16/10;border:1px solid var(--line);border-radius:8px;background:linear-gradient(135deg,#161b22,#1b2230);display:flex;align-items:center;justify-content:center;color:#3a4656;font-family:var(--mono);font-size:11px">screenshot</div>
+        <div class="mono muted" style="font-size:12px;margin-top:6px">1 · Board loads</div>
+      </div>
+      <div>
+        <div style="aspect-ratio:16/10;border:1px solid var(--line);border-radius:8px;background:linear-gradient(135deg,#161b22,#1b2230);display:flex;align-items:center;justify-content:center;color:#3a4656;font-family:var(--mono);font-size:11px">screenshot</div>
+        <div class="mono muted" style="font-size:12px;margin-top:6px">2 · Clicked Save on a listing</div>
+      </div>
+      <div>
+        <div style="aspect-ratio:16/10;border:1px solid var(--line);border-radius:8px;background:linear-gradient(135deg,#161b22,#1b2230);display:flex;align-items:center;justify-content:center;color:#3a4656;font-family:var(--mono);font-size:11px">screenshot</div>
+        <div class="mono muted" style="font-size:12px;margin-top:6px">3 · Now in Saved ✓</div>
+      </div>
+    </div>
+  </div>
+
+  <h2>The light compounding (kept deliberately small)</h2>
+  <p>
+    When a feature is a genuine <strong>core journey</strong> — not every little thing — the verifier
+    leaves behind <strong>one committed e2e spec</strong> for the path it just drove, folded into the
+    feature's own diff. Pete never hand-writes a spec. The standing suite is just "the critical
+    journeys that have shipped," and it's what the codified gate re-runs next time as the regression
+    net. The rule is <em>core flows only</em> — not a spec per micro-feature — so it stays a thin,
+    self-maintaining net, never a maintenance pile.
+  </p>
+
+  <h2>Pete's role at the gate (unchanged shape, better inputs)</h2>
+  <p>
+    The verifier <strong>reports; Pete directs.</strong> It never creates work on its own. At the
+    review card Pete sees proof-it-works + any flags, and says one of: <strong>merge</strong>,
+    <strong>"fix those first"</strong>, or <strong>"backlog it."</strong> Same two-gate ship shape —
+    he just no longer has to sit down and test whether the thing even works.
+  </p>
+
+  <h2>The generic seam — what ship names but does <em>not</em> build</h2>
+  <div class="card seam">
+    <p>The <span class="mono">verify</span> skill is <strong>repo-agnostic</strong>. It assumes the
+    repo hands it a <strong>reachable running app, including past auth</strong>. It does
+    <strong>not</strong> implement any auth bypass, session mint, or stack-up — that is the repo's
+    job. This single sentence is the clean seam where a repo plugs in:</p>
+    <ul>
+      <li>ship boots the worktree dev server (it already does this) and invokes <span class="mono">verify</span>.</li>
+      <li>the <strong>repo</strong> provides a local/test way to reach authed surfaces.</li>
+    </ul>
+    <p class="muted">homezero will later provide that hook (a guarded localhost login). That work is
+    <strong>out of scope here</strong> — it's a homezero task, not a ship-skill change. Keeping it out
+    is what stops the ship design and the homezero plumbing from tangling.</p>
+  </div>
+
+  <h2>Explicitly out of scope</h2>
+  <table>
+    <tr><th>Not doing</th><th>Why</th></tr>
+    <tr><td>homezero's localhost auth hook / stack-up</td><td>Separate homezero task; ship only names the requirement.</td></tr>
+    <tr><td>AIBC <span class="mono">crabbox</span> (cloud box per agent)</td><td>Solves N parallel loops; ship runs one feature at a time. No need yet.</td></tr>
+    <tr><td>AIBC <span class="mono">new-loop</span> / file-based <span class="mono">LOG.md</span> brain</td><td>ship already has a compounding memory (ship-retro loop + the router ledger). Different mechanism for a solved problem.</td></tr>
+    <tr><td>AIBC <span class="mono">setup-codebase-harness</span> / <span class="mono">dev-local</span></td><td>Repo-onboarding for cold repos; homezero is already agent-ready.</td></tr>
+    <tr><td>Uploading verifier video to a stable URL (gh prerelease)</td><td>Pete reviews the card locally; local screenshots embedded in the card are enough.</td></tr>
+  </table>
+
+  <h2>Open planning flags (resolve at plan time, not now)</h2>
+  <ul>
+    <li><b>Playwright run mode.</b> <em>Decided: Playwright</em> (live drive + crystallized <code>.spec.ts</code>). Left for the plan: whether the agent drives via the <span class="mono">playwright-cli</span> skill step-by-step or runs a throwaway script — a mechanics detail, not a tool choice.</li>
+    <li><b>"Core journey" trigger.</b> The exact rule for when the verifier commits an e2e spec vs just reports — keep it simple, decide the wording in the plan.</li>
+    <li><b>Evidence into HTML.</b> Screenshots referenced by relative path vs inlined as data-URIs in the review card — a rendering detail for the card edit.</li>
+    <li><b>Escalation copy.</b> What the <code>needs input:</code> line says when the verifier can't prove a feature after the cap.</li>
+  </ul>
+
+  <div class="foot">
+    ship plugin · <span class="mono">peteknowsai/ship</span> · branch <span class="mono">feature/ship-verify</span><br>
+    Source idea: <span class="mono">AI-Builder-Club/skills</span> → <span class="mono">pr</span> + <span class="mono">e2e-setup</span> skills.
+  </div>
+
+</div>
+</body>
+</html>
