@@ -200,10 +200,12 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
        the *remote* branch, no checkout conflict.
     4. `git pull --ff-only` so local main matches (+ `git branch -D feature/<slug>` if the squash
        left an "unmerged" local branch behind). Nothing left on disk.
-  - Then `rm .ship-stage` and **stop the review dev server you booted** (its worktree is being
-    removed). **Verify with `git worktree list` — zero ship worktrees must remain. A leftover
-    worktree means the teardown failed (usually the merge ran inside the worktree) — recover it
-    before you declare done.**
+  - Then `rm .ship-stage`, **stop the review dev server you booted** (its worktree is being
+    removed), and **deprovision the per-branch preview backend if Stage 0 spun one up** — close
+    the resource you opened, or skip if the repo's previews auto-expire (don't leave orphaned
+    backends piling up). **Verify with `git worktree list` — zero ship worktrees must remain. A
+    leftover worktree means the teardown failed (usually the merge ran inside the worktree) —
+    recover it before you declare done.**
 - **Ship deploys to the integration lane, never to production.** After the merge, push merged
   main to the repo's shared *dev/integration* lane if it has one — run its dev-deploy step **from
   the main checkout** (homezero: `scripts/deploy-dev.sh`, the single serialized writer for the
@@ -211,10 +213,12 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
   back that lane's URL (homezero: `dev.homezero.md`). If the repo just auto-deploys on merge via
   CI, say so and hand back the URL once it's up; if it has no deploy step, confirm merged. Never
   make Pete run a deploy himself.
-- **Promotion to production is NOT ship's job — shipping ends at the integration lane.**
-  "Merged" means live on *dev*, not live for users. Never deploy or promote to prod / `www`, and
-  never add a promote gate or offer to promote (homezero: `scripts/promote-to-prod.sh` is a
-  separate, human-gated ritual Pete runs on his own cadence — deliberately outside the pipeline).
+- **Promotion to production is NOT ship's job — shipping ends at the integration lane.** On the
+  three-lane model this assumes (a separate prod promote), "merged" means live on *dev*, not live
+  for users — so never deploy or promote to prod / `www`, never add a promote gate or offer to
+  promote (homezero: `scripts/promote-to-prod.sh` is a separate, human-gated ritual Pete runs on
+  his own cadence — deliberately outside the pipeline). (Only where merge auto-deploys straight to
+  prod is a merge itself the user-facing release — the review-card "Merge?" line covers that case.)
   Hand back the dev URL and stop there.
 - Run the RETRO below, then **end with a `result:` line**: what shipped, one sentence — and if
   RETRO filed a note, name it (`… · ship-retro #N filed`).
@@ -262,9 +266,9 @@ Pete reviews *this*, not the diff:
 - **Only you can confirm** — the 1–2 things that need his eye; walk through them on the open
   localhost.
 - **Merge?** — the PR link is there for the curious, but he shouldn't need it. Merge lands the
-  feature on the **integration lane** (dev), not on users — reversible, so it's a low-stakes yes
-  once he's seen it run. (On a repo where merge auto-deploys straight to prod, it *is* the point
-  of no return — treat it that way; but where prod is a separate promote, merge is not.)
+  feature on the **integration lane** (dev where the repo has one, else just main) — not on
+  users, so it's a reversible, low-stakes yes once he's seen it run. (Only where merge
+  auto-deploys straight to prod is it the point of no return — treat it that way there.)
 
 ## Gate signals — how a parked ship reaches Pete
 
@@ -314,4 +318,6 @@ specced feature into "Ship 1 of N" and stopping (phasing is Pete's to request, n
 to impose). No `executing-plans` (checkpoint-heavy — the opposite of hands-off). No strict
 TDD by default (tests are a build deliverable; the pre-merge test gate is the backstop;
 reserve test-first for money/auth). No manual git worktree management — `wt` owns the
-worktree birth-to-death.
+worktree birth-to-death. No promoting to production — ship ends at the integration lane (dev);
+promotion to prod / `www` is a separate, human-gated ritual Pete runs, never ship's to deploy,
+gate, or offer.
