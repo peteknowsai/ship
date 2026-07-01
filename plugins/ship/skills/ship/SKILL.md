@@ -23,6 +23,12 @@ impose. The models can hold a big plan; trust that.
 1. **The meta rule.** Every artifact Pete sees is a condensed HTML page — he reads the
    *meta*, never the full spec or plan. The spec (design) and the go-card are HTML he
    opens in the browser. The execution plan is machine-facing markdown he never reads.
+   HTML artifacts follow the **html-effectiveness patterns**
+   (https://thariqs.github.io/html-effectiveness/): the thesis is that flows, options,
+   and relationships are *spatial* information markdown flattens — so lead with a
+   plain-English TL;DR, render structure as diagrams/side-by-sides instead of prose,
+   put depth behind collapsibles, and make anything visual a *live* embed, not a
+   description. Per-artifact pattern picks are named in each stage below.
 2. **Two gates, only two.** GATE 1 = design direction (after DISCOVER). GATE 2 = go
    (after PLAN, via the go-card). Nothing else stops for him. Both gates are **HARD
    STOPS** — present the artifact and wait; never auto-advance past them.
@@ -102,6 +108,14 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
   feature here — every surface and behavior Pete wants in scope — because this spec is the
   scope contract PLAN and BUILD execute in full. A big feature is a big spec; don't trim
   it to a slice.
+- **Shape the spec on the html-effectiveness patterns** — it's an explainer Pete decides
+  from, not a document he studies: `14-research-feature-explainer` is the body (TL;DR
+  first, collapsible depth, no wall of prose); when GATE 1 is a genuine *direction*
+  choice, present it as `02-exploration-visual-designs` — 2–3 **live-rendered**
+  directions side-by-side with one-line tradeoffs, so Pete picks by looking, not
+  reading; embedded mockups are live/interactive (`07`/`08-prototype`) — the spec *is*
+  the prototype; any flow or pipeline is a diagram (`13-flowchart-diagram`), never a
+  paragraph pretending to be one.
 - Write `gate:1` to `.ship-stage`, fire the gate notification (see "Gate signals"),
   `open` the spec, and **end the turn with a `needs input:` line** naming the ship +
   "design direction?". **HARD STOP — GATE 1.** Wait for approval.
@@ -159,6 +173,12 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
 - Write `review` to `.ship-stage`.
 - Run a correctness code review (`/code-review` where available) + `ponytail-review`
   (over-build) — one pass.
+- **Design QA for visual features — invoke `impeccable` in critique mode** against the
+  running worktree app, with the GATE 1 spec as the bar. DISCOVER used impeccable to set
+  the design bar; nobody but this pass checks the *built* feature clears it (verify's
+  taste notes are a smoke test, not a design review). Findings are triaged like
+  ponytail-review's: real gaps get fixed before the card, nits land on the card as
+  "Verifier flagged / suggested" for Pete to judge.
 - **Put it in front of Pete, running — every time.** For any visual/interactive feature
   (the default on this web stack), **boot the worktree's own dev server yourself** (its dev
   script — e.g. `next dev` — in the background) and `open http://localhost:<port>` (usually
@@ -183,6 +203,10 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
   Never merge a UI Pete hasn't seen run** — a standing "go" authorizes the build, not the
   merge of an unseen feature. (Only a tiny, non-visual, watched change may `wt merge`
   directly.)
+- **When Pete asks for changes at the card, apply `superpowers:receiving-code-review`** —
+  verify the ask against the code before implementing (his feedback is product-true but
+  may be technically underspecified), do the work, then loop the changed flow back
+  through `verify` before re-presenting. Never blind-implement and re-card.
 - On "merge", land it and **let worktrunk own teardown — a leftover worktree is a bug**:
   - **Tiny & watched →** `wt merge` (runs the repo's `wt.toml` pre-merge gate, squashes,
     ff's main, removes the worktree — worktrunk merges *from* the worktree safely), then
@@ -251,7 +275,8 @@ notes across runs into one *general* skill change, and reviews that PR with Pete
 ## The review card (REVIEW artifact)
 
 Render `reference/review-card.html` filled with the meta only — PM-framed, one screen.
-Pete reviews *this*, not the diff:
+It's a `17-pr-writeup` for a PM: what changed and why with visual before/after evidence,
+never a file tour. Pete reviews *this*, not the diff:
 
 - **What you got** — plain-English bullets of what now works (what it *does*, not a file list).
 - **Proof it works** — the verifier's captioned screenshot **storyboard** (start → action →
@@ -298,7 +323,9 @@ The dashboard can't be styled, but it reflects the session. Make it a ship board
 
 ## The go-card contract (GATE 2 artifact)
 
-Render `reference/go-card.html` filled with the meta only — one screen, nothing more:
+Render `reference/go-card.html` filled with the meta only — one screen, nothing more
+(the template is a `16-implementation-plan` boiled down to its decision surface —
+scope, calls, risk — everything else stays in the machine-facing plan):
 
 - **What gets built** — one line of scope.
 - **Ponytail's cut-list** — what was dropped, and why.
@@ -315,7 +342,7 @@ No arbitrary phasing — ship plans and builds the whole spec in one pass, never
 specced feature into "Ship 1 of N" and stopping (phasing is Pete's to request, not ship's
 to impose). No `executing-plans` (checkpoint-heavy — the opposite of hands-off). No strict
 TDD by default (tests are a build deliverable; the pre-merge test gate is the backstop;
-reserve test-first for money/auth). No manual git worktree management — `wt` owns the
+reserve test-first — `superpowers:test-driven-development` — for money/auth paths). No manual git worktree management — `wt` owns the
 worktree birth-to-death. No promoting to production — ship ends at the integration lane (dev);
 promotion to prod / `www` is a separate, human-gated ritual Pete runs, never ship's to deploy,
 gate, or offer.
