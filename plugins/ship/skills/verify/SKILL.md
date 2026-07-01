@@ -49,7 +49,9 @@ FEATURE (what a user should now be able to do + the observable success state):
 HOW TO EXERCISE IT:
   <route + steps / API call / CLI>
 AUTH (if behind login):
-  reach authed surfaces via the repo's local/test-auth path; if none exists, say so and stop.
+  <the repo's local/test-auth path, or 'none'>. Use ONLY that path. Do NOT mint sessions, set
+  auth cookies, log in through the real login UI, or hit a dev-login endpoint yourself. If it's
+  'none' or the path fails, return `unverifiable` and stop — never improvise a way past auth.
 
 Drive the REAL flow with Playwright — walk the exact steps a user would, like clicking through
 it. Screenshot the MEANINGFUL BEATS (start → action → success), not a random dump. Judge

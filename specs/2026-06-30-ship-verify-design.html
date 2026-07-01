@@ -40,6 +40,7 @@
         border:1px solid var(--line);border-radius:10px;padding:16px 18px;white-space:pre-wrap;overflow-x:auto}
   .pill{font-family:var(--mono);font-size:12px;border-radius:6px;padding:1px 7px}
   .ok{color:#0b0e12;background:var(--accent)} .bad{color:#0b0e12;background:var(--red)}
+  .warn{color:#0b0e12;background:var(--amber)}
   .seam{border-left:3px solid var(--blue)} .out{border-left:3px solid var(--red)}
   .muted{color:var(--mut)}
   .kv{display:grid;grid-template-columns:130px 1fr;gap:6px 16px;margin:12px 0;font-size:15px}
@@ -103,9 +104,9 @@
   <h2>How the <span class="mono">verify</span> skill works</h2>
   <div class="kv">
     <b>Who runs it</b><div>A <strong>fresh, read-only verifier sub-agent</strong> — it did not write the code, so it judges honestly, and app-driving is verbose so context-isolation pays off.</div>
-    <b>What it does</b><div>Drives the running app through the feature's acceptance criteria (pulled from the spec/plan file), <strong>screenshots the success state</strong>, and returns <span class="pill ok">works</span> / <span class="pill bad">broken</span> plus a short "this looked off" taste note.</div>
+    <b>What it does</b><div>Drives the running app through the feature's acceptance criteria (pulled from the spec/plan file), <strong>screenshots the success state</strong>, and returns <span class="pill ok">works</span> / <span class="pill bad">broken</span> / <span class="pill warn">unverifiable</span> plus a short "this looked off" taste note.</div>
     <b>Fix loop</b><div>broken → the ship driver (Opus) fixes → a <strong>fresh</strong> verifier re-checks. Cap ~3 rounds. The driver never rubber-stamps its own work — only a fresh verifier can call it <span class="pill ok">works</span>.</div>
-    <b>Escalation</b><div>Still broken after the cap → escalate to Pete with the verdict and evidence. It never silently merges a feature it couldn't prove.</div>
+    <b>Escalation</b><div>Still broken after the cap, or <span class="pill warn">unverifiable</span> (e.g. an authed surface it can't reach) → escalate to Pete with the verdict and evidence. It never silently merges a feature it couldn't prove.</div>
     <b>Output</b><div>Returns <code>{ verdict, evidence paths, taste notes }</code> to REVIEW, which folds them into the review card.</div>
   </div>
 
@@ -116,7 +117,7 @@
   │    fresh verifier drives the feature live             │ loop ≤ 3
   │    works ✓  → capture screenshots + verdict           │
   │    broken ✗ → driver fixes → fresh verifier ──────────┘
-  │    still broken → escalate to Pete
+  │    still broken (or unverifiable) → escalate to Pete
   ├─ render review card  (now carries the proof + any flags)
   └─ GATE: Pete reviews proof → merge / "fix those" / backlog</div>
 
