@@ -38,6 +38,12 @@
   .vpill{display:inline-block;background:#e7f0e7;color:#2f6a3e;border:1px solid #cfe3cf;
     border-radius:6px;padding:2px 9px;font-size:12px;font-weight:700;letter-spacing:.04em;
     text-transform:uppercase;margin-left:8px;vertical-align:1px}
+  .cand{border-left:3px solid var(--slate);padding:2px 0 2px 14px;margin:10px 0}
+  .cand .t{font-weight:700;margin:0}
+  .cand .w{color:var(--slate);font-size:14px;margin:2px 0 0}
+  .dest{display:inline-block;border-radius:5px;padding:1px 8px;font-size:11px;font-weight:700;
+    letter-spacing:.04em;text-transform:uppercase;margin-left:8px;vertical-align:1px;
+    background:#efe9dc;color:var(--slate);border:1px solid var(--line)}
   .storyboard{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
   .beat{margin:0}
   .beat img{width:100%;aspect-ratio:16/10;object-fit:cover;border:1px solid var(--line);
@@ -85,6 +91,20 @@
   <div class="card">
     <h2>{{CONFIRM_HEADING}}</h2>
     {{CONFIRM_ITEMS}}
+  </div>
+
+  <!-- ALSO WORTH BUILDING: build-worthy things deliberately left out of THIS round. Include
+       only if there are real candidates (most rounds have none) — else delete this whole card.
+       Each .cand: what it is + one line on why it was deferred + proposed board destination.
+       Non-blocking — Pete says "file them" (or names which) and they go to Linear. -->
+  <div class="card">
+    <h2>Also worth building — didn't make this round</h2>
+    <div class="cand">
+      <p class="t">{{CAND_1_TITLE}}<span class="dest">{{CAND_1_DEST}}</span></p>
+      <p class="w">{{CAND_1_WHY}}</p>
+    </div>
+    <!-- one .cand block per candidate -->
+    <p style="margin:12px 0 0;font-size:14px;color:var(--slate)">Not built, not lost — say <b>file them</b> (or name which) and they land on the backlog.</p>
   </div>
 
   <div class="verdict">Merge? &nbsp;·&nbsp; or call a change?</div>

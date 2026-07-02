@@ -364,7 +364,8 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
   prod is a merge itself the user-facing release — the review-card "Merge?" line covers that case.)
   Hand back the dev URL and stop there.
 - Run the RETRO below, then **end with a `result:` line**: what shipped, one sentence — and if
-  RETRO filed a note, name it (`… · ship-retro #N filed`).
+  RETRO filed a note, name it (`… · ship-retro #N filed`). If the run left backlog candidates on
+  the review card, name the count too (`… · 2 backlog candidates`) so Pete knows to approve them.
 
 ### 5 · RETRO — autonomous; only if the run taught us something  → no marker
 
@@ -409,10 +410,43 @@ never a file tour. Pete reviews *this*, not the diff:
   confirm"), if any. These are *reports, not work* — Pete decides: fix now / backlog / ignore.
 - **Only you can confirm** — the 1–2 things that need his eye; walk through them on the open
   localhost.
+- **Also worth building — didn't make this round** — the run's *backlog candidates*: build-worthy
+  things you deliberately left out of this round (see the collection rule below). Each one: what
+  it is, one line on *why* it was deferred, and a proposed board destination (Backlog default;
+  Icebox for the clearly-speculative). **Most rounds have none** — omit the card entirely when
+  the list is empty; never pad it. This is **non-blocking**: the card lists them and the
+  `result:` line names the count — nothing stops for them.
 - **Merge?** — the PR link is there for the curious, but he shouldn't need it. Merge lands the
   feature on the **integration lane** (dev where the repo has one, else just main) — not on
   users, so it's a reversible, low-stakes yes once he's seen it run. (Only where merge
   auto-deploys straight to prod is it the point of no return — treat it that way there.)
+
+### Backlog candidates — collect deferrals, surface them, file on approval
+
+A ship run keeps throwing off *build-worthy ideas that aren't this round's job* — a surface you
+scoped out in DISCOVER ("not this round"), an over-build the `ponytail` review said to cut but
+that's a real feature later, an adjacent thing the verifier or the build turned up. Today they
+evaporate. Don't let them.
+
+- **Collect as you go — no scratch file, you're one continuous run.** As the driver you see every
+  deferral source (DISCOVER scope cuts, the ponytail/verifier reports, ideas noticed mid-build).
+  Keep a running list of the ones you'd *actually build*, each with a one-line *why-deferred*.
+  Same bar as RETRO: **most runs defer nothing worth keeping** — a genuine candidate, not every
+  passing thought. **A candidate is a thing OUTSIDE this spec's scope** — an adjacent feature, a
+  nice-to-have the work exposed. It is *never* a specced surface you chose not to build: the scope
+  law holds (build the whole spec, never slice it into "Ship 1 of N"), and this section is not a
+  loophole around it. New ideas the run surfaced, yes; specced work deferred, never.
+- **Surface in the review card** — the "Also worth building" card (above), one `.cand` per item
+  with a proposed destination: **Backlog** by default ("things we intend to build"), **Icebox**
+  only for the clearly-speculative. Empty list → omit the card.
+- **File on approval — non-blocking.** The `result:` line names the count ("· 2 backlog
+  candidates"). When Pete says *file them* (or names which), file each through the repo's backlog
+  board and reply with the links. **This is the only place ship touches a tracker** — and only
+  where the repo *has* one: a configured backlog skill (homezero → the `linear` skill, HOM board;
+  `stateId` Backlog default, Icebox for speculative; description = the idea + "deferred from ship
+  run on `<feature>`"). **No board for this repo → the card and the `result:` line are the record;
+  don't invent a tracker.** Never gate the merge or the `result:` line on this — approval is
+  always async.
 
 ## Running under Codex Desktop
 
