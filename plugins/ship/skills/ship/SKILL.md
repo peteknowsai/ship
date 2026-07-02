@@ -227,19 +227,19 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
 ### 4 · REVIEW / MERGE — automatic  → marker: `review`, then remove the file
 
 - Write `review` to `.ship-stage`.
-- **Correctness review runs on GPT-5.5 — an adversarial `codex exec` review,
-  launched first so it works while the rest of REVIEW proceeds.** From the
-  worktree, background dispatch (router quick-reference rules apply —
-  `< /dev/null`, ship-dispatch tag):
-  `codex exec -c model_reasoning_effort=xhigh "<review brief>" < /dev/null`
-  where the brief says: adversarially review `git diff <lane-target-branch>...HEAD`
-  for real bugs (correctness, edge cases, security) AND over-build (reinvented
-  stdlib, speculative abstraction, unneeded deps — ponytail's targets); report a
-  numbered findings list with file:line and severity; **edit nothing**. Review
-  inference is heavy and codex is the unlimited plan — spend GPT-5.5 here, save
-  Opus/Max for judgment. Collect the output before the card; the **driver
-  triages every finding** — adversarial reviewers over-flag by design, so verify
-  each claimed bug against the code (receiving-code-review posture), fix what's
+- **Correctness review runs on GPT-5.5 — codex's native review mode, launched
+  first so it works while the rest of REVIEW proceeds.** From the worktree,
+  background dispatch (router quick-reference rules apply — `< /dev/null`,
+  ship-dispatch tag, `-o` result file):
+  `codex exec review --base <lane-target-branch> -o <result-file> "<focus>" < /dev/null`
+  with focus text: hunt real bugs (correctness, edge cases, security) AND
+  over-build (reinvented stdlib, speculative abstraction, unneeded deps —
+  ponytail's targets); findings with file:line and severity. Review mode is
+  read-only by construction and computes the diff itself. Review inference is
+  heavy and codex is the unlimited plan — spend GPT-5.5 here, save Opus/Max
+  for judgment. Read the result file before the card; the **driver triages
+  every finding** — adversarial reviewers over-flag by design, so verify each
+  claimed bug against the code (receiving-code-review posture), fix what's
   real, put judgment calls on the card. codex unavailable → fall back to
   `/code-review` + `ponytail-review` on the driver.
 - **Design QA for visual features — an Opus subagent runs `impeccable` in critique

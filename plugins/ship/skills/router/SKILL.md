@@ -148,9 +148,15 @@ is identical across both engines.
 
 **Codex (GPT-5.5) — `codex exec`, self-contained, one process per dispatch:**
 ```
-cd <repo> && codex exec -c model_reasoning_effort=xhigh "<full task brief>" < /dev/null
+cd <repo> && codex exec -c model_reasoning_effort=xhigh -o <result-file> "<full task brief>" < /dev/null
 ```
-launched with the harness's `run_in_background` (never a hand-rolled `&`).
+launched in the background — in Claude Code the Bash tool's `run_in_background`
+(it notifies on exit); under Codex Desktop a long-lived shell session you poll.
+Never a hand-rolled `&`.
+- **`-o <result-file>` on every dispatch** (e.g. `/tmp/ship-<task-slug>-result.md`) —
+  it writes the agent's final message to a file, so the result survives even if
+  the shell buffer is truncated or the watcher misses the exit. Read the file,
+  not the scrollback.
 - **`< /dev/null` is mandatory.** When stdin isn't a TTY, `codex exec` blocks
   reading stdin to EOF *before doing anything* — a held-open pipe hangs the run
   at startup forever, with no session file and no error (this ate a night of
@@ -162,8 +168,16 @@ launched with the harness's `run_in_background` (never a hand-rolled `&`).
   service_tier`, flag it to Pete instead of silently downgrading).
 - First line of the brief is the `[ship-dispatch: …]` tag (see "Tag and track
   every codex dispatch") so the run is attributable in `ps`.
-- `codex exec resume --last` continues the previous thread (fix rounds).
+- Fix rounds: resume the *specific* session — capture the session id codex
+  prints, then `codex exec resume <session-id> "<follow-up>"`. **Never
+  `resume --last`** — with concurrent sessions dispatching codex, "--last" is
+  whichever run finished most recently anywhere on the machine, not your task.
 - Edits the working tree directly → obey "one writer per branch."
+- **Reviews use codex's native review mode, not a hand-rolled brief:**
+  `codex exec review --base <branch> -o <result-file> "<focus text>" < /dev/null`
+  (or `--uncommitted` / `--commit <sha>`). Review mode is read-only by
+  construction and computes the diff itself — "edit nothing" enforced by the
+  tool, not by prompt convention.
 - **Do NOT use the codex-companion runtime (`codex` plugin's
   `codex-companion.mjs task/status/result`) for background work.** Its jobs
   depend on a per-worktree broker daemon that the plugin's SessionEnd hook
