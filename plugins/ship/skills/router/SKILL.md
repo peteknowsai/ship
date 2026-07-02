@@ -1,15 +1,18 @@
 ---
 name: router
-description: Use ONLY when executing the build tasks of an implementation plan (the BUILD stage of /ship) — deciding, per task, whether the work goes to Opus or GPT-5.5 (codex). Two engines split per Pete's current dial (see "Target mix" — currently ~50/50), self-tuning via a ledger. Do NOT invoke for planning, design, review, merge, or normal work — that all stays on the driver (the harness model). Never route to Sonnet.
+description: Use ONLY when executing the build tasks of an implementation plan (the BUILD stage of /ship) — deciding, per task, whether the work goes to Opus or GPT-5.5 (codex). Two engines split per Pete's current dial (see "Target mix" — currently ~20/80 Opus/GPT-5.5), self-tuning via a ledger. Do NOT invoke for planning, design, review, merge, or normal work — that all stays on the driver (the harness model). Never route to Sonnet.
 ---
 
 # router — split BUILD-stage coding across Opus and GPT-5.5
 
-**Scope: the BUILD stage only.** Discover, plan, design, review, merge, and every
-normal task stay on **the driver** — the harness model running the session (Fable) —
-as usual; do not invoke router for them. Router fires *only* when the driver is
+**Scope: the BUILD stage only.** Discover, plan, design, merge, and every normal
+task stay on **the driver** — the harness model running the session (Fable) — as
+usual; do not invoke router for them. Router fires *only* when the driver is
 dispatching the concrete build tasks of an already-written implementation plan.
-Outside build, there is no routing decision.
+Outside build, there is no routing decision. (Ship's other codex offloads —
+adversarial review in REVIEW, mechanical recon in DISCOVER — are wired directly
+in the ship skill, not through router. The constant everywhere: **design,
+planning, and the final say stay with Fable**; codex is inference muscle.)
 
 Two engines:
 
@@ -61,8 +64,10 @@ note).
 
 ## Target mix  ← Pete's dial — edit here when he retunes it
 
-**Current dial (2026-07-01): Opus ~50 / GPT-5.5 ~50** — quota is flush, so split
-the build evenly and use each engine where it's strongest.
+**Current dial (2026-07-02): Opus ~20 / GPT-5.5 ~80** — Opus/Max quota is very
+tight; reserve Opus for tasks that genuinely need its judgment and send everything
+else to codex. **Fable has the final say at any mix** — the driver owns design,
+planning, briefs, triage, and merge; the dial only moves who drafts the code.
 
 Assign by **fit first**, then glance at the running split and rebalance only the
 borderline tasks. Never hand a judgment task to codex just to hit the number — log

@@ -35,7 +35,7 @@ Pete** — he asks for what he wants; you figure out what that takes. Three lane
   but no product-direction or taste question in it: write whatever spec/plan *you*
   need to build it well (machine-facing, in the docs home, `ponytail` as waste
   critic; `impeccable` posture for any visual surface) — then build, run the REVIEW
-  machinery (code review + `verify` — a `works` verdict is the merge bar), merge,
+  machinery (codex adversarial review + `verify` — a `works` verdict is the merge bar), merge,
   deploy to dev, `result:` line. **Zero stops — the artifacts are for the record,
   not for approval.**
 - **GATED — Pete's taste or direction is genuinely in play.** A new user-facing
@@ -133,6 +133,13 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
 ### 1 · DISCOVER — Pete's taste, up front  → marker: `discover`, then `gate:1`
 
 - Invoke `superpowers:brainstorming`. PM-framed, one question at a time.
+- **Mechanical recon runs on GPT-5.5, synthesis stays with the driver.** When
+  grounding needs codebase evidence-gathering (what's the current state of X,
+  where does Y live, summarize this subsystem), dispatch a codex read-only task
+  (`task --background`, **no `--write`**, via the companion runtime — see the
+  router skill's quick-reference) instead of burning Max-quota agents on
+  reading. The driver — Fable — does the actual design and every judgment call
+  from that evidence; recon is the only part that leaves.
 - For any visual/UI feature, also run `impeccable` — the HTML design sprint (use `/pix`
   for imagery freely). The spec *is* the prototype.
 - **Ground the design in the *live* product, not stale artifacts.** Before designing any
@@ -182,8 +189,8 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
   (durable, resumable progress), but don't merge until the whole plan is built.
 - Invoke `superpowers:subagent-driven-development`, driven by the harness model (the driver).
 - Invoke `router` to route each build task across Opus and GPT-5.5 (codex, xhigh,
-  Fast mode) — Sonnet never. The router skill owns the mix (Pete's dial, currently
-  ~50/50) — don't restate it here. The driver owns the brief, the diff review, the
+  Fast mode) — Sonnet never. The router skill owns the mix (Pete's dial — read it
+  there, don't restate it here). The driver owns the brief, the diff review, the
   gates, and git. One writer per branch at a time.
 - **Single-writer vs fan-out — pick by the diff, not by reflex** (matters most under
   ultracode, where "always orchestrate" tempts you to parallelize the build). The default is
@@ -209,8 +216,17 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
 ### 4 · REVIEW / MERGE — automatic  → marker: `review`, then remove the file
 
 - Write `review` to `.ship-stage`.
-- Run a correctness code review (`/code-review` where available) + `ponytail-review`
-  (over-build) — one pass.
+- **Correctness review runs on GPT-5.5 — codex `adversarial-review`, launched
+  first so it works while the rest of REVIEW proceeds.** From the worktree:
+  `node "$COMPANION" adversarial-review --background --base <lane-target-branch> --scope branch`
+  (`$COMPANION` = the codex-companion script; see the router skill's
+  quick-reference). Review inference is heavy and codex is the unlimited plan —
+  spend GPT-5.5 here, save Opus/Max for judgment. Collect the findings
+  (`status`/`result`, same cwd) before the card; the **driver triages every
+  finding** — adversarial reviewers over-flag by design, so verify each claimed
+  bug against the code (receiving-code-review posture), fix what's real, put
+  judgment calls on the card. Plugin missing → fall back to `/code-review`.
+- Run `ponytail-review` (over-build) on the driver — one pass.
 - **Design QA for visual features — invoke `impeccable` in critique mode** against the
   running worktree app, with the GATE 1 spec as the bar. DISCOVER used impeccable to set
   the design bar; nobody but this pass checks the *built* feature clears it (verify's
