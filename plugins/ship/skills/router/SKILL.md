@@ -13,11 +13,12 @@ Outside build, there is no routing decision.
 
 Two engines:
 
-- **GPT-5.5** — via `codex exec "<brief>"` (cwd = repo), **default effort `xhigh`,
-  Fast mode on** (`service_tier = "fast"` + `[features] fast_mode = true` in
-  `~/.codex/config.toml` — global, every `codex exec` inherits it; ~1.5× faster for
-  2.5× the credit burn, and Pete has chosen to spend it — never turn it off to save
-  codex credits). On Pete's Codex plan: effectively **unlimited and off-Max entirely**.
+- **GPT-5.5** — via the **codex-companion runtime** (OpenAI's `codex` plugin for
+  Claude Code; see the quick-reference), **default effort `xhigh`, Fast mode on**
+  (`service_tier = "fast"` + `[features] fast_mode = true` in `~/.codex/config.toml`
+  — global, every codex run inherits it; ~1.5× faster for 2.5× the credit burn, and
+  Pete has chosen to spend it — never turn it off to save codex credits). On Pete's
+  Codex plan: effectively **unlimited and off-Max entirely**.
 - **Opus** — an Opus subagent: `Agent(model: opus)` in Claude Code; under Codex
   Desktop, an Opus-capable subagent tool if the harness exposes one (search the
   available tools first) — if none, keep the task on the driver and log
@@ -48,7 +49,7 @@ that's what's important."*
 
 | Engine | Invoke | Best at |
 |--------|--------|---------|
-| **GPT-5.5** | `codex exec "<brief>"` (cwd = repo), `-c model_reasoning_effort=xhigh`, Fast mode on by default | Fully-specified, self-contained coding with real work to explore: figure out signatures, write tests against real types, work through a well-briefed problem. "Here's exactly what to build" → it builds it well |
+| **GPT-5.5** | companion runtime: `task --background --write --effort xhigh "<brief>"` (cwd = repo), Fast mode on by default | Fully-specified, self-contained coding with real work to explore: figure out signatures, write tests against real types, work through a well-briefed problem. "Here's exactly what to build" → it builds it well |
 | **Opus** | `Agent(model: opus)` | Judgment and integration: design still open mid-task, cross-file integration, real risk, irreversible surfaces, ambiguity a brief can't close — plus solid well-specified coding when the split calls for it |
 
 **You (the driver) dial thinking per task — and default to MORE thinking, not
@@ -87,36 +88,32 @@ For each build task, ask in order:
 
 ### Patience note (hard-won — read before sending to codex)
 
-`codex exec` buffers output and can sit silent for many minutes at xhigh — past
-runs were killed at a 2-minute timeout before codex had written a single file, and
-those got mislogged as failures. They weren't; they were impatience. **We have
-time: run codex in the background (Claude Code: `run_in_background`; Codex Desktop:
-a long-lived shell session you poll) with a generous window — think 15–30 minutes,
-not 2 — and check in on it rather than killing it.** Don't
-drop effort to make it faster; xhigh + patience is the deal. The one true
-exception: a **tiny verbatim write whose exact content is already in the brief** —
-that's not a codex task at any speed, the driver writes it inline (heuristic #4).
+codex can sit quiet for many minutes at xhigh — past runs were killed at a
+2-minute timeout before codex had written a single file, and those got mislogged
+as failures. They weren't; they were impatience. **We have time: dispatch with
+`task --background` and give it a generous window — think 15–30 minutes, not 2 —
+checking `status` rather than killing it.** Don't drop effort to make it faster;
+xhigh + patience is the deal. The one true exception: a **tiny verbatim write
+whose exact content is already in the brief** — that's not a codex task at any
+speed, the driver writes it inline (heuristic #4).
 
 ### Tag and track every codex dispatch
 
-Pete runs concurrent sessions, each spawning its own `codex exec` — untagged,
-the processes are indistinguishable in `ps`, and a hung run sits unnoticed until
-someone wonders why a task never landed (it has happened). So:
+Pete runs concurrent sessions dispatching codex at once — untagged and
+untracked, a hung run sits unnoticed until someone wonders why a task never
+landed (it has happened). So:
 
 - **Tag:** the first line of every codex brief is
   `[ship-dispatch: <project> · <branch> · <task-slug>]` (append `-retryN` on
-  redispatch). The brief is part of the process argv, so the tag shows in
-  `ps aux | grep 'codex exec'` — any session, and Pete, can attribute every run
-  at a glance. Tell codex in the brief that the tag line is routing metadata to
-  ignore.
-- **Track:** launch in the background and note the shell/PID. Patience (15–30
-  min) is for **live** runs — at each check-in, confirm the run is alive *and*
-  progressing (process exists, output growing, or target files changing). A
-  process that's gone without a result, or a window that elapses with zero
-  output and zero file writes, is not a patience case — it's dead: kill the
-  whole chain (the spawned shell's process group — `codex exec` runs as
-  zsh → node → codex), redispatch with `-retry1`, and log the row honestly
-  (`abandoned` or `fixed-N`, note "hung").
+  redispatch). The companion runtime shows it as the job's summary in `status`,
+  so any session, and Pete, can attribute every run at a glance. Tell codex in
+  the brief that the tag line is routing metadata to ignore.
+- **Track:** dispatch with `task --background`, note the returned job id, and
+  check `status <job-id>` at each check-in. Patience (15–30 min) is for
+  **live** runs — `status` says `running` and the phase/working tree is moving.
+  A job that reports `failed`, or a window that elapses with no progress, is
+  not a patience case: `cancel` it if needed, redispatch with `-retry1`, and
+  log the row honestly (`abandoned` or `fixed-N`, note "hung").
 
 ## The discipline (non-negotiable, both engines)
 
@@ -140,31 +137,36 @@ is identical across both engines.
 
 ## CLI / invoke quick-reference
 
-**Codex (GPT-5.5):**
+**Codex (GPT-5.5) — the companion runtime** (OpenAI's `codex` plugin for Claude
+Code, installed as `codex@openai-codex`):
 ```
-cd <repo> && codex exec -c model_reasoning_effort=xhigh "<full task brief>" < /dev/null
+COMPANION=$(ls -d ~/.claude/plugins/cache/openai-codex/codex/*/scripts/codex-companion.mjs | tail -1)
+cd <repo> && node "$COMPANION" task --background --write --effort xhigh "<full task brief>"
 ```
-- **`< /dev/null` is mandatory.** When stdin isn't a TTY, `codex exec` blocks
-  reading stdin to EOF *before doing anything* ("Reading additional input from
-  stdin..."). A launch shape that holds the pipe open — a wrapper script, an
-  `&` spawn inheriting a pipe — hangs the run at startup indefinitely, with no
-  session file and no error (this ate a night of dispatches once; it looked
-  like codex "stalling" and got misblamed on fast mode/xhigh).
-- **cwd outside a git repo → add `--skip-git-repo-check`**, or codex exits
-  fatally at startup ("Not inside a trusted directory"). Applies to briefs that
-  write to e.g. `~/.claude/skills`.
-- Non-interactive, edits files autonomously. `codex exec resume --last` to
-  continue. If it needs write access beyond its sandbox, pass the appropriate
-  `-c sandbox_*` / approval config.
-- Fast mode rides along from `~/.codex/config.toml` (`service_tier = "fast"`,
-  `[features] fast_mode = true`) — don't override it, and if codex ever errors with
-  `Unsupported service_tier`, flag it to Pete instead of silently downgrading.
-- Launch long tasks in the background with a 15–30 min window — never kill a run
-  for slowness alone (see the patience note).
+- **The driver calls the script directly** — do NOT go through the
+  `codex:codex-rescue` subagent (it's a Sonnet-powered forwarder that adds a hop
+  and nothing else; Sonnet is retired here).
+- `task --background` returns a **job id** immediately. Poll
+  `node "$COMPANION" status <job-id>` and fetch `node "$COMPANION" result <job-id>`
+  when it completes; `cancel <job-id>` kills a dead run. **Jobs are
+  workspace-scoped — run status/result/cancel from the same cwd as the dispatch.**
+- `--write` is required for build tasks (edits files); leave `--model` unset so
+  the run inherits `~/.codex/config.toml` (gpt-5.5 + Fast mode — don't override,
+  and if codex errors with `Unsupported service_tier`, flag it to Pete instead of
+  silently downgrading).
+- The runtime drives `codex app-server` over JSON-RPC — the old `codex exec`
+  stdin-hang and `--skip-git-repo-check` startup traps don't apply through it.
 - First line of the brief is the `[ship-dispatch: …]` tag (see "Tag and track
-  every codex dispatch") so the run is attributable in `ps`.
-- Runs in the repo cwd and edits the working tree directly → obey "one writer per
-  branch."
+  every codex dispatch") — it becomes the job summary in `status`.
+- `task --resume-last` continues the previous codex thread in this workspace
+  (fix rounds on the same task).
+- Edits the working tree directly → obey "one writer per branch."
+- **Fallback** (plugin missing): `cd <repo> && codex exec -c
+  model_reasoning_effort=xhigh "<brief>" < /dev/null` — the `< /dev/null` is
+  mandatory (`codex exec` blocks reading a non-TTY stdin to EOF before doing
+  anything; a held-open pipe hangs it at startup forever with no session and no
+  error), and a cwd outside a git repo also needs `--skip-git-repo-check` or it
+  dies at startup.
 
 **Opus:**
 ```
