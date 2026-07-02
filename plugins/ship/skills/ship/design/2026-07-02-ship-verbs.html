@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>/ship verbs — explicit process pins</title>
+<style>
+  :root {
+    --bg: #0f1117; --panel: #171a23; --panel2: #1e2230; --line: #2a2f40;
+    --text: #e6e9f0; --dim: #9aa3b5; --accent: #6ee7b7; --accent2: #7dd3fc;
+    --warn: #fbbf24; --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: var(--bg); color: var(--text); font: 16px/1.6 -apple-system, system-ui, sans-serif; padding: 40px 20px 80px; }
+  main { max-width: 880px; margin: 0 auto; }
+  h1 { font-size: 1.7rem; margin-bottom: 4px; }
+  h2 { font-size: 1.15rem; margin: 36px 0 12px; color: var(--accent2); }
+  .sub { color: var(--dim); margin-bottom: 24px; }
+  .tldr { background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 8px; padding: 18px 20px; margin-bottom: 8px; }
+  .tldr strong { color: var(--accent); }
+  code { font-family: var(--mono); font-size: .88em; background: var(--panel2); padding: 1px 6px; border-radius: 4px; }
+  pre { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; overflow-x: auto; font-family: var(--mono); font-size: .85rem; line-height: 1.5; }
+  .verbs { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+  .verb { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; }
+  .verb h3 { font-family: var(--mono); font-size: 1rem; color: var(--accent); margin-bottom: 8px; }
+  .verb p { font-size: .92rem; color: var(--dim); }
+  .verb p b { color: var(--text); }
+  .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; font-family: var(--mono); font-size: .82rem; }
+  .flow span { background: var(--panel2); border: 1px solid var(--line); border-radius: 6px; padding: 4px 10px; }
+  .flow .arr { background: none; border: none; color: var(--dim); padding: 0; }
+  .flow .pin { border-color: var(--accent); color: var(--accent); }
+  .rule { background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--warn); border-radius: 8px; padding: 14px 18px; margin: 10px 0; font-size: .95rem; }
+  table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); }
+  th { color: var(--dim); font-weight: 600; }
+  td code { white-space: nowrap; }
+  details { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 18px; margin-top: 10px; }
+  summary { cursor: pointer; color: var(--accent2); font-weight: 600; }
+  details > *:not(summary) { margin-top: 10px; }
+  ul { padding-left: 20px; }
+  li { margin: 4px 0; }
+</style>
+</head>
+<body>
+<main>
+  <h1>/ship verbs — explicit process pins</h1>
+  <p class="sub">Design spec · 2026-07-02 · ships as an edit to <code>skills/ship/SKILL.md</code></p>
+
+  <div class="tldr">
+    <strong>TL;DR:</strong> <code>/ship</code> keeps sizing the ceremony itself — nothing changes
+    for the bare form or the auto-trigger. But now a first-word <b>verb pins the process
+    explicitly</b>: <code>express</code> pins the tweak lane, <code>design</code> pins the full
+    gated design walkthrough, <code>skill</code> drops into skill authoring. Verbs are overrides,
+    not a menu. Every one of them starts the same way: <b>a worktree off main via worktrunk</b>.
+  </div>
+
+  <h2>Dispatch — one decision, up front</h2>
+  <div class="flow">
+    <span>/ship …</span><span class="arr">→</span>
+    <span>first word a verb?</span><span class="arr">→</span>
+    <span class="pin">yes: process pinned, sizing skipped</span>
+    <span class="arr">/</span>
+    <span>no: auto-size EXPRESS · SELF-DIRECTED · GATED (today's behavior)</span>
+  </div>
+
+  <h2>The three verbs</h2>
+  <div class="verbs">
+    <div class="verb">
+      <h3>/ship express &lt;tweak&gt;</h3>
+      <p>Pins <b>EXPRESS</b>: worktree → change → repo gates → self-drive → merge → dev.
+      No spec, no plan, no stops. Pins ceremony <b>down, never safety down</b> — schema,
+      auth, money, or a taste call mid-flight still promotes, verb or not.</p>
+    </div>
+    <div class="verb">
+      <h3>/ship design &lt;idea&gt;</h3>
+      <p>Pins <b>GATED</b> with the full design walkthrough front-loaded: questions one at a
+      time, 2–3 approaches with a recommendation, HTML spec + live mockup, GATE 1 — then the
+      normal pipeline through to dev. The verb <b>asserts taste is in play</b>; it is never
+      downgraded to SELF-DIRECTED.</p>
+    </div>
+    <div class="verb">
+      <h3>/ship skill &lt;what&gt;</h3>
+      <p>Authors or evolves a <b>skill</b> instead of product code. Reuses the installed
+      <code>skill-creator</code> discipline (pressure-test scenario first). Repo-homed skills
+      ride the normal rails; ship-plugin skills also get the <b>plugin-cache deploy</b> so
+      running sessions pick them up.</p>
+    </div>
+  </div>
+
+  <h2>Where a skill lives decides its ceremony</h2>
+  <table>
+    <tr><th>Skill home</th><th>Rails</th><th>Verification</th></tr>
+    <tr><td>ship plugin (<code>plugins/ship/skills/</code>)</td><td>wt worktree → merge → push → cache deploy + repoint <code>installed_plugins.json</code></td><td rowspan="2">fresh subagent run against the pressure scenario</td></tr>
+    <tr><td>a project's <code>.claude/skills/</code></td><td>that repo's wt worktree → merge</td></tr>
+    <tr><td>personal <code>~/.claude/skills/</code></td><td>no repo ceremony — write + test</td></tr>
+  </table>
+
+  <div class="rule"><b>The worktrunk rule is universal.</b> Every verb, like every lane, begins at
+  stage 0: <code>wt switch --create feature/&lt;slug&gt; --no-cd --format=json -y</code> off main.
+  No verb ever edits a primary checkout.</div>
+
+  <details>
+    <summary>What deliberately didn't make the cut</summary>
+    <ul>
+      <li><code>/ship status</code> and <code>/ship promote</code> — proposed, rejected (Pete, 2026-07-02): core three only, keep the menu minimal. Promotion stays a separate human ritual outside ship.</li>
+      <li><code>/ship fix</code>, <code>/ship build</code>, <code>/ship review</code> — the lanes already cover these; a fat verb menu is how CLIs rot.</li>
+      <li>Mandatory verbs — rejected: bare <code>/ship &lt;idea&gt;</code> and the auto-trigger keep sizing themselves.</li>
+      <li>A separate skill file per verb — rejected: one ~40-line section in the ship SKILL.md; the verbs share every rail with the lanes.</li>
+    </ul>
+  </details>
+</main>
+</body>
+</html>

@@ -1,6 +1,6 @@
 ---
 name: ship
-description: Use for any code change in a product/web repo, quick fix to full feature — ship sizes the ceremony itself and stops only when Pete's taste is in play. EXPRESS (tweak — no spec/plan, straight through to dev), SELF-DIRECTED (writes its own spec+plan, builds, reviews, merges, deploys — zero stops), or GATED (design direction + "go" gates) — gates fire only when Pete's answer would change what gets built. Auto-triggers on change requests; you never type it. Do NOT use for a question or pure analysis. Never edit main directly.
+description: Use for any code change in a product/web repo, quick fix to full feature — ship sizes the ceremony itself and stops only when Pete's taste is in play. Explicit verbs pin the process — "/ship express <tweak>", "/ship design <idea>", "/ship skill <what>"; anything else sizes itself. EXPRESS (tweak — no spec/plan, straight through to dev), SELF-DIRECTED (writes its own spec+plan, builds, reviews, merges, deploys — zero stops), or GATED (design direction + "go" gates) — gates fire only when Pete's answer would change what gets built. Auto-triggers on change requests; you never type it. Do NOT use for a question or pure analysis. Never edit main directly.
 ---
 
 # /ship — idea to merged, in one command
@@ -17,6 +17,43 @@ If Pete wants less he specs less; if he specs a big feature you plan and build t
 plan shrink the destination. A bigger spec means a bigger plan and a longer build — that
 is wanted, not a problem to manage away. Phasing is Pete's to ask for, never yours to
 impose. The models can hold a big plan; trust that.
+
+## Verbs — Pete pins the process explicitly
+
+If the invocation's first word is `express`, `design`, or `skill`, that verb **pins
+the process and skips the sizing judgment below**. Anything else — bare
+`/ship <idea>` or the auto-trigger — sizes the lane exactly as today. Verbs are
+overrides, not a menu. Every verb rides the same rails as every lane: **stage 0's
+worktree off main via `wt`, never a primary checkout** — skill work included.
+
+- **`/ship express <tweak>`** — pins EXPRESS. The verb pins ceremony *down*, never
+  safety down: if the change turns out to touch schema/auth/money or a taste call,
+  promote per the mid-flight rule regardless of the pin.
+- **`/ship design <idea>`** — pins GATED and mandates the full design walkthrough in
+  DISCOVER: clarifying questions one at a time, 2–3 approaches with a recommendation,
+  the HTML spec with a live mockup, GATE 1 — then the normal pipeline through to dev.
+  The verb is Pete asserting taste is in play; never downgrade it to SELF-DIRECTED
+  however mechanical the work looks.
+- **`/ship skill <what>`** — author or evolve a *skill* instead of product code:
+  - **Home by context.** A ship-plugin skill lives in the ship repo; a project skill
+    in that repo's `.claude/skills/`; a personal skill in `~/.claude/skills/` (no
+    repo ceremony — write it and test it).
+  - **Authoring discipline is reused, not rebuilt.** Invoke the installed
+    `skill-creator` skill and follow it: pressure-test scenario first, then the
+    SKILL.md against it.
+  - **Rails.** Repo-homed skills ride the normal ship rails — worktree → commit →
+    merge → dev lane. Verification = a fresh subagent run against the new skill's
+    pressure scenario (browser `verify` doesn't apply to skills).
+  - **Deploy (ship-plugin skills only).** Merged skill changes reach running
+    sessions via the plugin cache, not on their own:
+
+    ```
+    git -C ~/.claude/plugins/marketplaces/ship pull
+    SHA=$(git -C ~/.claude/plugins/marketplaces/ship rev-parse --short=12 HEAD)
+    cp -R ~/.claude/plugins/marketplaces/ship/plugins/ship ~/.claude/plugins/cache/ship/ship/$SHA
+    ```
+    then repoint `~/.claude/plugins/installed_plugins.json` (`installPath`,
+    `version`, `gitCommitSha`, `lastUpdated`) at the new cache dir.
 
 ## Sizing — every change ships; you pick the ceremony, and gates exist only for Pete's taste
 
