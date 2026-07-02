@@ -16,8 +16,10 @@ planning, and the final say stay with Fable**; codex is inference muscle.)
 
 Two engines:
 
-- **GPT-5.5** — via the **codex-companion runtime** (OpenAI's `codex` plugin for
-  Claude Code; see the quick-reference), **default effort `xhigh`, Fast mode on**
+- **GPT-5.5** — via **`codex exec … < /dev/null` in the background** (see the
+  quick-reference; NOT the companion runtime for background work — its broker
+  daemon gets torn down by session churn and orphans jobs), **default effort
+  `xhigh`, Fast mode on**
   (`service_tier = "fast"` + `[features] fast_mode = true` in `~/.codex/config.toml`
   — global, every codex run inherits it; ~1.5× faster for 2.5× the credit burn, and
   Pete has chosen to spend it — never turn it off to save codex credits). On Pete's
@@ -52,7 +54,7 @@ that's what's important."*
 
 | Engine | Invoke | Best at |
 |--------|--------|---------|
-| **GPT-5.5** | companion runtime: `task --background --write --effort xhigh "<brief>"` (cwd = repo), Fast mode on by default | Fully-specified, self-contained coding with real work to explore: figure out signatures, write tests against real types, work through a well-briefed problem. "Here's exactly what to build" → it builds it well |
+| **GPT-5.5** | `codex exec -c model_reasoning_effort=xhigh "<brief>" < /dev/null` (cwd = repo, background), Fast mode on by default | Fully-specified, self-contained coding with real work to explore: figure out signatures, write tests against real types, work through a well-briefed problem. "Here's exactly what to build" → it builds it well |
 | **Opus** | `Agent(model: opus)` | Judgment and integration: design still open mid-task, cross-file integration, real risk, irreversible surfaces, ambiguity a brief can't close — plus solid well-specified coding when the split calls for it |
 
 **You (the driver) dial thinking per task — and default to MORE thinking, not
@@ -95,9 +97,9 @@ For each build task, ask in order:
 
 codex can sit quiet for many minutes at xhigh — past runs were killed at a
 2-minute timeout before codex had written a single file, and those got mislogged
-as failures. They weren't; they were impatience. **We have time: dispatch with
-`task --background` and give it a generous window — think 15–30 minutes, not 2 —
-checking `status` rather than killing it.** Don't drop effort to make it faster;
+as failures. They weren't; they were impatience. **We have time: dispatch in the
+background and give it a generous window — think 15–30 minutes, not 2 — checking
+in on it rather than killing it.** Don't drop effort to make it faster;
 xhigh + patience is the deal. The one true exception: a **tiny verbatim write
 whose exact content is already in the brief** — that's not a codex task at any
 speed, the driver writes it inline (heuristic #4).
@@ -110,15 +112,17 @@ landed (it has happened). So:
 
 - **Tag:** the first line of every codex brief is
   `[ship-dispatch: <project> · <branch> · <task-slug>]` (append `-retryN` on
-  redispatch). The companion runtime shows it as the job's summary in `status`,
-  so any session, and Pete, can attribute every run at a glance. Tell codex in
-  the brief that the tag line is routing metadata to ignore.
-- **Track:** dispatch with `task --background`, note the returned job id, and
-  check `status <job-id>` at each check-in. Patience (15–30 min) is for
-  **live** runs — `status` says `running` and the phase/working tree is moving.
-  A job that reports `failed`, or a window that elapses with no progress, is
-  not a patience case: `cancel` it if needed, redispatch with `-retry1`, and
-  log the row honestly (`abandoned` or `fixed-N`, note "hung").
+  redispatch). The brief rides in `codex exec`'s argv, so the tag shows in
+  `ps aux | grep 'codex exec'` — any session, and Pete, can attribute every run
+  at a glance. Tell codex in the brief that the tag line is routing metadata to
+  ignore.
+- **Track:** dispatch with the harness's `run_in_background` (it notifies on
+  exit) and check in at intervals. Patience (15–30 min) is for **live** runs —
+  the process exists and its output or the working tree is moving. A run that
+  exited without a result, or a window that elapses with zero output and zero
+  file writes, is not a patience case: kill the process chain
+  (zsh → node → codex), redispatch with `-retry1`, and log the row honestly
+  (`abandoned` or `fixed-N`, note "hung").
 
 ## The discipline (non-negotiable, both engines)
 
@@ -142,36 +146,33 @@ is identical across both engines.
 
 ## CLI / invoke quick-reference
 
-**Codex (GPT-5.5) — the companion runtime** (OpenAI's `codex` plugin for Claude
-Code, installed as `codex@openai-codex`):
+**Codex (GPT-5.5) — `codex exec`, self-contained, one process per dispatch:**
 ```
-COMPANION=$(ls -d ~/.claude/plugins/cache/openai-codex/codex/*/scripts/codex-companion.mjs | tail -1)
-cd <repo> && node "$COMPANION" task --background --write --effort xhigh "<full task brief>"
+cd <repo> && codex exec -c model_reasoning_effort=xhigh "<full task brief>" < /dev/null
 ```
-- **The driver calls the script directly** — do NOT go through the
-  `codex:codex-rescue` subagent (it's a Sonnet-powered forwarder that adds a hop
-  and nothing else; Sonnet is retired here).
-- `task --background` returns a **job id** immediately. Poll
-  `node "$COMPANION" status <job-id>` and fetch `node "$COMPANION" result <job-id>`
-  when it completes; `cancel <job-id>` kills a dead run. **Jobs are
-  workspace-scoped — run status/result/cancel from the same cwd as the dispatch.**
-- `--write` is required for build tasks (edits files); leave `--model` unset so
-  the run inherits `~/.codex/config.toml` (gpt-5.5 + Fast mode — don't override,
-  and if codex errors with `Unsupported service_tier`, flag it to Pete instead of
-  silently downgrading).
-- The runtime drives `codex app-server` over JSON-RPC — the old `codex exec`
-  stdin-hang and `--skip-git-repo-check` startup traps don't apply through it.
+launched with the harness's `run_in_background` (never a hand-rolled `&`).
+- **`< /dev/null` is mandatory.** When stdin isn't a TTY, `codex exec` blocks
+  reading stdin to EOF *before doing anything* — a held-open pipe hangs the run
+  at startup forever, with no session file and no error (this ate a night of
+  dispatches once and got misblamed on fast mode/xhigh).
+- **cwd outside a git repo → add `--skip-git-repo-check`**, or codex exits
+  fatally at startup ("Not inside a trusted directory").
+- Leave the model unset so the run inherits `~/.codex/config.toml` (gpt-5.5 +
+  Fast mode — don't override, and if codex errors with `Unsupported
+  service_tier`, flag it to Pete instead of silently downgrading).
 - First line of the brief is the `[ship-dispatch: …]` tag (see "Tag and track
-  every codex dispatch") — it becomes the job summary in `status`.
-- `task --resume-last` continues the previous codex thread in this workspace
-  (fix rounds on the same task).
+  every codex dispatch") so the run is attributable in `ps`.
+- `codex exec resume --last` continues the previous thread (fix rounds).
 - Edits the working tree directly → obey "one writer per branch."
-- **Fallback** (plugin missing): `cd <repo> && codex exec -c
-  model_reasoning_effort=xhigh "<brief>" < /dev/null` — the `< /dev/null` is
-  mandatory (`codex exec` blocks reading a non-TTY stdin to EOF before doing
-  anything; a held-open pipe hangs it at startup forever with no session and no
-  error), and a cwd outside a git repo also needs `--skip-git-repo-check` or it
-  dies at startup.
+- **Do NOT use the codex-companion runtime (`codex` plugin's
+  `codex-companion.mjs task/status/result`) for background work.** Its jobs
+  depend on a per-worktree broker daemon that the plugin's SessionEnd hook
+  tears down — in Pete's multi-session, restart-heavy workflow the broker dies
+  mid-run and the job sits "running" forever, orphaned (it killed a 25-minute
+  review). Companion is acceptable only for short *foreground* calls you'll
+  outlive; `codex exec` is the path for everything dispatched. Never go through
+  the `codex:codex-rescue` subagent either (Sonnet forwarder; Sonnet is
+  retired).
 
 **Opus:**
 ```

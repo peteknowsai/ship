@@ -143,11 +143,11 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
 - Invoke `superpowers:brainstorming`. PM-framed, one question at a time.
 - **Mechanical recon runs on GPT-5.5, synthesis stays with the driver.** When
   grounding needs codebase evidence-gathering (what's the current state of X,
-  where does Y live, summarize this subsystem), dispatch a codex read-only task
-  (`task --background`, **no `--write`**, via the companion runtime — see the
-  router skill's quick-reference) instead of burning Max-quota agents on
-  reading. The driver — Fable — does the actual design and every judgment call
-  from that evidence; recon is the only part that leaves.
+  where does Y live, summarize this subsystem), dispatch a background
+  `codex exec … < /dev/null` **briefed read-only** (report findings, edit
+  nothing — see the router skill's quick-reference) instead of burning
+  Max-quota agents on reading. The driver — Fable — does the actual design and
+  every judgment call from that evidence; recon is the only part that leaves.
 - For any visual/UI feature, also run `impeccable` — the HTML design sprint (use `/pix`
   for imagery freely). The spec *is* the prototype.
 - **Ground the design in the *live* product, not stale artifacts.** Before designing any
@@ -227,20 +227,21 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
 ### 4 · REVIEW / MERGE — automatic  → marker: `review`, then remove the file
 
 - Write `review` to `.ship-stage`.
-- **Correctness review runs on GPT-5.5 — codex `adversarial-review`, launched
-  first so it works while the rest of REVIEW proceeds.** From the worktree:
-  `node "$COMPANION" adversarial-review --background --base <lane-target-branch> --scope branch`
-  (`$COMPANION` = the codex-companion script; see the router skill's
-  quick-reference). Review inference is heavy and codex is the unlimited plan —
-  spend GPT-5.5 here, save Opus/Max for judgment. Collect the findings
-  (`status`/`result`, same cwd) before the card; the **driver triages every
-  finding** — adversarial reviewers over-flag by design, so verify each claimed
-  bug against the code (receiving-code-review posture), fix what's real, put
-  judgment calls on the card. Plugin missing → fall back to `/code-review`.
-- Fold the over-build check into the codex pass: give `adversarial-review` a focus
-  text that also hunts reinvented stdlib, speculative abstraction, and unneeded
-  deps (ponytail's targets). Only run a separate driver `ponytail-review` if the
-  plugin's missing.
+- **Correctness review runs on GPT-5.5 — an adversarial `codex exec` review,
+  launched first so it works while the rest of REVIEW proceeds.** From the
+  worktree, background dispatch (router quick-reference rules apply —
+  `< /dev/null`, ship-dispatch tag):
+  `codex exec -c model_reasoning_effort=xhigh "<review brief>" < /dev/null`
+  where the brief says: adversarially review `git diff <lane-target-branch>...HEAD`
+  for real bugs (correctness, edge cases, security) AND over-build (reinvented
+  stdlib, speculative abstraction, unneeded deps — ponytail's targets); report a
+  numbered findings list with file:line and severity; **edit nothing**. Review
+  inference is heavy and codex is the unlimited plan — spend GPT-5.5 here, save
+  Opus/Max for judgment. Collect the output before the card; the **driver
+  triages every finding** — adversarial reviewers over-flag by design, so verify
+  each claimed bug against the code (receiving-code-review posture), fix what's
+  real, put judgment calls on the card. codex unavailable → fall back to
+  `/code-review` + `ponytail-review` on the driver.
 - **Design QA for visual features — an Opus subagent runs `impeccable` in critique
   mode** (`Agent(model: opus)` — it drives the running worktree app with browser
   tools, and browser-driving is always Opus, never the driver) with the GATE 1
