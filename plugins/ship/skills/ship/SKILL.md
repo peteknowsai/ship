@@ -51,6 +51,14 @@ or direction appears (park, write the spec from what you've learned, present
 GATE 1); size alone just moves EXPRESS → SELF-DIRECTED, never to a gate. Never use
 an autonomous lane to slip a taste call past Pete.
 
+**The engine ladder (conserve Fable):** the driver — Fable — is the scarcest
+inference in the pipeline; spend it only on what needs its judgment (design,
+planning, briefs, triage, gates, git — the final say). **Browser-driving is
+always an Opus subagent** (`Agent(model: opus)`): verify, impeccable critique,
+live-product grounding — never drive Playwright/Chrome from the driver. Heavy
+non-judgment inference (correctness review, mechanical recon, drafting code)
+goes to GPT-5.5 per the router. Sonnet never.
+
 **Two principles, always:**
 
 1. **The meta rule.** Every artifact Pete sees is a condensed HTML page — he reads the
@@ -144,7 +152,10 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
   for imagery freely). The spec *is* the prototype.
 - **Ground the design in the *live* product, not stale artifacts.** Before designing any
   visual feature, look at what's actually shipped — boot the app (its dev script) or open
-  the deployed URL and *see* the current surface and its real theme/CSS. In-repo mockups
+  the deployed URL and *see* the current surface and its real theme/CSS. **An Opus
+  subagent does the driving** (browser tools are always Opus, never the driver): it
+  walks the relevant surfaces, saves screenshots, and reports the real theme/CSS;
+  the driver Reads the key screenshots and designs from them. In-repo mockups
   (`design/`, old specs) drift and read as current when they're not; the running app is the
   design source of truth. (A run once designed against a repo's old cream mockups while the
   live product had moved to a dark terminal UI — caught only at GATE 1, the whole spec redone.)
@@ -226,13 +237,18 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
   finding** — adversarial reviewers over-flag by design, so verify each claimed
   bug against the code (receiving-code-review posture), fix what's real, put
   judgment calls on the card. Plugin missing → fall back to `/code-review`.
-- Run `ponytail-review` (over-build) on the driver — one pass.
-- **Design QA for visual features — invoke `impeccable` in critique mode** against the
-  running worktree app, with the GATE 1 spec as the bar. DISCOVER used impeccable to set
-  the design bar; nobody but this pass checks the *built* feature clears it (verify's
-  taste notes are a smoke test, not a design review). Findings are triaged like
-  ponytail-review's: real gaps get fixed before the card, nits land on the card as
-  "Verifier flagged / suggested" for Pete to judge.
+- Fold the over-build check into the codex pass: give `adversarial-review` a focus
+  text that also hunts reinvented stdlib, speculative abstraction, and unneeded
+  deps (ponytail's targets). Only run a separate driver `ponytail-review` if the
+  plugin's missing.
+- **Design QA for visual features — an Opus subagent runs `impeccable` in critique
+  mode** (`Agent(model: opus)` — it drives the running worktree app with browser
+  tools, and browser-driving is always Opus, never the driver) with the GATE 1
+  spec as the bar. DISCOVER used impeccable to set the design bar; nobody but this
+  pass checks the *built* feature clears it (verify's taste notes are a smoke
+  test, not a design review). The driver triages its findings: real gaps get
+  fixed before the card, nits land on the card as "Verifier flagged / suggested"
+  for Pete to judge.
 - **Put it in front of Pete, running — every time.** For any visual/interactive feature
   (the default on this web stack), **boot the worktree's own dev server yourself** (its dev
   script — e.g. `next dev` — in the background) and `open http://localhost:<port>` (usually
@@ -241,8 +257,8 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
   "go look at the live site"** — deploy is downstream of merge; the worktree's localhost is
   the review surface. (Non-UI change — CLI/library — show the demo/test output instead.)
 - **Prove it actually works — invoke `verify` before the card.** With the app running,
-  invoke the `verify` skill against the worktree's localhost. A fresh read-only sub-agent
-  drives the feature, screenshots the beats, and returns `works | broken | unverifiable` +
+  invoke the `verify` skill against the worktree's localhost. A fresh read-only **Opus**
+  sub-agent drives the feature, screenshots the beats, and returns `works | broken | unverifiable` +
   taste notes; verify loops-to-fix (cap ~3). **`broken` after the cap, or `unverifiable`, →
   do NOT proceed to merge: end the turn with a `needs input:` line ("review: <feature> —
   couldn't prove it works: <reason>") and hand Pete the verdict + evidence.** Only a `works`

@@ -37,7 +37,9 @@ to one app. If authed surfaces are unreachable and the repo offers no test-auth 
 ## 2. Verify the feature (delegate) → fix → re-verify (loop ≤ 3)
 
 Brief from the plan/spec file if one exists (point the verifier at it), else inline the
-acceptance criteria. Spawn a fresh **read-only** verifier sub-agent:
+acceptance criteria. Spawn a fresh **read-only** verifier sub-agent **on Opus**
+(`Agent(model: opus, ...)` — browser-driving is always Opus work, never the
+driver's model; Pete's call, it conserves Fable):
 
 ```
 You are a read-only verifier. Do NOT edit code. Independently confirm THIS feature works by
