@@ -26,6 +26,15 @@ the process and skips the sizing judgment below**. Anything else — bare
 overrides, not a menu. Every verb rides the same rails as every lane: **stage 0's
 worktree off main via `wt`, never a primary checkout** — skill work included.
 
+**The fork is the verb's FIRST act — before any question, recon agent, or authoring
+step.** The moment a verb lands, resolve the target repo (for `skill`, infer the
+skill's home first — one quick judgment, not a research phase), then immediately run
+stage 0 there: `wt switch --create`, enter the worktree, write `.ship-stage`. That
+marker flip is how Pete *sees* ship engage — a verb that spawns recon or asks
+questions while still parked on main looks like nothing happened, and that's a bug,
+not a sequencing choice. Only exception: a personal-skill home (`~/.claude/skills/`)
+has no repo — say so in one line instead of forking.
+
 - **`/ship express <tweak>`** — pins EXPRESS. The verb pins ceremony *down*, never
   safety down: if the change turns out to touch schema/auth/money or a taste call,
   promote per the mid-flight rule regardless of the pin.
