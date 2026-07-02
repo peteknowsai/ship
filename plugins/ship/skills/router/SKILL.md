@@ -97,6 +97,27 @@ drop effort to make it faster; xhigh + patience is the deal. The one true
 exception: a **tiny verbatim write whose exact content is already in the brief** —
 that's not a codex task at any speed, the driver writes it inline (heuristic #4).
 
+### Tag and track every codex dispatch
+
+Pete runs concurrent sessions, each spawning its own `codex exec` — untagged,
+the processes are indistinguishable in `ps`, and a hung run sits unnoticed until
+someone wonders why a task never landed (it has happened). So:
+
+- **Tag:** the first line of every codex brief is
+  `[ship-dispatch: <project> · <branch> · <task-slug>]` (append `-retryN` on
+  redispatch). The brief is part of the process argv, so the tag shows in
+  `ps aux | grep 'codex exec'` — any session, and Pete, can attribute every run
+  at a glance. Tell codex in the brief that the tag line is routing metadata to
+  ignore.
+- **Track:** launch in the background and note the shell/PID. Patience (15–30
+  min) is for **live** runs — at each check-in, confirm the run is alive *and*
+  progressing (process exists, output growing, or target files changing). A
+  process that's gone without a result, or a window that elapses with zero
+  output and zero file writes, is not a patience case — it's dead: kill the
+  whole chain (the spawned shell's process group — `codex exec` runs as
+  zsh → node → codex), redispatch with `-retry1`, and log the row honestly
+  (`abandoned` or `fixed-N`, note "hung").
+
 ## The discipline (non-negotiable, both engines)
 
 Whoever drafts the code, **the driver owns the envelope**:
@@ -131,6 +152,8 @@ cd <repo> && codex exec -c model_reasoning_effort=xhigh "<full task brief>"
   `Unsupported service_tier`, flag it to Pete instead of silently downgrading.
 - Launch long tasks in the background with a 15–30 min window — never kill a run
   for slowness alone (see the patience note).
+- First line of the brief is the `[ship-dispatch: …]` tag (see "Tag and track
+  every codex dispatch") so the run is attributable in `ps`.
 - Runs in the repo cwd and edits the working tree directly → obey "one writer per
   branch."
 
