@@ -142,8 +142,17 @@ is identical across both engines.
 
 **Codex (GPT-5.5):**
 ```
-cd <repo> && codex exec -c model_reasoning_effort=xhigh "<full task brief>"
+cd <repo> && codex exec -c model_reasoning_effort=xhigh "<full task brief>" < /dev/null
 ```
+- **`< /dev/null` is mandatory.** When stdin isn't a TTY, `codex exec` blocks
+  reading stdin to EOF *before doing anything* ("Reading additional input from
+  stdin..."). A launch shape that holds the pipe open — a wrapper script, an
+  `&` spawn inheriting a pipe — hangs the run at startup indefinitely, with no
+  session file and no error (this ate a night of dispatches once; it looked
+  like codex "stalling" and got misblamed on fast mode/xhigh).
+- **cwd outside a git repo → add `--skip-git-repo-check`**, or codex exits
+  fatally at startup ("Not inside a trusted directory"). Applies to briefs that
+  write to e.g. `~/.claude/skills`.
 - Non-interactive, edits files autonomously. `codex exec resume --last` to
   continue. If it needs write access beyond its sandbox, pass the appropriate
   `-c sandbox_*` / approval config.
