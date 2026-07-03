@@ -438,7 +438,9 @@ narration and the pipeline rolls on; no stage ever waits on Linear.
 - **PLAN** — mirror the plan's punch list into the issue description as markdown checkboxes;
   check items off as build tasks land. The ticket is the punch list; the HTML is the depth.
 - **Merge** — publish the review card the same way, drop a closing comment (the `result:` line,
-  the review-card link, the verify verdict), move the card to Done (the standing rule).
+  the review-card link, the verify verdict), move the card to **For Review** — never to Done.
+  **Done is Pete's drag**: he does the final pass on dev and moves the card himself; ship's
+  pipeline ends at For Review on the board just as it ends at the dev lane in the repo.
 - **Bigger than this round** — when the design reveals real phases beyond this ship, create a
   board **project**: this round's issue goes in it, the later phases are filed as issues in the
   same project, and the spec link lives on the project description. Next round picks up inside
