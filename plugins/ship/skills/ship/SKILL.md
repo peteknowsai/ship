@@ -421,6 +421,29 @@ never a file tour. Pete reviews *this*, not the diff:
   users, so it's a reversible, low-stakes yes once he's seen it run. (Only where merge
   auto-deploys straight to prod is it the point of no return — treat it that way there.)
 
+### The board is the run's record (board-backed repos)
+
+Where the repo has a backlog-board skill (homezero → the `linear` skill, which holds all the
+mutations and recipes), the ticket mirrors the run — Pete follows a ship from his phone by
+opening the card. **The board is a mirror, never a gate**: an API hiccup gets one line of
+narration and the pipeline rolls on; no stage ever waits on Linear.
+
+- **Run start** — move the matching card to In Progress. A GATED ship with no card gets one
+  created (title = the feature, description = Pete's ask in his words). EXPRESS runs skip the
+  board entirely unless a card already exists for the work.
+- **GATE 1, design approved** — publish the spec HTML to the repo's public specs host
+  (homezero: `specs.homezero.md` — the linear skill's R2 recipe, ~2s, **never the dev
+  deploy**), then comment on the issue: 3-line design summary + the spec link. **Ticket links
+  are always public URLs** — never localhost, never a file path.
+- **PLAN** — mirror the plan's punch list into the issue description as markdown checkboxes;
+  check items off as build tasks land. The ticket is the punch list; the HTML is the depth.
+- **Merge** — publish the review card the same way, drop a closing comment (the `result:` line,
+  the review-card link, the verify verdict), move the card to Done (the standing rule).
+- **Bigger than this round** — when the design reveals real phases beyond this ship, create a
+  board **project**: this round's issue goes in it, the later phases are filed as issues in the
+  same project, and the spec link lives on the project description. Next round picks up inside
+  the project instead of re-discovering the shape.
+
 ### Backlog candidates — collect deferrals, surface them, file on approval
 
 A ship run keeps throwing off *build-worthy ideas that aren't this round's job* — a surface you
@@ -441,12 +464,13 @@ evaporate. Don't let them.
   only for the clearly-speculative. Empty list → omit the card.
 - **File on approval — non-blocking.** The `result:` line names the count ("· 2 backlog
   candidates"). When Pete says *file them* (or names which), file each through the repo's backlog
-  board and reply with the links. **This is the only place ship touches a tracker** — and only
-  where the repo *has* one: a configured backlog skill (homezero → the `linear` skill, HOM board;
-  `stateId` Backlog default, Icebox for speculative; description = the idea + "deferred from ship
-  run on `<feature>`"). **No board for this repo → the card and the `result:` line are the record;
-  don't invent a tracker.** Never gate the merge or the `result:` line on this — approval is
-  always async.
+  board and reply with the links — only where the repo *has* one: a configured backlog skill
+  (homezero → the `linear` skill, HOM board; `stateId` Backlog default, Icebox for speculative;
+  description = the idea + "deferred from ship run on `<feature>`"). Candidates that are
+  **phases of one larger design** go into that design's board *project* (see the board-record
+  section) instead of loose backlog cards. **No board for this repo → the card and the
+  `result:` line are the record; don't invent a tracker.** Never gate the merge or the
+  `result:` line on this — approval is always async.
 
 ## Running under Codex Desktop
 
