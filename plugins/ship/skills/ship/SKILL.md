@@ -437,10 +437,18 @@ narration and the pipeline rolls on; no stage ever waits on Linear.
   are always public URLs** — never localhost, never a file path.
 - **PLAN** — mirror the plan's punch list into the issue description as markdown checkboxes;
   check items off as build tasks land. The ticket is the punch list; the HTML is the depth.
-- **Merge** — publish the review card the same way, drop a closing comment (the `result:` line,
-  the review-card link, the verify verdict), move the card to **For Review** — never to Done.
-  **Done is Pete's drag**: he does the final pass on dev and moves the card himself; ship's
-  pipeline ends at For Review on the board just as it ends at the dev lane in the repo.
+- **Merge** — move the card to **For Review** and make **the ticket itself the review ask** —
+  Pete does his final pass from the ticket on his phone, no HTML required. Append a
+  `## For your review` section to the description: the dev-lane URL to test at, then
+  **checkboxes for exactly what needs his eye** (the "only you can confirm" items + any
+  verifier flags — the same content the review card carries), and a 1–2 line *what shipped*.
+  Close with a comment carrying the `result:` line + verify verdict. Publish + link the
+  review-card HTML **only when there's more than the ticket can hold** (a screenshot
+  storyboard, before/afters) — depth behind a link, never the primary surface. Never move to
+  Done — **Done is Pete's drag**: he tests on dev, ticks the boxes, and moves the card
+  himself; ship's pipeline ends at For Review on the board just as it ends at the dev lane
+  in the repo. (GATED ships still present the review card at the merge gate as always — this
+  is about what lands on the ticket after the merge.)
 - **Bigger than this round** — when the design reveals real phases beyond this ship, create a
   board **project**: this round's issue goes in it, the later phases are filed as issues in the
   same project, and the spec link lives on the project description. Next round picks up inside
