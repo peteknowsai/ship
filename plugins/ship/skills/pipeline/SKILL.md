@@ -1,6 +1,6 @@
 ---
 name: pipeline
-description: Use for any code change in a product/web repo, quick fix to full feature — ship sizes the ceremony itself and stops only when Pete's taste is in play. Explicit verbs pin the process — "/ship express <tweak>", "/ship design <idea>", "/ship skill <what>"; anything else sizes itself. EXPRESS (tweak — no spec/plan, straight through to dev), SELF-DIRECTED (writes its own spec+plan, builds, reviews, merges, deploys — zero stops), or GATED (design direction + "go" gates) — gates fire only when Pete's answer would change what gets built. Auto-triggers on change requests; you never type it. Do NOT use for a question or pure analysis. Never edit main directly.
+description: Use for any code change in a product/web repo, quick fix to full feature — ship sizes the ceremony itself and stops only when Pete's taste is in play. Explicit verbs pin the process — "/ship express <tweak>", "/ship design <idea>", "/ship skill <what>", "/ship next" (ship the board's Next column as a batch); anything else sizes itself. EXPRESS (tweak — no spec/plan, straight through to dev), SELF-DIRECTED (writes its own spec+plan, builds, reviews, merges, deploys — zero stops), or GATED (design direction + "go" gates) — gates fire only when Pete's answer would change what gets built. Auto-triggers on change requests; you never type it. Do NOT use for a question or pure analysis. Never edit main directly.
 ---
 
 # /ship — idea to merged, in one command
@@ -20,8 +20,8 @@ impose. The models can hold a big plan; trust that.
 
 ## Verbs — Pete pins the process explicitly
 
-If the invocation's first word is `express`, `design`, or `skill`, that verb **pins
-the process and skips the sizing judgment below**. Anything else — bare
+If the invocation's first word is `express`, `design`, `skill`, or `next`, that verb
+**pins the process and skips the sizing judgment below**. Anything else — bare
 `/ship <idea>` or the auto-trigger — sizes the lane exactly as today. Verbs are
 overrides, not a menu. Every verb rides the same rails as every lane: **stage 0's
 worktree off main via `wt`, never a primary checkout** — skill work included.
@@ -32,8 +32,9 @@ skill's home first — one quick judgment, not a research phase), then immediate
 stage 0 there: `wt switch --create`, enter the worktree, write `.ship-stage`. That
 marker flip is how Pete *sees* ship engage — a verb that spawns recon or asks
 questions while still parked on main looks like nothing happened, and that's a bug,
-not a sequencing choice. Only exception: a personal-skill home (`~/.claude/skills/`)
-has no repo — say so in one line instead of forking.
+not a sequencing choice. Two exceptions: a personal-skill home (`~/.claude/skills/`)
+has no repo — say so in one line instead of forking; and `/ship next`'s board sweep
+is read-only — each *queued ship* forks as its own first act instead.
 
 - **`/ship express <tweak>`** — pins EXPRESS. The verb pins ceremony *down*, never
   safety down: if the change turns out to touch schema/auth/money or a taste call,
@@ -63,6 +64,31 @@ has no repo — say so in one line instead of forking.
     ```
     then repoint `~/.claude/plugins/installed_plugins.json` (`installPath`,
     `version`, `gitCommitSha`, `lastUpdated`) at the new cache dir.
+- **`/ship next`** — ship the board's **Next column** as one batch (board-backed repos
+  only; no board → say so and stop). Moving a card to Next is Pete's "build this"
+  signal; this verb is how the column gets worked:
+  1. **Sweep + enrich.** Pull every Next card. Bring each up to the backlog skill's
+     standard anatomy (What / Why / Done when) from card context + the repo before
+     judging it — a thin ticket enriched now is a ship that doesn't stall later.
+  2. **Triage** each card, Fable's judgment: **ship-now** (intent clear, no taste
+     call — the spec is inferable), **needs-design** (Pete's taste or direction
+     genuinely in play — same test as the GATED lane), or **too-thin** (can't design
+     it without Pete). Narrate the three lists before firing anything.
+  3. **Fire ship-now as a sequential queue** — one ship at a time, each a normal lane
+     run with its own worktree, full pipeline, own card flow (In Progress → … →
+     For Review). **Never a parallel swarm**: merges serialize onto main, one preview
+     backend at a time, and a failed ship parks that card (comment why) and moves to
+     the next — one bad ticket never stalls the queue.
+  4. **Bulk GATE 1 for needs-design: ONE design doc, one sitting.** A single HTML —
+     a section per ticket: proposed direction, mockup where visual, and the one
+     question that matters. Publish to the specs host, comment the link on each
+     ticket, present it once. **Pete's section-by-section approval is the only human
+     gate in the batch** — approved sections run straight through (plan machine-facing,
+     no per-ticket go-card; the For Review column + dev lane are the net) and join the
+     queue. Sections he redirects get revised and re-presented; nothing builds on a guess.
+  5. **Too-thin cards** stay in Next: comment the one clarifying question on each and
+     name them in narration. They ship on a later `/ship next`, once answered.
+  End with a batch `result:` line: `shipped N · awaiting design answers M · too thin K`.
 
 ## Sizing — every change ships; you pick the ceremony, and gates exist only for Pete's taste
 
