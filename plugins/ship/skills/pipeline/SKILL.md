@@ -280,11 +280,14 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
 - **Correctness review runs on GPT-5.5 — codex's native review mode, launched
   first so it works while the rest of REVIEW proceeds.** From the worktree,
   background dispatch (router quick-reference rules apply — `< /dev/null`,
-  ship-dispatch tag, `-o` result file):
-  `codex exec review --base <lane-target-branch> -o <result-file> "<focus>" < /dev/null`
-  with focus text: hunt real bugs (correctness, edge cases, security) AND
-  over-build (reinvented stdlib, speculative abstraction, unneeded deps —
-  ponytail's targets); findings with file:line and severity. Review mode is
+  `-o` result file):
+  `codex exec review --base <lane-target-branch> -o <result-file> < /dev/null`
+  **No focus prompt** — codex rejects `[PROMPT]` alongside `--base` (or any
+  diff-source flag); review mode picks the diff and applies its own bug-hunt
+  rubric. Name the result file after the feature slug so the run is
+  attributable in `ps`. The over-build sweep (reinvented stdlib, speculative
+  abstraction, unneeded deps) is the driver's: run `ponytail-review` while
+  codex works. Review mode is
   read-only by construction and computes the diff itself. Review inference is
   heavy and codex is the unlimited plan — spend GPT-5.5 here, save Opus/Max
   for judgment. Read the result file before the card; the **driver triages

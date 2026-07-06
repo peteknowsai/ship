@@ -174,8 +174,12 @@ Never a hand-rolled `&`.
   whichever run finished most recently anywhere on the machine, not your task.
 - Edits the working tree directly → obey "one writer per branch."
 - **Reviews use codex's native review mode, not a hand-rolled brief:**
-  `codex exec review --base <branch> -o <result-file> "<focus text>" < /dev/null`
-  (or `--uncommitted` / `--commit <sha>`). Review mode is read-only by
+  `codex exec review --base <branch> -o <result-file> < /dev/null`
+  (or `--uncommitted` / `--commit <sha>`). **No positional prompt** — codex
+  errors ("cannot be used with [PROMPT]") when a prompt is combined with any
+  diff-source flag; review mode applies its own rubric. No prompt also means
+  no ship-dispatch tag — name the `-o` result file after the feature slug so
+  the run is attributable in `ps`. Review mode is read-only by
   construction and computes the diff itself — "edit nothing" enforced by the
   tool, not by prompt convention.
 - **Do NOT use the codex-companion runtime (`codex` plugin's
