@@ -1,8 +1,10 @@
 # ship — the /ship plugin repo
 
 The Claude Code plugin behind `/ship` (marketplace `peteknowsai/ship`). Skills live in
-`plugins/ship/skills/` (`pipeline` is /ship itself, plus `router` and `verify`); the
-`/ship` slash command is `plugins/ship/commands/ship.md`, a thin dispatcher.
+`plugins/ship/skills/` (`pipeline` is /ship itself, plus `router` and `verify`). The bare
+`/ship` slash command is a *personal* command at `~/.claude/commands/ship.md` (a thin
+dispatcher to `ship:pipeline`) — plugin commands are always namespaced `plugin:command`,
+so a command in this repo would surface as the awkward `/ship:ship`. Don't add one back.
 
 ## Deploying skill changes
 
