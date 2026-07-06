@@ -107,7 +107,23 @@ planning, briefs, triage, gates, git — the final say). **Browser-driving is
 always an Opus subagent** (`Agent(model: opus)`): verify, impeccable critique,
 live-product grounding — never drive Playwright/Chrome from the driver. Heavy
 non-judgment inference (correctness review, mechanical recon, drafting code)
-goes to GPT-5.5 per the router. Sonnet never.
+goes to GPT-5.5 per the router. Sonnet never. **One amendment (Pete's call,
+2026-07-06): a dispatch has ~5–10 min of fixed overhead (brief, launch, poll,
+read result) — work smaller than that overhead, the driver does inline.** A
+rename, a config line, wiring a triaged review fix: dispatching it costs more
+wall-clock than doing it. Real features still go to codex; browser-driving is
+Opus with no size exception.
+
+**Never idle while a dispatch runs.** Waiting is the pipeline's biggest time
+sink — a codex review or Opus QA pass is 10–25 minutes, and a driver that just
+watches it wastes the whole window. While anything is dispatched, work the
+standing non-tree list (none of it violates one-writer-per-branch: the
+dispatch owns the working tree, these don't touch it): draft the review card,
+write the Linear punch-list update and closing comment, publish the spec, prep
+the commit message, groom remaining `/ship next` cards. The goal: when a
+dispatch lands, everything around it is already done — the stage closes in
+minutes. Same posture at gates: notify, then keep doing non-gated work while
+Pete decides.
 
 **Two principles, always:**
 

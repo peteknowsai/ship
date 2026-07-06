@@ -87,8 +87,12 @@ For each build task, ask in order:
    xhigh).**
 3. **Solid, well-specified coding that fits either?** → balance the split (see
    the dial above).
-4. **Tiny verbatim write, content already authored in the brief?** → the **driver
-   writes it inline** — faster than spinning up any subagent or waiting on codex.
+4. **Smaller than the dispatch overhead?** → the **driver writes it inline**.
+   A dispatch costs ~5–10 min of fixed overhead (brief, launch, poll, read
+   result) — a verbatim write already authored in the brief, a rename, a config
+   line, wiring a triaged review fix all finish faster on the driver than the
+   overhead alone (Pete's amendment to conserve-Fable, 2026-07-06). Anything
+   with real exploration or multi-file work still dispatches.
 5. **codex produced a *wrong* diff twice on a task?** → escalate to **Opus**, log
    `escalated→opus`. A third fix round costs more than it saves. **Slow is not
    failure** — never escalate (or kill a run) because codex is taking a while.
@@ -100,9 +104,9 @@ codex can sit quiet for many minutes at xhigh — past runs were killed at a
 as failures. They weren't; they were impatience. **We have time: dispatch in the
 background and give it a generous window — think 15–30 minutes, not 2 — checking
 in on it rather than killing it.** Don't drop effort to make it faster;
-xhigh + patience is the deal. The one true exception: a **tiny verbatim write
-whose exact content is already in the brief** — that's not a codex task at any
-speed, the driver writes it inline (heuristic #4).
+xhigh + patience is the deal. The one true exception: **work smaller than the
+dispatch overhead** — that's not a codex task at any speed, the driver writes
+it inline (heuristic #4).
 
 ### Tag and track every codex dispatch
 
@@ -117,12 +121,17 @@ landed (it has happened). So:
   at a glance. Tell codex in the brief that the tag line is routing metadata to
   ignore.
 - **Track:** dispatch with the harness's `run_in_background` (it notifies on
-  exit) and check in at intervals. Patience (15–30 min) is for **live** runs —
-  the process exists and its output or the working tree is moving. A run that
-  exited without a result, or a window that elapses with zero output and zero
-  file writes, is not a patience case: kill the process chain
-  (zsh → node → codex), redispatch with `-retry1`, and log the row honestly
-  (`abandoned` or `fixed-N`, note "hung").
+  exit) and check in at intervals. **Every dispatch carries a stall budget:
+  ~15 minutes of silence → an active look** (is the process in `ps`? has the
+  result file or the run's working tree moved?) — never more passive waiting.
+  Patience (15–30 min) is for **live** runs — the process exists and its
+  output or the working tree is moving; a live run that's just slow gets left
+  alone. A run that exited without a result, or a stall-budget check finding
+  zero output and zero file writes, is not a patience case: kill the process
+  chain (zsh → node → codex), resume the specific session if it left one
+  (`codex exec resume <session-id>`), else redispatch with `-retry1`, and log
+  the row honestly (`abandoned` or `fixed-N`, note "hung"). The stall budget
+  converts "stuck forever" into "lost 15 minutes."
 
 ## The discipline (non-negotiable, both engines)
 
