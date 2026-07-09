@@ -107,7 +107,7 @@ planning, briefs, triage, gates, git — the final say). **Browser-driving is
 always an Opus subagent** (`Agent(model: opus)`): verify, impeccable critique,
 live-product grounding — never drive Playwright/Chrome from the driver. Heavy
 non-judgment inference (correctness review, mechanical recon, drafting code)
-goes to GPT-5.5 per the router. Sonnet never. **One amendment (Pete's call,
+goes to GPT-5.6 sol per the router. Sonnet never. **One amendment (Pete's call,
 2026-07-06): a dispatch has ~5–10 min of fixed overhead (brief, launch, poll,
 read result) — work smaller than that overhead, the driver does inline.** A
 rename, a config line, wiring a triaged review fix: dispatching it costs more
@@ -207,7 +207,7 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
 ### 1 · DISCOVER — Pete's taste, up front  → marker: `discover`, then `gate:1`
 
 - Invoke `superpowers:brainstorming`. PM-framed, one question at a time.
-- **Mechanical recon runs on GPT-5.5, synthesis stays with the driver.** When
+- **Mechanical recon runs on GPT-5.6 sol, synthesis stays with the driver.** When
   grounding needs codebase evidence-gathering (what's the current state of X,
   where does Y live, summarize this subsystem), dispatch a background
   `codex exec … < /dev/null` **briefed read-only** (report findings, edit
@@ -265,7 +265,7 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
   partway or hand back a half-built feature. Commit each task on the branch as it lands
   (durable, resumable progress), but don't merge until the whole plan is built.
 - Invoke `superpowers:subagent-driven-development`, driven by the harness model (the driver).
-- Invoke `router` to route each build task across Opus and GPT-5.5 (codex, xhigh,
+- Invoke `router` to route each build task across Opus and GPT-5.6 sol (codex, xhigh,
   Fast mode) — Sonnet never. The router skill owns the mix (Pete's dial — read it
   there, don't restate it here). The driver owns the brief, the diff review, the
   gates, and git. One writer per branch at a time.
@@ -293,7 +293,7 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
 ### 4 · REVIEW / MERGE — automatic  → marker: `review`, then remove the file
 
 - Write `review` to `.ship-stage`.
-- **Correctness review runs on GPT-5.5 — codex's native review mode, launched
+- **Correctness review runs on GPT-5.6 sol — codex's native review mode, launched
   first so it works while the rest of REVIEW proceeds.** From the worktree,
   background dispatch (router quick-reference rules apply — `< /dev/null`,
   `-o` result file):
@@ -305,7 +305,7 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
   abstraction, unneeded deps) is the driver's: run `ponytail-review` while
   codex works. Review mode is
   read-only by construction and computes the diff itself. Review inference is
-  heavy and codex is the unlimited plan — spend GPT-5.5 here, save Opus/Max
+  heavy and codex is the unlimited plan — spend GPT-5.6 sol here, save Opus/Max
   for judgment. Read the result file before the card; the **driver triages
   every finding** — adversarial reviewers over-flag by design, so verify each
   claimed bug against the code (receiving-code-review posture), fix what's

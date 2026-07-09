@@ -1,9 +1,9 @@
 ---
 name: router
-description: Use ONLY when executing the build tasks of an implementation plan (the BUILD stage of /ship) — deciding, per task, whether the work goes to Opus or GPT-5.5 (codex). Two engines split per Pete's current dial (see "Target mix" — currently ~20/80 Opus/GPT-5.5), self-tuning via a ledger. Do NOT invoke for planning, design, review, merge, or normal work — that all stays on the driver (the harness model). Never route to Sonnet.
+description: Use ONLY when executing the build tasks of an implementation plan (the BUILD stage of /ship) — deciding, per task, whether the work goes to Opus or GPT-5.6 sol (codex). Two engines split per Pete's current dial (see "Target mix" — currently ~25/75 Opus/GPT-5.6 sol), self-tuning via a ledger. Do NOT invoke for planning, design, review, merge, or normal work — that all stays on the driver (the harness model). Never route to Sonnet.
 ---
 
-# router — split BUILD-stage coding across Opus and GPT-5.5
+# router — split BUILD-stage coding across Opus and GPT-5.6 sol
 
 **Scope: the BUILD stage only.** Discover, plan, design, merge, and every normal
 task stay on **the driver** — the harness model running the session (Fable) — as
@@ -16,7 +16,7 @@ planning, and the final say stay with Fable**; codex is inference muscle.)
 
 Two engines:
 
-- **GPT-5.5** — via **`codex exec … < /dev/null` in the background** (see the
+- **GPT-5.6 sol** — via **`codex exec … < /dev/null` in the background** (see the
   quick-reference; NOT the companion runtime for background work — its broker
   daemon gets torn down by session churn and orphans jobs), **default effort
   `xhigh`, Fast mode on**
@@ -54,7 +54,7 @@ that's what's important."*
 
 | Engine | Invoke | Best at |
 |--------|--------|---------|
-| **GPT-5.5** | `codex exec -c model_reasoning_effort=xhigh "<brief>" < /dev/null` (cwd = repo, background), Fast mode on by default | Fully-specified, self-contained coding with real work to explore: figure out signatures, write tests against real types, work through a well-briefed problem. "Here's exactly what to build" → it builds it well |
+| **GPT-5.6 sol** | `codex exec -c model_reasoning_effort=xhigh "<brief>" < /dev/null` (cwd = repo, background), Fast mode on by default | Fully-specified, self-contained coding with real work to explore: figure out signatures, write tests against real types, work through a well-briefed problem. "Here's exactly what to build" → it builds it well |
 | **Opus** | `Agent(model: opus)` | Judgment and integration: design still open mid-task, cross-file integration, real risk, irreversible surfaces, ambiguity a brief can't close — plus solid well-specified coding when the split calls for it |
 
 **You (the driver) dial thinking per task — and default to MORE thinking, not
@@ -66,9 +66,9 @@ note).
 
 ## Target mix  ← Pete's dial — edit here when he retunes it
 
-**Current dial (2026-07-02): Opus ~20 / GPT-5.5 ~80** — Opus/Max quota is very
-tight; reserve Opus for tasks that genuinely need its judgment and send everything
-else to codex. **Fable has the final say at any mix** — the driver owns design,
+**Current dial (2026-07-09): Opus 4.8 ~25 / GPT-5.6 sol ~75** — Opus/Max quota is
+still tight; reserve Opus for tasks that genuinely need its judgment and send
+everything else to codex. **Fable has the final say at any mix** — the driver owns design,
 planning, briefs, triage, and merge; the dial only moves who drafts the code.
 
 Assign by **fit first**, then glance at the running split and rebalance only the
@@ -83,7 +83,7 @@ For each build task, ask in order:
 1. **Needs Opus-grade judgment** — design still open, cross-file integration,
    real risk, irreversible, ambiguous mid-flight? → **Opus.**
 2. **Fully specified and self-contained, with real work to explore** — exact
-   files, signatures, test cases, no open design questions? → **GPT-5.5 (codex,
+   files, signatures, test cases, no open design questions? → **GPT-5.6 sol (codex,
    xhigh).**
 3. **Solid, well-specified coding that fits either?** → balance the split (see
    the dial above).
@@ -155,7 +155,7 @@ is identical across both engines.
 
 ## CLI / invoke quick-reference
 
-**Codex (GPT-5.5) — `codex exec`, self-contained, one process per dispatch:**
+**Codex (GPT-5.6 sol) — `codex exec`, self-contained, one process per dispatch:**
 ```
 cd <repo> && codex exec -c model_reasoning_effort=xhigh -o <result-file> "<full task brief>" < /dev/null
 ```
@@ -172,7 +172,7 @@ Never a hand-rolled `&`.
   dispatches once and got misblamed on fast mode/xhigh).
 - **cwd outside a git repo → add `--skip-git-repo-check`**, or codex exits
   fatally at startup ("Not inside a trusted directory").
-- Leave the model unset so the run inherits `~/.codex/config.toml` (gpt-5.5 +
+- Leave the model unset so the run inherits `~/.codex/config.toml` (gpt-5.6-sol +
   Fast mode — don't override, and if codex errors with `Unsupported
   service_tier`, flag it to Pete instead of silently downgrading).
 - First line of the brief is the `[ship-dispatch: …]` tag (see "Tag and track
