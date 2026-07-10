@@ -96,6 +96,10 @@ For each build task, ask in order:
 5. **codex produced a *wrong* diff twice on a task?** → escalate to **Opus**, log
    `escalated→opus`. A third fix round costs more than it saves. **Slow is not
    failure** — never escalate (or kill a run) because codex is taking a while.
+6. **Agent-skill / craft prose — never routed.** SKILL.md files, reference/verb
+   docs, agent-voiced distillations are **driver-authored** (Fable), not sent to
+   codex or Opus (Pete's dial, 2026-07-02) — the voice and judgment *are* the
+   deliverable.
 
 ### Patience note (hard-won — read before sending to codex)
 
@@ -121,7 +125,11 @@ landed (it has happened). So:
   at a glance. Tell codex in the brief that the tag line is routing metadata to
   ignore.
 - **Track:** dispatch with the harness's `run_in_background` (it notifies on
-  exit) and check in at intervals. **Every dispatch carries a stall budget:
+  exit) and check in at intervals. **Startup liveness tell:** a healthy
+  `codex exec` creates its `~/.codex/sessions` rollout file within seconds —
+  process alive but no rollout after ~2 min = dead at startup (stdin held open,
+  bad flag), kill and redispatch; this is distinct from "slow is fine", which
+  applies only after the session exists. **Every dispatch carries a stall budget:
   ~15 minutes of silence → an active look** (is the process in `ps`? has the
   result file or the run's working tree moved?) — never more passive waiting.
   Patience (15–30 min) is for **live** runs — the process exists and its

@@ -214,6 +214,18 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
   nothing — see the router skill's quick-reference) instead of burning
   Max-quota agents on reading. The driver — Fable — does the actual design and
   every judgment call from that evidence; recon is the only part that leaves.
+- **The recon brief includes a reuse audit:** for every core noun the feature
+  introduces (a table, module, event type, helper), grep the WHOLE repo — data
+  layer included, not just the subsystem in focus — for existing infra of that
+  name before the plan treats it as new. Extend-it beats build-it (a plan once
+  specced a fresh `events` table the repo already had; three tasks got
+  rewritten mid-build).
+- **Bug-shaped requests ("X isn't working") get an empirical root-cause check
+  before the spec commits to a cause:** reproduce the failure or read the
+  actual runtime evidence (logs, live session transcripts, dependency health)
+  and write the *observed* cause with its evidence — never spec a fix from a
+  hypothesis. (A hypothesized cause once produced a fix that would have made
+  an agent fabricate data; the real cause was a 500ing dependency.)
 - For any visual/UI feature, also run `impeccable` — the HTML design sprint (use `/pix`
   for imagery freely). The spec *is* the prototype.
 - **Ground the design in the *live* product, not stale artifacts.** Before designing any
@@ -284,7 +296,12 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
 - **Before BUILD is done, walk the whole feature end-to-end yourself** — a quick *self-driven*
   smoke-walk (the formal fresh-agent `verify` skill runs in REVIEW, not here — don't invoke it
   twice): boot the app and drive its *real* user paths (the spec's happy path + key edge cases),
-  not just unit tests. *You* find the breakage, never Pete. Fix what breaks (loop with
+  not just unit tests. Two smoke-walk preconditions that have each cost a red deploy: **if the
+  change touches a framework with its own production build** (`flue build`, `next build`,
+  wrangler/vite bundling), **run that build too** — tsc+vitest green ≠ deployable; and **if the
+  branch touched `convex/`, re-push it to the per-branch preview first**
+  (`npx convex deploy --preview-name <branch> -y`) — the preview holds stage-0 code and drifts
+  behind every Convex commit. *You* find the breakage, never Pete. Fix what breaks (loop with
   `systematic-debugging`); only leave BUILD once the live flow actually works. The review card's
   end-to-end promise ("it runs" — backed by REVIEW's verify pass) must stay true.
 - Raise a hand only for a genuine fork (PM-framed, with a rec). Pete can jump in from
@@ -293,6 +310,18 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
 ### 4 · REVIEW / MERGE — automatic  → marker: `review`, then remove the file
 
 - Write `review` to `.ship-stage`.
+- **First: sync with main.** `git fetch origin`; if `origin/main` has commits the
+  branch lacks, absorb it *in the worktree* (rebase, or merge when rebase is
+  unsafe), re-run the repo gates, and only then dispatch the review — on
+  multi-session days main moves under every long ship, and a review against a
+  stale fork reviews apparent reversions of other ships' work (it has wasted
+  full review runs). Repeat right before the merge if main moved again during
+  REVIEW.
+- **Freeze the tree while a verifier is driving.** A live verify round holds a
+  read lock on the worktree: no merges, rebases, or edits until its verdict
+  lands — a mid-round `git merge` once left conflict markers in a hot-reloading
+  file, broke the dev server under the verifier, and wasted the whole Opus
+  round. Absorb upstream *before* dispatching the next round, never during.
 - **Correctness review runs on GPT-5.6 sol — codex's native review mode, launched
   first so it works while the rest of REVIEW proceeds.** From the worktree,
   background dispatch (router quick-reference rules apply — `< /dev/null`,
@@ -357,7 +386,12 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
     worktree.** `gh pr merge` checks out the base branch locally after merging; run from inside
     the worktree it dies with `fatal: 'main' is already used by worktree …` — the PR merges on
     GitHub but the local step fails, so teardown never runs and Pete is stranded in an orphan
-    worktree (this has bitten real runs). So **tear down FIRST, then merge:**
+    worktree (this has bitten real runs). So **tear down FIRST, then merge — after a merge
+    pre-flight**, because tearing down a worktree whose PR then conflicts strands the ship
+    with no worktree and no merge (that recovery is all manual):
+    0. Pre-flight *from the worktree*: `git fetch origin` — if main moved, absorb + re-gate
+       (the REVIEW sync step) and push; then confirm `gh pr view <#> --json mergeable` says
+       `MERGEABLE`. Never tear down a worktree whose PR can't merge.
     1. Return to the main checkout: Claude Code `ExitWorktree({action:"keep"})`; Codex sets
        subsequent tool calls to the main checkout path.
     2. `wt remove feature/<slug> -f` — remove the local worktree now (frees the branch so
@@ -365,7 +399,17 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
     3. `gh pr merge <#> --squash --delete-branch` — now from the main checkout: merges + deletes
        the *remote* branch, no checkout conflict.
     4. `git pull --ff-only` so local main matches (+ `git branch -D feature/<slug>` if the squash
-       left an "unmerged" local branch behind). Nothing left on disk.
+       left an "unmerged" local branch behind). Nothing left on disk. **If the main checkout is
+       dirty with another session's uncommitted work** (`git status --porcelain`), skip the local
+       ff — leave their work untouched — and run any deploy step from a throwaway worktree pinned
+       to `origin/main`, never from the dirty checkout (deploying it would ship their unfinished
+       work and miss your merge).
+  - **Session living in a pre-existing worktree ship didn't create** (e.g. Zero's sibling-worktree
+    convention): don't tear down what isn't yours — the session and its dev server live there.
+    Instead: `gh pr merge <#> --squash -R <owner/repo>` *without* `--delete-branch`,
+    `git push origin --delete <branch>` to drop the remote branch, ff the main checkout, and
+    leave the worktree + local branch in place (Pete's, not ship's). The zero-worktrees
+    assertion below scopes to worktrees ship itself created.
   - Then `rm .ship-stage`, **stop the review dev server you booted** (its worktree is being
     removed), and **deprovision the per-branch preview backend if Stage 0 spun one up** — close
     the resource you opened, or skip if the repo's previews auto-expire (don't leave orphaned
@@ -378,7 +422,18 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
   shared dev plane; never run it from a worktree — that's the clobbering bug again), then hand
   back that lane's URL (homezero: `dev.homezero.md`). If the repo just auto-deploys on merge via
   CI, say so and hand back the URL once it's up; if it has no deploy step, confirm merged. Never
-  make Pete run a deploy himself.
+  make Pete run a deploy himself. Three deploy-watch rules, each from a real incident:
+  - **Watch the deploy to conclusion — a red deploy is unfinished work**, on every lane
+    including EXPRESS and batch runs (a batch once merged 18 green PRs over a dev lane that
+    had been red for an hour). Red → diagnose, fix-forward on a new express branch,
+    re-verify. Batch fleets: one watcher for the final merge wave is enough.
+  - **Watch the run for YOUR commit** — `gh run list --commit <sha>` — not "the latest run":
+    a following merge's push can cancel yours via workflow concurrency, and the superseding
+    run's green reads as yours while dev is actually mid-deploy. Cheap artifact check before
+    handing back the URL: fetch the lane's HTML shell and confirm a marker the diff introduced.
+  - **A red *shared*-lane deploy you didn't cause is a shared resource** — before authoring a
+    fix, check for an existing fix PR (`gh pr list --search`) and open a **draft PR first as
+    the claim**; two sessions once raced identical fixes and one ship was thrown away.
 - **Promotion to production is NOT ship's job — shipping ends at the integration lane.** On the
   three-lane model this assumes (a separate prod promote), "merged" means live on *dev*, not live
   for users — so never deploy or promote to prod / `www`, never add a promote gate or offer to

@@ -31,8 +31,17 @@ boots its own.
 **The generic seam (don't cross it):** if the feature is behind auth, the **repo** must
 provide a local/test way to reach authed surfaces. verify does **not** mint sessions, bypass
 auth, or stand up infra — that's repo plumbing, and baking it in here would couple this skill
-to one app. If authed surfaces are unreachable and the repo offers no test-auth path, return
-`unverifiable` with that reason — never fake a pass.
+to one app. If authed surfaces are unreachable and the repo offers no test-auth path, one
+blessed alternative before `unverifiable`: **attach to Pete's already-logged-in Chrome via
+claude-in-chrome** (a new tab shares his cookies) — it has verified full authed surfaces
+headless localhost can't reach. Note in the verdict which route was used. Otherwise return
+`unverifiable` with the reason — never fake a pass.
+
+**The seeded account is the verifier's alone while a walk is in flight.** Never invite Pete
+to poke at the app on the same seeded user mid-round — his concurrent clicks read as bugs
+(a shared account once produced a false `broken` that cost a diagnosis round). Seed a second
+user for his hands-on look, or wait for the verdict. This applies doubly to claude-in-chrome,
+which shares his real profile; Playwright's isolated browser is immune by construction.
 
 ## 2. Verify the feature (delegate) → fix → re-verify (loop ≤ 3)
 
@@ -64,7 +73,22 @@ EVIDENCE: ordered list of "<screenshot path> — <plain-language caption>"   (th
 EXPECTED: <criteria>
 OBSERVED: <what actually happened>
 TASTE: <0-3 short "looked off / couldn't confirm" notes, or "none">
+
+Deliver this report as your FINAL MESSAGE — it is the return value, not a note to yourself.
+If you were spawned as a named/mailbox agent, SendMessage it to "main" as your last act;
+going idle without sending it is an incomplete run.
+
+Screenshot reality if you're driving via claude-in-chrome (not Playwright): MCP screenshots
+render inline-only, and the download fallback works ONCE per tab before Chrome silently
+suppresses repeats — save your one file early, and use DOM measurements as storyboard
+substitutes for the rest (they're acceptable evidence). Prefer chrome-devtools
+take_screenshot(filePath) when that server is connected.
 ```
+
+Prefer an **unnamed one-shot Agent call** for the verifier — its final message returns as
+the tool result automatically. Use a named agent only when you genuinely need mid-run
+steering (named agents strand their report unless the brief demands the SendMessage above;
+it has cost dead minutes at the exact moment the pipeline was blocked on the verdict).
 
 - **broken** → fix the implementation, then spawn a **fresh** verifier (never reuse the one
   that saw the bug — it's no longer independent of the fix). Cap at ~3 rounds.
@@ -73,7 +97,11 @@ TASTE: <0-3 short "looked off / couldn't confirm" notes, or "none">
 
 ## 3. Regression sweep — you run the codified checks; fix red directly
 
-Run the repo's `tsc` / lint / unit / existing e2e as a regression sweep. Triage failures
+Run the repo's `tsc` / lint / unit / existing e2e as a regression sweep — and **run what the
+DEPLOY workflow runs, not just the test gate.** If deploy does a build/typecheck the test job
+skips (`next build`, `flue build`, an app-level tsc that vitest never touches), run it locally
+here: deploy-only failures are the most expensive class because they land *after* merge (a
+TS7023 invisible to vitest once sailed through to a red dev deploy). Triage failures
 (real-bug vs stale-test); **never weaken an assertion to go green.** If a fix changes feature
 behavior, re-verify (§2).
 
