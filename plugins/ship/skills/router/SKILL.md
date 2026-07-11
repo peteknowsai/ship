@@ -1,6 +1,6 @@
 ---
 name: router
-description: Use ONLY when executing the build tasks of an implementation plan (the BUILD stage of /ship) — deciding, per task, whether the work goes to Opus or GPT-5.6 sol (codex). Two engines split per Pete's current dial (see "Target mix" — currently ~25/75 Opus/GPT-5.6 sol), self-tuning via a ledger. Do NOT invoke for planning, design, review, merge, or normal work — that all stays on the driver (the harness model). Never route to Sonnet.
+description: Use ONLY when executing the build tasks of an implementation plan (the BUILD stage of /ship) — dispatching each task to GPT-5.6 sol (codex) per Pete's current dial (see "Target mix" — currently 0/100, Opus is out of the BUILD rotation entirely; drafting is all codex, sub-overhead work inline on the driver). Do NOT invoke for planning, design, review, merge, or normal work — that all stays on the driver (the harness model). Never route to Sonnet.
 ---
 
 # router — split BUILD-stage coding across Opus and GPT-5.6 sol
@@ -24,7 +24,8 @@ Two engines:
   — global, every codex run inherits it; ~1.5× faster for 2.5× the credit burn, and
   Pete has chosen to spend it — never turn it off to save codex credits). On Pete's
   Codex plan: effectively **unlimited and off-Max entirely**.
-- **Opus** — an Opus subagent: `Agent(model: opus)` in Claude Code; under Codex
+- **Opus** *(dormant at the current 0/100 dial — kept for when Pete swings it
+  back)* — an Opus subagent: `Agent(model: opus)` in Claude Code; under Codex
   Desktop, an Opus-capable subagent tool if the harness exposes one (search the
   available tools first) — if none, keep the task on the driver and log
   `driver-no-opus`. On Claude Max, drawing on the weekly Opus quota.
@@ -55,7 +56,7 @@ that's what's important."*
 | Engine | Invoke | Best at |
 |--------|--------|---------|
 | **GPT-5.6 sol** | `codex exec -c model_reasoning_effort=xhigh "<brief>" < /dev/null` (cwd = repo, background), Fast mode on by default | Fully-specified, self-contained coding with real work to explore: figure out signatures, write tests against real types, work through a well-briefed problem. "Here's exactly what to build" → it builds it well |
-| **Opus** | `Agent(model: opus)` | Judgment and integration: design still open mid-task, cross-file integration, real risk, irreversible surfaces, ambiguity a brief can't close — plus solid well-specified coding when the split calls for it |
+| **Opus** *(dormant at 0/100)* | `Agent(model: opus)` | Judgment and integration: design still open mid-task, cross-file integration, real risk, irreversible surfaces, ambiguity a brief can't close — at the current dial that work is the driver's, not Opus's |
 
 **You (the driver) dial thinking per task — and default to MORE thinking, not
 less.** codex: `xhigh` unless you have a reason to drop (usage is unlimited — spend
@@ -66,36 +67,44 @@ note).
 
 ## Target mix  ← Pete's dial — edit here when he retunes it
 
-**Current dial (2026-07-09): Opus 4.8 ~25 / GPT-5.6 sol ~75** — Opus/Max quota is
-still tight; reserve Opus for tasks that genuinely need its judgment and send
-everything else to codex. **Fable has the final say at any mix** — the driver owns design,
-planning, briefs, triage, and merge; the dial only moves who drafts the code.
+**Current dial (2026-07-11): Opus 0 / GPT-5.6 sol 100 — Opus 4.8 is out of the
+BUILD rotation entirely (Pete's call).** All drafting goes to codex; there is no
+per-task engine choice, only dispatch-vs-inline (heuristic #4). A task that
+would have wanted Opus-grade judgment doesn't get a different engine — it gets
+a **tighter brief**: the driver closes the open design question itself, then
+dispatches the fully-specified remainder; if the judgment can't be separated
+from the writing, the driver does that task inline. **Fable has the final say
+at any mix** — the driver owns design, planning, briefs, triage, and merge; the
+dial only moves who drafts the code.
 
-Assign by **fit first**, then glance at the running split and rebalance only the
-borderline tasks. Never hand a judgment task to codex just to hit the number — log
-the drift and why. When a task fits both engines equally, alternate toward
-whichever side of the split is behind.
+**What this dial does NOT touch:** browser-driving Opus subagents (verify,
+impeccable critique, live-product grounding) are the pipeline's engine ladder,
+not the router's dial — they stay Opus.
 
 ## The assignment heuristic
 
 For each build task, ask in order:
 
-1. **Needs Opus-grade judgment** — design still open, cross-file integration,
-   real risk, irreversible, ambiguous mid-flight? → **Opus.**
+1. **Design still open, real risk, irreversible, ambiguous mid-flight?** → the
+   **driver closes the judgment first** (decide the design, pick the shape,
+   settle the ambiguity), then dispatches the now-fully-specified task to codex.
+   Judgment inseparable from the writing → the driver does the task inline.
 2. **Fully specified and self-contained, with real work to explore** — exact
    files, signatures, test cases, no open design questions? → **GPT-5.6 sol (codex,
-   xhigh).**
-3. **Solid, well-specified coding that fits either?** → balance the split (see
-   the dial above).
+   xhigh).** At the current dial this is the default destination for everything.
+3. *(dormant at 0/100)* When the dial has two engines, solid well-specified
+   coding that fits either balances the split.
 4. **Smaller than the dispatch overhead?** → the **driver writes it inline**.
    A dispatch costs ~5–10 min of fixed overhead (brief, launch, poll, read
    result) — a verbatim write already authored in the brief, a rename, a config
    line, wiring a triaged review fix all finish faster on the driver than the
    overhead alone (Pete's amendment to conserve-Fable, 2026-07-06). Anything
    with real exploration or multi-file work still dispatches.
-5. **codex produced a *wrong* diff twice on a task?** → escalate to **Opus**, log
-   `escalated→opus`. A third fix round costs more than it saves. **Slow is not
-   failure** — never escalate (or kill a run) because codex is taking a while.
+5. **codex produced a *wrong* diff twice on a task?** → escalate to **the
+   driver** — Fable rewrites the task inline (at 0/100 there is no Opus bench;
+   a third codex round costs more than it saves), log `escalated→driver`.
+   **Slow is not failure** — never escalate (or kill a run) because codex is
+   taking a while.
 6. **Agent-skill / craft prose — never routed.** SKILL.md files, reference/verb
    docs, agent-voiced distillations are **driver-authored** (Fable), not sent to
    codex or Opus (Pete's dial, 2026-07-02) — the voice and judgment *are* the
@@ -180,6 +189,9 @@ Never a hand-rolled `&`.
   dispatches once and got misblamed on fast mode/xhigh).
 - **cwd outside a git repo → add `--skip-git-repo-check`**, or codex exits
   fatally at startup ("Not inside a trusted directory").
+- **Always the sol variant.** GPT-5.6 in this pipeline means `gpt-5.6-sol`,
+  never plain `gpt-5.6` or another variant (Pete's call, 2026-07-11). If a
+  dispatch ever needs the model set explicitly, it's `-m gpt-5.6-sol`.
 - Leave the model unset so the run inherits `~/.codex/config.toml` (gpt-5.6-sol +
   Fast mode — don't override, and if codex errors with `Unsupported
   service_tier`, flag it to Pete instead of silently downgrading).
