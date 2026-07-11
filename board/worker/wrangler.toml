@@ -1,0 +1,12 @@
+name = "shipboard"
+main = "worker.mjs"
+compatibility_date = "2026-07-01"
+account_id = "5a6fef07a998d84ec047ef43d0543342"
+
+routes = [
+  { pattern = "board.cells.md", custom_domain = true }
+]
+
+[[r2_buckets]]
+binding = "SHIPBOARD"
+bucket_name = "shipboard"

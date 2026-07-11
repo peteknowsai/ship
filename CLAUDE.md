@@ -6,6 +6,17 @@ The Claude Code plugin behind `/ship` (marketplace `peteknowsai/ship`). Skills l
 dispatcher to `ship:pipeline`) — plugin commands are always namespaced `plugin:command`,
 so a command in this repo would surface as the awkward `/ship:ship`. Don't add one back.
 
+## shipboard — board.cells.md
+
+`board/shipboard.mjs` renders the cross-repo departure board (merge queue, worktree
+stages, deploy health, field guide) and puts it to the `shipboard` R2 bucket (PKAI
+account). A launchd agent (`md.cells.shipboard`, plist copy in `board/`) runs it every
+60s from THIS main checkout — script edits go live on the next tick after merge, no
+deploy step. `board/worker/` is the `board.cells.md` Worker (R2 + index fallback);
+redeploy only when the worker itself changes (`npx wrangler deploy` in that dir).
+Add a repo to the board by extending `REPOS` at the top of the script.
+`node board/shipboard.mjs --dry` renders to /tmp/shipboard.html without uploading.
+
 ## Deploying skill changes
 
 Merging to main does NOT update the installed plugin — running and new sessions read
