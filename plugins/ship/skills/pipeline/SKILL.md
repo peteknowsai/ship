@@ -103,19 +103,26 @@ an autonomous lane to slip a taste call past Pete.
 
 **The engine ladder (conserve Fable):** the driver — Fable — is the scarcest
 inference in the pipeline; spend it only on what needs its judgment (design,
-planning, briefs, triage, gates, git — the final say). **Browser-driving is
-always an Opus subagent** (`Agent(model: opus)`): verify, impeccable critique,
-live-product grounding — never drive Playwright/Chrome from the driver. Heavy
-non-judgment inference (correctness review, mechanical recon, drafting code)
-goes to GPT-5.6 sol per the router. Sonnet never. **One amendment (Pete's call,
-2026-07-06): a dispatch has ~5–10 min of fixed overhead (brief, launch, poll,
-read result) — work smaller than that overhead, the driver does inline.** A
-rename, a config line, wiring a triaged review fix: dispatching it costs more
-wall-clock than doing it. Real features still go to codex; browser-driving is
-Opus with no size exception.
+planning, briefs, triage, gates, git — the final say). **Browser-driving goes
+to GPT-5.6 sol too (Pete's call, 2026-07-11 — it's the best at browser use):**
+verify walks, impeccable-style design QA, live-product grounding all dispatch
+as background `codex exec` — codex writes and runs its own Playwright against
+the running app and saves screenshots to disk (a bonus: file screenshots are
+exactly what the claude-in-chrome MCP couldn't reliably produce). Never drive
+Playwright/Chrome from the driver. **The one browser exception:** codex has no
+bridge into Pete's logged-in Chrome — when an auth-walled surface has no
+repo test-auth path, the claude-in-chrome attach route still needs a Claude
+subagent (`Agent(model: opus)`); that is Opus's only remaining pipeline job.
+Heavy non-judgment inference (correctness review, mechanical recon, drafting
+code) also goes to GPT-5.6 sol per the router. Sonnet never. **One amendment
+(Pete's call, 2026-07-06): a dispatch has ~5–10 min of fixed overhead (brief,
+launch, poll, read result) — work smaller than that overhead, the driver does
+inline.** A rename, a config line, wiring a triaged review fix: dispatching it
+costs more wall-clock than doing it. Real features still go to codex;
+browser work has no inline exception — it never runs on the driver.
 
 **Never idle while a dispatch runs.** Waiting is the pipeline's biggest time
-sink — a codex review or Opus QA pass is 10–25 minutes, and a driver that just
+sink — a codex review or browser-QA pass is 10–25 minutes, and a driver that just
 watches it wastes the whole window. While anything is dispatched, work the
 standing non-tree list (none of it violates one-writer-per-branch: the
 dispatch owns the working tree, these don't touch it): draft the review card,
@@ -230,9 +237,10 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
   for imagery freely). The spec *is* the prototype.
 - **Ground the design in the *live* product, not stale artifacts.** Before designing any
   visual feature, look at what's actually shipped — boot the app (its dev script) or open
-  the deployed URL and *see* the current surface and its real theme/CSS. **An Opus
-  subagent does the driving** (browser tools are always Opus, never the driver): it
-  walks the relevant surfaces, saves screenshots, and reports the real theme/CSS;
+  the deployed URL and *see* the current surface and its real theme/CSS. **A background
+  codex dispatch does the driving** (browser work is GPT-5.6 sol, never the driver): it
+  scripts Playwright against the running app, walks the relevant surfaces, saves
+  screenshots to disk, and reports the real theme/CSS;
   the driver Reads the key screenshots and designs from them. In-repo mockups
   (`design/`, old specs) drift and read as current when they're not; the running app is the
   design source of truth. (A run once designed against a repo's old cream mockups while the
@@ -341,10 +349,11 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
   claimed bug against the code (receiving-code-review posture), fix what's
   real, put judgment calls on the card. codex unavailable → fall back to
   `/code-review` + `ponytail-review` on the driver.
-- **Design QA for visual features — an Opus subagent runs `impeccable` in critique
-  mode** (`Agent(model: opus)` — it drives the running worktree app with browser
-  tools, and browser-driving is always Opus, never the driver) with the GATE 1
-  spec as the bar. DISCOVER used impeccable to set the design bar; nobody but this
+- **Design QA for visual features — a background codex dispatch drives and critiques**
+  with the GATE 1 spec as the bar: brief it to walk the built surfaces (its own
+  Playwright, screenshots to disk) and judge them against the spec on impeccable's
+  axes — hierarchy, spacing, alignment, theme fidelity, interaction states.
+  DISCOVER used impeccable to set the design bar; nobody but this
   pass checks the *built* feature clears it (verify's taste notes are a smoke
   test, not a design review). The driver triages its findings: real gaps get
   fixed before the card, nits land on the card as "Verifier flagged / suggested"
@@ -357,8 +366,8 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
   "go look at the live site"** — deploy is downstream of merge; the worktree's localhost is
   the review surface. (Non-UI change — CLI/library — show the demo/test output instead.)
 - **Prove it actually works — invoke `verify` before the card.** With the app running,
-  invoke the `verify` skill against the worktree's localhost. A fresh read-only **Opus**
-  sub-agent drives the feature, screenshots the beats, and returns `works | broken | unverifiable` +
+  invoke the `verify` skill against the worktree's localhost. A fresh read-only **codex
+  (GPT-5.6 sol)** verifier drives the feature, screenshots the beats, and returns `works | broken | unverifiable` +
   taste notes; verify loops-to-fix (cap ~3). **`broken` after the cap, or `unverifiable`, →
   do NOT proceed to merge: end the turn with a `needs input:` line ("review: <feature> —
   couldn't prove it works: <reason>") and hand Pete the verdict + evidence.** Only a `works`

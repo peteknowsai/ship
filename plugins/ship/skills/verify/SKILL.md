@@ -46,14 +46,22 @@ which shares his real profile; Playwright's isolated browser is immune by constr
 ## 2. Verify the feature (delegate) → fix → re-verify (loop ≤ 3)
 
 Brief from the plan/spec file if one exists (point the verifier at it), else inline the
-acceptance criteria. Spawn a fresh **read-only** verifier sub-agent **on Opus**
-(`Agent(model: opus, ...)` — browser-driving is always Opus work, never the
-driver's model; Pete's call, it conserves Fable):
+acceptance criteria. The verifier is a fresh **background codex dispatch** — GPT-5.6 sol
+is the pipeline's browser engine (Pete's call, 2026-07-11): from the worktree,
+`codex exec -o <result-file> "<brief below>" < /dev/null` (router dispatch rules apply —
+background, stall budget, read the result file, not scrollback). codex scripts and runs
+its own Playwright against the running app and saves screenshots to real files. The
+brief must open with "READ-ONLY: edit no source files" — codex review-mode's
+tool-enforced read-only doesn't apply to a plain exec, so the brief carries the
+constraint, and the driver eyeballs `git status` in the worktree after the run
+(any dirt → discard it, count the round as `unverifiable`):
 
 ```
-You are a read-only verifier. Do NOT edit code. Independently confirm THIS feature works by
-driving the running app with Playwright (the stack is already up at <URL>). Most new features
-have no automated spec — verify it agentically.
+READ-ONLY: you may not edit, create, or delete any source file — throwaway Playwright
+scripts and screenshots go under /tmp/verify-<slug>/ only. Independently confirm THIS
+feature works by driving the running app with Playwright (the stack is already up at
+<URL> — reuse it, never boot your own). Most new features have no automated spec —
+verify it agentically.
 
 FEATURE (what a user should now be able to do + the observable success state):
   <intent / acceptance criteria>            (or: see plan/spec file <path>)
@@ -74,21 +82,17 @@ EXPECTED: <criteria>
 OBSERVED: <what actually happened>
 TASTE: <0-3 short "looked off / couldn't confirm" notes, or "none">
 
-Deliver this report as your FINAL MESSAGE — it is the return value, not a note to yourself.
-If you were spawned as a named/mailbox agent, SendMessage it to "main" as your last act;
-going idle without sending it is an incomplete run.
-
-Screenshot reality if you're driving via claude-in-chrome (not Playwright): MCP screenshots
-render inline-only, and the download fallback works ONCE per tab before Chrome silently
-suppresses repeats — save your one file early, and use DOM measurements as storyboard
-substitutes for the rest (they're acceptable evidence). Prefer chrome-devtools
-take_screenshot(filePath) when that server is connected.
+This report is your FINAL MESSAGE — it lands in the -o result file the caller reads;
+finishing without it is an incomplete run.
 ```
 
-Prefer an **unnamed one-shot Agent call** for the verifier — its final message returns as
-the tool result automatically. Use a named agent only when you genuinely need mid-run
-steering (named agents strand their report unless the brief demands the SendMessage above;
-it has cost dead minutes at the exact moment the pipeline was blocked on the verdict).
+**The Chrome-attach exception (only when the AUTH line forces it):** if the only way to
+reach an auth-walled surface is Pete's already-logged-in Chrome, codex can't get there —
+that one route still runs as a Claude subagent (`Agent(model: opus)`, unnamed one-shot,
+claude-in-chrome tools; Opus's only remaining pipeline job). Its screenshot reality:
+MCP screenshots render inline-only and the download fallback works ONCE per tab —
+save the one file early, use DOM measurements as storyboard substitutes for the rest
+(acceptable evidence). Note in the verdict which route was used.
 
 - **broken** → fix the implementation, then spawn a **fresh** verifier (never reuse the one
   that saw the bug — it's no longer independent of the fix). Cap at ~3 rounds.

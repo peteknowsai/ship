@@ -77,9 +77,11 @@ from the writing, the driver does that task inline. **Fable has the final say
 at any mix** — the driver owns design, planning, briefs, triage, and merge; the
 dial only moves who drafts the code.
 
-**What this dial does NOT touch:** browser-driving Opus subagents (verify,
-impeccable critique, live-product grounding) are the pipeline's engine ladder,
-not the router's dial — they stay Opus.
+**Browser work is codex's too (Pete, 2026-07-11):** verify walks, design QA,
+and live-product grounding dispatch as background `codex exec` — codex scripts
+its own Playwright and saves screenshots to disk. Opus's only remaining
+pipeline job is the claude-in-chrome attach route for auth-walled surfaces
+codex can't reach (it has no bridge into Pete's logged-in Chrome).
 
 ## The assignment heuristic
 
