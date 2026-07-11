@@ -247,8 +247,8 @@ function page(cards) {
     <li style="color:var(--ink3)">everything else is automatic</li></ul></div>
   <div class="card"><h3>Who does the work</h3><ul>
     <li><b style="color:var(--ink)">Fable</b> — judgment, design, git</li>
-    <li><b style="color:var(--ink)">GPT-5.6 sol</b> — all drafting + review</li>
-    <li><b style="color:var(--ink)">Opus 4.8</b> — browser QA only</li></ul></div>
+    <li><b style="color:var(--ink)">GPT-5.6 sol</b> — drafting, review, browser</li>
+    <li><b style="color:var(--ink)">Opus 4.8</b> — benched (Chrome-attach only)</li></ul></div>
   <div class="card"><h3>Landing rules</h3><ul>
     <li>one train on the track</li>
     <li>re-sync at the signal</li>
