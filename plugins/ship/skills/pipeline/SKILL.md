@@ -290,7 +290,7 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
   (durable, resumable progress), but don't merge until the whole plan is built.
 - Invoke `superpowers:subagent-driven-development`, driven by the harness model (the driver).
 - Invoke `router` to dispatch each build task — currently all drafting goes to
-  GPT-5.6 **sol** (codex, xhigh, Fast mode; always the sol variant, never plain
+  GPT-5.6 **sol** (codex, xhigh, standard tier; always the sol variant, never plain
   gpt-5.6) — Sonnet never, and the router skill owns the engine dial (Pete's —
   read it there, don't restate it here). The driver owns the brief, the diff
   review, the gates, and git. One writer per branch at a time.
@@ -347,7 +347,7 @@ never one with unmerged work. This + stage 4's teardown means ship worktrees nev
   abstraction, unneeded deps) is the driver's: run `ponytail-review` while
   codex works. Review mode is
   read-only by construction and computes the diff itself. Review inference is
-  heavy and codex is the unlimited plan — spend GPT-5.6 sol here, save Opus/Max
+  heavy and codex is still the cheap engine — spend GPT-5.6 sol here, save Opus/Max
   for judgment. Read the result file before the card; the **driver triages
   every finding** — adversarial reviewers over-flag by design, so verify each
   claimed bug against the code (receiving-code-review posture), fix what's

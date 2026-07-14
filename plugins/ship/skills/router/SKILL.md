@@ -19,11 +19,11 @@ Two engines:
 - **GPT-5.6 sol** — via **`codex exec … < /dev/null` in the background** (see the
   quick-reference; NOT the companion runtime for background work — its broker
   daemon gets torn down by session churn and orphans jobs), **default effort
-  `xhigh`, Fast mode on**
-  (`service_tier = "fast"` + `[features] fast_mode = true` in `~/.codex/config.toml`
-  — global, every codex run inherits it; ~1.5× faster for 2.5× the credit burn, and
-  Pete has chosen to spend it — never turn it off to save codex credits). On Pete's
-  Codex plan: effectively **unlimited and off-Max entirely**.
+  `xhigh`, Fast mode OFF** (Pete's call, 2026-07-13: Fast burned credits ~2.5×
+  for ~1.5× speed — standard tier is the deal now; don't set `service_tier`
+  or re-enable `fast_mode`, and expect runs to take proportionally longer —
+  patience rules below apply even more). Off-Max entirely; xhigh stays the
+  effort floor — save credits on the *tier*, never on thinking.
 - **Opus** *(dormant at the current 0/100 dial — kept for when Pete swings it
   back)* — an Opus subagent: `Agent(model: opus)` in Claude Code; under Codex
   Desktop, an Opus-capable subagent tool if the harness exposes one (search the
@@ -55,11 +55,12 @@ that's what's important."*
 
 | Engine | Invoke | Best at |
 |--------|--------|---------|
-| **GPT-5.6 sol** | `codex exec -c model_reasoning_effort=xhigh "<brief>" < /dev/null` (cwd = repo, background), Fast mode on by default | Fully-specified, self-contained coding with real work to explore: figure out signatures, write tests against real types, work through a well-briefed problem. "Here's exactly what to build" → it builds it well |
+| **GPT-5.6 sol** | `codex exec -c model_reasoning_effort=xhigh "<brief>" < /dev/null` (cwd = repo, background), standard tier | Fully-specified, self-contained coding with real work to explore: figure out signatures, write tests against real types, work through a well-briefed problem. "Here's exactly what to build" → it builds it well |
 | **Opus** *(dormant at 0/100)* | `Agent(model: opus)` | Judgment and integration: design still open mid-task, cross-file integration, real risk, irreversible surfaces, ambiguity a brief can't close — at the current dial that work is the driver's, not Opus's |
 
 **You (the driver) dial thinking per task — and default to MORE thinking, not
-less.** codex: `xhigh` unless you have a reason to drop (usage is unlimited — spend
+less.** codex: `xhigh` unless you have a reason to drop (credits are real but
+thinking is the cheap part — the expensive mistake is a shallow wrong draft; spend
 it). Opus subagents: `high` floor, `xhigh` for the gnarly ones; go lower only for
 genuinely mechanical work. **Slow is fine — the answer to an engine taking a while
 is a longer timeout, not less thinking or a different engine** (see the patience
@@ -196,9 +197,8 @@ Never a hand-rolled `&`.
 - **Always the sol variant.** GPT-5.6 in this pipeline means `gpt-5.6-sol`,
   never plain `gpt-5.6` or another variant (Pete's call, 2026-07-11). If a
   dispatch ever needs the model set explicitly, it's `-m gpt-5.6-sol`.
-- Leave the model unset so the run inherits `~/.codex/config.toml` (gpt-5.6-sol +
-  Fast mode — don't override, and if codex errors with `Unsupported
-  service_tier`, flag it to Pete instead of silently downgrading).
+- Leave the model unset so the run inherits `~/.codex/config.toml` (gpt-5.6-sol,
+  standard tier — Fast mode is OFF to conserve credits; don't override either).
 - First line of the brief is the `[ship-dispatch: …]` tag (see "Tag and track
   every codex dispatch") so the run is attributable in `ps`.
 - Fix rounds: resume the *specific* session — capture the session id codex
