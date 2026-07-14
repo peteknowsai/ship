@@ -31,17 +31,23 @@ boots its own.
 **The generic seam (don't cross it):** if the feature is behind auth, the **repo** must
 provide a local/test way to reach authed surfaces. verify does **not** mint sessions, bypass
 auth, or stand up infra — that's repo plumbing, and baking it in here would couple this skill
-to one app. If authed surfaces are unreachable and the repo offers no test-auth path, one
-blessed alternative before `unverifiable`: **attach to Pete's already-logged-in Chrome via
-claude-in-chrome** (a new tab shares his cookies) — it has verified full authed surfaces
-headless localhost can't reach. Note in the verdict which route was used. Otherwise return
+to one app. If authed surfaces are unreachable and the repo offers no test-auth path, the
+blessed alternative before `unverifiable`: **attach to the codex Chrome** — a dedicated
+logged-in Chrome instance (profile `~/.codex/chrome-profile`, launch with
+`~/.codex/codex-chrome` if `curl -s http://127.0.0.1:9222/json/version` says it's down);
+the verifier's Playwright attaches with
+`chromium.connectOverCDP("http://127.0.0.1:9222")` and drives real logged-in tabs. Pete
+logs into each site there once; sessions persist. If the needed login exists only in
+Pete's *personal* Chrome, the last resort is a Claude subagent (`Agent(model: opus)`,
+claude-in-chrome tools). Note in the verdict which route was used. Otherwise return
 `unverifiable` with the reason — never fake a pass.
 
 **The seeded account is the verifier's alone while a walk is in flight.** Never invite Pete
 to poke at the app on the same seeded user mid-round — his concurrent clicks read as bugs
 (a shared account once produced a false `broken` that cost a diagnosis round). Seed a second
-user for his hands-on look, or wait for the verdict. This applies doubly to claude-in-chrome,
-which shares his real profile; Playwright's isolated browser is immune by construction.
+user for his hands-on look, or wait for the verdict. This applies to the codex Chrome too
+(its logins are shared state) and doubly to claude-in-chrome, which is his real profile;
+Playwright's own isolated browser is immune by construction.
 
 ## 2. Verify the feature (delegate) → fix → re-verify (loop ≤ 3)
 
@@ -86,13 +92,17 @@ This report is your FINAL MESSAGE — it lands in the -o result file the caller 
 finishing without it is an incomplete run.
 ```
 
-**The Chrome-attach exception (only when the AUTH line forces it):** if the only way to
-reach an auth-walled surface is Pete's already-logged-in Chrome, codex can't get there —
-that one route still runs as a Claude subagent (`Agent(model: opus)`, unnamed one-shot,
-claude-in-chrome tools; Opus's only remaining pipeline job). Its screenshot reality:
-MCP screenshots render inline-only and the download fallback works ONCE per tab —
-save the one file early, use DOM measurements as storyboard substitutes for the rest
-(acceptable evidence). Note in the verdict which route was used.
+**Auth-walled surface (the AUTH line forces it):** point the same codex verifier at the
+**codex Chrome** instead of a fresh browser — add to the brief: "attach with
+`chromium.connectOverCDP('http://127.0.0.1:9222')` and drive a new tab there; it is
+logged in." (Launch `~/.codex/codex-chrome` first if :9222 is down; if the site isn't
+logged in there yet, park with a `needs input:` asking Pete to log in once — sessions
+persist after that.) **Last resort only** — the login exists solely in Pete's personal
+Chrome: a Claude subagent (`Agent(model: opus)`, unnamed one-shot, claude-in-chrome
+tools). Its screenshot reality: MCP screenshots render inline-only and the download
+fallback works ONCE per tab — save the one file early, use DOM measurements as
+storyboard substitutes for the rest (acceptable evidence). Note in the verdict which
+route was used.
 
 - **broken** → fix the implementation, then spawn a **fresh** verifier (never reuse the one
   that saw the bug — it's no longer independent of the fix). Cap at ~3 rounds.

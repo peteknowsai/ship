@@ -79,9 +79,11 @@ dial only moves who drafts the code.
 
 **Browser work is codex's too (Pete, 2026-07-11):** verify walks, design QA,
 and live-product grounding dispatch as background `codex exec` — codex scripts
-its own Playwright and saves screenshots to disk. Opus's only remaining
-pipeline job is the claude-in-chrome attach route for auth-walled surfaces
-codex can't reach (it has no bridge into Pete's logged-in Chrome).
+its own Playwright and saves screenshots to disk. Auth-walled surfaces: codex
+attaches to the dedicated logged-in **codex Chrome**
+(`~/.codex/codex-chrome`, CDP :9222) via `connectOverCDP`. Opus's only
+remaining pipeline job is claude-in-chrome against Pete's *personal* Chrome,
+for logins that exist nowhere else.
 
 ## The assignment heuristic
 

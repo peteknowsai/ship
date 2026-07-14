@@ -109,10 +109,14 @@ verify walks, impeccable-style design QA, live-product grounding all dispatch
 as background `codex exec` — codex writes and runs its own Playwright against
 the running app and saves screenshots to disk (a bonus: file screenshots are
 exactly what the claude-in-chrome MCP couldn't reliably produce). Never drive
-Playwright/Chrome from the driver. **The one browser exception:** codex has no
-bridge into Pete's logged-in Chrome — when an auth-walled surface has no
-repo test-auth path, the claude-in-chrome attach route still needs a Claude
-subagent (`Agent(model: opus)`); that is Opus's only remaining pipeline job.
+Playwright/Chrome from the driver. **Auth-walled surfaces with no repo
+test-auth path: codex attaches to the codex Chrome** — the dedicated logged-in
+instance (`~/.codex/codex-chrome`, profile `~/.codex/chrome-profile`, CDP on
+:9222; Pete logs into each site there once) — via
+`chromium.connectOverCDP("http://127.0.0.1:9222")`. Only when a login exists
+solely in Pete's *personal* Chrome does a Claude subagent
+(`Agent(model: opus)`, claude-in-chrome) still fire; that is Opus's last
+remaining pipeline job.
 Heavy non-judgment inference (correctness review, mechanical recon, drafting
 code) also goes to GPT-5.6 sol per the router. Sonnet never. **One amendment
 (Pete's call, 2026-07-06): a dispatch has ~5–10 min of fixed overhead (brief,
