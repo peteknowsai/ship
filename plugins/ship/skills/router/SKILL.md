@@ -231,6 +231,14 @@ launched in the background — in Claude Code the Bash tool's `run_in_background
   absent from the proxy's `/v1/models` → dispatch that task via `codex exec`
   below and log `fallback→codex` in the ledger note. Never stall a build on
   proxy repair.
+- **Failure and fallback are never silent (Pete's call, 2026-07-16).** The
+  ledger note is the record, not the alert: the moment a dispatch falls back
+  to codex or a claudex run dies (proxy failure, auth expiry, hung worker),
+  say so in the turn's narration as it happens (`⚠ claudex down — <reason>,
+  task dispatched via codex exec`) AND carry it in the run's closing
+  `result:` line (`· fallback→codex ×N: <reason>` / `· claudex failed:
+  <reason>`). Pete finds out the proxy path broke from the session line, on
+  the turn it broke — never by discovering it in the ledger later.
 
 **Codex fallback (GPT-5.6 sol via `codex exec`) — drafting fallback only; still
 the standing engine for review mode and browser work (wired in the ship skill):**
