@@ -130,7 +130,11 @@ For each build task, ask in order:
 6. **Agent-skill / craft prose — never routed.** SKILL.md files, reference/verb
    docs, agent-voiced distillations are **driver-authored** (Fable), not sent to
    codex or Opus (Pete's dial, 2026-07-02) — the voice and judgment *are* the
-   deliverable.
+   deliverable. This covers *prose whose voice is the deliverable* only — HTML
+   is the opposite: design-spec artifacts, mockups, and all frontend code are
+   prime sol material (Pete, 2026-07-16: GPT-5.6 is excellent at HTML; the
+   spec-authoring split lives in the pipeline's DISCOVER stage — Fable decides
+   what the artifact says, sol builds it).
 
 ### Patience note (hard-won — read before dispatching sol)
 
