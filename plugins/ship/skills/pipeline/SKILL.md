@@ -300,11 +300,11 @@ self-clears on board-backed repos — this tidy is the belt to that suspenders.
   (durable, resumable progress), but don't merge until the whole plan is built.
 - Invoke `superpowers:subagent-driven-development`, driven by the harness model (the driver).
 - Invoke `router` to dispatch each build task — currently all drafting goes to
-  GPT-5.6 **sol** via **claudex** (sol in the Claude Code harness, xhigh;
-  `codex exec` as fallback; always the sol variant, never plain gpt-5.6) —
-  Sonnet never, and the router skill owns the engine dial (Pete's — read it
-  there, don't restate it here). The driver owns the brief, the diff review,
-  the gates, and git. One writer per branch at a time.
+  GPT-5.6 **sol** via background **`codex exec`** (xhigh; always the sol
+  variant, never plain gpt-5.6) — Sonnet never, and the router skill owns the
+  engine dial (Pete's — read it there, don't restate it here). The driver owns
+  the brief, the diff review, the gates, and git. One writer per branch at a
+  time.
 - **Single-writer vs fan-out — pick by the diff, not by reflex** (matters most under
   ultracode, where "always orchestrate" tempts you to parallelize the build). The default is
   one writer on the branch: right for a small, interdependent, or design-coherent feature,

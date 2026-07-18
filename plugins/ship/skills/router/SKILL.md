@@ -1,6 +1,6 @@
 ---
 name: router
-description: Use ONLY when executing the build tasks of an implementation plan (the BUILD stage of /ship) — dispatching each task to GPT-5.6 sol via claudex (sol in the Claude Code harness; codex exec is the fallback) per Pete's current dial (see "Target mix" — currently 0/100, Opus is out of the BUILD rotation entirely; drafting is all sol, sub-overhead work inline on the driver). Do NOT invoke for planning, design, review, merge, or normal work — that all stays on the driver (the harness model). Never route to Sonnet.
+description: Use ONLY when executing the build tasks of an implementation plan (the BUILD stage of /ship) — dispatching each task to GPT-5.6 sol via background codex exec per Pete's current dial (see "Target mix" — currently 0/100, Opus is out of the BUILD rotation entirely; drafting is all sol, sub-overhead work inline on the driver). Do NOT invoke for planning, design, review, merge, or normal work — that all stays on the driver (the harness model). Never route to Sonnet.
 ---
 
 # router — split BUILD-stage coding across Opus and GPT-5.6 sol
@@ -16,18 +16,15 @@ planning, and the final say stay with Fable**; codex is inference muscle.)
 
 Two engines:
 
-- **GPT-5.6 sol** — via **`claudex -p … --effort xhigh` in the background** (Pete's
-  call, 2026-07-16: sol drafts in the *Claude Code harness* through claudex —
-  loopback CLIProxyAPI backed by Codex OAuth — because sol performs better in this
-  harness than in Codex, and a claudex worker inherits Pete's CLAUDE.md, skills, and
-  MCP natively; see the quick-reference). Billing rides the ChatGPT subscription
-  through the proxy, and the wrapper unsets every Anthropic credential — a claudex
-  worker *cannot* bill Anthropic API credits, so the "never `claude -p` for agent
-  work" billing rule is satisfied by construction. **`codex exec` is the drafting
-  fallback** when the proxy path is down (same model, same subscription; see the
-  fallback block — there, **Fast mode stays OFF**, Pete 2026-07-13: Fast burned
-  credits ~2.5× for ~1.5× speed). Off-Max entirely; xhigh stays the effort floor —
-  save credits on the *tier*, never on thinking.
+- **GPT-5.6 sol** — via **background `codex exec`**, billing the ChatGPT
+  subscription (never `claude -p` — that spends Anthropic API credits, and Max
+  OAuth for agent work is a ToS violation). Off-Max entirely. **Fast mode stays
+  OFF** (Pete, 2026-07-13: Fast burned credits ~2.5× for ~1.5× speed); xhigh
+  stays the effort floor — save credits on the *tier*, never on thinking.
+  *(The 2026-07-16 claudex experiment — sol in the Claude Code harness via a
+  loopback proxy — is reversed as of 2026-07-18, Pete's call: clumsy in
+  practice, and the codex CLI's own network path is faster. The claudex install
+  survives for interactive use, but ship never dispatches through it.)*
 - **Opus** *(dormant at the current 0/100 dial — kept for when Pete swings it
   back)* — an Opus subagent: `Agent(model: opus)` in Claude Code; under Codex
   Desktop, an Opus-capable subagent tool if the harness exposes one (search the
@@ -43,15 +40,9 @@ lives in **"Target mix"** below — when Pete says "go X/Y," that section (and t
 description) is the only thing to edit. The heuristics, discipline, and patience
 rules below hold at any mix.
 
-**Auth caveat:** on first use each session, sanity-check the path with
-`claudex-proxy status`. **A stopped proxy is NOT a fallback case** — the claudex
-wrapper auto-starts it on every invocation (no launchd service exists, so after
-a reboot "stopped" is the normal resting state; `claudex-proxy start` also works
-by hand). Fall back to `codex exec` only when the path actually *fails*: the
-start errors, the Codex OAuth credential is missing/expired, or `gpt-5.6-sol`
-is absent from the proxy's `/v1/models`. On the fallback, the savings only hold
-if `codex` uses its *subscription* login, not an API key (an `OPENAI_API_KEY`
-in the env would silently bill per-call).
+**Auth caveat:** the savings only hold if `codex` uses its *subscription*
+login, not an API key — an `OPENAI_API_KEY` in the env would silently bill
+per-call. Sanity-check on first use in a session.
 
 ## Prime directive: success over the mix
 
@@ -65,7 +56,7 @@ that's what's important."*
 
 | Engine | Invoke | Best at |
 |--------|--------|---------|
-| **GPT-5.6 sol** | `claudex -p "<brief>" --effort xhigh --dangerously-skip-permissions` (cwd = repo worktree, background; fallback: `codex exec`, see quick-reference) | Fully-specified, self-contained coding with real work to explore: figure out signatures, write tests against real types, work through a well-briefed problem. "Here's exactly what to build" → it builds it well |
+| **GPT-5.6 sol** | `codex exec -c model_reasoning_effort=xhigh -o <result-file> "<brief>" < /dev/null` (cwd = repo worktree, background; see quick-reference) | Fully-specified, self-contained coding with real work to explore: figure out signatures, write tests against real types, work through a well-briefed problem. "Here's exactly what to build" → it builds it well |
 | **Opus** *(dormant at 0/100)* | `Agent(model: opus)` | Judgment and integration: design still open mid-task, cross-file integration, real risk, irreversible surfaces, ambiguity a brief can't close — at the current dial that work is the driver's, not Opus's |
 
 **You (the driver) dial thinking per task — and default to MORE thinking, not
@@ -88,11 +79,10 @@ from the writing, the driver does that task inline. **Fable has the final say
 at any mix** — the driver owns design, planning, briefs, triage, and merge; the
 dial only moves who drafts the code.
 
-**Harness (2026-07-16, Pete's call): sol drafts through claudex** — the Claude
-Code harness on the loopback proxy path — not through `codex exec`. Same model,
-same ChatGPT-subscription billing; `codex exec` remains only as the drafting
-fallback when the proxy path is down. Browser work (below) is unchanged — still
-`codex exec` + Playwright.
+**Harness (2026-07-18, Pete's call): sol drafts through `codex exec`** — the
+one-day claudex detour (07-16→07-18) is over; codex's native network path is
+faster and the wrapper felt clumsy. One engine, one invoke shape, for drafting
+and browser work alike.
 
 **Browser work is codex's too (Pete, 2026-07-11):** verify walks, design QA,
 and live-product grounding dispatch as background `codex exec` — codex scripts
@@ -112,8 +102,8 @@ For each build task, ask in order:
    Judgment inseparable from the writing → the driver does the task inline.
 2. **Fully specified and self-contained, with real work to explore** — exact
    files, signatures, test cases, no open design questions? → **GPT-5.6 sol
-   (claudex, xhigh).** At the current dial this is the default destination for
-   everything.
+   (codex exec, xhigh).** At the current dial this is the default destination
+   for everything.
 3. *(dormant at 0/100)* When the dial has two engines, solid well-specified
    coding that fits either balances the split.
 4. **Smaller than the dispatch overhead?** → the **driver writes it inline**.
@@ -139,7 +129,7 @@ For each build task, ask in order:
 
 ### Patience note (hard-won — read before dispatching sol)
 
-A sol worker — claudex or codex — can sit quiet for many minutes at xhigh — past
+A sol worker can sit quiet for many minutes at xhigh — past
 runs were killed at a 2-minute timeout before a single file was written, and those
 got mislogged as failures. They weren't; they were impatience. **We have time:
 dispatch in the background and give it a generous window — think 15–30 minutes,
@@ -156,29 +146,26 @@ landed (it has happened). So:
 
 - **Tag:** the first line of every brief is
   `[ship-dispatch: <project> · <branch> · <task-slug>]` (append `-retryN` on
-  redispatch). The brief rides in argv (`claudex -p "<brief>"` and
-  `codex exec "<brief>"` alike), so the tag shows in `ps aux | grep -E
-  'claudex|codex exec'` — any session, and Pete, can attribute every run at a
-  glance. Tell the worker in the brief that the tag line is routing metadata to
-  ignore.
+  redispatch). The brief rides in `codex exec`'s argv, so the tag shows in
+  `ps aux | grep "codex exec"` — any session, and Pete, can attribute every
+  run at a glance. Tell the worker in the brief that the tag line is routing
+  metadata to ignore.
 - **Track:** dispatch with the harness's `run_in_background` (it notifies on
-  exit) and check in at intervals. **Startup liveness tells:** a healthy claudex
-  run creates its session transcript under `~/.claude/projects/` within seconds
-  (and `claudex-proxy logs` shows traffic); a healthy `codex exec` creates its
-  `~/.codex/sessions` rollout file within seconds. Process alive with neither
-  after ~2 min = dead at startup (stdin held open, bad flag, proxy down), kill
-  and redispatch — this is distinct from "slow is fine", which applies only
-  after the session exists. **Every dispatch carries a stall budget: ~15 minutes
-  of silence → an active look** (is the process in `ps`? has the result file or
-  the run's working tree moved?) — never more passive waiting. Patience
-  (15–30 min) is for **live** runs — the process exists and its output or the
-  working tree is moving; a live run that's just slow gets left alone. A run
-  that exited without a result, or a stall-budget check finding zero output and
-  zero file writes, is not a patience case: kill the process chain, resume the
-  specific session if it left one (claudex: `claudex -p --resume <session-id>
-  "<follow-up>"`; codex: `codex exec resume <session-id>`), else redispatch
-  with `-retry1`, and log the row honestly (`abandoned` or `fixed-N`, note
-  "hung"). The stall budget converts "stuck forever" into "lost 15 minutes."
+  exit) and check in at intervals. **Startup liveness tell:** a healthy
+  `codex exec` creates its `~/.codex/sessions` rollout file within seconds.
+  Process alive with no session file after ~2 min = dead at startup (stdin
+  held open, bad flag), kill and redispatch — this is distinct from "slow is
+  fine", which applies only after the session exists. **Every dispatch carries
+  a stall budget: ~15 minutes of silence → an active look** (is the process in
+  `ps`? has the result file or the run's working tree moved?) — never more
+  passive waiting. Patience (15–30 min) is for **live** runs — the process
+  exists and its output or the working tree is moving; a live run that's just
+  slow gets left alone. A run that exited without a result, or a stall-budget
+  check finding zero output and zero file writes, is not a patience case: kill
+  the process chain, `codex exec resume <session-id>` if it left a session,
+  else redispatch with `-retry1`, and log the row honestly (`abandoned` or
+  `fixed-N`, note "hung"). The stall budget converts "stuck forever" into
+  "lost 15 minutes."
 
 ## The discipline (non-negotiable, both engines)
 
@@ -202,51 +189,8 @@ is identical across both engines.
 
 ## CLI / invoke quick-reference
 
-**Claudex (GPT-5.6 sol in the Claude Code harness) — the default drafting dispatch:**
-```
-cd <worktree> && claudex -p "<full task brief>" --effort xhigh \
-  --dangerously-skip-permissions > <result-file> 2> <result-file>.err
-```
-launched in the background — in Claude Code the Bash tool's `run_in_background`
-(it notifies on exit). Never a hand-rolled `&`.
-- The wrapper auto-starts the loopback proxy, pins `--model gpt-5.6-sol`, routes
-  via `ANTHROPIC_BASE_URL` to CLIProxyAPI (Codex OAuth = ChatGPT subscription),
-  and **unsets `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` / `CLAUDE_CODE_OAUTH_TOKEN`**
-  — a claudex worker cannot bill Anthropic credits or an OpenAI API key.
-- **`> <result-file>` on every dispatch** (e.g. `/tmp/ship-<task-slug>-result.md`)
-  — `-p` prints the final message to stdout; capture it so the result survives a
-  truncated shell buffer. Read the file, not the scrollback. **Keep stderr in
-  its own `.err` file, never `2>&1`** — the wrapper writes proxy-health and
-  connector warnings to stderr, and merged into stdout they sit ahead of the
-  result and break `--output-format json` parsing (the session id extraction).
-- **`--dangerously-skip-permissions` is the worker's autonomy envelope** — legal
-  because the worker runs in ship's isolated worktree and the driver reviews the
-  diff and re-runs the gates afterward (the same trust shape `codex exec`
-  full-auto had). Never hand it a shared checkout.
-- First line of the brief is the `[ship-dispatch: …]` tag (see "Tag and track").
-- The worker inherits Pete's global CLAUDE.md, the repo's CLAUDE.md, and the
-  installed skills — brief it like a teammate on these rails, not like codex
-  (no need to restate house rules the harness already loads).
-- Fix rounds: capture the session id (`--output-format json` emits it) and
-  resume that specific session: `claudex -p --resume <session-id> "<follow-up>"`.
-  Never resume "the last session" — concurrent dispatches make that a lottery.
-- Edits the working tree directly → obey "one writer per branch."
-- **Fallback:** claudex missing, the proxy *fails to auto-start* (a merely
-  stopped proxy is not failure — the wrapper starts it), or `gpt-5.6-sol`
-  absent from the proxy's `/v1/models` → dispatch that task via `codex exec`
-  below and log `fallback→codex` in the ledger note. Never stall a build on
-  proxy repair.
-- **Failure and fallback are never silent (Pete's call, 2026-07-16).** The
-  ledger note is the record, not the alert: the moment a dispatch falls back
-  to codex or a claudex run dies (proxy failure, auth expiry, hung worker),
-  say so in the turn's narration as it happens (`⚠ claudex down — <reason>,
-  task dispatched via codex exec`) AND carry it in the run's closing
-  `result:` line (`· fallback→codex ×N: <reason>` / `· claudex failed:
-  <reason>`). Pete finds out the proxy path broke from the session line, on
-  the turn it broke — never by discovering it in the ledger later.
-
-**Codex fallback (GPT-5.6 sol via `codex exec`) — drafting fallback only; still
-the standing engine for review mode and browser work (wired in the ship skill):**
+**Codex (GPT-5.6 sol via `codex exec`) — the drafting dispatch, and the standing
+engine for review mode and browser work (wired in the ship skill):**
 ```
 cd <repo> && codex exec -c model_reasoning_effort=xhigh -o <result-file> "<full task brief>" < /dev/null
 ```
@@ -311,7 +255,7 @@ current.
 
 Row: `date | project | task (short) | task-type | engine | outcome | fix-rounds | note`
 
-- **engine**: `claudex` · `codex` (fallback) · `opus`
+- **engine**: `codex` · `opus`
 - **task-type**: `specific-coding` · `integration` · `mechanical`
 - **outcome**: `clean` (passed review + gates first pass) · `fixed-N` (N
   review→fix cycles) · `escalated→driver` (the sol worker couldn't; the driver
