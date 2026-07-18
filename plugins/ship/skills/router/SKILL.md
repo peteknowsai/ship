@@ -127,14 +127,15 @@ For each build task, ask in order:
    bench; a third sol round costs more than it saves), log `escalated→driver`.
    **Slow is not failure** — never escalate (or kill a run) because a worker is
    taking a while.
-6. **Agent-skill / craft prose — never routed.** SKILL.md files, reference/verb
-   docs, agent-voiced distillations are **driver-authored** (Fable), not sent to
-   codex or Opus (Pete's dial, 2026-07-02) — the voice and judgment *are* the
-   deliverable. This covers *prose whose voice is the deliverable* only — HTML
-   is the opposite: design-spec artifacts, mockups, and all frontend code are
-   prime sol material (Pete, 2026-07-16: GPT-5.6 is excellent at HTML; the
-   spec-authoring split lives in the pipeline's DISCOVER stage — Fable decides
-   what the artifact says, sol builds it).
+6. **Agent-skill / craft prose AND frontend design — never routed.** SKILL.md
+   files, reference/verb docs, agent-voiced distillations are **driver-authored**
+   (Fable), not sent to codex or Opus (Pete's dial, 2026-07-02) — the voice and
+   judgment *are* the deliverable. Same for **frontend design** (Pete's call,
+   2026-07-18, reversing 2026-07-16): HTML design specs, mockups, visual/UI
+   work, styling — anywhere taste is the deliverable — Fable authors inline.
+   Frontend *mechanics* with the design already closed (wiring a spec'd
+   component, plumbing per an approved design) route to sol like any other
+   closed-brief task.
 
 ### Patience note (hard-won — read before dispatching sol)
 

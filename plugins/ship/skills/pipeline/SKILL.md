@@ -259,16 +259,11 @@ self-clears on board-backed repos — this tidy is the belt to that suspenders.
   feature here — every surface and behavior Pete wants in scope — because this spec is the
   scope contract PLAN and BUILD execute in full. A big feature is a big spec; don't trim
   it to a slice.
-- **Sol builds the HTML, Fable owns the design (Pete's call, 2026-07-16 — GPT-5.6 is
-  excellent at HTML).** The driver decides everything the spec *says* — direction, the
-  2–3 options and their tradeoffs, scope, the TL;DR — then dispatches the artifact
-  build to **GPT-5.6 sol via claudex** (router quick-reference mechanics): the brief
-  carries the design decisions verbatim, the html-effectiveness pattern picks, and the
-  live-product theme evidence (screenshots/CSS from the grounding pass), and sol builds
-  the page with its live mockups. The driver reviews and tightens the result before
-  GATE 1 — the artifact is sol's, the taste is Fable's. Same split for any standalone
-  HTML doc ship produces. The one carve-out: template fills (go-card, review-card) stay
-  driver-inline — they're one-screen meta fills, smaller than the dispatch overhead.
+- **Fable builds the design HTML itself (Pete's call, 2026-07-18, reversing the
+  2026-07-16 sol split).** Design specs, mockups, and any artifact where visual taste
+  is the deliverable are **driver-authored inline** — direction, options, tradeoffs,
+  AND the page that shows them. No dispatch for design work. Template fills (go-card,
+  review-card) stay driver-inline as before.
 - **Shape the spec on the html-effectiveness patterns** — it's an explainer Pete decides
   from, not a document he studies: `14-research-feature-explainer` is the body (TL;DR
   first, collapsible depth, no wall of prose); when GATE 1 is a genuine *direction*
