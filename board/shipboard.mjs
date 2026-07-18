@@ -94,7 +94,54 @@ function collectWorktrees(repo) {
     });
 }
 
-function stageChip(stage) {
+// A worktree whose PR already landed is cruft: it shadows the board with a stale
+// .ship-stage and nobody reaps it (merges from the GitHub UI / other sessions
+// never run ship's teardown). Reap when it's provably done, flag when unsure.
+// 6h grace: cruft clearing needs to be inevitable, not fast — the window lets
+// any session still living in a freshly-merged worktree wind down first.
+const REAP_MIN_AGE_MS = 6 * 60 * 60 * 1000;
+
+function branchPR(repo, branch) {
+  // newest PR for the branch, any state — branch reuse means an old merged PR
+  // must not shadow a new open one
+  const raw = sh("gh", ["pr", "list", "-R", repo.gh, "--head", branch, "--state", "all", "--limit", "1", "--json", "number,state,headRefOid,mergedAt"]);
+  const arr = raw ? JSON.parse(raw) : [];
+  return arr[0] ?? null;
+}
+
+function classifyWorktrees(repo, wts, reap) {
+  const codexHome = process.env.CODEX_HOME || join(homedir(), ".codex");
+  const keep = [];
+  for (const w of wts) {
+    // Codex Desktop owns its worktrees' lifecycle (archive reaps them) — never touch
+    if (w.path.startsWith(codexHome)) { keep.push(w); continue; }
+    const pr = branchPR(repo, w.branch);
+    if (!pr || pr.state !== "MERGED") { keep.push(w); continue; }
+    const tip = sh("git", ["-C", w.path, "rev-parse", "HEAD"])?.trim();
+    const clean = sh("git", ["-C", w.path, "status", "--porcelain"]); // "" = verified clean; null = check failed
+    const provablyLanded = tip === pr.headRefOid && clean === "";
+    const oldEnough = Date.now() - new Date(pr.mergedAt).getTime() > REAP_MIN_AGE_MS;
+    if (provablyLanded && !oldEnough) { keep.push(w); continue; } // in grace — render as-is
+    if (provablyLanded && reap) {
+      const r = sh("wt", ["-C", repo.path, "remove", w.branch, "-f"]);
+      console.log(r !== null ? `reaped ${repo.name}/${w.branch} (merged #${pr.number})` : `REAP FAILED ${repo.name}/${w.branch}`);
+      if (r !== null) continue;
+      keep.push({ ...w, stale: `merged #${pr.number} — reap failed`, staleLabel: "STALE · reap me" });
+    } else if (provablyLanded) {
+      keep.push({ ...w, stale: `merged #${pr.number}`, staleLabel: "STALE · reap me" });
+    } else if (tip === pr.headRefOid) {
+      // dirty (or unverifiable) tree on a merged tip — a human decides, never "reap me"
+      keep.push({ ...w, stale: `merged #${pr.number} — dirty tree`, staleLabel: "MERGED · inspect" });
+    } else {
+      // worktree moved past the merged tip — unmerged work, preserve it
+      keep.push({ ...w, stale: `merged #${pr.number} + commits after merge`, staleLabel: "MERGED · inspect" });
+    }
+  }
+  return keep;
+}
+
+function stageChip(stage, stale, staleLabel) {
+  if (stale) return { cls: staleLabel === "STALE · reap me" ? "c-bad" : "c-gate", label: staleLabel, needsYou: true };
   if (!stage) return { cls: "c-line", label: "WORKTREE" };
   if (stage.startsWith("gate:")) return { cls: "c-gate", label: stage === "gate:1" ? "GATE 1 · you" : "GATE 2 · you", needsYou: true };
   if (stage.startsWith("build:")) { const [, n, m] = stage.split(":"); return { cls: "c-build", label: `BUILD ${n}/${m}` }; }
@@ -119,11 +166,11 @@ function deployChip(run, repo) {
 
 // ---------- render ----------
 
-function repoCard(repo) {
+function repoCard(repo, { reap }) {
   const { inLine, claims } = collectPRs(repo);
   const run = collectDeploy(repo);
   const main = collectMain(repo);
-  const wts = collectWorktrees(repo);
+  const wts = classifyWorktrees(repo, collectWorktrees(repo), reap);
   const dep = deployChip(run, repo);
 
   const qRows = inLine.map((p, i) => `
@@ -143,11 +190,11 @@ function repoCard(repo) {
     </div>`).join("");
 
   const wtRows = wts.map((w) => {
-    const c = stageChip(w.stage);
+    const c = stageChip(w.stage, w.stale, w.staleLabel);
     return `
     <div class="qrow ${c.needsYou ? "needsyou" : ""}">
       <div class="pos">—</div>
-      <div class="ship"><div class="t">${esc(w.branch)}</div><div class="s">${esc(w.path.split("/").pop())}</div></div>
+      <div class="ship"><div class="t">${esc(w.branch)}</div><div class="s">${esc(w.stale ?? w.path.split("/").pop())}</div></div>
       <span class="chip ${c.cls}"><span class="dot"></span>${c.label}</span>
       <div class="age">${ago(w.since)}</div>
     </div>`;
@@ -267,7 +314,9 @@ function page(cards) {
 
 // ---------- main ----------
 
-const html = page(REPOS.map(repoCard));
+// --dry: render only — no reaping, no upload (safe to run anywhere, anytime)
+const dry = process.argv.includes("--dry");
+const html = page(REPOS.map((r) => repoCard(r, { reap: !dry })));
 const out = "/tmp/shipboard.html";
 writeFileSync(out, html);
 

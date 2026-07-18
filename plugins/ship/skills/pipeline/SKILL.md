@@ -211,9 +211,14 @@ must never make it look like nothing forked. Pete watches for the worktree from 
 the breadcrumb can't show it, your words must.
 
 **Opportunistic tidy (anti-accumulation):** glance at `git worktree list` first and
-`wt remove <branch> -f` any worktree whose branch is already merged and its remote shows
-`[gone]` (a finished ship that wasn't torn down). Only ever touch merged+gone worktrees —
-never one with unmerged work. This + stage 4's teardown means ship worktrees never pile up.
+`wt remove <branch> -f` any worktree that provably already landed: its branch is merged
+with the remote showing `[gone]`, OR a **merged PR** exists for the branch whose
+`headRefOid` equals the worktree's `HEAD` with a clean tree (squash merges from the
+GitHub UI / other sessions don't delete the branch or satisfy `--merged` — check
+`gh pr list --state merged --head <branch> --json number,headRefOid`). Never touch a
+worktree with uncommitted changes or commits past the merged tip. The shipboard
+launchd loop runs this same reap continuously (board/shipboard.mjs), so cruft
+self-clears on board-backed repos — this tidy is the belt to that suspenders.
 
 ### 1 · DISCOVER — Pete's taste, up front  → marker: `discover`, then `gate:1`
 
