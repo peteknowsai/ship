@@ -387,7 +387,7 @@ const Narrator = {
   _playWeb(paras,{onWord,onProgress,onEnd}){
     const text = paras.join(" \n ");
     const u = new SpeechSynthesisUtterance(text);
-    u.rate = 1.02; u.pitch = 0.95;
+    u.rate = 1.25; u.pitch = 0.95;
     const vs = speechSynthesis.getVoices();
     u.voice = vs.find(v=>/en[-_]US/i.test(v.lang) && /Samantha|Ava|Evan|Nathan|Alex/i.test(v.name)) || vs.find(v=>/en/i.test(v.lang)) || null;
     // map char offsets to word indexes
@@ -433,6 +433,7 @@ const Narrator = {
   /* --- shared: play an audio src against precomputed word start times --- */
   async _playTimed(src, wordTimes, {onWord, onProgress, onEnd}){
     const audio = new Audio(src);
+    audio.playbackRate = 1.25;
     let raf, lastWi=-1;
     const tick = ()=>{
       const t = audio.currentTime;
