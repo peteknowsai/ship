@@ -179,6 +179,14 @@
   .edge.l{left:-12px; background:var(--red); box-shadow:0 0 30px 4px rgba(248,113,113,.5);}
   .edge.r{right:-12px; background:var(--green); box-shadow:0 0 30px 4px rgba(74,222,128,.5);}
 
+  /* break-out / reframe */
+  .holdbtn{
+    margin-left:auto; font-size:11.5px; font-weight:800; letter-spacing:.04em; color:var(--red);
+    background:rgba(248,113,113,.1); border:1px solid rgba(248,113,113,.4);
+    border-radius:999px; padding:7px 13px; cursor:pointer; flex:none;
+  }
+  .holdbtn:active{transform:scale(.96);}
+
   /* design pager (swipe-through mockups, answer at the end) */
   .pager{flex:1; margin:16px -26px 0; display:flex; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none; -webkit-overflow-scrolling:touch;}
   .pager::-webkit-scrollbar{display:none;}
@@ -310,7 +318,7 @@
     <!-- STORY -->
     <div class="scene" id="story">
       <div class="storyhero" data-hero>
-        <div class="storyhead"><span class="chip gate">Gate</span><span class="t">Saved searches · homezero</span></div>
+        <div class="storyhead"><span class="chip gate">Gate</span><span class="t">Saved searches · homezero</span><button class="holdbtn" id="holdStory">✋ reframe</button></div>
       </div>
       <div class="transcript" id="transcript"></div>
       <div class="bar">
@@ -322,8 +330,26 @@
 
     <!-- QUESTIONS -->
     <div class="scene" id="ask">
-      <div class="askhead"><span class="n" id="qNum">Question 1</span><span class="of" id="qOf">of 3</span></div>
+      <div class="askhead"><span class="n" id="qNum">Question 1</span><span class="of" id="qOf">of 3</span><button class="holdbtn" id="holdAsk">✋ reframe</button></div>
       <div class="askstage" id="askStage"></div>
+    </div>
+
+    <!-- REFRAME (break out at any time) -->
+    <div class="scene" id="reframe">
+      <div class="askhead"><span class="n" style="color:var(--red)">✋ Hold on</span></div>
+      <div class="askstage"><div class="qcard" style="border-color:rgba(248,113,113,.35);">
+        <div class="qtag" style="color:var(--red)">Reframe</div>
+        <div class="q">Tell me what's actually going on.</div>
+        <div class="qsub">This goes straight back to the run — it reworks the direction and gates you again. Your answers so far ride along.</div>
+        <div class="textwrap">
+          <textarea id="reframeText" placeholder="Wispr it — new direction, new constraint, kill the feature, anything…"></textarea>
+          <div class="hint">🎙 dictation lands as text</div>
+          <div class="rowbtns">
+            <button class="btn ghost" id="reframeBack">Never mind</button>
+            <button class="btn primary" id="reframeSend" style="background:linear-gradient(180deg,#f87171,#dc2626); color:#2a0505;">Send reframe</button>
+          </div>
+        </div>
+      </div></div>
     </div>
 
     <!-- DONE -->
@@ -738,6 +764,27 @@ function finish(){
 document.getElementById("simGate").onclick = ()=> show("arrive");
 document.getElementById("gatecard").onclick = startStory;
 document.getElementById("replayBtn").onclick = ()=>{ Narrator.stop(); show("idle"); };
+
+/* reframe — break out of the gate at any time, dictate the redirect, run re-gates */
+let reframeFrom = "story";
+function openReframe(from){
+  reframeFrom = from;
+  Narrator.stop(); if(navigator.vibrate) navigator.vibrate(20);
+  document.getElementById("reframeText").value = "";
+  show("reframe");
+}
+document.getElementById("holdStory").onclick = e=>{ e.stopPropagation(); openReframe("story"); };
+document.getElementById("holdAsk").onclick = ()=> openReframe("ask");
+document.getElementById("reframeBack").onclick = ()=>{
+  if(reframeFrom === "story") startStory(); else { show("ask"); renderQ(); }
+};
+document.getElementById("reframeSend").onclick = ()=>{
+  const msg = document.getElementById("reframeText").value.trim();
+  document.querySelector("#idle .quiet").textContent = "homezero · reframing — new gate soon";
+  const u = new SpeechSynthesisUtterance("Got it. Reworking the direction — new gate soon.");
+  u.rate = Math.max(1.05, getRate()); speechSynthesis.speak(u);
+  show("idle");
+};
 
 /* start-a-ship composer — a run is born IN a repo: project first, then verb, then the idea */
 const composer = document.getElementById("composer");
