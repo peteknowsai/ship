@@ -132,6 +132,12 @@
   .prog{flex:1; height:5px; background:#1a2338; border-radius:4px; overflow:hidden;}
   .prog>i{display:block; height:100%; width:0%; background:linear-gradient(90deg,var(--amber),var(--cyan)); border-radius:4px; transition:width .25s linear;}
   .skipbtn{background:none; border:none; color:var(--ink-dim); font-size:13.5px; font-weight:600; cursor:pointer; padding:8px;}
+  .ratebtn{
+    flex:none; font-size:13px; font-weight:800; color:var(--cyan);
+    background:rgba(87,215,226,.08); border:1px solid rgba(87,215,226,.35);
+    border-radius:999px; padding:10px 13px; cursor:pointer; min-width:58px;
+  }
+  .ratebtn:active{transform:scale(.95);}
 
   /* ---------- scene: questions ---------- */
   #ask{background:var(--panel); padding:0;}
@@ -324,7 +330,8 @@
       <div class="bar">
         <button class="playbtn" id="playBtn">❚❚</button>
         <div class="prog"><i id="progFill"></i></div>
-        <button class="skipbtn" id="skipBtn">Skip to questions</button>
+        <button class="ratebtn" id="rateBtn">1×</button>
+        <button class="skipbtn" id="skipBtn">Skip</button>
       </div>
     </div>
 
@@ -599,6 +606,18 @@ function startStory(){
     onError: ()=> flashVoiceStat("ElevenLabs call failed — using browser voice. Check the key / console.", true)
   });
 }
+/* one-tap speed cycle on the story bar — no drawer digging while driving */
+const RATE_STEPS = [1, 1.25, 0.75];
+const rateBtn = document.getElementById("rateBtn");
+function fmtRateShort(v){ return parseFloat(v).toString().replace("0.",".")+"×"; }
+rateBtn.textContent = fmtRateShort(getRate());
+rateBtn.onclick = ()=>{
+  const cur = getRate();
+  const next = RATE_STEPS[(RATE_STEPS.findIndex(r=>Math.abs(r-cur)<.01)+1) % RATE_STEPS.length] ?? 1;
+  localStorage.setItem("voxRate", next);
+  rateBtn.textContent = fmtRateShort(next);
+  if(Narrator._audio) Narrator._audio.playbackRate = next;
+};
 playBtn.onclick = ()=>{
   playing = !playing;
   playBtn.textContent = playing ? "❚❚" : "▶";
@@ -801,13 +820,9 @@ document.querySelectorAll(".verb").forEach(b=> b.onclick = ()=>{
 });
 document.getElementById("launchShip").onclick = ()=>{
   composer.classList.remove("open");
-  const auto = pickedProj === "auto";
-  document.querySelector("#idle .quiet").textContent = auto
-    ? `${pickedVerb} run · finding the right project…`
-    : `${pickedVerb} run starting on ${pickedProj}…`;
-  const u = new SpeechSynthesisUtterance(auto
-    ? `Got it. I'll route it to the right repo and start a ${pickedVerb} run — gate's coming.`
-    : `On ${pickedProj}. ${pickedVerb} run started — I'll gate you when I need you.`);
+  /* routing is silent — the concierge just goes; no triage narration */
+  document.querySelector("#idle .quiet").textContent = `${pickedVerb} run starting…`;
+  const u = new SpeechSynthesisUtterance("Got it — gate's coming.");
   u.rate = Math.max(1.05, getRate()); speechSynthesis.speak(u);
 };
 
@@ -825,6 +840,7 @@ function syncRateUI(){ rateSlider.value = getRate(); rateVal.textContent = fmtRa
 rateSlider.oninput = ()=>{
   localStorage.setItem("voxRate", rateSlider.value);
   rateVal.textContent = fmtRate(rateSlider.value);
+  rateBtn.textContent = fmtRateShort(rateSlider.value);
   if(Narrator._audio) Narrator._audio.playbackRate = parseFloat(rateSlider.value);
 };
 document.getElementById("closeDrawer").onclick = ()=> drawer.classList.remove("open");
