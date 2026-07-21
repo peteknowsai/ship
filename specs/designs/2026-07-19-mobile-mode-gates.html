@@ -185,6 +185,29 @@
   .edge.l{left:-12px; background:var(--red); box-shadow:0 0 30px 4px rgba(248,113,113,.5);}
   .edge.r{right:-12px; background:var(--green); box-shadow:0 0 30px 4px rgba(74,222,128,.5);}
 
+  /* brainstorm mode */
+  .shipbtn{
+    margin-left:auto; font-size:11.5px; font-weight:800; letter-spacing:.04em; color:var(--amber);
+    background:rgba(245,185,66,.1); border:1px solid rgba(245,185,66,.45);
+    border-radius:999px; padding:7px 13px; cursor:pointer; flex:none;
+  }
+  .shipbtn:active{transform:scale(.96);}
+  .brainlog{flex:1; overflow-y:auto; padding:8px 20px 12px; display:flex; flex-direction:column; gap:10px; scroll-behavior:smooth;}
+  .bturn{max-width:88%; border-radius:16px; padding:12px 15px; font-size:15.5px; line-height:1.5;}
+  .bturn.agent{background:var(--card2); border:1px solid #1a2338; align-self:flex-start;}
+  .bturn.agent.speaking{border-color:rgba(245,185,66,.4);}
+  .bturn.me{background:rgba(87,215,226,.07); border:1px solid rgba(87,215,226,.28); align-self:flex-end;}
+  .brainbar{flex:none; display:flex; gap:8px; padding:10px 16px calc(26px); align-items:flex-end;}
+  .brainbar textarea{
+    flex:1; background:#0d1425; border:1.5px solid #223052; border-radius:16px; color:var(--ink);
+    font:inherit; font-size:15px; padding:13px 14px; min-height:52px; max-height:120px; resize:none; outline:none;
+  }
+  .brainbar textarea:focus{border-color:var(--cyan);}
+  .brainbar .send{
+    flex:none; width:52px; height:52px; border-radius:50%; border:none; cursor:pointer; font-size:18px;
+    background:linear-gradient(180deg,var(--cyan),#2ba8b4); color:#032226; font-weight:800;
+  }
+
   /* break-out / reframe */
   .holdbtn{
     margin-left:auto; font-size:11.5px; font-weight:800; letter-spacing:.04em; color:var(--red);
@@ -301,7 +324,7 @@
         <div class="projrow"><span class="lamp live"></span><div><div class="pname">homezero</div><div class="pstat">building · saved searches — task 3 of 7</div></div><span class="go">›</span></div>
         <div class="projrow"><span class="lamp"></span><div><div class="pname">ship</div><div class="pstat">idle · last merge 2h ago</div></div><span class="go">›</span></div>
         <div class="projrow"><span class="lamp"></span><div><div class="pname">cells</div><div class="pstat">idle</div></div><span class="go">›</span></div>
-        <button class="newship">＋ &nbsp;Start a ship — dictate an idea</button>
+        <button class="newship">＋ &nbsp;Talk to ship — dictate anything</button>
       </div>
 
       <button class="simbtn" id="simGate">Simulate: a gate arrives</button>
@@ -341,6 +364,19 @@
       <div class="askstage" id="askStage"></div>
     </div>
 
+    <!-- BRAINSTORM (long-form conversation; "ship" graduates it to a design run) -->
+    <div class="scene" id="brain">
+      <div class="askhead">
+        <span class="n" style="color:var(--cyan)">◍ Brainstorm</span><span class="of" id="brainTopic"></span>
+        <button class="shipbtn" id="shipFromBrain">⚓ ship</button>
+      </div>
+      <div class="brainlog" id="brainLog"></div>
+      <div class="brainbar">
+        <textarea id="brainText" placeholder="Wispr your reply… (say “ship” to start the build)"></textarea>
+        <button class="send" id="brainSend">↑</button>
+      </div>
+    </div>
+
     <!-- REFRAME (break out at any time) -->
     <div class="scene" id="reframe">
       <div class="askhead"><span class="n" style="color:var(--red)">✋ Hold on</span></div>
@@ -368,27 +404,6 @@
       <button class="simbtn" id="replayBtn">Replay the simulation</button>
     </div>
 
-  </div>
-
-  <!-- START-A-SHIP COMPOSER -->
-  <div class="drawer" id="composer">
-    <h3>Start a ship</h3>
-    <label>Project</label>
-    <div class="pickproj" id="pickProj">
-      <button class="pp picked" data-p="auto">🧭 Let ship decide <small>routes it · can create a repo</small></button>
-      <button class="pp" data-p="homezero">homezero <small>1 run live</small></button>
-      <button class="pp" data-p="ship">ship <small>idle</small></button>
-      <button class="pp" data-p="cells">cells <small>idle</small></button>
-    </div>
-    <label>Kind</label>
-    <div class="verbrow">
-      <button class="verb picked" data-v="design">DESIGN — gate me</button>
-      <button class="verb" data-v="express">EXPRESS — straight through</button>
-    </div>
-    <label>The idea</label>
-    <textarea id="ideaText" placeholder="Wispr your idea…"></textarea>
-    <button class="btn primary" id="launchShip">Launch</button>
-    <button class="btn ghost" id="closeComposer" style="margin-top:8px;">Close</button>
   </div>
 
   <!-- SETTINGS DRAWER -->
@@ -805,26 +820,50 @@ document.getElementById("reframeSend").onclick = ()=>{
   show("idle");
 };
 
-/* start-a-ship composer — a run is born IN a repo: project first, then verb, then the idea */
-const composer = document.getElementById("composer");
-let pickedProj = "auto", pickedVerb = "design";
-document.querySelector("#idle .newship").onclick = ()=> composer.classList.add("open");
-document.getElementById("closeComposer").onclick = ()=> composer.classList.remove("open");
-document.querySelectorAll("#pickProj .pp").forEach(b=> b.onclick = ()=>{
-  document.querySelectorAll("#pickProj .pp").forEach(x=>x.classList.remove("picked"));
-  b.classList.add("picked"); pickedProj = b.dataset.p;
-});
-document.querySelectorAll(".verb").forEach(b=> b.onclick = ()=>{
-  document.querySelectorAll(".verb").forEach(x=>x.classList.remove("picked"));
-  b.classList.add("picked"); pickedVerb = b.dataset.v;
-});
-document.getElementById("launchShip").onclick = ()=>{
-  composer.classList.remove("open");
-  /* routing is silent — the concierge just goes; no triage narration */
-  document.querySelector("#idle .quiet").textContent = `${pickedVerb} run starting…`;
-  const u = new SpeechSynthesisUtterance("Got it — gate's coming.");
-  u.rate = Math.max(1.05, getRate()); speechSynthesis.speak(u);
+/* talk to ship — the front door. No picker, no form: the ship agent routes
+   repo, mode (brainstorm/design/express), everything, from what Pete says.
+   Brainstorm is the default posture; "ship" graduates it to a design run. */
+const brainLog = document.getElementById("brainLog");
+const brainText = document.getElementById("brainText");
+let brainTurns = 0;
+document.querySelector("#idle .newship").onclick = ()=>{
+  brainLog.innerHTML = ""; brainTurns = 0;
+  document.getElementById("brainTopic").textContent = "";
+  show("brain"); setTimeout(()=>brainText.focus(), 350);
 };
+function bturn(cls, text){
+  const d = document.createElement("div"); d.className = "bturn "+cls; d.textContent = text;
+  brainLog.appendChild(d); brainLog.scrollTop = brainLog.scrollHeight; return d;
+}
+function say(text){
+  const d = bturn("agent speaking", text);
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = Math.max(1, getRate()); u.onend = ()=> d.classList.remove("speaking");
+  speechSynthesis.speak(u);
+}
+const BRAIN_REPLIES = [
+  "Heard. Sharpest version of that: what does it do for you the first morning it exists? Keep talking — or say ship.",
+  "Good. One push: is that a new surface, or a behavior on something that already exists? Say it — then ship when you're ready.",
+  "That's locked enough to build from. Say ship and I'll route it — or keep riffing."
+];
+function sendBrain(){
+  const v = brainText.value.trim(); if(!v) return;
+  brainText.value = ""; bturn("me", v);
+  if(brainTurns === 0) document.getElementById("brainTopic").textContent = v.split(/\s+/).slice(0,4).join(" ")+"…";
+  if(/\bship\b/i.test(v)) return doShip();
+  const reply = BRAIN_REPLIES[Math.min(brainTurns, BRAIN_REPLIES.length-1)];
+  brainTurns++;
+  setTimeout(()=> say(reply), 500);
+}
+document.getElementById("brainSend").onclick = sendBrain;
+brainText.addEventListener("keydown", e=>{ if(e.key==="Enter" && !e.shiftKey){ e.preventDefault(); sendBrain(); } });
+function doShip(){
+  document.querySelector("#idle .quiet").textContent = "design run starting from your brainstorm…";
+  const u = new SpeechSynthesisUtterance("On it. Routing and starting the design run — gate's coming.");
+  u.rate = Math.max(1.05, getRate()); speechSynthesis.speak(u);
+  show("idle");
+}
+document.getElementById("shipFromBrain").onclick = doShip;
 
 /* settings drawer */
 const drawer = document.getElementById("drawer");
