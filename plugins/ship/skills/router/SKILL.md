@@ -18,8 +18,10 @@ planning, and the final say stay with Fable**; codex is inference muscle.)
 Two engines:
 
 - **GPT-5.6 sol** — via **background `codex exec`**, billing the ChatGPT
-  subscription (never `claude -p` — that spends Anthropic API credits, and Max
-  OAuth for agent work is a ToS violation). Off-Max entirely. **Fast mode stays
+  subscription. Off-Max entirely. (For Anthropic-model offloads, never shell
+  out to `claude -p` from inside a session — use harness subagents via the
+  Agent tool: same models, same Max billing, native tracking. `claude -p` is
+  fine ToS-wise but belongs in scripts/cron, not inside a run.) **Fast mode stays
   OFF** (Pete, 2026-07-13: Fast burned credits ~2.5× for ~1.5× speed); xhigh
   stays the effort floor — save credits on the *tier*, never on thinking.
   *(The 2026-07-16 claudex experiment — sol in the Claude Code harness via a
