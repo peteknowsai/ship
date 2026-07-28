@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Instruction Layers × /ship — Design Brief</title>
+<style>
+  :root {
+    --bg: #faf9f7; --ink: #1a1a1a; --muted: #6b6b6b; --line: #e4e1db;
+    --accent: #b4552d; --good: #2d7a4f; --bad: #b03030; --warn: #a07617;
+    --card: #ffffff; --code-bg: #f0eee9;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #161513; --ink: #e8e6e1; --muted: #9a978f; --line: #2e2c28;
+      --accent: #e07a4a; --good: #5bbd8a; --bad: #e06c6c; --warn: #d9b04a;
+      --card: #1e1d1a; --code-bg: #26241f; }
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: var(--bg); color: var(--ink);
+    font: 16px/1.65 -apple-system, "SF Pro Text", Segoe UI, sans-serif;
+    max-width: 880px; margin: 0 auto; padding: 3rem 1.5rem 6rem; }
+  h1 { font-size: 1.9rem; line-height: 1.2; letter-spacing: -0.02em; margin-bottom: .4rem; }
+  h2 { font-size: 1.25rem; margin: 3rem 0 1rem; padding-top: 1.5rem; border-top: 1px solid var(--line); letter-spacing: -0.01em; }
+  h3 { font-size: 1rem; margin: 1.6rem 0 .5rem; }
+  p { margin: .7rem 0; }
+  .kicker { color: var(--accent); font-weight: 600; font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; }
+  .sub { color: var(--muted); font-size: .95rem; }
+  .tldr { background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--accent);
+    border-radius: 8px; padding: 1.1rem 1.3rem; margin: 1.8rem 0; }
+  .tldr p { margin: .5rem 0; }
+  code { background: var(--code-bg); border-radius: 4px; padding: .1em .35em; font-size: .85em;
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .88rem; }
+  .tablewrap { overflow-x: auto; }
+  th { text-align: left; font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted);
+    padding: .5rem .7rem; border-bottom: 2px solid var(--line); }
+  td { padding: .55rem .7rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .sev { font-weight: 700; white-space: nowrap; }
+  .sev.hard { color: var(--bad); } .sev.drift { color: var(--warn); } .sev.dup { color: var(--muted); }
+  .stack { display: flex; flex-direction: column; gap: 6px; margin: 1.2rem 0; }
+  .layer { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: .7rem 1rem; }
+  .layer b { display: block; font-size: .92rem; }
+  .layer span { color: var(--muted); font-size: .84rem; }
+  .layer.hot { border-color: var(--accent); }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0; }
+  @media (max-width: 640px) { .grid2 { grid-template-columns: 1fr; } }
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 1rem 1.2rem; }
+  .panel h3 { margin-top: 0; }
+  .panel.good h3 { color: var(--good); } .panel.bad h3 { color: var(--bad); }
+  ul { padding-left: 1.2rem; margin: .5rem 0; }
+  li { margin: .35rem 0; }
+  blockquote { border-left: 3px solid var(--accent); margin: 1rem 0; padding: .3rem 0 .3rem 1rem;
+    color: var(--muted); font-style: italic; }
+  .pill { display: inline-block; font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
+    border-radius: 999px; padding: .1em .6em; margin-right: .4em; }
+  .pill.do { background: color-mix(in srgb, var(--good) 15%, transparent); color: var(--good); }
+  .pill.fork { background: color-mix(in srgb, var(--accent) 15%, transparent); color: var(--accent); }
+  .footnote { color: var(--muted); font-size: .82rem; margin-top: 2.5rem; border-top: 1px solid var(--line); padding-top: 1rem; }
+</style>
+</head>
+<body>
+
+<p class="kicker">Design Brief · 2026-07-28</p>
+<h1>The instruction stack vs. /ship</h1>
+<p class="sub">How the CLAUDE.md layers on this machine cooperate with — and fight — the ship pipeline, and what the Fable 5 prompting guidance changes.</p>
+
+<div class="tldr">
+  <p><b>The verdict:</b> the architecture is right — global taste, plugin process, per-repo facts — but the layers have drifted into <b>4 direct contradictions, ~7 duplicated rule-sets, and one live dial that the skill files no longer describe</b>. And the Fable 5 guidance lands squarely on ship's biggest file: <i>"Skills developed for prior models are often too prescriptive for Claude Fable 5 and can degrade output quality."</i> The pipeline skill is 7,800 words with a prohibition every 110 words — much of it steering behavior Fable now does by default.</p>
+  <p><b>The move:</b> resolve the 4 contradictions (3 are one-line edits, 1 is your call), put ship's per-repo knowledge into a small "ship contract" section in each repo's CLAUDE.md instead of hardcoding homezero into the global plugin, and put the pipeline skill on a Fable 5 diet — keep the machine contracts byte-exact, compress the behavioral steering into short principles, move the war stories to an appendix.</p>
+</div>
+
+<h2>1 · The stack as it exists today</h2>
+<p>Six layers speak into every /ship run. Ordered from most-global to most-local:</p>
+
+<div class="stack">
+  <div class="layer"><b>Fable 5 harness system prompt</b><span>Now ships several behaviors verbatim that lower layers also instruct: "when you have enough information to act, act," autonomous-operation rules, evidence-grounded progress claims, brevity-by-selectivity. New since the guide.</span></div>
+  <div class="layer"><b>~/.claude/CLAUDE.md (global)</b><span>Taste + invariants: tone dial 7, worktree-always, PR + squash flow, HTML design docs, default stack, "don't hand me non-decisions."</span></div>
+  <div class="layer"><b>Hooks + superpowers</b><span>Ponytail (full) injected at session and subagent start; superpowers skills with mandatory language (brainstorming before ANY creative work, TDD always).</span></div>
+  <div class="layer hot"><b>ship plugin — pipeline / router / verify</b><span>12k words, 99 hard prohibitions, ~18 incident-derived rules, 3 machine-parsed output contracts (<code>.ship-stage</code>, <code>needs input:</code>/<code>result:</code> lines, verify's 5-field verdict).</span></div>
+  <div class="layer"><b>Project CLAUDE.md / AGENTS.md (13 active)</b><span>Bimodal: 2 repos feed ship everything it needs (homezero, ship itself); 4 give a bare test command; 7 give nothing. 4 of 13 are entirely machine-generated stubs.</span></div>
+  <div class="layer"><b>Memories + router ledger</b><span>Where the live truth now lives — including a dial change (<code>ship-engine-all-fable</code>) the skill files don't reflect.</span></div>
+</div>
+
+<div class="grid2">
+  <div class="panel good">
+    <h3>What's genuinely working</h3>
+    <ul>
+      <li><b>The one declared contract works.</b> Ship names exactly one CLAUDE.md dependency — the standing stack, repo file overrides — and it matches the global file exactly. "The plugin is the process; your stack is you" is the right seam.</li>
+      <li><b>homezero is the model case.</b> Its AGENTS.md names /ship as the flow, declares the CI gate, npm-only, deploy lanes, and the prod-send footgun. When ship runs there it has everything.</li>
+      <li><b>verify is already Fable-5-shaped.</b> The guide's #1 scaffolding rec — fresh-context verifier subagents over self-critique — is verify's founding axiom.</li>
+      <li><b>The machine contracts are real infrastructure.</b> Status line, shipboard, and FleetView parse them. These are the parts that must survive any rewrite byte-exact.</li>
+    </ul>
+  </div>
+  <div class="panel bad">
+    <h3>What's rotting</h3>
+    <ul>
+      <li><b>cells + wells are dead (Pete-confirmed) but still instrumented as alive:</b> <code>cells/CLAUDE.md</code> sits in the active Projects tree, and the <code>cells</code> and <code>wells</code> skills are still registered globally — every session carries triggers for infrastructure that no longer exists.</li>
+      <li><b>notes/CLAUDE.md</b> points at a nonexistent <code>~/Projects/CLAUDE.md</code> and still lists wells/cells as active projects.</li>
+      <li><b>Zero/CLAUDE.md</b> names two in-flight worktrees that are gone, and half-duplicates homezero's deploy-lane table (already drifting).</li>
+      <li><b>imessage/CLAUDE.md</b> has a plaintext password in it.</li>
+      <li><b>buzz</b> documents that Tauri <code>cargo fmt</code> fails inside git worktrees — a landmine directly under the worktree-always rule if /ship ever fires there. Nothing connects the two facts.</li>
+    </ul>
+  </div>
+</div>
+
+<h2>2 · The conflicts</h2>
+<p>Ranked. <span class="sev hard">HARD</span> = the two layers literally command opposite things. <span class="sev drift">DRIFT</span> = the file no longer matches operating reality. <span class="sev dup">DUP</span> = same rule stated in two places, waiting to diverge.</p>
+
+<div class="tablewrap"><table>
+  <tr><th></th><th>Global / other layer says</th><th>ship says</th><th>Read</th></tr>
+  <tr><td class="sev hard">HARD</td>
+    <td>"Every feature/fix lands through a GitHub PR — don't squash-merge straight to local main anymore."</td>
+    <td>EXPRESS lane: <code>wt merge</code> — which is precisely a local squash to main, no PR.</td>
+    <td><b>Your call.</b> You moved to PR-flow deliberately; either EXPRESS opens a fast PR too, or the global gets an explicit EXPRESS carve-out. Pick one, write it down once.</td></tr>
+  <tr><td class="sev hard">HARD</td>
+    <td>"Design docs, specs, AND implementation plans are self-contained HTML files."</td>
+    <td>"The execution plan is machine-facing markdown he never reads" — and in practice ship's plans are <code>specs/plans/*.md</code>.</td>
+    <td>Ship is right. The global rule was written for docs <i>you</i> read. One-line fix to the global: machine-facing plans may be markdown.</td></tr>
+  <tr><td class="sev hard">HARD</td>
+    <td>Global Billing: Max OAuth via <code>claude -p</code> is fine; "Fable reviews may use <code>claude -p --model fable</code>."</td>
+    <td>Router: "never <code>claude -p</code> … Max OAuth for agent work is a ToS violation."</td>
+    <td>Router is stale on both fact and policy. Delete the line.</td></tr>
+  <tr><td class="sev hard">HARD</td>
+    <td>Superpowers: brainstorming "before ANY creative work," TDD "for any feature or bugfix" — mandatory language.</td>
+    <td>EXPRESS and SELF-DIRECTED skip brainstorming; "No strict TDD by default."</td>
+    <td>Ship's posture is the one you actually run — but it never says it's overriding. Add one line: "this pipeline overrides the superpowers brainstorming/TDD defaults on autonomous lanes." Silent bypass of MUST-language is exactly what confuses a strong instruction-follower.</td></tr>
+  <tr><td class="sev drift">DRIFT</td>
+    <td>Memory <code>ship-engine-all-fable</code> + router ledger (2026-07-23): "all-Fable dial supersedes router 0/100; killed a codex dispatch, building inline."</td>
+    <td>Router + pipeline both still say all drafting goes to GPT-5.6 sol at 0/100.</td>
+    <td><b>The biggest single item.</b> The engine ladder's whole premise — "conserve Fable, it's the scarcest inference" — predates Fable being the everyday driver. Decide the standing dial; if all-Fable is it, router shrinks to dispatch mechanics for verify/review offloads and the ladder prose goes.</td></tr>
+  <tr><td class="sev drift">DRIFT</td>
+    <td>Ponytail hook fires on every subagent: "code first, at most three short lines."</td>
+    <td>Ship's subagent briefs demand storyboards, 7-section cards, fixed verdict schemas.</td>
+    <td>Ship's structured outputs are contracts, so they win — but the two fight in every subagent's context. Exempt ship-dispatched subagents from the ponytail hook, or state the precedence in the brief template.</td></tr>
+  <tr><td class="sev drift">DRIFT</td>
+    <td>"Don't hand me non-decisions."</td>
+    <td>GATE 2 fires unconditionally after PLAN — the skill itself admits it's "often zero calls — then it's a pure confirm."</td>
+    <td>A hard stop that's sometimes a non-decision. Option: GATE 2 auto-passes when the go-card has zero calls and the lane isn't schema/auth/money. Your taste call — it removes a checkpoint.</td></tr>
+  <tr><td class="sev dup">DUP</td>
+    <td colspan="2">Stated in both global and pipeline: docs-home rule, html-effectiveness patterns + URL, "who Pete is" PM framing, squash + <code>--delete-branch</code> choreography, auto-<code>open</code> artifacts, the six-name stack list. Pipeline even restates the engine dial right after saying "router owns it, don't restate it here."</td>
+    <td>Each fact should live in one layer; the lower layer references, never restates. Every duplicate is a future drift (the billing one above <i>was</i> one of these).</td></tr>
+  <tr><td class="sev dup">DUP</td>
+    <td colspan="2">Deploy-lane knowledge lives in both Zero/CLAUDE.md and homezero/AGENTS.md at different detail levels; Zero's copy already has dead references.</td>
+    <td>AGENTS.md owns it; Zero points.</td></tr>
+</table></div>
+
+<h2>3 · What the Fable 5 guidance changes</h2>
+<p>The platform doc (the "new ways of prompting" — this is the written form of what Thariq's been saying) has one recommendation aimed straight at this setup:</p>
+<blockquote>"Refactor existing prompts and skills. Skills developed for prior models are often too prescriptive for Claude Fable 5 and can degrade output quality. Review and consider removing older instructions if default performance is better."</blockquote>
+<p>Pipeline SKILL.md is the poster child: 70 "never"s, ~176 bold spans, 18 rules that are incident post-mortems turned into permanent prose. The guide's counter-pattern: <b>one short principle now steers what used to take an enumerated list</b> — instruction-following is strong enough that listing every banned behavior is worse than stating the intent.</p>
+
+<h3>Three-way triplication</h3>
+<p>Several behaviors are now stated <b>three times</b> — in the Fable harness system prompt, in the global CLAUDE.md, and again in ship: act-don't-overplan, evidence-grounded status reports, pause-only-for-genuine-input, brevity. The harness copy is maintained by Anthropic and always current; the other two copies are now redundancy that can only drift.</p>
+
+<h3>Sorting the pipeline's 7,800 words</h3>
+<div class="tablewrap"><table>
+  <tr><th>Bucket</th><th>What it is</th><th>Fable 5 treatment</th></tr>
+  <tr><td><b>Machine contracts</b></td><td><code>.ship-stage</code> markers, <code>needs input:</code>/<code>result:</code> + branch·worktree suffix, verify's 5-field verdict, card templates.</td><td><b>Keep byte-exact.</b> Parsed by statusline, shipboard, FleetView. Label them as machine contracts so the model knows they're not prose style.</td></tr>
+  <tr><td><b>Environment facts</b></td><td>codex stdin hang, <code>--merged</code> vs UI-squash, worktree/<code>gh pr merge</code> interactions, Convex preview drift, workflow-concurrency cancellation.</td><td><b>Keep, but move to a reference appendix.</b> These are facts about the world, not behavior steering — Fable can pull them when relevant instead of carrying all 18 inline.</td></tr>
+  <tr><td><b>Behavior steering</b></td><td>Anti-idle rules, narration cadence, don't-overplan, options-with-a-rec phrasing, "most runs teach nothing," brevity rules.</td><td><b>Compress hard.</b> Most of this is now native or one sentence. This is where "too prescriptive degrades output" bites.</td></tr>
+  <tr><td><b>Process spine</b></td><td>Lanes, two gates, the gate test ("would Pete's answer change what gets built"), scope law, stage order.</td><td><b>Keep — this is the actual design.</b> The gate test and scope law are exactly the kind of short principle the guide says to prefer. They're already well-written.</td></tr>
+</table></div>
+
+<h3>Other guide items that map here</h3>
+<ul>
+  <li><b>Memory:</b> the guide's per-lesson-file pattern is already your harness memory + router ledger + ship-retro issues — three systems. The failure mode showed up already: a memory changed the engine dial and no skill file followed. Design rule: <b>a memory that changes a dial triggers a skill edit</b> (the retro path exists for exactly this; use it).</li>
+  <li><b>Reasoning echo:</b> ship's "log why" ledger rows are fine (decision logs, not reasoning transcripts) — nothing here trips the reasoning-extraction refusal category. One less migration worry.</li>
+  <li><b>Effort:</b> router's "xhigh is the floor" was written for codex; with Fable driving, the guide says lower efforts often beat old-model xhigh — the all-Fable decision changes the economics the ladder was built on.</li>
+</ul>
+
+<h2>4 · Target architecture</h2>
+<p><b>One fact, one layer.</b> Each layer states only what it uniquely knows; lower layers reference upward, never restate.</p>
+<ul>
+  <li><b>Global CLAUDE.md</b> — taste and cross-repo invariants only. Drops what the Fable harness now ships (autonomy, evidence-grounding). Gains two one-liners: machine-facing plans may be markdown; the EXPRESS merge ruling (whichever way you call it).</li>
+  <li><b>ship plugin</b> — the process spine + machine contracts + environment-fact appendix. Loses: restated global rules, restated dial, homezero hardcoding (7 mentions), stale billing claim, behavioral steering Fable does natively. Gains: an explicit "overrides superpowers brainstorming/TDD on autonomous lanes" line.</li>
+  <li><b>Project CLAUDE.md — a small "ship contract" section</b>, the real design idea here. Ship currently knows homezero by name; instead every shippable repo declares:
+    <ul>
+      <li><code>gates:</code> the test/build commands that must be green</li>
+      <li><code>lanes:</code> deploy commands per lane (or "none")</li>
+      <li><code>preview:</code> how to provision an isolated backend (the clobbering-bug seam)</li>
+      <li><code>verify-auth:</code> the test-auth path verify may use</li>
+      <li><code>ship: no</code> — for van, mayor-pete, notes, paonia/PKAI, so the pipeline declines cleanly instead of improvising</li>
+    </ul>
+    homezero already has all of this in prose; this just names the seam so the plugin reads it instead of embedding it. buzz's contract would carry its worktree-breaking fmt gotcha where ship would actually see it.</li>
+  <li><b>Memories/ledger</b> — observations and dial history; any standing change flows into the owning skill file within the run that made it.</li>
+</ul>
+
+<h2>5 · Punch list</h2>
+<h3><span class="pill do">Just do</span> No taste required</h3>
+<ul>
+  <li>Delete router's stale Max-OAuth/ToS claim.</li>
+  <li>Global one-liner: machine-facing execution plans may be markdown.</li>
+  <li>Ship one-liner: declares its superpowers overrides explicitly.</li>
+  <li>Hygiene sweep: move <code>~/Projects/cells</code> to <code>archived/</code> and unregister the <code>cells</code>/<code>wells</code> skills (both dead per Pete); fix notes/CLAUDE.md's dead pointers and stale project list; Zero/CLAUDE.md dead worktree names + dedupe the lane table; move the imessage password out of the file.</li>
+  <li>De-duplicate the seven restated global rules out of pipeline (reference, don't restate).</li>
+</ul>
+<h3><span class="pill fork">Your call</span> Genuine forks</h3>
+<ul>
+  <li><b>EXPRESS merge:</b> PRs-for-everything (consistency, audit trail, ~30s overhead per tweak) vs. keep <code>wt merge</code> as a sanctioned carve-out (fastest path for watched tweaks). <b>Rec: fast PR even on EXPRESS</b> — you chose PR-flow for a reason, and ship already has the choreography.</li>
+  <li><b>Engine dial:</b> ratify all-Fable as the standing dial (router shrinks to dispatch mechanics; the "conserve Fable" ladder retires) vs. restore 0/100 codex. <b>Rec: ratify all-Fable</b> — it's what you're actually running, and the ladder's premise is obsolete now that Fable is the driver.</li>
+  <li><b>GATE 2 auto-pass</b> when the go-card has zero calls (non-schema/auth/money): removes a checkpoint that's sometimes a pure confirm, at the cost of one fewer look before build. <b>Rec: yes, with the schema/auth/money exclusion.</b></li>
+  <li><b>Pipeline diet itself:</b> the restructure in §3 is a real /ship run on the ship repo — worth doing as its own ship once the forks above are called, so the rewrite lands the rulings in one pass.</li>
+</ul>
+
+<p class="footnote">Sources: Fable 5 prompting guide (platform.claude.com); full reads of pipeline/router/verify SKILL.md, the ship plugin repo, and all 13 active project CLAUDE.md files (+ worktree copies, confirmed identical). Conflict quotes verbatim from the files. This brief is analysis only — no files were edited.</p>
+
+</body>
+</html>

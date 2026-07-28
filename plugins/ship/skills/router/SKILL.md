@@ -1,298 +1,142 @@
 ---
 name: router
-description: Use ONLY when executing the build tasks of an implementation plan (the BUILD stage of /ship) — dispatching each task to GPT-5.6 sol via background codex exec per Pete's current dial (see "Target mix" — currently 0/100, Opus is out of the BUILD rotation entirely; drafting is all sol, sub-overhead work inline on the driver; the dial is driver-independent — Fable or Opus 5 driving, drafting stays codex). Do NOT invoke for planning, design, review, merge, or normal work — that all stays on the driver (the harness model). Never route to Sonnet.
+description: Use ONLY when executing the build tasks of an implementation plan (the BUILD stage of /ship) — dispatching each coding task to GPT-5.6 sol via background codex exec. Fable always drives (every stage, including BUILD) and dispenses the coding tasks; sub-overhead work stays inline on the driver. Do NOT invoke for planning, design, review, merge, or normal work — that all stays on the driver. Never route to Sonnet.
 ---
 
-# router — split BUILD-stage coding across Opus and GPT-5.6 sol
+# router — the driver dispenses BUILD coding to GPT-5.6 sol
 
-**Scope: the BUILD stage only.** Discover, plan, design, merge, and every normal
-task stay on **the driver** — the harness model running the session (Fable
-today; Opus 5 once Fable's quota is up — see driver succession under "Target
-mix") — as usual; do not invoke router for them. Router fires *only* when the driver is
-dispatching the concrete build tasks of an already-written implementation plan.
-Outside build, there is no routing decision. (Ship's other codex offloads —
-adversarial review in REVIEW, mechanical recon in DISCOVER — are wired directly
-in the ship skill, not through router. The constant everywhere: **design,
-planning, and the final say stay with Fable**; codex is inference muscle.)
+**Scope: the BUILD stage only.** Discover, plan, design, merge, and every normal task
+stay on the driver; router fires only when dispatching the concrete build tasks of an
+already-written implementation plan. (Ship's other codex offloads — review mode in
+REVIEW, recon in DISCOVER, verify's browser walks — are wired directly in the ship
+skill; the invoke rules below apply to them all the same.)
 
-Two engines:
+**The dial (Pete, 2026-07-28): Fable always drives — every stage, including BUILD — and
+dispenses the coding tasks to codex.** Driver tokens buy judgment (design, briefs,
+triage, gates, git, the final say); codex tokens buy drafts — codex does markedly better
+work under a well-authored brief, and brief-writing is what the driver excels at.
+**Never route to Sonnet** — retired from this pipeline entirely. The dial is a target,
+not a quota: *"use your judgment and make sure you get the job done, that's what's
+important."* If a task wants different handling, follow the task and log why.
 
-- **GPT-5.6 sol** — via **background `codex exec`**, billing the ChatGPT
-  subscription. Off-Max entirely. (For Anthropic-model offloads, never shell
-  out to `claude -p` from inside a session — use harness subagents via the
-  Agent tool: same models, same Max billing, native tracking. `claude -p` is
-  fine ToS-wise but belongs in scripts/cron, not inside a run.) **Fast mode stays
-  OFF** (Pete, 2026-07-13: Fast burned credits ~2.5× for ~1.5× speed); xhigh
-  stays the effort floor — save credits on the *tier*, never on thinking.
-  *(The 2026-07-16 claudex experiment — sol in the Claude Code harness via a
-  loopback proxy — is reversed as of 2026-07-18, Pete's call: clumsy in
-  practice, and the codex CLI's own network path is faster. The claudex install
-  survives for interactive use, but ship never dispatches through it.)*
-- **Opus** *(dormant at the current 0/100 dial — kept for when Pete swings it
-  back)* — an Opus subagent: `Agent(model: opus)` in Claude Code; under Codex
-  Desktop, an Opus-capable subagent tool if the harness exposes one (search the
-  available tools first) — if none, keep the task on the driver and log
-  `driver-no-opus`. On Claude Max, drawing on the weekly Opus quota.
-
-**Never route to Sonnet** — Sonnet 5 is retired from this pipeline entirely (Pete's
-call), whatever the current mix.
-
-**The mix is Pete's dial, not a constant.** He retunes it as quota reality changes
-(it has swung from 50/50 to 95/5 codex and back inside a week). The current dial
-lives in **"Target mix"** below — when Pete says "go X/Y," that section (and this
-description) is the only thing to edit. The heuristics, discipline, and patience
-rules below hold at any mix.
-
-**Auth caveat:** the savings only hold if `codex` uses its *subscription*
-login, not an API key — an `OPENAI_API_KEY` in the env would silently bill
-per-call. Sanity-check on first use in a session.
-
-## Prime directive: success over the mix
-
-The dial is a **target, not a quota.** You (the driver) decide each assignment —
-optimize for the work getting done *well*, and **self-adjust freely** as the ledger
-shows what works. If a task wants a different engine than the split suggests, follow
-the task and log why. Pete: *"use your judgment and make sure you get the job done,
-that's what's important."*
-
-## The two engines
-
-| Engine | Invoke | Best at |
-|--------|--------|---------|
-| **GPT-5.6 sol** | `codex exec -c model_reasoning_effort=xhigh -o <result-file> "<brief>" < /dev/null` (cwd = repo worktree, background; see quick-reference) | Fully-specified, self-contained coding with real work to explore: figure out signatures, write tests against real types, work through a well-briefed problem. "Here's exactly what to build" → it builds it well |
-| **Opus** *(dormant at 0/100)* | `Agent(model: opus)` | Judgment and integration: design still open mid-task, cross-file integration, real risk, irreversible surfaces, ambiguity a brief can't close — at the current dial that work is the driver's, not Opus's |
-
-**You (the driver) dial thinking per task — and default to MORE thinking, not
-less.** sol workers: `xhigh` unless you have a reason to drop (credits are real but
-thinking is the cheap part — the expensive mistake is a shallow wrong draft; spend
-it). Opus subagents: `high` floor, `xhigh` for the gnarly ones; go lower only for
-genuinely mechanical work. **Slow is fine — the answer to an engine taking a while
-is a longer timeout, not less thinking or a different engine** (see the patience
-note).
-
-## Target mix  ← Pete's dial — edit here when he retunes it
-
-**Current dial (2026-07-11): Opus 0 / GPT-5.6 sol 100 — Opus 4.8 is out of the
-BUILD rotation entirely (Pete's call).** All drafting goes to GPT-5.6 sol; there
-is no per-task engine choice, only dispatch-vs-inline (heuristic #4). A task that
-would have wanted Opus-grade judgment doesn't get a different engine — it gets
-a **tighter brief**: the driver closes the open design question itself, then
-dispatches the fully-specified remainder; if the judgment can't be separated
-from the writing, the driver does that task inline. **Fable has the final say
-at any mix** — the driver owns design, planning, briefs, triage, and merge; the
-dial only moves who drafts the code.
-
-**Driver succession (Pete, 2026-07-28): the dial is driver-independent.** Pete
-drives /ship on Fable until its quota runs out, then switches the driver to
-**Opus 5** — and BUILD drafting stays 100% codex either way. An Opus 5 driver
-does *not* put Opus back in the drafting rotation; whoever drives, their quota
-is spent only on judgment — briefs, triage, gates, git, the final say. That's
-the economics of the split: codex does markedly better work under a
-well-authored brief, brief-writing is exactly what the driver excels at, so
-driver tokens buy guidance while codex tokens buy drafts — stretching both
-subscriptions as far as they'll go. (The all-Fable build dial some 2026-07-23
-ledger rows cite was Pete's temporary call for that run; as of 2026-07-28 he's
-retuned it back to all-codex — that memory is retired.)
-
-**Harness (2026-07-18, Pete's call): sol drafts through `codex exec`** — the
-one-day claudex detour (07-16→07-18) is over; codex's native network path is
-faster and the wrapper felt clumsy. One engine, one invoke shape, for drafting
-and browser work alike.
-
-**Browser work is codex's too (Pete, 2026-07-11):** verify walks, design QA,
-and live-product grounding dispatch as background `codex exec` — codex scripts
-its own Playwright and saves screenshots to disk. Auth-walled surfaces: codex
-attaches to the dedicated logged-in **codex Chrome**
-(`~/.codex/codex-chrome`, CDP :9222) via `connectOverCDP`. Opus's only
-remaining pipeline job is claude-in-chrome against Pete's *personal* Chrome,
-for logins that exist nowhere else.
+**Billing:** codex bills the ChatGPT subscription — the savings hold only on its
+*subscription* login; an `OPENAI_API_KEY` in the env silently bills per-call
+(sanity-check on first use). **Fast mode stays OFF** (burned credits ~2.5× for ~1.5×
+speed); **xhigh is the effort floor** — save credits on the tier, never on thinking.
+For Anthropic-model offloads, never shell out to `claude -p` from inside a session —
+use harness subagents (the Agent tool): same models, same Max billing, native tracking.
+`claude -p` belongs in scripts/cron, not inside a run.
 
 ## The assignment heuristic
 
-For each build task, ask in order:
+For each build task, in order:
 
-1. **Design still open, real risk, irreversible, ambiguous mid-flight?** → the
-   **driver closes the judgment first** (decide the design, pick the shape,
-   settle the ambiguity), then dispatches the now-fully-specified task to sol.
-   Judgment inseparable from the writing → the driver does the task inline.
-2. **Fully specified and self-contained, with real work to explore** — exact
-   files, signatures, test cases, no open design questions? → **GPT-5.6 sol
-   (codex exec, xhigh).** At the current dial this is the default destination
-   for everything.
-3. *(dormant at 0/100)* When the dial has two engines, solid well-specified
-   coding that fits either balances the split.
-4. **Smaller than the dispatch overhead?** → the **driver writes it inline**.
-   A dispatch costs ~5–10 min of fixed overhead (brief, launch, poll, read
-   result) — a verbatim write already authored in the brief, a rename, a config
-   line, wiring a triaged review fix all finish faster on the driver than the
-   overhead alone (Pete's amendment to conserve-Fable, 2026-07-06). Anything
-   with real exploration or multi-file work still dispatches.
-5. **The sol worker produced a *wrong* diff twice on a task?** → escalate to
-   **the driver** — Fable rewrites the task inline (at 0/100 there is no Opus
-   bench; a third sol round costs more than it saves), log `escalated→driver`.
-   **Slow is not failure** — never escalate (or kill a run) because a worker is
-   taking a while.
-6. **Agent-skill / craft prose AND frontend design — never routed.** SKILL.md
-   files, reference/verb docs, agent-voiced distillations are **driver-authored**
-   (Fable), not sent to codex or Opus (Pete's dial, 2026-07-02) — the voice and
-   judgment *are* the deliverable. Same for **frontend design** (Pete's call,
-   2026-07-18, reversing 2026-07-16): HTML design specs, mockups, visual/UI
-   work, styling — anywhere taste is the deliverable — Fable authors inline.
-   Frontend *mechanics* with the design already closed (wiring a spec'd
-   component, plumbing per an approved design) route to sol like any other
-   closed-brief task.
+1. **Design still open, real risk, ambiguous?** → the driver closes the judgment first
+   (decide the design, settle the ambiguity), then dispatches the fully-specified
+   remainder. Judgment inseparable from the writing → the driver does the task inline.
+2. **Fully specified and self-contained, with real work to explore?** → **GPT-5.6 sol**
+   (`codex exec`, xhigh). The default destination for drafting.
+3. **Smaller than the dispatch overhead (~5–10 min: brief, launch, poll, read)?** → the
+   driver writes it inline. A rename, a config line, a verbatim write already authored
+   in the brief, wiring a triaged review fix — all finish faster than the overhead.
+   Real multi-file exploration still dispatches.
+4. **A wrong diff twice on the same task?** → escalate: the driver rewrites inline; log
+   `escalated→driver`. A third codex round costs more than it saves. **Slow is not
+   failure** — never escalate because a worker is taking a while.
+5. **Skill/agent prose and frontend design — never routed.** SKILL.md files, agent-
+   voiced docs, HTML design specs, mockups, styling — anywhere taste is the
+   deliverable — the driver authors inline. Frontend *mechanics* with the design closed
+   route like any other closed-brief task.
 
-### Patience note (hard-won — read before dispatching sol)
+**Browser work is codex's, always** — verify walks, design QA, live-product grounding:
+codex scripts its own Playwright, saves screenshots to disk. Auth-walled: the logged-in
+codex Chrome (`~/.codex/codex-chrome`, CDP :9222) via `connectOverCDP`. Never drive
+the browser from the driver.
 
-A sol worker can sit quiet for many minutes at xhigh — past
-runs were killed at a 2-minute timeout before a single file was written, and those
-got mislogged as failures. They weren't; they were impatience. **We have time:
-dispatch in the background and give it a generous window — think 15–30 minutes,
-not 2 — checking in on it rather than killing it.** Don't drop effort to make it
-faster; xhigh + patience is the deal. The one true exception: **work smaller than
-the dispatch overhead** — that's not a dispatch task at any speed, the driver
-writes it inline (heuristic #4).
+## Patience & liveness
 
-### Tag and track every dispatch
+An xhigh worker can sit quiet for many minutes — runs killed at a 2-minute timeout were
+healthy and got mislogged as failures. **Dispatch in the background with a generous
+window (15–30 min), checking in rather than killing.** Don't drop effort to go faster.
 
-Pete runs concurrent sessions dispatching workers at once — untagged and
-untracked, a hung run sits unnoticed until someone wonders why a task never
-landed (it has happened). So:
+- **Startup liveness tell:** a healthy `codex exec` creates its `~/.codex/sessions`
+  rollout file within seconds. Process alive with no session file after ~2 min = dead
+  at startup (held stdin, bad flag) — kill and redispatch. Distinct from "slow is
+  fine," which applies only after the session exists.
+- **Stall budget: ~15 min of silence → an active look** (process in `ps`? result file
+  or working tree moving?). A live run that's just slow gets left alone. A run that
+  exited without a result, or shows zero output and zero writes: kill the chain,
+  `codex exec resume <session-id>` if it left a session, else redispatch `-retry1`,
+  and log the row honestly.
 
-- **Tag:** the first line of every brief is
+## Tag and track every dispatch
+
+Pete runs concurrent sessions; untagged hung runs sit unnoticed.
+
+- **Tag:** first line of every brief is
   `[ship-dispatch: <project> · <branch> · <task-slug>]` (append `-retryN` on
-  redispatch). The brief rides in `codex exec`'s argv, so the tag shows in
-  `ps aux | grep "codex exec"` — any session, and Pete, can attribute every
-  run at a glance. Tell the worker in the brief that the tag line is routing
-  metadata to ignore.
-- **Track:** dispatch with the harness's `run_in_background` (it notifies on
-  exit) and check in at intervals. **Startup liveness tell:** a healthy
-  `codex exec` creates its `~/.codex/sessions` rollout file within seconds.
-  Process alive with no session file after ~2 min = dead at startup (stdin
-  held open, bad flag), kill and redispatch — this is distinct from "slow is
-  fine", which applies only after the session exists. **Every dispatch carries
-  a stall budget: ~15 minutes of silence → an active look** (is the process in
-  `ps`? has the result file or the run's working tree moved?) — never more
-  passive waiting. Patience (15–30 min) is for **live** runs — the process
-  exists and its output or the working tree is moving; a live run that's just
-  slow gets left alone. A run that exited without a result, or a stall-budget
-  check finding zero output and zero file writes, is not a patience case: kill
-  the process chain, `codex exec resume <session-id>` if it left a session,
-  else redispatch with `-retry1`, and log the row honestly (`abandoned` or
-  `fixed-N`, note "hung"). The stall budget converts "stuck forever" into
-  "lost 15 minutes."
+  redispatch) — it rides in argv, so `ps aux | grep "codex exec"` attributes every run.
+  Tell the worker the tag is routing metadata to ignore.
+- **Track:** dispatch with the harness's `run_in_background` (notifies on exit) —
+  never a hand-rolled `&`.
 
-## The discipline (non-negotiable, both engines)
+## The discipline (non-negotiable)
 
-Whoever drafts the code, **the driver owns the envelope**:
+Whoever drafts, **the driver owns the envelope**:
 
-1. **The driver writes the brief** — exact files, signatures, test cases,
-   constraints. A vague brief to codex wastes the savings in fix rounds.
-2. **The driver reviews the diff** and **runs the gates** (tsc / tests / build)
-   before anything is committed. Never trust a "tests pass" claim — re-run them.
-   This holds for Opus-subagent output too.
-3. **The driver owns git** — commits, merges, branch hygiene. (Codex has
-   auto-opened PRs / committed unprompted before — rein it in; git stays with
-   the driver.)
-4. **One writer per branch at a time.** Never run two writers — an Opus subagent
-   and/or a codex task — against the same working tree concurrently; they collide
-   (it has caused git collisions). Serialize them, or give each its own
-   sub-worktree.
+1. **The driver writes the brief** — exact files, signatures, test cases, constraints.
+   A vague brief wastes the savings in fix rounds.
+2. **The driver reviews the diff and runs the gates** before anything is committed —
+   never trust a "tests pass" claim.
+3. **The driver owns git** — codex has auto-opened PRs and committed unprompted; rein
+   it in.
+4. **One writer per branch at a time** — concurrent writers on one working tree
+   collide. Serialize, or give each its own sub-worktree.
 
-The split is about *who drafts the code*, not about skipping review. Quality bar
-is identical across both engines.
+## CLI quick-reference
 
-## CLI / invoke quick-reference
-
-**Codex (GPT-5.6 sol via `codex exec`) — the drafting dispatch, and the standing
-engine for review mode and browser work (wired in the ship skill):**
 ```
 cd <repo> && codex exec -c model_reasoning_effort=xhigh -o <result-file> "<full task brief>" < /dev/null
 ```
-launched in the background — in Claude Code the Bash tool's `run_in_background`
-(it notifies on exit); under Codex Desktop a long-lived shell session you poll.
-Never a hand-rolled `&`.
+
 - **`-o <result-file>` on every dispatch** (e.g. `/tmp/ship-<task-slug>-result.md`) —
-  it writes the agent's final message to a file, so the result survives even if
-  the shell buffer is truncated or the watcher misses the exit. Read the file,
-  not the scrollback.
-- **`< /dev/null` is mandatory.** When stdin isn't a TTY, `codex exec` blocks
-  reading stdin to EOF *before doing anything* — a held-open pipe hangs the run
-  at startup forever, with no session file and no error (this ate a night of
-  dispatches once and got misblamed on fast mode/xhigh).
-- **cwd outside a git repo → add `--skip-git-repo-check`**, or codex exits
-  fatally at startup ("Not inside a trusted directory").
-- **Always the sol variant.** GPT-5.6 in this pipeline means `gpt-5.6-sol`,
-  never plain `gpt-5.6` or another variant (Pete's call, 2026-07-11). If a
-  dispatch ever needs the model set explicitly, it's `-m gpt-5.6-sol`.
-- Leave the model unset so the run inherits `~/.codex/config.toml` (gpt-5.6-sol,
-  standard tier — Fast mode is OFF to conserve credits; don't override either).
-- First line of the brief is the `[ship-dispatch: …]` tag (see "Tag and track
-  every dispatch") so the run is attributable in `ps`.
-- Fix rounds: resume the *specific* session — capture the session id codex
-  prints, then `codex exec resume <session-id> "<follow-up>"`. **Never
-  `resume --last`** — with concurrent sessions dispatching codex, "--last" is
-  whichever run finished most recently anywhere on the machine, not your task.
-- Edits the working tree directly → obey "one writer per branch."
+  the result survives a truncated buffer or missed exit. Read the file, not scrollback.
+- **`< /dev/null` is mandatory** — a held-open stdin hangs `codex exec` at startup
+  forever, no session file, no error.
+- **cwd outside a git repo → `--skip-git-repo-check`**, or codex exits fatally.
+- **Always the sol variant** — `gpt-5.6-sol`, never plain `gpt-5.6`. Leave the model
+  unset to inherit `~/.codex/config.toml` (sol, standard tier); if it must be explicit,
+  `-m gpt-5.6-sol`.
+- Fix rounds: capture the session id and `codex exec resume <session-id>
+  "<follow-up>"`. **Never `resume --last`** — with concurrent sessions it's whichever
+  run finished most recently anywhere on the machine.
 - **Reviews use codex's native review mode, not a hand-rolled brief:**
-  `codex exec review --base <branch> -o <result-file> < /dev/null`
-  (or `--uncommitted` / `--commit <sha>`). **No positional prompt** — codex
-  errors ("cannot be used with [PROMPT]") when a prompt is combined with any
-  diff-source flag; review mode applies its own rubric. No prompt also means
-  no ship-dispatch tag — name the `-o` result file after the feature slug so
-  the run is attributable in `ps`. Review mode is read-only by
-  construction and computes the diff itself — "edit nothing" enforced by the
-  tool, not by prompt convention.
-- **Do NOT use the codex-companion runtime (`codex` plugin's
-  `codex-companion.mjs task/status/result`) for background work.** Its jobs
-  depend on a per-worktree broker daemon that the plugin's SessionEnd hook
-  tears down — in Pete's multi-session, restart-heavy workflow the broker dies
-  mid-run and the job sits "running" forever, orphaned (it killed a 25-minute
-  review). Companion is acceptable only for short *foreground* calls you'll
-  outlive; `codex exec` is the path for everything dispatched. Never go through
-  the `codex:codex-rescue` subagent either (Sonnet forwarder; Sonnet is
-  retired).
+  `codex exec review --base <branch> -o <result-file> < /dev/null` (or
+  `--uncommitted` / `--commit <sha>`). **No positional prompt** — codex errors when a
+  prompt is combined with any diff-source flag. No prompt means no dispatch tag — name
+  the `-o` file after the slug instead. Read-only by construction.
+- **Never the codex-companion runtime for background work** — its per-worktree broker
+  daemon dies mid-run in a multi-session workflow and the job orphans "running"
+  forever. Companion only for short foreground calls; `codex exec` for everything
+  dispatched. Never the `codex:codex-rescue` subagent (Sonnet forwarder; retired).
 
-**Opus:**
-```
-Agent(model: opus, prompt: "<full task brief>")   // Claude Code
-```
-- Codex Desktop: use an Opus-capable subagent tool if one is exposed; otherwise keep
-  the task on the driver and log the engine as `driver-no-opus` in the ledger.
+## The ledger
 
-## The metric — the ledger
+Maintain `~/.claude/skills/router/ledger.md` — the single canonical ledger, outside any
+repo or plugin directory (an installed plugin isn't writable state). **After every
+delegated build task**, append a row:
 
-Maintain `~/.claude/skills/router/ledger.md` — the **single canonical ledger**,
-outside any repo or plugin directory (create it there if missing; never write a
-ledger into the plugin's own directory — an installed plugin isn't writable state).
-**After every delegated build task**, append a row and keep the rolling summary
-current.
+`date | project | task (short) | task-type | engine | outcome | fix-rounds | note`
 
-Row: `date | project | task (short) | task-type | engine | outcome | fix-rounds | note`
-
-- **engine**: `codex` · `opus`
 - **task-type**: `specific-coding` · `integration` · `mechanical`
-- **outcome**: `clean` (passed review + gates first pass) · `fixed-N` (N
-  review→fix cycles) · `escalated→driver` (the sol worker couldn't; the driver
-  rewrote inline) · `abandoned`
-- Headline metric: **first-pass-clean rate per engine and per task-type**, plus
-  **escalation rate.**
+- **outcome**: `clean` · `fixed-N` · `escalated→driver` · `abandoned`
+- Headline metric: **first-pass-clean rate per task-type**, plus escalation rate. A
+  task-type that keeps escalating stays on the driver — say so when reporting a plan's
+  execution.
 
-**How to tune the split:** every so often (or when Pete asks), read the ledger:
-- an engine cleaning a task-type first-pass → send it *more* of that type.
-- a task-type that keeps getting `escalated→driver` → keep that type on the
-  driver and say so when reporting the mix.
-- Report realized mix vs the current dial and per-engine hit-rates when
-  summarizing a plan's execution.
+## When NOT to delegate (driver-inline, always)
 
-The mix is Pete's dial; the ledger is the evidence; refine over time.
-
-## When NOT to delegate (keep on the driver or Opus)
-
-- Anything touching auth, secrets, money, migrations, or irreversible / outward-
-  facing actions → Opus (or the driver directly).
-- Anything where the spec is still fuzzy (clarify/plan first — that's not a build
-  task yet).
-- Tiny verbatim writes where the content is *already authored* in the brief
-  (driver-inline is faster than spinning up any subagent).
-- The final review of a branch, and all of git → the driver, always.
+- Auth, secrets, money, migrations, irreversible or outward-facing actions.
+- A still-fuzzy spec (clarify/plan first — that's not a build task yet).
+- Tiny verbatim writes already authored in the brief.
+- The final review of a branch, and all of git.
