@@ -1,13 +1,14 @@
 ---
 name: router
-description: Use ONLY when executing the build tasks of an implementation plan (the BUILD stage of /ship) — dispatching each task to GPT-5.6 sol via background codex exec per Pete's current dial (see "Target mix" — currently 0/100, Opus is out of the BUILD rotation entirely; drafting is all sol, sub-overhead work inline on the driver). Do NOT invoke for planning, design, review, merge, or normal work — that all stays on the driver (the harness model). Never route to Sonnet.
+description: Use ONLY when executing the build tasks of an implementation plan (the BUILD stage of /ship) — dispatching each task to GPT-5.6 sol via background codex exec per Pete's current dial (see "Target mix" — currently 0/100, Opus is out of the BUILD rotation entirely; drafting is all sol, sub-overhead work inline on the driver; the dial is driver-independent — Fable or Opus 5 driving, drafting stays codex). Do NOT invoke for planning, design, review, merge, or normal work — that all stays on the driver (the harness model). Never route to Sonnet.
 ---
 
 # router — split BUILD-stage coding across Opus and GPT-5.6 sol
 
 **Scope: the BUILD stage only.** Discover, plan, design, merge, and every normal
-task stay on **the driver** — the harness model running the session (Fable) — as
-usual; do not invoke router for them. Router fires *only* when the driver is
+task stay on **the driver** — the harness model running the session (Fable
+today; Opus 5 once Fable's quota is up — see driver succession under "Target
+mix") — as usual; do not invoke router for them. Router fires *only* when the driver is
 dispatching the concrete build tasks of an already-written implementation plan.
 Outside build, there is no routing decision. (Ship's other codex offloads —
 adversarial review in REVIEW, mechanical recon in DISCOVER — are wired directly
@@ -78,6 +79,18 @@ dispatches the fully-specified remainder; if the judgment can't be separated
 from the writing, the driver does that task inline. **Fable has the final say
 at any mix** — the driver owns design, planning, briefs, triage, and merge; the
 dial only moves who drafts the code.
+
+**Driver succession (Pete, 2026-07-28): the dial is driver-independent.** Pete
+drives /ship on Fable until its quota runs out, then switches the driver to
+**Opus 5** — and BUILD drafting stays 100% codex either way. An Opus 5 driver
+does *not* put Opus back in the drafting rotation; whoever drives, their quota
+is spent only on judgment — briefs, triage, gates, git, the final say. That's
+the economics of the split: codex does markedly better work under a
+well-authored brief, brief-writing is exactly what the driver excels at, so
+driver tokens buy guidance while codex tokens buy drafts — stretching both
+subscriptions as far as they'll go. (The all-Fable build dial some 2026-07-23
+ledger rows cite was Pete's temporary call for that run; as of 2026-07-28 he's
+retuned it back to all-codex — that memory is retired.)
 
 **Harness (2026-07-18, Pete's call): sol drafts through `codex exec`** — the
 one-day claudex detour (07-16→07-18) is over; codex's native network path is
