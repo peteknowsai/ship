@@ -24,8 +24,9 @@ important."* If a task wants different handling, follow the task and log why.
 (sanity-check on first use). **Fast mode is ON for ship dispatches** (Pete, 2026-08-01,
 reversing the 07-13 cost ruling — the ~2.5× credit burn for ~1.5× speed is accepted):
 add `-c fast_mode=true` to every dispatch; the global `~/.codex/config.toml` keeps
-`fast_mode = false` for interactive use. **xhigh is still the effort floor** — never
-save on thinking.
+`fast_mode = false` for interactive use. **Effort: high** (Pete, 2026-08-01, down from
+xhigh — paired with fast mode, xhigh's long thinks were eating the speed win). Watch
+the ledger's first-pass-clean rate; a task-type that degrades goes back to xhigh.
 For Anthropic-model offloads, never shell out to `claude -p` from inside a session —
 use harness subagents (the Agent tool): same models, same Max billing, native tracking.
 `claude -p` belongs in scripts/cron, not inside a run.
@@ -38,7 +39,7 @@ For each build task, in order:
    (decide the design, settle the ambiguity), then dispatches the fully-specified
    remainder. Judgment inseparable from the writing → the driver does the task inline.
 2. **Fully specified and self-contained, with real work to explore?** → **GPT-5.6 sol**
-   (`codex exec`, xhigh). The default destination for drafting.
+   (`codex exec`, high). The default destination for drafting.
 3. **Smaller than the dispatch overhead (~5–10 min: brief, launch, poll, read)?** → the
    driver writes it inline. A rename, a config line, a verbatim write already authored
    in the brief, wiring a triaged review fix — all finish faster than the overhead.
@@ -58,7 +59,7 @@ the browser from the driver.
 
 ## Patience & liveness
 
-An xhigh worker can sit quiet for many minutes — runs killed at a 2-minute timeout were
+A high-effort worker can sit quiet for many minutes — runs killed at a 2-minute timeout were
 healthy and got mislogged as failures. **Dispatch in the background with a generous
 window (15–30 min), checking in rather than killing.** Don't drop effort to go faster.
 
@@ -99,7 +100,7 @@ Whoever drafts, **the driver owns the envelope**:
 ## CLI quick-reference
 
 ```
-cd <repo> && codex exec -c model_reasoning_effort=xhigh -c fast_mode=true -o <result-file> "<full task brief>" < /dev/null
+cd <repo> && codex exec -c model_reasoning_effort=high -c fast_mode=true -o <result-file> "<full task brief>" < /dev/null
 ```
 
 - **`-o <result-file>` on every dispatch** (e.g. `/tmp/ship-<task-slug>-result.md`) —
