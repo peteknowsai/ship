@@ -21,8 +21,11 @@ important."* If a task wants different handling, follow the task and log why.
 
 **Billing:** codex bills the ChatGPT subscription — the savings hold only on its
 *subscription* login; an `OPENAI_API_KEY` in the env silently bills per-call
-(sanity-check on first use). **Fast mode stays OFF** (burned credits ~2.5× for ~1.5×
-speed); **xhigh is the effort floor** — save credits on the tier, never on thinking.
+(sanity-check on first use). **Fast mode is ON for ship dispatches** (Pete, 2026-08-01,
+reversing the 07-13 cost ruling — the ~2.5× credit burn for ~1.5× speed is accepted):
+add `-c fast_mode=true` to every dispatch; the global `~/.codex/config.toml` keeps
+`fast_mode = false` for interactive use. **xhigh is still the effort floor** — never
+save on thinking.
 For Anthropic-model offloads, never shell out to `claude -p` from inside a session —
 use harness subagents (the Agent tool): same models, same Max billing, native tracking.
 `claude -p` belongs in scripts/cron, not inside a run.
@@ -96,7 +99,7 @@ Whoever drafts, **the driver owns the envelope**:
 ## CLI quick-reference
 
 ```
-cd <repo> && codex exec -c model_reasoning_effort=xhigh -o <result-file> "<full task brief>" < /dev/null
+cd <repo> && codex exec -c model_reasoning_effort=xhigh -c fast_mode=true -o <result-file> "<full task brief>" < /dev/null
 ```
 
 - **`-o <result-file>` on every dispatch** (e.g. `/tmp/ship-<task-slug>-result.md`) —
