@@ -174,10 +174,13 @@ on main.
   plan treats it as new (incidents: Design).
 - **Bug-shaped requests get an empirical root-cause check** — reproduce the failure or
   read the runtime evidence; never spec a fix from a hypothesis (incidents: Design).
-- For any visual/UI feature, run `impeccable` (use `/pix` for imagery freely) — the
-  spec *is* the prototype. **Ground the design in the live product**: a background
-  codex dispatch walks the running app / deployed URL and reports the real theme/CSS
-  with screenshots; design from those, never from in-repo mockups (incidents: Design).
+- For any visual/UI feature, invoke `impeccable` and follow its Setup (context.mjs —
+  the repo's PRODUCT.md/DESIGN.md are the visual authority): a new surface or
+  replacement look routes through its `shape`/new-work path; a refinement stays on the
+  incumbent world. Use `/pix` for imagery freely — the spec *is* the prototype.
+  **Ground the design in the live product**: a background codex dispatch walks the
+  running app / deployed URL and reports the real theme/CSS with screenshots; design
+  from those, never from in-repo mockups (incidents: Design).
 - Produce ONE self-contained HTML spec in the repo's docs home (`specs/` or `docs/`,
   whichever it uses) — e.g. `specs/designs/YYYY-MM-DD-<slug>.html` — covering the
   **whole** feature; it's the scope contract PLAN and BUILD execute in full.
@@ -218,6 +221,10 @@ on main.
   parallelize 5 verifiers.
 - `ponytail` posture; `superpowers:verification-before-completion` before claiming any
   task done — actually run it; `superpowers:systematic-debugging` on a red test.
+- **UI-writing briefs carry the craft floor** — codex has no impeccable installed, so
+  the floor never reaches the writer unless the brief points it there: every dispatch
+  that writes UI tells codex to read
+  `~/.claude/skills/impeccable/reference/craft-floor.md` and honor its checks and bans.
 - **Before BUILD is done, smoke-walk the whole feature yourself** — boot the app and
   drive the spec's real user paths (the formal `verify` runs in REVIEW; don't invoke it
   twice). Two preconditions that have each cost a red deploy (incidents: Backends): a
@@ -242,10 +249,14 @@ on main.
   **driver triages every finding** — adversarial reviewers over-flag by design — fixes
   what's real, puts judgment calls on the card. codex unavailable → `/code-review` +
   `ponytail-review` on the driver.
-- **Design QA for visual features** — a background codex dispatch walks the built
-  surfaces and judges them against the GATE 1 spec on impeccable's axes (hierarchy,
-  spacing, theme fidelity, interaction states). Driver triages: real gaps fixed before
-  the card, nits land on the card for Pete.
+- **Design QA for visual features** — a background codex dispatch first runs
+  impeccable's deterministic detector over the branch's changed UI files
+  (`node ~/.claude/skills/impeccable/scripts/detect.mjs --json <files>` — local, no
+  network), then walks the built surfaces and judges them against the GATE 1 spec and
+  the craft-floor checklist (contrast, depth, spacing, type, motion, states, copy, and
+  the bans). Bounded per impeccable's own ceiling: one batched round, one confirm, no
+  open-ended polish loops. Driver triages: real gaps fixed before the card, nits land
+  on the card for Pete.
 - **Put it in front of Pete, running.** For any visual/interactive feature, boot the
   worktree's dev server in the background and `open http://localhost:<port>` so the
   live local app is on his screen. **Never deploy to let him review; never tell him to
