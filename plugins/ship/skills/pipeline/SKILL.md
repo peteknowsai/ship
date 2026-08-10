@@ -66,7 +66,7 @@ gate genuinely needs him.** What scales is the ceremony, and **you size it, not 
   visual. Pete finds out from the `result:` line, not before.
 - **SELF-DIRECTED — real work with no taste question in it.** Write whatever
   machine-facing spec/plan *you* need to build it well, then build, run the full REVIEW
-  machinery (codex review + `verify` — a `works` verdict is the merge bar), merge,
+  machinery (`/code-review` + `verify` — a `works` verdict is the merge bar), merge,
   deploy to dev, `result:`. **Zero stops — the artifacts are for the record, not
   approval.**
 - **GATED — Pete's taste or direction is genuinely in play.** A new user-facing
@@ -82,20 +82,43 @@ a gate. Never use an autonomous lane to slip a taste call past Pete.
 
 ## Engines
 
-**Fable always drives — every stage, including BUILD** (Pete, 2026-07-28). The driver
-owns design, briefs, triage, gates, git, and the final say; it **dispenses the coding
-tasks to GPT-5.6 sol** via background `codex exec` (the `router` skill owns the dispatch
-mechanics and the dial). Work smaller than a dispatch's ~5–10 min fixed overhead, the
-driver writes inline. Never Sonnet.
+**Everything runs inside Claude Code** (Pete, 2026-08-10 — codex retired from the
+pipeline; the separate `router` skill retired with it). The driver owns design, briefs,
+triage, gates, git, and the final say, and **dispenses closed-brief coding tasks to
+harness subagents** (the Agent tool — same models, same Max billing, native tracking,
+notifies on exit). Work smaller than the dispatch overhead, the driver writes inline.
+Never shell out to `claude -p` from inside a session — that's for scripts and cron.
+Never Sonnet.
 
-**All browser work dispatches to codex too** — verify walks, design QA, live-product
-grounding: codex scripts its own Playwright against the running app and saves
-screenshots to disk; never drive Playwright/Chrome from the driver. Auth-walled
-surfaces: codex attaches to the logged-in codex Chrome (`~/.codex/codex-chrome`, CDP
-:9222) via `connectOverCDP`. Only a login that exists solely in Pete's *personal*
-Chrome still gets `Agent(model: opus)` + claude-in-chrome.
+**What delegates, what stays inline** — in order, per build task:
 
-**Never idle while a dispatch runs** — a codex review or QA pass is 10–25 minutes.
+1. **Design still open, real risk, ambiguous?** → the driver closes the judgment first,
+   then dispatches the fully-specified remainder. Judgment inseparable from the
+   writing → the driver does it inline.
+2. **Fully specified and self-contained, with real work to explore?** → **subagent**.
+   The default destination for drafting.
+3. **Smaller than the dispatch overhead** (writing the brief + reading the result)? →
+   inline. A rename, a config line, a verbatim write already authored in the brief,
+   wiring a triaged review fix. Real multi-file exploration still dispatches.
+4. **A wrong diff twice on the same task?** → the driver rewrites it inline. **Slow is
+   not failure** — never escalate because a subagent is taking a while.
+5. **Skill/agent prose and frontend design — never delegated.** SKILL.md files,
+   agent-voiced docs, HTML design specs, mockups, styling — anywhere taste is the
+   deliverable, the driver authors inline. Frontend *mechanics* with the design closed
+   delegate like any other closed brief.
+
+**The driver owns the envelope**, whoever drafts: it writes the brief (exact files,
+signatures, test cases, constraints — a vague brief burns the savings in fix rounds),
+reviews the diff and runs the gates before anything is committed (never trust a "tests
+pass" claim), and owns git entirely. **One writer per branch at a time** — concurrent
+writers on one tree collide; serialize, or give each its own sub-worktree.
+
+**All browser work runs on claude-in-chrome** — verify walks, design QA, live-product
+grounding. A subagent drives the MCP browser tools against the running app and reports
+what it saw; never drive the browser from the driver while other work is in flight.
+Auth-walled surfaces need no special rig: Pete's own Chrome is already logged in.
+
+**Never idle while a subagent runs** — a review or QA pass is 10–25 minutes.
 Work the standing non-tree list meanwhile (draft the review card, the board update, the
 commit message, groom `/ship next` cards) so the stage closes minutes after the result
 lands. Same posture at gates: notify, then keep doing non-gated work.
@@ -167,8 +190,9 @@ on main.
 ### 1 · DISCOVER — Pete's taste, up front  → marker: `discover`, then `gate:1`
 
 - Invoke `superpowers:brainstorming`. PM-framed, one question at a time.
-- **Recon runs on codex, synthesis stays with the driver.** Codebase evidence-gathering
-  dispatches as a background read-only `codex exec` (report findings, edit nothing).
+- **Recon runs on a subagent, synthesis stays with the driver.** Codebase
+  evidence-gathering dispatches to a read-only `Explore` subagent (report findings,
+  edit nothing).
   The recon brief includes a **reuse audit**: for every core noun the feature
   introduces, grep the whole repo — data layer included — for existing infra before the
   plan treats it as new (incidents: Design).
@@ -178,9 +202,9 @@ on main.
   the repo's PRODUCT.md/DESIGN.md are the visual authority): a new surface or
   replacement look routes through its `shape`/new-work path; a refinement stays on the
   incumbent world. Use `/pix` for imagery freely — the spec *is* the prototype.
-  **Ground the design in the live product**: a background codex dispatch walks the
-  running app / deployed URL and reports the real theme/CSS with screenshots; design
-  from those, never from in-repo mockups (incidents: Design).
+  **Ground the design in the live product**: a subagent walks the running app /
+  deployed URL over claude-in-chrome and reports the real theme/CSS with screenshots;
+  design from those, never from in-repo mockups (incidents: Design).
 - Produce ONE self-contained HTML spec in the repo's docs home (`specs/` or `docs/`,
   whichever it uses) — e.g. `specs/designs/YYYY-MM-DD-<slug>.html` — covering the
   **whole** feature; it's the scope contract PLAN and BUILD execute in full.
@@ -210,10 +234,10 @@ on main.
 
 - Write `build:0:<M>`; bump N per task. Build **all M tasks** in one session; commit
   each task on the branch as it lands, merge only when the whole plan is built.
-- Invoke `superpowers:subagent-driven-development` (the driver drives) and `router` to
-  dispatch each task — drafting goes to codex per the router; sub-overhead work inline.
-  The driver owns the brief, the diff review, the gates, and git. One writer per branch
-  at a time.
+- Invoke `superpowers:subagent-driven-development` (the driver drives) and dispatch
+  each task per **Engines** above — closed briefs to subagents, sub-overhead work
+  inline. The driver owns the brief, the diff review, the gates, and git. One writer
+  per branch at a time.
 - **Single-writer vs fan-out — pick by the diff, not reflex.** Default one writer.
   Fan out writers (own worktrees, merged back) only for genuinely independent AND
   numerous tasks — a migration, a mechanical sweep. The high-value fan-out is the
@@ -221,9 +245,9 @@ on main.
   parallelize 5 verifiers.
 - `ponytail` posture; `superpowers:verification-before-completion` before claiming any
   task done — actually run it; `superpowers:systematic-debugging` on a red test.
-- **UI-writing briefs carry the craft floor** — codex has no impeccable installed, so
-  the floor never reaches the writer unless the brief points it there: every dispatch
-  that writes UI tells codex to read
+- **UI-writing briefs carry the craft floor** — a subagent loads its own skills, not
+  the driver's open ones, so the floor never reaches the writer unless the brief points
+  it there: every dispatch that writes UI tells the writer to read
   `~/.claude/skills/impeccable/reference/craft-floor.md` and honor its checks and bans.
 - **Before BUILD is done, smoke-walk the whole feature yourself** — boot the app and
   drive the spec's real user paths (the formal `verify` runs in REVIEW; don't invoke it
@@ -241,15 +265,12 @@ on main.
 - **Freeze the tree while a verifier is driving** — no merges, rebases, or edits until
   its verdict lands (incidents: Worktrees). Absorb upstream *before* dispatching a
   round, never during.
-- **Correctness review — codex's native review mode, launched first** so it works while
-  the rest of REVIEW proceeds. From the worktree, background dispatch:
-  `codex exec review --base <lane-target-branch> -o <result-file> < /dev/null`
-  No focus prompt (incidents: codex); name the result file after the slug. Meanwhile
-  the driver runs `ponytail-review` (the over-build sweep). Read the result file; the
-  **driver triages every finding** — adversarial reviewers over-flag by design — fixes
-  what's real, puts judgment calls on the card. codex unavailable → `/code-review` +
-  `ponytail-review` on the driver.
-- **Design QA for visual features** — a background codex dispatch first runs
+- **Correctness review — `/code-review` against the lane target, launched first** so
+  it works while the rest of REVIEW proceeds. Meanwhile the driver runs
+  `ponytail-review` (the over-build sweep). The **driver triages every finding** —
+  adversarial reviewers over-flag by design — fixes what's real, puts judgment calls on
+  the card. The high-value fan-out is here: several verifiers on one diff beats one.
+- **Design QA for visual features** — a background subagent first runs
   impeccable's deterministic detector over the branch's changed UI files
   (`node ~/.claude/skills/impeccable/scripts/detect.mjs --json <files>` — local, no
   network), then walks the built surfaces and judges them against the GATE 1 spec and
@@ -262,7 +283,7 @@ on main.
   live local app is on his screen. **Never deploy to let him review; never tell him to
   "go look at the live site"** — the worktree's localhost is the review surface.
   (Non-UI change → show the demo/test output instead.)
-- **Prove it works — invoke `verify` before the card.** A fresh read-only codex
+- **Prove it works — invoke `verify` before the card.** A fresh read-only subagent
   verifier drives the feature and returns `works | broken | unverifiable` + a
   screenshot storyboard; verify loops-to-fix (cap ~3). **`broken` after the cap, or
   `unverifiable` → do NOT merge**: end the turn with `needs input:` ("review: <feature>

@@ -11,13 +11,12 @@ It's opinionated. Built for a hands-off, PM-style workflow: you stay in your lan
 - **You read the meta, never the diff.** Every checkpoint auto-opens a condensed HTML card in your browser — a design spec, a go-card, and a **review card** at merge. Never "go read the PR."
 - **Gate notifications.** When a ship parks at a gate, a desktop notification taps you on the shoulder (Ghostty-native, with a macOS fallback) — so you can walk away.
 - **Stage-aware status line.** Which ship, what phase (`designing → planning → building → reviewing`), ships-in-flight, your context + weekly budget, effort level. A bold banner when a ship needs you.
-- **BUILD routed across models.** Each build task is routed via the bundled `router` skill — split across Opus and GPT-5.5 (codex) per a tunable mix — while the driving model owns the brief, review, gates, and git.
+- **BUILD dispatched to subagents.** Each closed-brief build task goes to a harness subagent while the driver owns the brief, review, gates, and git. Everything stays inside Claude Code.
 - **Fresh-agent verification.** REVIEW invokes the bundled `verify` skill before the card so the running app is driven and judged before merge.
 
 ## What's in the plugin
 
 - `skills/ship` — the pipeline playbook + the go-card / review-card templates + the design record.
-- `skills/router` — model delegation for the BUILD stage (bundled; BUILD-only).
 - `skills/verify` — fresh read-only verification against the running app before merge.
 - `hooks/` — the gate desktop-notification hook.
 - `statusline.sh` — the stage-aware status line.
