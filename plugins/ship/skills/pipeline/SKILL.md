@@ -82,30 +82,15 @@ a gate. Never use an autonomous lane to slip a taste call past Pete.
 
 ## Engines
 
-**Everything runs inside Claude Code** (Pete, 2026-08-10 — codex retired from the
-pipeline; the separate `router` skill retired with it). The driver owns design, briefs,
-triage, gates, git, and the final say, and **dispenses closed-brief coding tasks to
-harness subagents** (the Agent tool — same models, same Max billing, native tracking,
-notifies on exit). Work smaller than the dispatch overhead, the driver writes inline.
-Never shell out to `claude -p` from inside a session — that's for scripts and cron.
-Never Sonnet.
-
-**What delegates, what stays inline** — in order, per build task:
-
-1. **Design still open, real risk, ambiguous?** → the driver closes the judgment first,
-   then dispatches the fully-specified remainder. Judgment inseparable from the
-   writing → the driver does it inline.
-2. **Fully specified and self-contained, with real work to explore?** → **subagent**.
-   The default destination for drafting.
-3. **Smaller than the dispatch overhead** (writing the brief + reading the result)? →
-   inline. A rename, a config line, a verbatim write already authored in the brief,
-   wiring a triaged review fix. Real multi-file exploration still dispatches.
-4. **A wrong diff twice on the same task?** → the driver rewrites it inline. **Slow is
-   not failure** — never escalate because a subagent is taking a while.
-5. **Skill/agent prose and frontend design — never delegated.** SKILL.md files,
-   agent-voiced docs, HTML design specs, mockups, styling — anywhere taste is the
-   deliverable, the driver authors inline. Frontend *mechanics* with the design closed
-   delegate like any other closed brief.
+**Fable always drives — every stage, including BUILD** (Pete, 2026-07-28; codex
+dispatch restored 2026-08-12, reversing the 08-10 all-Claude retirement). The driver
+owns design, briefs, triage, gates, git, and the final say; it **dispenses the plan's
+coding tasks to GPT-5.6 sol** via background `codex exec` — the `router` skill owns
+the dispatch mechanics, the assignment heuristic (what dispatches vs stays inline),
+and the ledger. Work smaller than a dispatch's ~5–10 min fixed overhead, the driver
+writes inline; skill/agent prose and design taste never route. For Anthropic-model
+offloads (recon, verify walks, review fan-outs), use harness subagents (the Agent
+tool) — never `claude -p` from inside a session. Never Sonnet.
 
 **The driver owns the envelope**, whoever drafts: it writes the brief (exact files,
 signatures, test cases, constraints — a vague brief burns the savings in fix rounds),
@@ -118,7 +103,8 @@ grounding. A subagent drives the MCP browser tools against the running app and r
 what it saw; never drive the browser from the driver while other work is in flight.
 Auth-walled surfaces need no special rig: Pete's own Chrome is already logged in.
 
-**Never idle while a subagent runs** — a review or QA pass is 10–25 minutes.
+**Never idle while a dispatch or subagent runs** — a codex draft, review, or QA pass
+is 10–25 minutes.
 Work the standing non-tree list meanwhile (draft the review card, the board update, the
 commit message, groom `/ship next` cards) so the stage closes minutes after the result
 lands. Same posture at gates: notify, then keep doing non-gated work.
@@ -291,10 +277,10 @@ on main.
 
 - Write `build:0:<M>`; bump N per task. Build **all M tasks** in one session; commit
   each task on the branch as it lands, merge only when the whole plan is built.
-- Invoke `superpowers:subagent-driven-development` (the driver drives) and dispatch
-  each task per **Engines** above — closed briefs to subagents, sub-overhead work
-  inline. The driver owns the brief, the diff review, the gates, and git. One writer
-  per branch at a time.
+- Invoke `superpowers:subagent-driven-development` (the driver drives) and `router` to
+  dispatch each task — drafting goes to codex per the router's heuristic; sub-overhead
+  work inline. The driver owns the brief, the diff review, the gates, and git. One
+  writer per branch at a time.
 - **Single-writer vs fan-out — pick by the diff, not reflex.** Default one writer.
   Fan out writers (own worktrees, merged back) only for genuinely independent AND
   numerous tasks — a migration, a mechanical sweep. The high-value fan-out is the
@@ -302,9 +288,9 @@ on main.
   parallelize 5 verifiers.
 - `ponytail` posture; `superpowers:verification-before-completion` before claiming any
   task done — actually run it; `superpowers:systematic-debugging` on a red test.
-- **UI-writing briefs carry the craft floor** — a subagent loads its own skills, not
-  the driver's open ones, so the floor never reaches the writer unless the brief points
-  it there: every dispatch that writes UI tells the writer to read
+- **UI-writing briefs carry the craft floor** — codex has no impeccable installed, so
+  the floor never reaches the writer unless the brief points it there: every dispatch
+  that writes UI tells codex to read
   `~/.claude/skills/impeccable/reference/craft-floor.md` and honor its checks and bans.
 - **Before BUILD is done, smoke-walk the whole feature yourself** — boot the app and
   drive the spec's real user paths (the formal `verify` runs in REVIEW; don't invoke it
