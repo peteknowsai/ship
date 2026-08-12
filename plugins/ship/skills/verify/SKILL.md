@@ -32,32 +32,27 @@ boots its own.
 provide a local/test way to reach authed surfaces. verify does **not** mint sessions, bypass
 auth, or stand up infra — that's repo plumbing, and baking it in here would couple this skill
 to one app. If authed surfaces are unreachable and the repo offers no test-auth path, the
-blessed alternative before `unverifiable`: **the logged-in codex Chrome** — a
-dedicated Chrome instance (profile `~/.codex/chrome-profile`, launch `~/.codex/codex-chrome`
-if `curl -s http://127.0.0.1:9222/json/version` says it's down) that the verifier's
-Playwright attaches to with `chromium.connectOverCDP("http://127.0.0.1:9222")`. Pete logs
-into each site there once; sessions persist. If the needed login exists only in Pete's
-*personal* Chrome, the last resort is a driver-side claude-in-chrome walk. Note in the
-verdict which route was used. Otherwise return `unverifiable` with the reason — never
-fake a pass.
+blessed alternative before `unverifiable`: **drive Pete's own Chrome over
+claude-in-chrome** — his real profile, already logged into everything, reached through
+the `mcp__claude-in-chrome__*` tools. Note in the verdict which route was used.
+Otherwise return `unverifiable` with the reason — never fake a pass.
 
 **The seeded account is the verifier's alone while a walk is in flight.** Never invite Pete
 to poke at the app on the same seeded user mid-round — his concurrent clicks read as bugs
 (a shared account once produced a false `broken` that cost a diagnosis round). Seed a second
-user for his hands-on look, or wait for the verdict. This applies to the codex Chrome
-too (its logins are shared state) and doubly to claude-in-chrome, which drives his real
-profile and real tabs; Playwright's own isolated browser is immune by construction.
+user for his hands-on look, or wait for the verdict. This applies doubly to
+claude-in-chrome, which drives his real profile and real tabs — a walk in flight owns
+the browser. Never leave a modal dialog open: an alert/confirm blocks every subsequent
+tool call and strands the run.
 
 ## 2. Verify the feature (delegate) → fix → re-verify (loop ≤ 3)
 
 Brief from the plan/spec file if one exists (point the verifier at it), else inline the
-acceptance criteria. The verifier is a **fresh codex supervisor** — a subagent that
-owns one read-only codex walk (`codex-supervisor` skill: background, stall budget, read
-the result file, not scrollback). Fresh so it judges the feature rather than its own
-work. Codex scripts and runs its own Playwright against the running app and saves
-screenshots to real files. The brief must open with "READ-ONLY: edit no source files" —
-a plain `codex exec` has no tool-enforced read-only, so the brief carries the constraint,
-and the supervisor eyeballs `git status` in the worktree after the run
+acceptance criteria. The verifier is a **fresh subagent** — fresh so it judges the
+feature rather than its own work. It drives the running app over claude-in-chrome and
+captures screenshots as it goes. The brief must open with "READ-ONLY: edit no source
+files" — nothing enforces that at the tool layer, so the brief carries the constraint,
+and the driver eyeballs `git status` in the worktree after the run
 (any dirt → discard it, count the round as `unverifiable`):
 
 ```
@@ -90,12 +85,11 @@ This report is your FINAL MESSAGE — it lands in the -o result file the caller 
 finishing without it is an incomplete run.
 ```
 
-**Auth-walled surface (the AUTH line forces it):** point the walk at the **codex
-Chrome** instead of a fresh browser — add to the brief: "attach with
-`chromium.connectOverCDP('http://127.0.0.1:9222')` and drive a new tab there; it is
-logged in." (Launch `~/.codex/codex-chrome` first if :9222 is down; if the site isn't
-logged in there yet, park with a `needs input:` asking Pete to log in once — sessions
-persist after that.) **Last resort only** — the login exists solely in Pete's personal
+**Auth-walled surface (the AUTH line forces it):** the verifier opens a new tab in
+Pete's own Chrome over claude-in-chrome — it is already logged in. Add to the brief:
+"call `tabs_context_mcp` first, then `tabs_create_mcp` for your own tab; never reuse a
+tab Pete is working in." If the site isn't logged in there, park with a `needs input:`
+asking Pete to log in once. **Last resort only** — the login exists solely in Pete's personal
 Chrome: a Claude subagent (`Agent(model: opus)`, unnamed one-shot, claude-in-chrome
 tools). Its screenshot reality: MCP screenshots render inline-only and the download
 fallback works ONCE per tab — save the one file early, use DOM measurements as

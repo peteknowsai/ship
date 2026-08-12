@@ -1,12 +1,13 @@
 ---
 name: codex-supervisor
-description: Use when you are a subagent that has been handed one codex task to manage — a /ship BUILD task, correctness review, recon sweep, or browser walk. You own that codex session end to end: brief, launch, patience, fix rounds, verdict. The driver never runs codex directly; it dispatches you and you run codex. Do NOT invoke this on the driver, and do NOT invoke it for work that should be written inline.
+description: Use when you are a subagent that has been handed one codex coding task to manage — a /ship BUILD drafting task. You own that codex session end to end: brief, launch, keeping it alive, fix rounds, verdict. The driver never runs codex directly; it dispatches you and you run codex. Do NOT invoke this on the driver, do NOT invoke it for work that should be written inline, and do NOT use it for browser walks, recon, or review — those run on plain harness subagents.
 ---
 
 # codex-supervisor — one subagent owns one codex session
 
-**You are the supervisor, not the author.** The driver handed you exactly one task and
-then stopped thinking about it. You author the brief, launch codex, wait it out, judge
+**You are the supervisor, not the author.** The driver handed you exactly one coding
+task and then stopped thinking about it. Codex draws the draft; you keep it alive, judge
+it, and carry the result back. You author the brief, launch codex, wait it out, judge
 what comes back, run the fix rounds, and return a verdict the driver can act on without
 reading a line of your scrollback.
 
@@ -63,17 +64,11 @@ cd <repo> && codex exec -c model_reasoning_effort=high -c fast_mode=true \
 - **Billing sanity-check on first use**: codex bills the ChatGPT subscription only on its
   *subscription* login. An `OPENAI_API_KEY` in the env silently bills per call.
 
-**Reviews use codex's native review mode, not a hand-written brief:**
-`codex exec review --base <branch> -o <result-file> < /dev/null` (or `--uncommitted` /
-`--commit <sha>`). **No positional prompt** — codex errors when a prompt is combined with
-any diff-source flag, so there's no dispatch tag either; name the `-o` file after the
-slug instead. Read-only by construction.
-
 **Never the codex-companion runtime for background work** — its per-worktree broker
 daemon dies mid-run in a multi-session workflow and the job orphans "running" forever.
 Companion is for short foreground calls only.
 
-## Patience — the failure mode that fooled us for weeks
+## Keeping the session alive — your headline duty
 
 A high-effort worker sits quiet for many minutes. Runs killed at a two-minute timeout
 were healthy and got logged as failures, which then made the engine look worse than it
@@ -115,27 +110,6 @@ Return `escalate` immediately, without burning rounds, when:
   specs, mockups, styling. Frontend *mechanics* with the design closed are yours;
   anywhere taste is the deliverable is not.
 - Codex needs repo knowledge the brief doesn't carry and you'd be guessing.
-
-## Browser walks
-
-When your task is a browser walk (verify, design QA, live-product grounding), codex
-scripts and runs its own Playwright against the running app and saves screenshots to
-real files. The brief must open with **"READ-ONLY: edit no source files"** — a plain
-`codex exec` has no tool-enforced read-only the way review mode does, so the constraint
-lives in the brief and you check `git status` in the worktree afterwards. Any dirt →
-discard it and count the round `unverifiable`.
-
-Auth-walled surfaces: codex attaches to the logged-in codex Chrome
-(`~/.codex/codex-chrome`, CDP :9222) via `chromium.connectOverCDP` and drives real
-logged-in tabs. Launch it first if `curl -s http://127.0.0.1:9222/json/version` says it's
-down; if the site isn't logged in there yet, hand back and ask for a one-time login —
-sessions persist after that. A login that exists **only** in Pete's personal Chrome is
-the one case that leaves codex entirely: say so, and the driver takes it with
-claude-in-chrome.
-
-**The seeded account is yours alone while a walk is in flight.** Concurrent clicks from
-anyone else read as bugs — a shared account once produced a false `broken` that cost a
-whole diagnosis round.
 
 ## The ledger
 

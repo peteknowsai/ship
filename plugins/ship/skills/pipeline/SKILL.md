@@ -32,9 +32,10 @@ read-only — each *queued ship* forks as its own first act instead.
 
 - **`/ship express <tweak>`** — pins EXPRESS. The verb pins ceremony *down*, never
   safety down: a money path or a taste call promotes per the mid-flight rule regardless.
-- **`/ship design <idea>`** — pins GATED and mandates the full design walkthrough in
-  DISCOVER. The verb is Pete asserting taste is in play; never downgrade it, however
-  mechanical the work looks.
+- **`/ship design <idea>`** — pins GATED and mandates the full design workshop in
+  DISCOVER (pencil pass → rounds → lock → pen build-out → Pete iterates in pen →
+  go). The verb is Pete asserting taste is in
+  play; never downgrade it, however mechanical the work looks.
 - **`/ship next`** — ship the board's **Next column** as one batch (board-backed repos
   only; no board → say so and stop):
   1. **Sweep + enrich.** Pull every Next card; bring each up to standard anatomy
@@ -82,40 +83,26 @@ a gate. Never use an autonomous lane to slip a taste call past Pete.
 
 ## Engines
 
-**Everything is orchestrated from inside Claude Code** (Pete, 2026-08-10). The driver
-dispatches only to **harness subagents** — it never runs `codex exec` itself, never
-shells out to `claude -p`, and never watches a background process. Some subagents do the
-work themselves; others are **codex supervisors**: an Opus subagent that owns one codex
-session end to end (brief → launch → patience → fix rounds → verdict) per the
-`codex-supervisor` skill. Codex tokens still buy the drafts; the supervisor absorbs the
-polling, the stall checks, and the retries that used to crowd the driver's context.
-Never Sonnet.
+**Fable always drives — every stage, including BUILD** (Pete, 2026-07-28; codex
+dispatch restored 2026-08-12, reversing the 08-10 all-Claude retirement; supervised
+2026-08-12). The driver owns design, briefs, triage, gates, git, and the final say, and
+**dispenses the plan's coding tasks to GPT-5.6 sol — but never touches codex itself.**
+Each codex session is owned by an **Opus subagent supervisor** (`codex-supervisor`
+skill) that carries the brief down, launches the run, **keeps the session alive**, judges
+what comes back, spends the fix rounds, and hands the driver a verdict.
 
-**Two dispatch shapes:**
+Why the layer: codex tokens buy drafts, driver tokens buy judgment — and the *watching*
+is neither. Polling, liveness tells, stall budgets, a session id threaded through three
+commands, retries after a run dies at startup: that noise used to fill the driver's
+context and crowd out the work. Now it fills a subagent that's cheap to spawn and cheap
+to discard. **Keeping the run alive is the supervisor's headline duty**, not a footnote —
+a run killed early gets logged as a failure it didn't earn.
 
-- **Codex supervisor (Opus → codex)** — the default for closed-brief drafting,
-  correctness review, recon sweeps, and browser walks. Anything with real work to
-  explore and no open design question.
-- **Plain Claude subagent** — when repo context or taste is load-bearing enough that
-  handing it to codex would cost more in fix rounds than it saves.
-
-**What delegates, what stays inline** — in order, per build task:
-
-1. **Design still open, real risk, ambiguous?** → the driver closes the judgment first,
-   then dispatches the fully-specified remainder. Judgment inseparable from the
-   writing → the driver does it inline.
-2. **Fully specified and self-contained, with real work to explore?** → **codex
-   supervisor**. The default destination for drafting.
-3. **Smaller than the dispatch overhead** (brief + supervise + read the verdict)? →
-   inline. A rename, a config line, a verbatim write already authored in the brief,
-   wiring a triaged review fix. Real multi-file exploration still dispatches.
-4. **A supervisor returns `escalate`?** → the driver writes it inline, now, and logs
-   why. Don't re-dispatch the same task a third time. **Slow is not failure** — never
-   escalate because a run is taking a while; that judgment belongs to the supervisor.
-5. **Skill/agent prose and frontend design — never delegated.** SKILL.md files,
-   agent-voiced docs, HTML design specs, mockups, styling — anywhere taste is the
-   deliverable, the driver authors inline. Frontend *mechanics* with the design closed
-   dispatch like any other closed brief.
+Work smaller than a dispatch's ~5–10 min fixed overhead, the driver writes inline;
+skill/agent prose and design taste never route. **Codex draws coding drafts and nothing
+else** — recon, verify walks, design QA, and review fan-outs run on plain harness
+subagents (the Agent tool) with claude-in-chrome for anything in a browser. Never
+`claude -p` from inside a session. Never Sonnet.
 
 **The driver owns the envelope**, whoever drafts: it writes the brief the supervisor
 carries (exact files, signatures, test cases, constraints — a vague brief burns the
@@ -124,14 +111,12 @@ committed (never trust a "tests pass" claim, from a supervisor or from codex), a
 git entirely. **One writer per branch at a time** — concurrent writers on one tree
 collide; serialize, or give each its own sub-worktree.
 
-**All browser work goes through a supervisor too** — verify walks, design QA,
-live-product grounding: codex scripts its own Playwright against the running app and
-saves screenshots to disk. Auth-walled surfaces use the logged-in codex Chrome
-(`~/.codex/codex-chrome`, CDP :9222). The one exception that never reaches codex: a
-login that exists solely in Pete's *personal* Chrome — that's a driver-side
-claude-in-chrome walk.
+**All browser work runs on claude-in-chrome** — verify walks, design QA, live-product
+grounding. A subagent drives the MCP browser tools against the running app and reports
+what it saw; browser work does not go to codex.
 
-**Never idle while a supervisor runs** — a review or QA pass is 10–25 minutes.
+**Never idle while a dispatch or subagent runs** — a codex draft, review, or QA pass
+is 10–25 minutes.
 Work the standing non-tree list meanwhile (draft the review card, the board update, the
 commit message, groom `/ship next` cards) so the stage closes minutes after the result
 lands. Same posture at gates: notify, then keep doing non-gated work.
@@ -145,8 +130,8 @@ lands. Same posture at gates: notify, then keep doing non-gated work.
    plain-English TL;DR first, structure as diagrams/side-by-sides instead of prose,
    depth behind collapsibles, anything visual a *live* embed. Pattern picks are named
    per stage.
-2. **Two gates, at most.** GATE 1 = design direction (after DISCOVER) — always a hard
-   stop on the GATED lane. GATE 2 = go (after PLAN, via the go-card) — a hard stop
+2. **Two gates, at most.** GATE 1 = Pete's "go" on the pen design of record (DISCOVER runs as
+   presented rounds, each a hard stop — see stage 1) — always gated on the GATED lane. GATE 2 = go (after PLAN, via the go-card) — a hard stop
    **only when the card carries a genuine call for Pete**: a PM tradeoff, a money path,
    or something you judge he'd genuinely want to see before build. **A zero-call
    go-card auto-passes** (Pete, 2026-07-28): render it, `open` it, narrate
@@ -169,6 +154,30 @@ use, and — for repos that shouldn't ship at all (wikis, civic work) — **`shi
 which means decline and say why. homezero's AGENTS.md is the model. A repo with no
 contract gets best-effort: whatever gates you can find, merge to main, no deploy claim.
 
+A repo that publishes releases may also declare a **release ritual**: it keeps a
+`VERSION` file and a `CHANGELOG.md`, and its contract says to bump them at ship time.
+Then the branch's last commit before merge bumps VERSION scale-aware (patch = fix or
+small addition, minor = new capability, major = breaking) and adds ONE user-facing
+CHANGELOG entry — what the user can now do, never branch narrative (no mid-branch
+version numbers, no review play-by-play). No declaration → no bump, no entry; app
+repos skip this entirely.
+
+## Decision memory — settled calls survive the session
+
+Where gstack is installed (`~/.claude/skills/gstack/bin/gstack-decision-search` on
+disk), the pipeline reuses its per-project decision store — never hand-roll one:
+
+- **DISCOVER start:** run `gstack-decision-search --recent 5` and treat what it lists
+  as settled calls with their rationale. Don't re-ask Pete a settled question;
+  reversing one is allowed, but say so explicitly.
+- **When a gate (or Pete mid-run) resolves a DURABLE call** — design direction, scope
+  cut, architecture or tool choice, or a reversal — log it:
+  `gstack-decision-log '{"decision":"…","rationale":"…","scope":"repo","source":"user","confidence":8}'`
+  (`--supersede <id>` for a reversal). Turn-level edits and phrasing tweaks are never
+  logged — a noisy store is worse than none.
+
+No gstack on the machine → skip silently; the pipeline runs unchanged.
+
 ## The pipeline — create a todo for each stage
 
 Each stage writes its marker to `.ship-stage` at the git root (the status line + the
@@ -177,9 +186,14 @@ swaps in "Running under Codex Desktop" below.
 
 ### 0 · Worktree (invisible)  → marker: `discover`
 
-**Prereqs:** a git repo with `main` and ≥1 commit (zero-commit repo: `git add -A &&
-git commit -m "init"` first). The PR path needs a GitHub remote; a repo with no remote
-falls back to `wt merge` at merge time.
+**Prereqs:** a git repo with a base branch and ≥1 commit (zero-commit repo: `git add
+-A && git commit -m "init"` first). The PR path needs a GitHub remote; a repo with no
+remote falls back to `wt merge` at merge time.
+
+**Resolve the base branch first — never assume `main`:** `git symbolic-ref
+refs/remotes/origin/HEAD` (strip `refs/remotes/origin/`), else `origin/main`, else
+`origin/master`, else local `main`. Every `main` in this pipeline means that detected
+base branch.
 
 ```
 wt switch --create feature/<slug> --no-cd --format=json -y
@@ -202,6 +216,8 @@ on main.
 
 ### 1 · DISCOVER — Pete's taste, up front  → marker: `discover`, then `gate:1`
 
+- **Resurface decision memory first** (see Decision memory) — settled calls constrain
+  the brainstorm; don't re-litigate them inside it.
 - Invoke `superpowers:brainstorming`. PM-framed, one question at a time.
 - **Recon runs on a supervisor, synthesis stays with the driver.** Codebase
   evidence-gathering dispatches as a read-only codex run (report findings, edit
@@ -215,27 +231,69 @@ on main.
   the repo's PRODUCT.md/DESIGN.md are the visual authority): a new surface or
   replacement look routes through its `shape`/new-work path; a refinement stays on the
   incumbent world. Use `/pix` for imagery freely — the spec *is* the prototype.
-  **Ground the design in the live product**: a supervisor walks the running app /
-  deployed URL and reports the real theme/CSS with screenshots; design from those,
-  never from in-repo mockups (incidents: Design).
-- Produce ONE self-contained HTML spec in the repo's docs home (`specs/` or `docs/`,
-  whichever it uses) — e.g. `specs/designs/YYYY-MM-DD-<slug>.html` — covering the
-  **whole** feature; it's the scope contract PLAN and BUILD execute in full.
-  **The driver authors all design artifacts inline** — taste is the deliverable, never
-  dispatched.
+  **Ground the design in the live product**: a subagent walks the running app /
+  deployed URL over claude-in-chrome and reports the real theme/CSS with screenshots;
+  design from those, never from in-repo mockups (incidents: Design).
+- **DISCOVER is a design workshop, not a handoff.** The first thing Pete sees is
+  never a finished spec — it's a working session, opened the way a designer opens one:
+  1. **Pencil pass — rough directions first.** Open with 2–4 cheap, throwaway
+     directions on ONE board (`02-exploration-visual-designs`, live-rendered side by
+     side). Where the `pen` CLI is installed AND authenticated (`pen status`), sketch
+     the variants with it — **impeccable briefs, pen draws**: run impeccable's
+     context first, then per variant
+     `pen --repo <project> --prompt "<direction brief>" --prompt-file <live-product
+     screenshot> --out <slug>.pen --export <slug>.png` so pen's agent designs from
+     PRODUCT.md/DESIGN.md and the real product (the DISCOVER grounding screenshots),
+     never from generic taste; embed the exports in the board. Judge exports by eye
+     against craft-floor taste — never lint a pencil; impeccable's deterministic
+     checks stay on the HTML spec and built UI. No pen → sketch directly in HTML.
+     Present the board with the open questions a designer would actually bring
+     ("went denser on B, unsure about the nav, which tone?") — never a fait
+     accompli. Write `gate:1`, fire the gate notification, `open` the board, end
+     the turn with `needs input:` ("workshop round 1 — reactions?").
+     **HARD STOP** — every round is one.
+  2. **Workshop rounds.** Pete reacts; revise the board in place — minutes per
+     round, not a re-spec — re-`open`, end the turn with `needs input:` again.
+     Push back where taste warrants it: a designer with no opinions is a renderer.
+     Loop until Pete locks a direction ("go with B", "lock it").
+  3. **Lock → pen builds it out.** On the lock, drive pen to build the locked
+     direction as a HIGH-FIDELITY design of every specced surface, as a
+     repo-committed design file: `specs/designs/pen/YYYY-MM-DD-<slug>.pen`
+     (`pen --repo <project> --out <that file> --prompt "<locked direction, full
+     surface inventory, real copy>" --prompt-file <grounding screenshots>`), with
+     PNG exports beside it (`--export`, one per surface where the file has several).
+     **The pen file is the DESIGN OF RECORD from here on** — committed on the
+     branch, it travels with the ship.
+  4. **Pete iterates IN pen — that's the rest of the workshop.** `open` the .pen
+     file (his pen.dev app owns the filetype) and end the turn with `needs input:`
+     ("design is in pen — iterate there, say go when it's right"). He edits at his
+     own pace, in pen's own UI, no driver round-trips. **His "go" freezes whatever
+     the file says at that moment**: re-read the .pen, re-export the PNGs — his
+     edits ARE the design; never build from the pre-iteration exports. The go IS
+     GATE 1.
+  5. **Go → spec.** Produce the thin HTML spec: the scope contract wrapped around
+     the pen exports (embed them) plus everything a comp can't carry — copy as
+     data, routes, behavior, states, a11y. `open` it for the record; no re-gate.
+- The spec lives in the repo's docs home (`specs/` or `docs/`, whichever it uses) —
+  e.g. `specs/designs/YYYY-MM-DD-<slug>.html`. **The driver authors boards, briefs,
+  and spec prose inline** (taste is the deliverable, never dispatched); pen authors
+  the comps.
 - **Spec shape:** `14-research-feature-explainer` body (TL;DR first, collapsible
-  depth); a genuine direction choice presents as `02-exploration-visual-designs` — 2–3
-  live-rendered directions side-by-side so Pete picks by looking; mockups are live
-  (`07`/`08-prototype`); flows are diagrams (`13-flowchart-diagram`).
-- Write `gate:1`, fire the gate notification, `open` the spec, end the turn with a
-  `needs input:` line ("design direction?"). **HARD STOP — GATE 1.**
+  depth); the pen exports are the mockups; flows are diagrams
+  (`13-flowchart-diagram`).
+- A trivial visual change where multiple directions would be noise may collapse the
+  workshop to one board + one confirm — never to zero showings on the GATED lane.
+  A non-visual GATED ship (pure product tradeoff, no UI) skips pen and gates on the
+  board alone.
 
 ### 2 · PLAN — automatic  → marker: `plan`, then `gate:2` (or straight through)
 
 - Write `plan`. Invoke `superpowers:writing-plans` for ONE execution plan covering the
-  **entire spec** — never sliced into phases. Run `ponytail` as the *waste* critic, not
-  a scope critic — it cuts reinvention and gold-plating, never specced scope. Save the
-  markdown plan to the docs home (e.g. `specs/plans/YYYY-MM-DD-<slug>.md`).
+  **entire spec** — never sliced into phases. **The pen exports are the design source
+  of truth**: the plan's UI tasks reference the export image for each surface (path,
+  not prose description) and plan to match it. Run `ponytail` as the *waste* critic,
+  not a scope critic — it cuts reinvention and gold-plating, never specced scope. Save
+  the markdown plan to the docs home (e.g. `specs/plans/YYYY-MM-DD-<slug>.md`).
 - Render the HTML **go-card** from `reference/go-card.html` (contract below) and
   `open` it.
 - **Gate or go:** if the card carries a genuine call (PM tradeoff, money path, your
@@ -248,7 +306,7 @@ on main.
 - Write `build:0:<M>`; bump N per task. Build **all M tasks** in one session; commit
   each task on the branch as it lands, merge only when the whole plan is built.
 - Invoke `superpowers:subagent-driven-development` (the driver drives) and dispatch
-  each task per **Engines** above — closed briefs to codex supervisors, sub-overhead
+  each task to a `codex-supervisor` subagent — drafting goes to codex; sub-overhead
   work inline. The driver owns the brief, the diff review, the gates, and git. One
   writer per branch at a time.
 - **Single-writer vs fan-out — pick by the diff, not reflex.** Default one writer.
@@ -258,11 +316,10 @@ on main.
   parallelize 5 verifiers.
 - `ponytail` posture; `superpowers:verification-before-completion` before claiming any
   task done — actually run it; `superpowers:systematic-debugging` on a red test.
-- **UI-writing briefs carry the craft floor** — codex has no impeccable installed and
-  a subagent loads its own skills, not the driver's, so the floor never reaches the
-  writer unless the brief points it there: every dispatch that writes UI carries
-  `~/.claude/skills/impeccable/reference/craft-floor.md` down to the writer, with its
-  checks and bans.
+- **UI-writing briefs carry the pen comp and the craft floor** — every dispatch that
+  writes UI names the surface's pen export (`specs/designs/pen/…png`) as the comp to
+  match, and — since codex has no impeccable installed — tells codex to read
+  `~/.claude/skills/impeccable/reference/craft-floor.md` and honor its checks and bans.
 - **Before BUILD is done, smoke-walk the whole feature yourself** — boot the app and
   drive the spec's real user paths (the formal `verify` runs in REVIEW; don't invoke it
   twice). Two preconditions that have each cost a red deploy (incidents: Backends): a
@@ -289,9 +346,13 @@ on main.
 - **Design QA for visual features** — a background supervisor first runs
   impeccable's deterministic detector over the branch's changed UI files
   (`node ~/.claude/skills/impeccable/scripts/detect.mjs --json <files>` — local, no
-  network), then walks the built surfaces and judges them against the GATE 1 spec and
-  the craft-floor checklist (contrast, depth, spacing, type, motion, states, copy, and
-  the bans). Bounded per impeccable's own ceiling: one batched round, one confirm, no
+  network), then walks the built surfaces and judges them **side-by-side against the
+  pen design of record** (screenshot each built surface next to its pen export —
+  impeccable's approved-comp critique: hero and sections as their own crops, never one
+  full-page thumbnail) plus the GATE 1 spec and the craft-floor checklist (contrast,
+  depth, spacing, type, motion, states, copy, and the bans). The review card shows the
+  pen-vs-built pairs — Pete reviews the design he iterated against the thing that got
+  built. Bounded per impeccable's own ceiling: one batched round, one confirm, no
   open-ended polish loops. Driver triages: real gaps fixed before the card, nits land
   on the card for Pete.
 - **Put it in front of Pete, running.** For any visual/interactive feature, boot the
