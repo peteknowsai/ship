@@ -43,7 +43,7 @@ Hard limits, no exceptions:
 ## Launch
 
 ```
-cd <repo> && codex exec -c model_reasoning_effort=high -c fast_mode=true \
+cd <repo> && codex exec -c model_reasoning_effort=high \
   -o <result-file> "<full task brief>" < /dev/null
 ```
 
@@ -51,8 +51,8 @@ cd <repo> && codex exec -c model_reasoning_effort=high -c fast_mode=true \
   forever — no session file, no error, no clue. This once ate a night of dispatches.
 - **`-o <result-file>` on every run** (e.g. `/tmp/ship-<task-slug>-result.md`). Read the
   file, never the scrollback — the result survives a truncated buffer or a missed exit.
-- **Fast mode on, effort high** (Pete, 2026-08-01). The global `~/.codex/config.toml`
-  keeps `fast_mode = false` for interactive use, so pass it per dispatch.
+- **No fast mode, effort high** (Pete, 2026-08-12). Don't pass `-c fast_mode=true`;
+  dispatches take the config default (`fast_mode = false`).
 - **Always the sol variant** — leave the model unset to inherit `gpt-5.6-sol` from
   config; if it must be explicit, `-m gpt-5.6-sol`. Never plain `gpt-5.6`.
 - **cwd outside a git repo → `--skip-git-repo-check`**, or codex exits fatally.
