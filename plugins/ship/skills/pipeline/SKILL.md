@@ -264,14 +264,21 @@ on main.
      PNG exports beside it (`--export`, one per surface where the file has several).
      **The pen file is the DESIGN OF RECORD from here on** — committed on the
      branch, it travels with the ship.
-  4. **Pete iterates IN pen — that's the rest of the workshop.** `open` the .pen
-     file (his pen.dev app owns the filetype) and end the turn with `needs input:`
-     ("design is in pen — iterate there, say go when it's right"). He edits at his
-     own pace, in pen's own UI, no driver round-trips. **His "go" freezes whatever
-     the file says at that moment**: re-read the .pen, re-export the PNGs — his
-     edits ARE the design; never build from the pre-iteration exports. The go IS
-     GATE 1.
-  5. **Go → spec.** Produce the thin HTML spec: the scope contract wrapped around
+  4. **Hand it to Pete where pen actually looks.** The Pen app's dashboard lists
+     ONLY its home folder — repo paths are invisible there, and an invisible
+     design is a dead workshop. Copy the working file to
+     `~/Library/Mobile Documents/com~apple~CloudDocs/Pencil/ship/<slug>.pen`
+     (create `ship/`; give it a human name, e.g. "homezero 404 — empty lot.pen")
+     and `open -a Pen "<that copy>"` so it's on his canvas and in his Recents.
+     End the turn with `needs input:` ("design is in pen — iterate there, say go
+     when it's right"). He edits at his own pace, in pen's own UI, no driver
+     round-trips. **The Pencil-folder copy is the live one while he iterates.**
+  5. **His "go" harvests the design.** Copy the Pencil-folder file BACK over
+     `specs/designs/pen/YYYY-MM-DD-<slug>.pen`, commit it, re-export the PNGs —
+     **whatever the file says at "go" IS the design**; never build from the
+     pre-iteration exports. The go IS GATE 1. Leave his Pencil copy in place
+     (it's his; a later express round harvests it again the same way).
+  6. **Go → spec.** Produce the thin HTML spec: the scope contract wrapped around
      the pen exports (embed them) plus everything a comp can't carry — copy as
      data, routes, behavior, states, a11y. `open` it for the record; no re-gate.
 - The spec lives in the repo's docs home (`specs/` or `docs/`, whichever it uses) —
