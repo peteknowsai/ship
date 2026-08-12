@@ -156,6 +156,30 @@ use, and — for repos that shouldn't ship at all (wikis, civic work) — **`shi
 which means decline and say why. homezero's AGENTS.md is the model. A repo with no
 contract gets best-effort: whatever gates you can find, merge to main, no deploy claim.
 
+A repo that publishes releases may also declare a **release ritual**: it keeps a
+`VERSION` file and a `CHANGELOG.md`, and its contract says to bump them at ship time.
+Then the branch's last commit before merge bumps VERSION scale-aware (patch = fix or
+small addition, minor = new capability, major = breaking) and adds ONE user-facing
+CHANGELOG entry — what the user can now do, never branch narrative (no mid-branch
+version numbers, no review play-by-play). No declaration → no bump, no entry; app
+repos skip this entirely.
+
+## Decision memory — settled calls survive the session
+
+Where gstack is installed (`~/.claude/skills/gstack/bin/gstack-decision-search` on
+disk), the pipeline reuses its per-project decision store — never hand-roll one:
+
+- **DISCOVER start:** run `gstack-decision-search --recent 5` and treat what it lists
+  as settled calls with their rationale. Don't re-ask Pete a settled question;
+  reversing one is allowed, but say so explicitly.
+- **When a gate (or Pete mid-run) resolves a DURABLE call** — design direction, scope
+  cut, architecture or tool choice, or a reversal — log it:
+  `gstack-decision-log '{"decision":"…","rationale":"…","scope":"repo","source":"user","confidence":8}'`
+  (`--supersede <id>` for a reversal). Turn-level edits and phrasing tweaks are never
+  logged — a noisy store is worse than none.
+
+No gstack on the machine → skip silently; the pipeline runs unchanged.
+
 ## The pipeline — create a todo for each stage
 
 Each stage writes its marker to `.ship-stage` at the git root (the status line + the
@@ -164,9 +188,14 @@ swaps in "Running under Codex Desktop" below.
 
 ### 0 · Worktree (invisible)  → marker: `discover`
 
-**Prereqs:** a git repo with `main` and ≥1 commit (zero-commit repo: `git add -A &&
-git commit -m "init"` first). The PR path needs a GitHub remote; a repo with no remote
-falls back to `wt merge` at merge time.
+**Prereqs:** a git repo with a base branch and ≥1 commit (zero-commit repo: `git add
+-A && git commit -m "init"` first). The PR path needs a GitHub remote; a repo with no
+remote falls back to `wt merge` at merge time.
+
+**Resolve the base branch first — never assume `main`:** `git symbolic-ref
+refs/remotes/origin/HEAD` (strip `refs/remotes/origin/`), else `origin/main`, else
+`origin/master`, else local `main`. Every `main` in this pipeline means that detected
+base branch.
 
 ```
 wt switch --create feature/<slug> --no-cd --format=json -y
@@ -189,6 +218,8 @@ on main.
 
 ### 1 · DISCOVER — Pete's taste, up front  → marker: `discover`, then `gate:1`
 
+- **Resurface decision memory first** (see Decision memory) — settled calls constrain
+  the brainstorm; don't re-litigate them inside it.
 - Invoke `superpowers:brainstorming`. PM-framed, one question at a time.
 - **Recon runs on a subagent, synthesis stays with the driver.** Codebase
   evidence-gathering dispatches to a read-only `Explore` subagent (report findings,
