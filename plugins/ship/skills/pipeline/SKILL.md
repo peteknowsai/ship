@@ -236,34 +236,39 @@ on main.
   design from those, never from in-repo mockups (incidents: Design).
 - **DISCOVER is a design workshop, not a handoff.** The first thing Pete sees is
   never a finished spec — it's a working session, opened the way a designer opens one:
+  **ONE .pen file per ship** — `specs/designs/pen/YYYY-MM-DD-<slug>.pen` holds the
+  whole design phase as frames: the direction pencils, then the chosen design at
+  full fidelity. Pete flips between designs side by side in one document, deletes
+  the frames he doesn't like, iterates the survivor — and PLAN reads that one file.
+  Never scatter a ship's design across multiple .pen files.
   1. **Pencil pass — rough directions first.** Open with 2–4 cheap, throwaway
-     directions on ONE board (`02-exploration-visual-designs`, live-rendered side by
-     side). Where the `pen` CLI is installed AND authenticated (`pen status`), sketch
-     the variants with it — **impeccable briefs, pen draws**: run impeccable's
-     context first, then per variant
-     `pen --repo <project> --prompt "<direction brief>" --prompt-file <live-product
-     screenshot> --out <slug>.pen --export <slug>.png` so pen's agent designs from
-     PRODUCT.md/DESIGN.md and the real product (the DISCOVER grounding screenshots),
-     never from generic taste; embed the exports in the board. Judge exports by eye
-     against craft-floor taste — never lint a pencil; impeccable's deterministic
-     checks stay on the HTML spec and built UI. No pen → sketch directly in HTML.
+     directions, each a NAMED FRAME in the ship's one .pen file — **impeccable
+     briefs, pen draws**: run impeccable's context first, then
+     `pen --repo <project> --in/--out <the ship's .pen> --prompt "<direction
+     briefs, one frame per direction>" --prompt-file <live-product screenshot>
+     --export <png>` so pen's agent designs from PRODUCT.md/DESIGN.md and the real
+     product (the DISCOVER grounding screenshots), never from generic taste; embed
+     the per-frame exports in the HTML board (`02-exploration-visual-designs`,
+     side by side). Judge exports by eye against craft-floor taste — never lint a
+     pencil; impeccable's deterministic checks stay on the HTML spec and built UI.
+     No pen → sketch directly in HTML.
      Present the board with the open questions a designer would actually bring
      ("went denser on B, unsure about the nav, which tone?") — never a fait
      accompli. Write `gate:1`, fire the gate notification, `open` the board, end
      the turn with `needs input:` ("workshop round 1 — reactions?").
      **HARD STOP** — every round is one.
-  2. **Workshop rounds.** Pete reacts; revise the board in place — minutes per
-     round, not a re-spec — re-`open`, end the turn with `needs input:` again.
+  2. **Workshop rounds.** Pete reacts; revise the frames + board in place — minutes
+     per round, not a re-spec — re-`open`, end the turn with `needs input:` again.
      Push back where taste warrants it: a designer with no opinions is a renderer.
      Loop until Pete locks a direction ("go with B", "lock it").
-  3. **Lock → pen builds it out.** On the lock, drive pen to build the locked
-     direction as a HIGH-FIDELITY design of every specced surface, as a
-     repo-committed design file: `specs/designs/pen/YYYY-MM-DD-<slug>.pen`
-     (`pen --repo <project> --out <that file> --prompt "<locked direction, full
-     surface inventory, real copy>" --prompt-file <grounding screenshots>`), with
-     PNG exports beside it (`--export`, one per surface where the file has several).
-     **The pen file is the DESIGN OF RECORD from here on** — committed on the
-     branch, it travels with the ship.
+  3. **Lock → pen builds it out, same file.** On the lock, drive pen to add the
+     locked direction as HIGH-FIDELITY frames of every specced surface to the SAME
+     .pen (`pen --repo <project> --in/--out <the ship's .pen> --prompt "<locked
+     direction, full surface inventory, real copy>" --prompt-file <grounding
+     screenshots>`), PNG exports beside it (`--export`, one per surface). Discarded
+     pencil frames are Pete's to delete — never prune them for him. **The pen file
+     is the DESIGN OF RECORD from here on** — committed on the branch, it travels
+     with the ship.
   4. **Hand it to Pete where pen actually looks.** The Pen app's dashboard lists
      ONLY its home folder — repo paths are invisible there, and an invisible
      design is a dead workshop. Copy the working file to
