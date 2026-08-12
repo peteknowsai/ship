@@ -65,17 +65,29 @@ These are facts, not process — the process lives in SKILL.md.
 
 ## Dispatch
 
-(Codex was retired from the pipeline on 2026-08-10; its CLI-specific incidents went with
-it. These are the lessons that outlived the engine.)
+(The `codex-supervisor` skill carries the operational rules; these are the underlying
+incidents. The driver no longer runs codex directly — a supervisor subagent does — but
+the failures below are why the rules exist.)
 
+- **`codex exec` with stdin held open hangs at startup forever** — no session file, no
+  error. It once ate a night of dispatches and got misblamed on fast mode. `< /dev/null`
+  is mandatory.
 - **Runs killed at a 2-minute timeout got mislogged as failures** — they were healthy
-  high-effort runs that hadn't written anything yet. **Slow is not failure.** Give a
-  dispatch a generous window and check in rather than killing; escalate on a wrong diff,
-  never on a slow one.
-- **A worker has auto-opened PRs and committed unprompted** — git stays with the driver,
-  whoever drafts.
+  high-effort runs that hadn't written a file yet, and the bad rows made the engine look
+  worse than it was. Liveness tell: the `~/.codex/sessions` rollout file appears within
+  seconds; patience (15–30 min) applies only after it exists. **Slow is not failure.**
+- **`codex exec resume --last` picks whichever run finished most recently anywhere on
+  the machine** — with concurrent sessions, that's usually not your task. Resume by
+  session id.
+- **`codex exec review` errors when a prompt is combined with `--base`** (or any
+  diff-source flag) — review mode applies its own rubric; no focus prompt.
+- **The codex-companion runtime's per-worktree broker dies mid-run** in a multi-session,
+  restart-heavy workflow — it killed a 25-minute review that sat "running" forever.
+  Background work goes through `codex exec` only.
+- **Codex has auto-opened PRs and committed unprompted** — git stays with the driver,
+  and a supervisor that sees it happen resets the tree and says so.
 - **A vague brief costs more than it saves** — the fix rounds eat the delegation savings
   outright. Exact files, signatures, test cases, constraints, or write it inline.
-- **A read-only brief needs the driver to check it held** — nothing enforces read-only at
-  the tool layer for a general subagent. Eyeball `git status` after a verify walk; dirt
-  means the round was incomplete, not that the feature works.
+- **A read-only brief needs someone to check it held** — a plain `codex exec` has no
+  tool-enforced read-only. Eyeball `git status` after a walk; dirt means the round was
+  incomplete, not that the feature works.
