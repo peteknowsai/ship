@@ -32,9 +32,9 @@ read-only — each *queued ship* forks as its own first act instead.
 
 - **`/ship express <tweak>`** — pins EXPRESS. The verb pins ceremony *down*, never
   safety down: a money path or a taste call promotes per the mid-flight rule regardless.
-- **`/ship design <idea>`** — pins GATED and mandates the full design walkthrough in
-  DISCOVER. The verb is Pete asserting taste is in play; never downgrade it, however
-  mechanical the work looks.
+- **`/ship design <idea>`** — pins GATED and mandates the full design workshop in
+  DISCOVER (pencil pass → rounds → lock). The verb is Pete asserting taste is in
+  play; never downgrade it, however mechanical the work looks.
 - **`/ship next`** — ship the board's **Next column** as one batch (board-backed repos
   only; no board → say so and stop):
   1. **Sweep + enrich.** Pull every Next card; bring each up to standard anatomy
@@ -132,8 +132,8 @@ lands. Same posture at gates: notify, then keep doing non-gated work.
    plain-English TL;DR first, structure as diagrams/side-by-sides instead of prose,
    depth behind collapsibles, anything visual a *live* embed. Pattern picks are named
    per stage.
-2. **Two gates, at most.** GATE 1 = design direction (after DISCOVER) — always a hard
-   stop on the GATED lane. GATE 2 = go (after PLAN, via the go-card) — a hard stop
+2. **Two gates, at most.** GATE 1 = the design workshop's lock (DISCOVER runs as
+   presented rounds, each a hard stop — see stage 1) — always gated on the GATED lane. GATE 2 = go (after PLAN, via the go-card) — a hard stop
    **only when the card carries a genuine call for Pete**: a PM tradeoff, a money path,
    or something you judge he'd genuinely want to see before build. **A zero-call
    go-card auto-passes** (Pete, 2026-07-28): render it, `open` it, narrate
@@ -236,17 +236,34 @@ on main.
   **Ground the design in the live product**: a subagent walks the running app /
   deployed URL over claude-in-chrome and reports the real theme/CSS with screenshots;
   design from those, never from in-repo mockups (incidents: Design).
-- Produce ONE self-contained HTML spec in the repo's docs home (`specs/` or `docs/`,
-  whichever it uses) — e.g. `specs/designs/YYYY-MM-DD-<slug>.html` — covering the
-  **whole** feature; it's the scope contract PLAN and BUILD execute in full.
+- **DISCOVER is a design workshop, not a handoff.** The first thing Pete sees is
+  never a finished spec — it's a working session, opened the way a designer opens one:
+  1. **Pencil pass — rough directions first.** Open with 2–4 cheap, throwaway
+     directions on ONE board (`02-exploration-visual-designs`, live-rendered side by
+     side). Where the `pen` CLI is installed AND authenticated (`pen status`), sketch
+     the variants with it — drive it per `pen --help`, export images, embed them in
+     the board; otherwise sketch directly in HTML. Present the board with the open
+     questions a designer would actually bring ("went denser on B, unsure about the
+     nav, which tone?") — never a fait accompli. Write `gate:1`, fire the gate
+     notification, `open` the board, end the turn with `needs input:`
+     ("workshop round 1 — reactions?"). **HARD STOP** — every round is one.
+  2. **Workshop rounds.** Pete reacts; revise the board in place — minutes per
+     round, not a re-spec — re-`open`, end the turn with `needs input:` again.
+     Push back where taste warrants it: a designer with no opinions is a renderer.
+     Loop until Pete locks a direction ("go with B", "lock it").
+  3. **Lock → spec.** Only after the lock, produce the ONE self-contained HTML spec
+     from the locked direction. The lock IS GATE 1; the spec is its record and the
+     scope contract PLAN and BUILD execute in full — show it, but don't re-gate on
+     it unless it surprised him.
+- Produce the spec in the repo's docs home (`specs/` or `docs/`, whichever it uses) —
+  e.g. `specs/designs/YYYY-MM-DD-<slug>.html` — covering the **whole** feature.
   **The driver authors all design artifacts inline** — taste is the deliverable, never
   dispatched.
 - **Spec shape:** `14-research-feature-explainer` body (TL;DR first, collapsible
-  depth); a genuine direction choice presents as `02-exploration-visual-designs` — 2–3
-  live-rendered directions side-by-side so Pete picks by looking; mockups are live
-  (`07`/`08-prototype`); flows are diagrams (`13-flowchart-diagram`).
-- Write `gate:1`, fire the gate notification, `open` the spec, end the turn with a
-  `needs input:` line ("design direction?"). **HARD STOP — GATE 1.**
+  depth); mockups are live (`07`/`08-prototype`); flows are diagrams
+  (`13-flowchart-diagram`).
+- A trivial visual change where multiple directions would be noise may collapse the
+  workshop to one board + one confirm — never to zero showings on the GATED lane.
 
 ### 2 · PLAN — automatic  → marker: `plan`, then `gate:2` (or straight through)
 
