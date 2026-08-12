@@ -67,7 +67,7 @@ gate genuinely needs him.** What scales is the ceremony, and **you size it, not 
   visual. Pete finds out from the `result:` line, not before.
 - **SELF-DIRECTED — real work with no taste question in it.** Write whatever
   machine-facing spec/plan *you* need to build it well, then build, run the full REVIEW
-  machinery (`/code-review` + `verify` — a `works` verdict is the merge bar), merge,
+  machinery (codex review + `verify` — a `works` verdict is the merge bar), merge,
   deploy to dev, `result:`. **Zero stops — the artifacts are for the record, not
   approval.**
 - **GATED — Pete's taste or direction is genuinely in play.** A new user-facing
@@ -84,25 +84,36 @@ a gate. Never use an autonomous lane to slip a taste call past Pete.
 ## Engines
 
 **Fable always drives — every stage, including BUILD** (Pete, 2026-07-28; codex
-dispatch restored 2026-08-12, reversing the 08-10 all-Claude retirement). The driver
-owns design, briefs, triage, gates, git, and the final say; it **dispenses the plan's
-coding tasks to GPT-5.6 sol** via background `codex exec` — the `router` skill owns
-the dispatch mechanics, the assignment heuristic (what dispatches vs stays inline),
-and the ledger. Work smaller than a dispatch's ~5–10 min fixed overhead, the driver
-writes inline; skill/agent prose and design taste never route. For Anthropic-model
-offloads (recon, verify walks, review fan-outs), use harness subagents (the Agent
-tool) — never `claude -p` from inside a session. Never Sonnet.
+dispatch restored 2026-08-12, reversing the 08-10 all-Claude retirement; supervised
+2026-08-12). The driver owns design, briefs, triage, gates, git, and the final say, and
+**dispenses the plan's coding tasks to GPT-5.6 sol — but never touches codex itself.**
+Each codex session is owned by an **Opus subagent supervisor** (`codex-supervisor`
+skill) that carries the brief down, launches the run, **keeps the session alive**, judges
+what comes back, spends the fix rounds, and hands the driver a verdict.
 
-**The driver owns the envelope**, whoever drafts: it writes the brief (exact files,
-signatures, test cases, constraints — a vague brief burns the savings in fix rounds),
-reviews the diff and runs the gates before anything is committed (never trust a "tests
-pass" claim), and owns git entirely. **One writer per branch at a time** — concurrent
-writers on one tree collide; serialize, or give each its own sub-worktree.
+Why the layer: codex tokens buy drafts, driver tokens buy judgment — and the *watching*
+is neither. Polling, liveness tells, stall budgets, a session id threaded through three
+commands, retries after a run dies at startup: that noise used to fill the driver's
+context and crowd out the work. Now it fills a subagent that's cheap to spawn and cheap
+to discard. **Keeping the run alive is the supervisor's headline duty**, not a footnote —
+a run killed early gets logged as a failure it didn't earn.
+
+Work smaller than a dispatch's ~5–10 min fixed overhead, the driver writes inline;
+skill/agent prose and design taste never route. **Codex draws coding drafts and nothing
+else** — recon, verify walks, design QA, and review fan-outs run on plain harness
+subagents (the Agent tool) with claude-in-chrome for anything in a browser. Never
+`claude -p` from inside a session. Never Sonnet.
+
+**The driver owns the envelope**, whoever drafts: it writes the brief the supervisor
+carries (exact files, signatures, test cases, constraints — a vague brief burns the
+savings in fix rounds), reviews the returned diff and runs the gates before anything is
+committed (never trust a "tests pass" claim, from a supervisor or from codex), and owns
+git entirely. **One writer per branch at a time** — concurrent writers on one tree
+collide; serialize, or give each its own sub-worktree.
 
 **All browser work runs on claude-in-chrome** — verify walks, design QA, live-product
 grounding. A subagent drives the MCP browser tools against the running app and reports
-what it saw; never drive the browser from the driver while other work is in flight.
-Auth-walled surfaces need no special rig: Pete's own Chrome is already logged in.
+what it saw; browser work does not go to codex.
 
 **Never idle while a dispatch or subagent runs** — a codex draft, review, or QA pass
 is 10–25 minutes.
@@ -208,9 +219,9 @@ on main.
 - **Resurface decision memory first** (see Decision memory) — settled calls constrain
   the brainstorm; don't re-litigate them inside it.
 - Invoke `superpowers:brainstorming`. PM-framed, one question at a time.
-- **Recon runs on a subagent, synthesis stays with the driver.** Codebase
-  evidence-gathering dispatches to a read-only `Explore` subagent (report findings,
-  edit nothing).
+- **Recon runs on a supervisor, synthesis stays with the driver.** Codebase
+  evidence-gathering dispatches as a read-only codex run (report findings, edit
+  nothing).
   The recon brief includes a **reuse audit**: for every core noun the feature
   introduces, grep the whole repo — data layer included — for existing infra before the
   plan treats it as new (incidents: Design).
@@ -294,8 +305,8 @@ on main.
 
 - Write `build:0:<M>`; bump N per task. Build **all M tasks** in one session; commit
   each task on the branch as it lands, merge only when the whole plan is built.
-- Invoke `superpowers:subagent-driven-development` (the driver drives) and `router` to
-  dispatch each task — drafting goes to codex per the router's heuristic; sub-overhead
+- Invoke `superpowers:subagent-driven-development` (the driver drives) and dispatch
+  each task to a `codex-supervisor` subagent — drafting goes to codex; sub-overhead
   work inline. The driver owns the brief, the diff review, the gates, and git. One
   writer per branch at a time.
 - **Single-writer vs fan-out — pick by the diff, not reflex.** Default one writer.
@@ -325,12 +336,14 @@ on main.
 - **Freeze the tree while a verifier is driving** — no merges, rebases, or edits until
   its verdict lands (incidents: Worktrees). Absorb upstream *before* dispatching a
   round, never during.
-- **Correctness review — `/code-review` against the lane target, launched first** so
-  it works while the rest of REVIEW proceeds. Meanwhile the driver runs
-  `ponytail-review` (the over-build sweep). The **driver triages every finding** —
-  adversarial reviewers over-flag by design — fixes what's real, puts judgment calls on
-  the card. The high-value fan-out is here: several verifiers on one diff beats one.
-- **Design QA for visual features** — a background subagent first runs
+- **Correctness review — a supervisor on codex review mode, launched first** so it
+  works while the rest of REVIEW proceeds (`codex exec review --base <lane-target>`;
+  the supervisor owns the mechanics). Meanwhile the driver runs `ponytail-review` (the
+  over-build sweep). The **driver triages every finding** — adversarial reviewers
+  over-flag by design — fixes what's real, puts judgment calls on the card. Codex
+  unavailable → `/code-review` + `ponytail-review` on the driver. The high-value
+  fan-out is here: several verifiers on one diff beats one.
+- **Design QA for visual features** — a background supervisor first runs
   impeccable's deterministic detector over the branch's changed UI files
   (`node ~/.claude/skills/impeccable/scripts/detect.mjs --json <files>` — local, no
   network), then walks the built surfaces and judges them **side-by-side against the
@@ -347,8 +360,8 @@ on main.
   live local app is on his screen. **Never deploy to let him review; never tell him to
   "go look at the live site"** — the worktree's localhost is the review surface.
   (Non-UI change → show the demo/test output instead.)
-- **Prove it works — invoke `verify` before the card.** A fresh read-only subagent
-  verifier drives the feature and returns `works | broken | unverifiable` + a
+- **Prove it works — invoke `verify` before the card.** A fresh read-only supervisor
+  drives the feature and returns `works | broken | unverifiable` + a
   screenshot storyboard; verify loops-to-fix (cap ~3). **`broken` after the cap, or
   `unverifiable` → do NOT merge**: end the turn with `needs input:` ("review: <feature>
   — couldn't prove it works: <reason>") and hand Pete the verdict + evidence.
