@@ -33,7 +33,8 @@ read-only — each *queued ship* forks as its own first act instead.
 - **`/ship express <tweak>`** — pins EXPRESS. The verb pins ceremony *down*, never
   safety down: a money path or a taste call promotes per the mid-flight rule regardless.
 - **`/ship design <idea>`** — pins GATED and mandates the full design workshop in
-  DISCOVER (pencil pass → rounds → lock). The verb is Pete asserting taste is in
+  DISCOVER (pencil pass → rounds → lock → pen build-out → Pete iterates in pen →
+  go). The verb is Pete asserting taste is in
   play; never downgrade it, however mechanical the work looks.
 - **`/ship next`** — ship the board's **Next column** as one batch (board-backed repos
   only; no board → say so and stop):
@@ -118,7 +119,7 @@ lands. Same posture at gates: notify, then keep doing non-gated work.
    plain-English TL;DR first, structure as diagrams/side-by-sides instead of prose,
    depth behind collapsibles, anything visual a *live* embed. Pattern picks are named
    per stage.
-2. **Two gates, at most.** GATE 1 = the design workshop's lock (DISCOVER runs as
+2. **Two gates, at most.** GATE 1 = Pete's "go" on the pen design of record (DISCOVER runs as
    presented rounds, each a hard stop — see stage 1) — always gated on the GATED lane. GATE 2 = go (after PLAN, via the go-card) — a hard stop
    **only when the card carries a genuine call for Pete**: a PM tradeoff, a money path,
    or something you judge he'd genuinely want to see before build. **A zero-call
@@ -244,28 +245,44 @@ on main.
      round, not a re-spec — re-`open`, end the turn with `needs input:` again.
      Push back where taste warrants it: a designer with no opinions is a renderer.
      Loop until Pete locks a direction ("go with B", "lock it").
-  3. **Lock → spec.** Only after the lock, produce the ONE self-contained HTML spec
-     from the locked direction — the locked sketch's PNG is the visual reference for
-     the spec's live mockups (pen owns divergence; impeccable owns everything that
-     ships). The lock IS GATE 1; the spec is its record and the scope contract PLAN
-     and BUILD execute in full — show it, but don't re-gate on it unless it
-     surprised him.
-- Produce the spec in the repo's docs home (`specs/` or `docs/`, whichever it uses) —
-  e.g. `specs/designs/YYYY-MM-DD-<slug>.html` — covering the **whole** feature.
-  **The driver authors all design artifacts inline** — taste is the deliverable, never
-  dispatched.
+  3. **Lock → pen builds it out.** On the lock, drive pen to build the locked
+     direction as a HIGH-FIDELITY design of every specced surface, as a
+     repo-committed design file: `specs/designs/pen/YYYY-MM-DD-<slug>.pen`
+     (`pen --repo <project> --out <that file> --prompt "<locked direction, full
+     surface inventory, real copy>" --prompt-file <grounding screenshots>`), with
+     PNG exports beside it (`--export`, one per surface where the file has several).
+     **The pen file is the DESIGN OF RECORD from here on** — committed on the
+     branch, it travels with the ship.
+  4. **Pete iterates IN pen — that's the rest of the workshop.** `open` the .pen
+     file (his pen.dev app owns the filetype) and end the turn with `needs input:`
+     ("design is in pen — iterate there, say go when it's right"). He edits at his
+     own pace, in pen's own UI, no driver round-trips. **His "go" freezes whatever
+     the file says at that moment**: re-read the .pen, re-export the PNGs — his
+     edits ARE the design; never build from the pre-iteration exports. The go IS
+     GATE 1.
+  5. **Go → spec.** Produce the thin HTML spec: the scope contract wrapped around
+     the pen exports (embed them) plus everything a comp can't carry — copy as
+     data, routes, behavior, states, a11y. `open` it for the record; no re-gate.
+- The spec lives in the repo's docs home (`specs/` or `docs/`, whichever it uses) —
+  e.g. `specs/designs/YYYY-MM-DD-<slug>.html`. **The driver authors boards, briefs,
+  and spec prose inline** (taste is the deliverable, never dispatched); pen authors
+  the comps.
 - **Spec shape:** `14-research-feature-explainer` body (TL;DR first, collapsible
-  depth); mockups are live (`07`/`08-prototype`); flows are diagrams
+  depth); the pen exports are the mockups; flows are diagrams
   (`13-flowchart-diagram`).
 - A trivial visual change where multiple directions would be noise may collapse the
   workshop to one board + one confirm — never to zero showings on the GATED lane.
+  A non-visual GATED ship (pure product tradeoff, no UI) skips pen and gates on the
+  board alone.
 
 ### 2 · PLAN — automatic  → marker: `plan`, then `gate:2` (or straight through)
 
 - Write `plan`. Invoke `superpowers:writing-plans` for ONE execution plan covering the
-  **entire spec** — never sliced into phases. Run `ponytail` as the *waste* critic, not
-  a scope critic — it cuts reinvention and gold-plating, never specced scope. Save the
-  markdown plan to the docs home (e.g. `specs/plans/YYYY-MM-DD-<slug>.md`).
+  **entire spec** — never sliced into phases. **The pen exports are the design source
+  of truth**: the plan's UI tasks reference the export image for each surface (path,
+  not prose description) and plan to match it. Run `ponytail` as the *waste* critic,
+  not a scope critic — it cuts reinvention and gold-plating, never specced scope. Save
+  the markdown plan to the docs home (e.g. `specs/plans/YYYY-MM-DD-<slug>.md`).
 - Render the HTML **go-card** from `reference/go-card.html` (contract below) and
   `open` it.
 - **Gate or go:** if the card carries a genuine call (PM tradeoff, money path, your
@@ -288,9 +305,9 @@ on main.
   parallelize 5 verifiers.
 - `ponytail` posture; `superpowers:verification-before-completion` before claiming any
   task done — actually run it; `superpowers:systematic-debugging` on a red test.
-- **UI-writing briefs carry the craft floor** — codex has no impeccable installed, so
-  the floor never reaches the writer unless the brief points it there: every dispatch
-  that writes UI tells codex to read
+- **UI-writing briefs carry the pen comp and the craft floor** — every dispatch that
+  writes UI names the surface's pen export (`specs/designs/pen/…png`) as the comp to
+  match, and — since codex has no impeccable installed — tells codex to read
   `~/.claude/skills/impeccable/reference/craft-floor.md` and honor its checks and bans.
 - **Before BUILD is done, smoke-walk the whole feature yourself** — boot the app and
   drive the spec's real user paths (the formal `verify` runs in REVIEW; don't invoke it
@@ -316,9 +333,13 @@ on main.
 - **Design QA for visual features** — a background subagent first runs
   impeccable's deterministic detector over the branch's changed UI files
   (`node ~/.claude/skills/impeccable/scripts/detect.mjs --json <files>` — local, no
-  network), then walks the built surfaces and judges them against the GATE 1 spec and
-  the craft-floor checklist (contrast, depth, spacing, type, motion, states, copy, and
-  the bans). Bounded per impeccable's own ceiling: one batched round, one confirm, no
+  network), then walks the built surfaces and judges them **side-by-side against the
+  pen design of record** (screenshot each built surface next to its pen export —
+  impeccable's approved-comp critique: hero and sections as their own crops, never one
+  full-page thumbnail) plus the GATE 1 spec and the craft-floor checklist (contrast,
+  depth, spacing, type, motion, states, copy, and the bans). The review card shows the
+  pen-vs-built pairs — Pete reviews the design he iterated against the thing that got
+  built. Bounded per impeccable's own ceiling: one batched round, one confirm, no
   open-ended polish loops. Driver triages: real gaps fixed before the card, nits land
   on the card for Pete.
 - **Put it in front of Pete, running.** For any visual/interactive feature, boot the
