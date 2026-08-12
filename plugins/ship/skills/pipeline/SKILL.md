@@ -241,20 +241,29 @@ on main.
   1. **Pencil pass — rough directions first.** Open with 2–4 cheap, throwaway
      directions on ONE board (`02-exploration-visual-designs`, live-rendered side by
      side). Where the `pen` CLI is installed AND authenticated (`pen status`), sketch
-     the variants with it — drive it per `pen --help`, export images, embed them in
-     the board; otherwise sketch directly in HTML. Present the board with the open
-     questions a designer would actually bring ("went denser on B, unsure about the
-     nav, which tone?") — never a fait accompli. Write `gate:1`, fire the gate
-     notification, `open` the board, end the turn with `needs input:`
-     ("workshop round 1 — reactions?"). **HARD STOP** — every round is one.
+     the variants with it — **impeccable briefs, pen draws**: run impeccable's
+     context first, then per variant
+     `pen --repo <project> --prompt "<direction brief>" --prompt-file <live-product
+     screenshot> --out <slug>.pen --export <slug>.png` so pen's agent designs from
+     PRODUCT.md/DESIGN.md and the real product (the DISCOVER grounding screenshots),
+     never from generic taste; embed the exports in the board. Judge exports by eye
+     against craft-floor taste — never lint a pencil; impeccable's deterministic
+     checks stay on the HTML spec and built UI. No pen → sketch directly in HTML.
+     Present the board with the open questions a designer would actually bring
+     ("went denser on B, unsure about the nav, which tone?") — never a fait
+     accompli. Write `gate:1`, fire the gate notification, `open` the board, end
+     the turn with `needs input:` ("workshop round 1 — reactions?").
+     **HARD STOP** — every round is one.
   2. **Workshop rounds.** Pete reacts; revise the board in place — minutes per
      round, not a re-spec — re-`open`, end the turn with `needs input:` again.
      Push back where taste warrants it: a designer with no opinions is a renderer.
      Loop until Pete locks a direction ("go with B", "lock it").
   3. **Lock → spec.** Only after the lock, produce the ONE self-contained HTML spec
-     from the locked direction. The lock IS GATE 1; the spec is its record and the
-     scope contract PLAN and BUILD execute in full — show it, but don't re-gate on
-     it unless it surprised him.
+     from the locked direction — the locked sketch's PNG is the visual reference for
+     the spec's live mockups (pen owns divergence; impeccable owns everything that
+     ships). The lock IS GATE 1; the spec is its record and the scope contract PLAN
+     and BUILD execute in full — show it, but don't re-gate on it unless it
+     surprised him.
 - Produce the spec in the repo's docs home (`specs/` or `docs/`, whichever it uses) —
   e.g. `specs/designs/YYYY-MM-DD-<slug>.html` — covering the **whole** feature.
   **The driver authors all design artifacts inline** — taste is the deliverable, never
