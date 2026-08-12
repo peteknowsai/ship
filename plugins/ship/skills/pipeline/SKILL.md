@@ -101,7 +101,7 @@ a run killed early gets logged as a failure it didn't earn.
 Work smaller than a dispatch's ~5–10 min fixed overhead, the driver writes inline;
 skill/agent prose and design taste never route. **Codex draws coding drafts and nothing
 else** — recon, verify walks, design QA, and review fan-outs run on plain harness
-subagents (the Agent tool) with claude-in-chrome for anything in a browser. Never
+subagents (the Agent tool) with the `/browse` skill for anything in a browser. Never
 `claude -p` from inside a session. Never Sonnet.
 
 **The driver owns the envelope**, whoever drafts: it writes the brief the supervisor
@@ -111,8 +111,10 @@ committed (never trust a "tests pass" claim, from a supervisor or from codex), a
 git entirely. **One writer per branch at a time** — concurrent writers on one tree
 collide; serialize, or give each its own sub-worktree.
 
-**All browser work runs on claude-in-chrome** — verify walks, design QA, live-product
-grounding. A subagent drives the MCP browser tools against the running app and reports
+**All browser work runs on `/browse`** — verify walks, design QA, live-product
+grounding. Pete's standing rule: `/browse` for all web browsing, never the
+`mcp__claude-in-chrome__*` tools. Auth-walled surfaces get `/setup-browser-cookies`
+once; `/browse` keeps the session after that. A subagent drives the MCP browser tools against the running app and reports
 what it saw; browser work does not go to codex.
 
 **Never idle while a dispatch or subagent runs** — a codex draft, review, or QA pass
@@ -232,7 +234,7 @@ on main.
   replacement look routes through its `shape`/new-work path; a refinement stays on the
   incumbent world. Use `/pix` for imagery freely — the spec *is* the prototype.
   **Ground the design in the live product**: a subagent walks the running app /
-  deployed URL over claude-in-chrome and reports the real theme/CSS with screenshots;
+  deployed URL over `/browse` and reports the real theme/CSS with screenshots;
   design from those, never from in-repo mockups (incidents: Design).
 - **DISCOVER is a design workshop, not a handoff.** The first thing Pete sees is
   never a finished spec — it's a working session, opened the way a designer opens one:

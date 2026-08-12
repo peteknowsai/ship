@@ -32,25 +32,26 @@ boots its own.
 provide a local/test way to reach authed surfaces. verify does **not** mint sessions, bypass
 auth, or stand up infra — that's repo plumbing, and baking it in here would couple this skill
 to one app. If authed surfaces are unreachable and the repo offers no test-auth path, the
-blessed alternative before `unverifiable`: **drive Pete's own Chrome over
-claude-in-chrome** — his real profile, already logged into everything, reached through
-the `mcp__claude-in-chrome__*` tools. Note in the verdict which route was used.
-Otherwise return `unverifiable` with the reason — never fake a pass.
+blessed alternative before `unverifiable`: **`/setup-browser-cookies`** — import the
+logged-in cookies into the `/browse` session, then walk it there. `/browse` persists
+cookies and login state between calls, so this is a one-time import per site. Note in
+the verdict which route was used. Otherwise return `unverifiable` with the reason —
+never fake a pass.
 
 **The seeded account is the verifier's alone while a walk is in flight.** Never invite Pete
 to poke at the app on the same seeded user mid-round — his concurrent clicks read as bugs
 (a shared account once produced a false `broken` that cost a diagnosis round). Seed a second
-user for his hands-on look, or wait for the verdict. This applies doubly to
-claude-in-chrome, which drives his real profile and real tabs — a walk in flight owns
-the browser. Never leave a modal dialog open: an alert/confirm blocks every subsequent
-tool call and strands the run.
+user for his hands-on look, or wait for the verdict. `/browse` is headless and
+isolated, so it never fights Pete for a tab — but its session state IS shared across
+calls, so two concurrent walks on one seeded account collide the same way.
 
 ## 2. Verify the feature (delegate) → fix → re-verify (loop ≤ 3)
 
 Brief from the plan/spec file if one exists (point the verifier at it), else inline the
 acceptance criteria. The verifier is a **fresh subagent** — fresh so it judges the
-feature rather than its own work. It drives the running app over claude-in-chrome and
-captures screenshots as it goes. The brief must open with "READ-ONLY: edit no source
+feature rather than its own work. It drives the running app through the **`/browse`
+skill** (Pete's standing rule: `/browse` for all web browsing, never the
+claude-in-chrome tools) and captures screenshots as it goes. The brief must open with "READ-ONLY: edit no source
 files" — nothing enforces that at the tool layer, so the brief carries the constraint,
 and the driver eyeballs `git status` in the worktree after the run
 (any dirt → discard it, count the round as `unverifiable`):
@@ -85,14 +86,12 @@ This report is your FINAL MESSAGE — it lands in the -o result file the caller 
 finishing without it is an incomplete run.
 ```
 
-**Auth-walled surface (the AUTH line forces it):** the verifier opens a new tab in
-Pete's own Chrome over claude-in-chrome — it is already logged in. Add to the brief:
-"call `tabs_context_mcp` first, then `tabs_create_mcp` for your own tab; never reuse a
-tab Pete is working in." If the site isn't logged in there, park with a `needs input:`
-asking Pete to log in once. **Last resort only** — the login exists solely in Pete's personal
-Chrome: a Claude subagent (`Agent(model: opus)`, unnamed one-shot, claude-in-chrome
-tools). Its screenshot reality: MCP screenshots render inline-only and the download
-fallback works ONCE per tab — save the one file early, use DOM measurements as
+**Auth-walled surface (the AUTH line forces it):** run **`/setup-browser-cookies`**
+once to import the logged-in cookies into the `/browse` session, then walk it normally —
+state persists across calls, so later rounds need no re-import. If the site defeats
+headless entirely (CAPTCHA, MFA, bot-fingerprinting), `/browse` has its own documented
+hand-off to a real browser; take that path and say so in the verdict. Park with a
+`needs input:` only when even the hand-off needs Pete's hands. Screenshot reality:
 storyboard substitutes for the rest (acceptable evidence). Note in the verdict which
 route was used.
 
