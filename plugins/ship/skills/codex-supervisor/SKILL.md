@@ -62,7 +62,10 @@ cd <repo> && codex exec -c model_reasoning_effort=high \
   metadata to ignore.
 - **Dispatch with `run_in_background`**, never a hand-rolled `&`.
 - **Billing sanity-check on first use**: codex bills the ChatGPT subscription only on its
-  *subscription* login. An `OPENAI_API_KEY` in the env silently bills per call.
+  *subscription* login. An `OPENAI_API_KEY` in the env silently bills per call. Check:
+  `codex login status` says "Logged in using ChatGPT" and `~/.codex/auth.json` has
+  `auth_mode: chatgpt`; `echo ${OPENAI_API_KEY:-unset}` must print `unset`. If a key is
+  in the env, launch under `env -u OPENAI_API_KEY -u OPENAI_BASE_URL`.
 
 **Never the codex-companion runtime for background work** — its per-worktree broker
 daemon dies mid-run in a multi-session workflow and the job orphans "running" forever.
@@ -75,6 +78,23 @@ were healthy and got logged as failures, which then made the engine look worse t
 was. **Slow is not failure.** Give it 15–30 minutes and check in rather than killing.
 Never drop effort to go faster.
 
+- **Arm a `Monitor` on the rollout file instead of blind-polling.** Codex narrates every
+  step into its session JSONL, so its progress lands in your chat as it happens. Right
+  after launch (the newest rollout file is your run — capture it once, it's also the
+  session id you resume by):
+
+  ```
+  S=$(ls -t ~/.codex/sessions/*/*/*/*.jsonl | head -1)
+  ```
+
+  then `Monitor` with `persistent: true` and:
+
+  ```
+  tail -f -n0 "$S" | jq -r --unbuffered 'select(.payload.type|IN("agent_message","patch_apply_end","task_complete","error","stream_error","turn_aborted")) | .payload | "[\(.type)] \(((.message // .stdout // .last_agent_message // "") | tostring | split("\n")[0])[0:150])"'
+  ```
+
+  The background job's own exit notification covers death/completion; the monitor covers
+  mid-flight. `TaskStop` it when you write the verdict.
 - **Startup liveness tell:** a healthy `codex exec` writes its `~/.codex/sessions`
   rollout file within seconds. Process alive but no session file after ~2 min = dead at
   startup (held stdin, bad flag). Kill and redispatch. This is the *only* early kill.
