@@ -100,8 +100,9 @@ a run killed early gets logged as a failure it didn't earn.
 
 Work smaller than a dispatch's ~5–10 min fixed overhead, the driver writes inline;
 skill/agent prose and design taste never route. **Codex draws coding drafts and nothing
-else** — recon, verify walks, design QA, and review fan-outs run on plain harness
-subagents (the Agent tool) with the `/browse` skill for anything in a browser. Never
+else** — recon, expert consults, verify walks, design QA, and review fan-outs run on
+plain harness subagents (the Agent tool) with the `/browse` skill for anything in a
+browser. Never
 `claude -p` from inside a session. Never Sonnet.
 
 **The driver owns the envelope**, whoever drafts: it writes the brief the supervisor
@@ -229,6 +230,26 @@ on main.
   plan treats it as new (incidents: Design).
 - **Bug-shaped requests get an empirical root-cause check** — reproduce the failure or
   read the runtime evidence; never spec a fix from a hypothesis (incidents: Design).
+- **Consult the installed domain experts before you spec.** Recon tells you what the
+  repo does; an expert tells you what the *stack* will do to you. Where the change
+  lands in a domain some installed agent knows better than you, ask it — as harness
+  subagents (the Agent tool, `subagent_type`), fired in parallel while recon runs, one
+  round, before the board is drawn. Not codex; not a second recon pass.
+  - **Read the session's own roster** — the available agent types and skills are listed
+    in-session — and **match against the surface the change actually touches**:
+    `convex/` → the Convex expert (and its authz auditor when the change moves
+    ownership or exposes records), a Claude Code capability (hooks, MCP, subagents,
+    SDK) → the claude-code guide, DNS / WAF / the edge → `cloudflare`, an always-on
+    agent → `flue`. **Never a hardcoded list** — rosters differ per machine and repo.
+    Nothing matches → consult nobody; a manufactured consult is worse than none.
+  - **Ask what changes the design, not what does the work.** "What's the canonical
+    pattern for this here", "what will bite us at scale", "what does this choice make
+    impossible later", "is there a component that already does this". A consult whose
+    answer couldn't move a line of the spec was a wasted turn.
+  - **You keep the pen.** Answers are evidence, weighed like recon — the driver writes
+    the spec, and Pete's settled calls (decision memory) and the repo's `CLAUDE.md`
+    outrank any agent's opinion. When a consult changes a decision, name it in the
+    spec's TL;DR so the reason survives the run.
 - For any visual/UI feature, invoke `impeccable` and follow its Setup (context.mjs —
   the repo's PRODUCT.md/DESIGN.md are the visual authority): a new surface or
   replacement look routes through its `shape`/new-work path; a refinement stays on the
@@ -308,6 +329,12 @@ on main.
   not prose description) and plan to match it. Run `ponytail` as the *waste* critic,
   not a scope critic — it cuts reinvention and gold-plating, never specced scope. Save
   the markdown plan to the docs home (e.g. `specs/plans/YYYY-MM-DD-<slug>.md`).
+- **Consult a domain expert again only for a question the plan raises and the spec
+  didn't settle** — schema shape, index or migration order, an API's real constraint,
+  an auth boundary. Same rules as DISCOVER's consult: harness subagent, a question not
+  a task, the driver decides. **On SELF-DIRECTED — which skips DISCOVER's workshop —
+  this is the lane's only consult**, so a stack question that would change the plan
+  gets asked here or nowhere.
 - Render the HTML **go-card** from `reference/go-card.html` (contract below) and
   `open` it.
 - **Gate or go:** if the card carries a genuine call (PM tradeoff, money path, your
