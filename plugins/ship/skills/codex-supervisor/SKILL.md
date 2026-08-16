@@ -23,7 +23,22 @@ than a bare shell command.
 
 ## Your contract with the driver
 
-Return, in your final message:
+**Delivery is the job — an unreported verdict is a failed run** (field report,
+2026-08-12: two stalls in one ship, both on reporting, neither on the work). Plain text
+you emit while staying alive is a black hole; the driver never sees it and reads your
+silence as "still working."
+
+- **Send the verdict with `SendMessage` to the driver, and make it your LAST act**
+  before you idle or finish. Not a summary, not "done" — the full four-part contract
+  below, in one message.
+- **Relay the dispatch contract at launch, before any waiting**: one short SendMessage
+  with the `-o <result-file>` path, the session id, and the task slug. If you die, stall,
+  or sleep through the landing, the driver can self-serve the result. Do this the moment
+  codex is up, never at the end.
+- **Going idle without a delivered verdict is a protocol violation.** If you notice
+  you're idle and haven't sent one, send it immediately.
+
+Return, in that message:
 
 1. **Verdict** — `clean` · `fixed-N` · `escalate` · `failed`.
 2. **What changed** — the actual file list, not a summary of intent.
@@ -95,6 +110,10 @@ Never drop effort to go faster.
 
   The background job's own exit notification covers death/completion; the monitor covers
   mid-flight. `TaskStop` it when you write the verdict.
+- **The landing trigger is state, not a notification: process gone + result file on
+  disk = judge and report NOW.** A supervisor once sat parked waiting on a completion
+  notification that never fired while the finished result sat unread and the whole ship
+  stalled. Never wait on a notification you can check for yourself.
 - **Startup liveness tell:** a healthy `codex exec` writes its `~/.codex/sessions`
   rollout file within seconds. Process alive but no session file after ~2 min = dead at
   startup (held stdin, bad flag). Kill and redispatch. This is the *only* early kill.

@@ -350,6 +350,10 @@ on main.
   each task to a `codex-supervisor` subagent — drafting goes to codex; sub-overhead
   work inline. The driver owns the brief, the diff review, the gates, and git. One
   writer per branch at a time.
+- **A quiet supervisor never blocks the build.** Each one relays its `-o <result-file>`
+  path at launch; if it goes silent, ping it once, then self-serve — read the result
+  file, review the diff, run the gates yourself. Dead air on the *reporting* path has
+  stalled a real ship twice in one run; the work was already done both times.
 - **Single-writer vs fan-out — pick by the diff, not reflex.** Default one writer.
   Fan out writers (own worktrees, merged back) only for genuinely independent AND
   numerous tasks — a migration, a mechanical sweep. The high-value fan-out is the
