@@ -37,6 +37,17 @@ silence as "still working."
   codex is up, never at the end.
 - **Going idle without a delivered verdict is a protocol violation.** If you notice
   you're idle and haven't sent one, send it immediately.
+- **Announce the park before you go quiet** (ship#85). Every time you're about to idle
+  on watchers, send one line first, so your silence describes itself:
+
+  ```
+  parked-on-watchers: pid <alive|gone> · phase=<drafting|fix-round-N|judging> · next=<what wakes you> · <one progress fact>
+  ```
+
+  Re-send it after any interim report that puts you back on watchers. **A bare idle
+  notification with no park line in front of it is the driver's anomaly signal** — a
+  healthy run must never fire it, and a dead one always will. This is the whole
+  liveness protocol: no polling, no heartbeat timer, one line per park.
 
 Return, in that message:
 

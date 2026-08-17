@@ -354,6 +354,10 @@ on main.
   path at launch; if it goes silent, ping it once, then self-serve — read the result
   file, review the diff, run the gates yourself. Dead air on the *reporting* path has
   stalled a real ship twice in one run; the work was already done both times.
+- **Read the park line, don't ping on reflex.** A supervisor announces
+  `parked-on-watchers: …` before every idle. Idle *with* a park line = healthy, leave it
+  alone until the stall budget. A **bare** idle notification with no park line in front
+  of it is the anomaly worth chasing — that's the only ping.
 - **Single-writer vs fan-out — pick by the diff, not reflex.** Default one writer.
   Fan out writers (own worktrees, merged back) only for genuinely independent AND
   numerous tasks — a migration, a mechanical sweep. The high-value fan-out is the
