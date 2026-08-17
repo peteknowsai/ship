@@ -71,6 +71,11 @@ AUTH (if behind login):
   <the repo's local/test-auth path, or 'none'>. Use ONLY that path. Do NOT mint sessions, set
   auth cookies, log in through the real login UI, or hit a dev-login endpoint yourself. If it's
   'none' or the path fails, return `unverifiable` and stop — never improvise a way past auth.
+BACKEND (repos with per-branch/preview backends):
+  <the exact deployment the app is serving>. Pin it on EVERY CLI call
+  (--preview-name/--deployment). Unpinned calls resolve to a different deployment than the
+  app reads, so your seeds land on one backend and the browser on another — that split-brain
+  reports as a broken feature and burns the whole round.
 
 Drive the REAL flow with Playwright — walk the exact steps a user would, like clicking through
 it. Screenshot the MEANINGFUL BEATS (start → action → success), not a random dump. Judge

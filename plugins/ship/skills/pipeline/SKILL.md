@@ -132,7 +132,10 @@ lands. Same posture at gates: notify, then keep doing non-gated work.
    follow the **html-effectiveness patterns** (https://thariqs.github.io/html-effectiveness/):
    plain-English TL;DR first, structure as diagrams/side-by-sides instead of prose,
    depth behind collapsibles, anything visual a *live* embed. Pattern picks are named
-   per stage.
+   per stage. **Prune hard inside that format — never reach for a new one.** Pete tried
+   landing-page-styled gate artifacts against the plain doc and kept the doc: "this is
+   taking it far too radical an approach… maybe there's just a little bit of pruning."
+   Cut any section that doesn't change a decision; shorter ledes, depth collapsed.
 2. **Two gates, at most.** GATE 1 = Pete's "go" on the pen design of record (DISCOVER runs as
    presented rounds, each a hard stop — see stage 1) — always gated on the GATED lane. GATE 2 = go (after PLAN, via the go-card) — a hard stop
    **only when the card carries a genuine call for Pete**: a PM tradeoff, a money path,
@@ -203,16 +206,25 @@ wt switch --create feature/<slug> --no-cd --format=json -y
 ```
 then enter the path from the JSON — Claude Code: `EnterWorktree({path})`; Codex:
 absolute paths. `--no-cd` is load-bearing. A `.config/wt.toml` auto-provisions
-gitignored runtime files. Write `printf 'discover' > <root>/.ship-stage`. Never build
-on main.
+gitignored runtime files. Write `printf 'discover' > <root>/.ship-stage`, then
+**`echo .ship-stage >> $(git rev-parse --git-common-dir)/info/exclude`** — `git add -A`
+sweeps the marker into commits otherwise (incidents: Worktrees). Never build on main.
 
 - **Provision the per-branch backend now** if the repo's ship contract has one — a
   worktree building against a shared backend clobbers it (incidents: Backends). No
-  preview lane → build against the repo's dev stack.
+  preview lane → build against the repo's dev stack. **Rewrite the worktree's env file
+  to the preview before the first backend command** and confirm the first deploy's host
+  is the preview: the inherited `.env.local` carries the shared key, and the
+  `--preview-name` flag does not override it (incidents: Backends). From here on the
+  preview's *name* comes from that file, never from the branch.
 - **Cross-repo case:** `EnterWorktree` only takes for the session's primary repo
   (incidents: Worktrees). Against any other repo, work the worktree by **absolute
   path** and **narrate the fork the moment you create it** (`forked feature/<slug> off
   main @ <path>`) — a blind status line must never make it look like nothing forked.
+- **Recon may contradict the fork — then re-fork.** In a multi-repo workspace the target
+  repo is itself a recon finding (incidents: Worktrees). Exit, `wt remove` the empty
+  worktree, fork in the right repo, narrate the move. Fork-first stays; being wrong
+  about the repo is cheap, being invisible is not.
 - **Opportunistic tidy:** glance at `git worktree list` and `wt remove <branch> -f`
   any worktree that provably landed (merged PR whose `headRefOid` matches its HEAD,
   clean tree — incidents: Worktrees). Never touch one with uncommitted work.
@@ -227,7 +239,10 @@ on main.
   nothing).
   The recon brief includes a **reuse audit**: for every core noun the feature
   introduces, grep the whole repo — data layer included — for existing infra before the
-  plan treats it as new (incidents: Design).
+  plan treats it as new (incidents: Design). When the design lands on an *existing*
+  surface, it also **classifies that surface's liveness** — current design system?
+  reachable from primary nav? touched by recent commits? — because a deprecated page
+  serves happily (incidents: Design). The spec names the chosen surface explicitly.
 - **Bug-shaped requests get an empirical root-cause check** — reproduce the failure or
   read the runtime evidence; never spec a fix from a hypothesis (incidents: Design).
 - **Consult the installed domain experts before you spec.** Recon tells you what the
@@ -309,6 +324,9 @@ on main.
   6. **Go → spec.** Produce the thin HTML spec: the scope contract wrapped around
      the pen exports (embed them) plus everything a comp can't carry — copy as
      data, routes, behavior, states, a11y. `open` it for the record; no re-gate.
+- **Commit every gate artifact to the branch before you fire the gate** (board, spec,
+  pen file, go-card). A parked ship with uncommitted work looks disposable to another
+  session's cleanup sweep, and one nearly lost its spec that way (incidents: Worktrees).
 - The spec lives in the repo's docs home (`specs/` or `docs/`, whichever it uses) —
   e.g. `specs/designs/YYYY-MM-DD-<slug>.html`. **The driver authors boards, briefs,
   and spec prose inline** (taste is the deliverable, never dispatched); pen authors
@@ -329,6 +347,9 @@ on main.
   not prose description) and plan to match it. Run `ponytail` as the *waste* critic,
   not a scope critic — it cuts reinvention and gold-plating, never specced scope. Save
   the markdown plan to the docs home (e.g. `specs/plans/YYYY-MM-DD-<slug>.md`).
+- **A task that computes from rows another code path writes gets one end-to-end test
+  through the real writer** — not just unit tests over hand-built rows, which pass while
+  the production writers produce garbage (incidents: Design).
 - **Consult a domain expert again only for a question the plan raises and the spec
   didn't settle** — schema shape, index or migration order, an API's real constraint,
   an auth boundary. Same rules as DISCOVER's consult: harness subagent, a question not
@@ -350,6 +371,10 @@ on main.
   each task to a `codex-supervisor` subagent — drafting goes to codex; sub-overhead
   work inline. The driver owns the brief, the diff review, the gates, and git. One
   writer per branch at a time.
+- **Standing brief boilerplate** (each line from a burned run — incidents: Dispatch):
+  test files whose assertions the planned change invalidates are **always in scope**,
+  allowlist or not; the result goes to the `-o` file and is **never committed**; the
+  worker never runs `git reset/checkout/stash`.
 - **A quiet supervisor never blocks the build.** Each one relays its `-o <result-file>`
   path at launch; if it goes silent, ping it once, then self-serve — read the result
   file, review the diff, run the gates yourself. Dead air on the *reporting* path has
@@ -373,15 +398,19 @@ on main.
   drive the spec's real user paths (the formal `verify` runs in REVIEW; don't invoke it
   twice). Two preconditions that have each cost a red deploy (incidents: Backends): a
   framework with its own production build → **run that build too**; the branch touched
-  `convex/` → **re-push the preview** (`npx convex deploy --preview-name <branch> -y`).
-  *You* find the breakage, never Pete.
+  `convex/` → **re-push the preview** (`npx convex deploy --preview-name <name-from-
+  .env.local> -y`, from the worktree root — the branch name and the shell's leftover cwd
+  have each sent a deploy to the wrong place). *You* find the breakage, never Pete.
 - Raise a hand only for a genuine fork (PM-framed, with a rec).
 
 ### 4 · REVIEW / MERGE — automatic  → marker: `review`, then remove the file
 
 - Write `review`. **Sync with main first**: `git fetch origin`; absorb upstream in the
   worktree (rebase, or merge if unsafe), re-run the gates, then dispatch review — and
-  re-sync right before the merge if main moved again (incidents: Worktrees).
+  re-sync right before the merge if main moved again (incidents: Worktrees). **If the
+  absorbed commits touched `convex/`, re-deploy the preview before any further
+  verification** — function skew is invisible to tsc, vitest and the production build,
+  and has hard-crashed a page after a green rebase (incidents: Backends).
 - **Freeze the tree while a verifier is driving** — no merges, rebases, or edits until
   its verdict lands (incidents: Worktrees). Absorb upstream *before* dispatching a
   round, never during.
@@ -391,7 +420,10 @@ on main.
   over-build sweep). The **driver triages every finding** — adversarial reviewers
   over-flag by design — fixes what's real, puts judgment calls on the card. Codex
   unavailable → `/code-review` + `ponytail-review` on the driver. The high-value
-  fan-out is here: several verifiers on one diff beats one.
+  fan-out is here: several verifiers on one diff beats one. **A missing or empty result
+  file means the review did not run** — it can exit 0 in seconds having done nothing.
+  Never read that as a clean bill: retry once, and if the retry is empty too, review on
+  the driver (incidents: Dispatch).
 - **Design QA for visual features** — a background supervisor first runs
   impeccable's deterministic detector over the branch's changed UI files
   (`node ~/.claude/skills/impeccable/scripts/detect.mjs --json <files>` — local, no
@@ -402,13 +434,21 @@ on main.
   depth, spacing, type, motion, states, copy, and the bans). The review card shows the
   pen-vs-built pairs — Pete reviews the design he iterated against the thing that got
   built. Bounded per impeccable's own ceiling: one batched round, one confirm, no
-  open-ended polish loops. Driver triages: real gaps fixed before the card, nits land
-  on the card for Pete.
+  open-ended polish loops. **Report only — the driver owns every fix**; check
+  `git status` the moment the round lands, because nothing enforces read-only at the
+  tool layer (incidents: Dispatch). Driver triages: real gaps fixed before the card,
+  nits land on the card for Pete.
 - **Put it in front of Pete, running.** For any visual/interactive feature, boot the
-  worktree's dev server in the background and `open http://localhost:<port>` so the
-  live local app is on his screen. **Never deploy to let him review; never tell him to
+  worktree's dev server **detached, never through a bounded pipe** (`nohup npm run dev >
+  dev.log 2>&1 &`, then curl-probe — a `| head -50` has SIGPIPE'd a server mid-verify)
+  and `open http://localhost:<port>` so the live local app is on his screen. A feature
+  behind an auth gate needs its secret in the worktree env, or localhost 403s and reads
+  as broken (incidents: Backends). **Never deploy to let him review; never tell him to
   "go look at the live site"** — the worktree's localhost is the review surface.
   (Non-UI change → show the demo/test output instead.)
+- **Screenshots live outside the repo** — the job tmp dir, never committed (~6MB of PNGs
+  broke a push); copy anything the presented card references somewhere durable before
+  teardown, or the card 404s its own proof (incidents: Worktrees).
 - **Prove it works — invoke `verify` before the card.** A fresh read-only supervisor
   drives the feature and returns `works | broken | unverifiable` + a
   screenshot storyboard; verify loops-to-fix (cap ~3). **`broken` after the cap, or
@@ -456,7 +496,9 @@ on main.
   auto-deploy → say so and hand the URL once up. Never make Pete run a deploy. Watch
   rules (each from a real incident — incidents: Backends): **watch the deploy to
   conclusion** (red = unfinished work, fix-forward on a new express branch); **watch
-  the run for YOUR commit**, not "latest," and artifact-check the lane; **a red shared
+  the run for YOUR commit** — `gh run list --commit $(git rev-parse <sha>)`, full SHA
+  only, a short one matches nothing and the watch times out silently — and
+  artifact-check the lane; **a red shared
   lane you didn't cause is a shared resource** — check for an existing fix PR, claim
   with a draft PR first.
 - **Promotion to production is NOT ship's job.** "Merged" means live on *dev*. Never

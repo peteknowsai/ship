@@ -65,6 +65,12 @@ Hard limits, no exceptions:
 - **Never widen scope.** A neighbouring bug you spot goes in the verdict as a note. It
   does not go in the diff.
 - **Never touch a file outside the brief's stated set** without saying so explicitly.
+  Two carve-outs, both from burned runs: **test files whose assertions the planned change
+  invalidates are always in scope** (otherwise the run stops to ask and eats a resume
+  round-trip), and **your result file is never one of them** — the write-up goes to `-o`,
+  never into the repo. Codex has committed its own result doc before.
+- **Never run `git reset`, `git checkout`, or `git stash`.** One cleanup of a stray
+  worker commit ate a driver's unstaged edit.
 
 ## Launch
 
@@ -77,11 +83,24 @@ cd <repo> && codex exec -c model_reasoning_effort=high \
   forever — no session file, no error, no clue. This once ate a night of dispatches.
 - **`-o <result-file>` on every run** (e.g. `/tmp/ship-<task-slug>-result.md`). Read the
   file, never the scrollback — the result survives a truncated buffer or a missed exit.
+  **Exit 0 with no result file means the run did nothing** — `codex exec review` has
+  exited clean in seconds on an unrelated startup error. Empty file, empty verdict:
+  retry once, then report `failed`. Never let silence read as "nothing to report."
 - **No fast mode, effort high** (Pete, 2026-08-12). Don't pass `-c fast_mode=true`;
   dispatches take the config default (`fast_mode = false`).
 - **Always the sol variant** — leave the model unset to inherit `gpt-5.6-sol` from
   config; if it must be explicit, `-m gpt-5.6-sol`. Never plain `gpt-5.6`.
 - **cwd outside a git repo → `--skip-git-repo-check`**, or codex exits fatally.
+- **Dispatching into a linked worktree → add the primary `.git` to the writable roots**:
+  `-c sandbox_workspace_write.writable_roots='["<git-common-dir>"]'` (from
+  `git rev-parse --git-common-dir`). The worktree's index lives there, outside the
+  sandbox, so without it the run finishes green and then cannot commit — a real ship
+  stalled on exactly that.
+- **Auth can die mid-run.** `refresh_token_invalidated` in a dispatch means another
+  machine refreshed the same ChatGPT OAuth session: in-flight runs survive on their
+  access token, every new dispatch is instantly dead. Say so in your verdict immediately
+  — the driver builds inline while a human recovers with `codex logout && codex login
+  --device-auth`. Never sit retrying a dead engine.
 - **Tag the brief's first line**: `[ship-dispatch: <project> · <branch> · <task-slug>]`
   (append `-retryN` on redispatch). It rides in argv, so `ps aux | grep "codex exec"`
   attributes every run across Pete's concurrent sessions. Tell codex the tag is routing
