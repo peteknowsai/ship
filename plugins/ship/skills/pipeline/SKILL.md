@@ -417,10 +417,15 @@ on main.
 - **Render the review card** from `reference/review-card.html` (contract below) to the
   docs home and `open` it, pointed at the running localhost. **Never tell Pete to "go
   read the PR"** — the review comes to him, running and labeled.
-- **The merge gate always holds for GATED ships**: present the running app + card, end
-  with `needs input:` ("review: <feature> — merge?"), and wait. **Never merge a gated
-  UI Pete hasn't seen run** — a standing "go" authorizes the build, not the merge of an
-  unseen feature. EXPRESS / SELF-DIRECTED merge autonomously on green gates + `works`.
+- **The merge is NOT a gate — every lane merges itself** (Pete, 2026-08-16, resolving
+  the collision with his standing "don't hand me mechanics" rule). A GATED ship whose
+  design he approved at GATE 1, with green gates and a `works` verdict, merges without
+  stopping: put the running app and the card in front of him **as a report, in the same
+  turn as the merge** — he approved the build; landing it on a reversible dev lane is
+  mechanics, not a decision. Changes he wants after the fact ride an express round.
+  **Two things still hard-stop:** a **money path**, and a repo where **merge
+  auto-deploys to production** (there the merge is the release). Neither is "it's a big
+  feature" — size never gates.
 - Changes Pete asks for at the card go through `superpowers:receiving-code-review` —
   verify the ask against the code, do the work, loop the changed flow back through
   `verify` before re-presenting.
@@ -457,7 +462,7 @@ on main.
 - **Promotion to production is NOT ship's job.** "Merged" means live on *dev*. Never
   promote to prod / `www`, never offer to (the repo's promote script is Pete's own
   human-gated ritual). Only where merge auto-deploys straight to prod is the merge
-  itself the release — treat the review card's "Merge?" accordingly.
+  itself the release — there, and only there, the merge asks first.
 - Run RETRO, then **end with a `result:` line**: what shipped, one sentence — plus
   `· ship-retro #N filed` and/or `· K backlog candidates` when applicable.
 
@@ -507,9 +512,9 @@ Render `reference/review-card.html` filled with the meta only — PM-framed, one
 - **Only you can confirm** — the 1–2 things that need his eye, on the open localhost.
 - **Also worth building — didn't make this round** — the run's backlog candidates (see
   below). Most rounds have none — omit the section entirely; never pad it.
-- **Merge?** — the PR link is there for the curious, but he shouldn't need it. Merge
-  lands on the integration lane — reversible, low-stakes. (Only where merge
-  auto-deploys to prod is it the point of no return — say so there.)
+- **Merged** — stated, not asked: it's on the dev lane with the URL, reversible. The PR
+  link is there for the curious, but he shouldn't need it. (A money path, or a repo
+  where merge auto-deploys to prod, is the exception that still asks — say why.)
 
 ## The board is the run's record (board-backed repos)
 
