@@ -112,11 +112,12 @@ committed (never trust a "tests pass" claim, from a supervisor or from codex), a
 git entirely. **One writer per branch at a time** — concurrent writers on one tree
 collide; serialize, or give each its own sub-worktree.
 
-**All browser work runs on `/browse`** — verify walks, design QA, live-product
-grounding. Pete's standing rule: `/browse` for all web browsing, never the
-`mcp__claude-in-chrome__*` tools. Auth-walled surfaces get `/setup-browser-cookies`
-once; `/browse` keeps the session after that. A subagent drives the MCP browser tools against the running app and reports
-what it saw; browser work does not go to codex.
+**Browser work splits by wall** (Pete's standing rule): plain headless QA and
+unauthenticated browsing — verify walks, design QA, live-product grounding — run on
+**`/browse`**; **auth-walled or bot-walled surfaces run on `pane`** (open a tab as your
+agent name, raise a handoff when a human is genuinely needed). Never the
+`mcp__claude-in-chrome__*` tools. A subagent drives the browser against the running app
+and reports what it saw; browser work does not go to codex.
 
 **Never idle while a dispatch or subagent runs** — a codex draft, review, or QA pass
 is 10–25 minutes.
@@ -204,8 +205,14 @@ base branch.
 ```
 wt switch --create feature/<slug> --no-cd --format=json -y
 ```
-then enter the path from the JSON — Claude Code: `EnterWorktree({path})`; Codex:
-absolute paths. `--no-cd` is load-bearing. A `.config/wt.toml` auto-provisions
+then enter the path from the JSON. **In the session's primary repo, `EnterWorktree({path})`
+is MANDATORY, not a suggestion** — the status line and FleetView read the session's cwd,
+so a run that keeps working by absolute path while parked on main is invisible to Pete
+even though `.ship-stage` is being written faithfully in the worktree (he has had to ask
+mid-BUILD whether a run forked at all). Absolute-path driving is the *cross-repo*
+fallback only, where `EnterWorktree` can't take. **Self-heal:** notice mid-pipeline that
+the session cwd isn't the worktree → `EnterWorktree({path})` right then; it works fine
+after the fact. Codex Desktop: absolute paths throughout. `--no-cd` is load-bearing. A `.config/wt.toml` auto-provisions
 gitignored runtime files. Write `printf 'discover' > <root>/.ship-stage`, then
 **`echo .ship-stage >> $(git rev-parse --git-common-dir)/info/exclude`** — `git add -A`
 sweeps the marker into commits otherwise (incidents: Worktrees). Never build on main.
