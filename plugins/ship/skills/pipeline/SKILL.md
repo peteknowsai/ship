@@ -147,9 +147,9 @@ lands. Same posture at gates: notify, then keep doing non-gated work.
    always stop. When a gate does fire, it is a **HARD STOP** — present the artifact and
    wait.
 
-**Who Pete is & the stack:** his global instructions carry both (technical-PM tone dial;
-the standing stack — flue · Cloudflare · Convex · Clerk · Stripe · Next). Never re-ask
-the stack. **The repo's own `CLAUDE.md` / `AGENTS.md` overrides it** where it diverges.
+**Pete's stack:** his global instructions carry the standing stack — flue · Cloudflare ·
+Convex · Clerk · Stripe · Next. Never re-ask it. **The repo's own `CLAUDE.md` /
+`AGENTS.md` overrides it** where it diverges.
 Escalate a library choice only when it's both architectural *and* outside the canon.
 
 ## The ship contract — what a repo tells ship
