@@ -184,8 +184,7 @@ Return `escalate` immediately, without burning rounds, when:
 
 Append one row per task to `~/.claude/skills/codex-supervisor/ledger.md` — the canonical
 ledger, kept outside any repo or plugin directory because an installed plugin isn't
-writable state. (It lived at `~/.claude/skills/router/ledger.md` until 2026-08-12; the
-history moved with the rename rather than restarting.)
+writable state.
 
 `date | project | task (short) | task-type | engine | outcome | fix-rounds | note`
 
