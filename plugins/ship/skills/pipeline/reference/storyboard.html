@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Storyboard — {{SLUG}}</title>
+<!--
+  /ship GATE 1 template. Write to specs/designs/YYYY-MM-DD-<slug>.html in the docs home
+  and `open` it. The page IS the mockups: frames of the app at ship size, one caption
+  each, the two or three questions a designer would bring, and everything else folded
+  under "for the record" at the foot. No TL;DR, no research sections, no plan.
+
+  Authoring a frame:
+    <template data-frame="frame-id" data-title="…" data-w="1180" data-h="760">
+      <link rel="stylesheet" href="../../web/public/grok-shipped.css">   (the product's own sheet, relative to THIS file)
+      …the screen's markup, in the product's own classes and tokens…
+    </template>
+  The script below mounts each template into its own iframe (srcdoc), so the product's
+  stylesheet styles the frame and nothing else, :root tokens resolve, and hovers, menus
+  and tabs inside the frame work. A transplant frame is the lifted markup, verbatim.
+  Directions in play: several <template>s with the same data-screen, drawn side by side.
+  Round N: bump data-round on <body>, delete frames Pete killed (never grey them out).
+-->
+<style>
+  :root{--cream:#f6f1e7;--card:#fffdf8;--ink:#23262d;--slate:#5a5e6b;--mut:#8a8d99;
+    --line:#e3dccb;--amber:#c8892b;--amber-soft:#f3ead6;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--cream);color:var(--ink);
+    font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    -webkit-font-smoothing:antialiased;padding:32px 24px 80px}
+  .wrap{max-width:1240px;margin:0 auto}
+  .kicker{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--amber);font-weight:700}
+  h1{font-family:Georgia,serif;font-size:30px;line-height:1.1;margin:6px 0 2px;font-weight:600}
+  .sub{color:var(--slate);margin:0 0 20px}
+  .sub b{color:var(--ink)}
+
+  /* one screen; sibling directions sit in a row */
+  .screen{margin:26px 0 8px}
+  .screen h2{font-family:Georgia,serif;font-size:18px;margin:0 0 8px;font-weight:600}
+  .row{display:flex;gap:18px;align-items:flex-start;overflow-x:auto;padding-bottom:6px}
+  figure.frame{margin:0;flex:1 1 0;min-width:0}
+  figure.frame .stage{position:relative;background:#111;border:1px solid var(--line);
+    border-radius:10px;overflow:hidden;box-shadow:0 10px 30px rgba(35,38,45,.12)}
+  figure.frame iframe{display:block;border:0;background:#111;transform-origin:0 0}
+  figcaption .tag{display:inline-block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+    background:var(--amber-soft);color:#7a5a18;border:1px solid #e7d6ad;border-radius:6px;padding:0 7px;
+    font-weight:700;margin-right:6px;vertical-align:1px}
+  figcaption{margin:8px 2px 0;color:var(--slate);font-size:14px}
+  figcaption b{color:var(--ink)}
+  figcaption .ref{display:block;color:var(--mut);font-size:12px;font-family:ui-monospace,Menlo,monospace;margin-top:2px}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 22px;margin:26px 0 14px}
+  .card h2{font-family:Georgia,serif;margin:0 0 10px;text-transform:uppercase;color:var(--mut);
+    font-weight:700;font-size:12px;letter-spacing:.14em}
+  .q{border-left:3px solid var(--amber);padding:8px 0 8px 14px;margin:10px 0}
+  .q p{margin:0}
+  .q .pick{display:inline-block;margin-top:4px;font-size:13px;background:var(--amber-soft);color:#7a5a18;
+    border:1px solid #e7d6ad;border-radius:6px;padding:1px 9px;font-weight:600}
+
+  details{margin-top:36px;color:var(--slate);font-size:14px}
+  summary{cursor:pointer;color:var(--mut);font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:700}
+  details ul{padding-left:18px}
+  .foot{color:var(--mut);font-size:13px;margin-top:22px;text-align:center}
+  .foot code{background:#efe9dc;border-radius:5px;padding:1px 6px;font-size:12px;font-family:ui-monospace,Menlo,monospace}
+</style>
+</head>
+<body data-round="1">
+<div class="wrap">
+  <div class="kicker">║ Storyboard · round <span data-round-no>1</span> ║ &nbsp;·&nbsp; {{SLUG}}</div>
+  <h1>{{FEATURE_TITLE}}</h1>
+  <p class="sub">{{ONE_LINE_WHAT_IT_IS}} &nbsp;·&nbsp; <b>reactions?</b></p>
+
+  <!-- ONE .screen PER SCREEN OR STATE. Frames are mounted from the <template>s below;
+       the figure's data-mount names the template. Sibling directions: several figures
+       in one .row, tagged A / B / C in the caption. A single direction drops the tag. -->
+  <section class="screen">
+    <h2>{{SCREEN_1_NAME}}</h2>
+    <div class="row">
+      <figure class="frame" data-mount="{{FRAME_1_ID}}">
+        <div class="stage"></div>
+        <figcaption><span class="tag">A</span><b>{{FRAME_1_WHAT_IS_NEW}}</b>
+          <span class="ref">{{FRAME_1_REFERENCE_OR_BLANK}}</span></figcaption>
+      </figure>
+      <figure class="frame" data-mount="{{FRAME_2_ID}}">
+        <div class="stage"></div>
+        <figcaption><span class="tag">B</span><b>{{FRAME_2_WHAT_IS_NEW}}</b></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <div class="card">
+    <h2>What I'd ask you</h2>
+    <div class="q"><p>{{QUESTION_1}}</p><span class="pick">I'd pick: {{PICK_1}}</span></div>
+    <div class="q"><p>{{QUESTION_2}}</p><span class="pick">I'd pick: {{PICK_2}}</span></div>
+  </div>
+
+  <details>
+    <summary>For the record</summary>
+    <ul>
+      <li>{{RECON_FINDING}}</li>
+      <li>{{REUSE_AUDIT_RESULT}}</li>
+      <li>{{SURFACE_LIVENESS}}</li>
+      <li>{{EXPERT_CONSULT_IF_ANY}}</li>
+    </ul>
+  </details>
+  <p class="foot">Lock it and the plan follows. Frames not on this page do not ship. <code>{{BRANCH}}</code></p>
+</div>
+
+<!-- ============ FRAMES ============ one <template> per frame, mounted above -->
+<template data-frame="{{FRAME_1_ID}}" data-w="1180" data-h="760">
+  <link rel="stylesheet" href="{{PRODUCT_STYLESHEET_RELATIVE_PATH}}">
+  <style>html,body{margin:0;height:100%}</style>
+  {{FRAME_1_MARKUP}}
+</template>
+<template data-frame="{{FRAME_2_ID}}" data-w="1180" data-h="760">
+  <link rel="stylesheet" href="{{PRODUCT_STYLESHEET_RELATIVE_PATH}}">
+  <style>html,body{margin:0;height:100%}</style>
+  {{FRAME_2_MARKUP}}
+</template>
+
+<script>
+// Mount every <template data-frame> into the figure that names it, scaled to fit.
+(function () {
+  const templates = new Map();
+  for (const t of document.querySelectorAll('template[data-frame]')) templates.set(t.dataset.frame, t);
+  const mounted = [];
+  for (const fig of document.querySelectorAll('figure.frame[data-mount]')) {
+    const t = templates.get(fig.dataset.mount);
+    const stage = fig.querySelector('.stage');
+    if (!t || !stage) continue;
+    const w = Number(t.dataset.w || 1180), h = Number(t.dataset.h || 760);
+    const f = document.createElement('iframe');
+    f.width = w; f.height = h; f.title = fig.dataset.mount;
+    f.srcdoc = '<!doctype html><html><head><meta charset="utf-8"><base href="' + location.href + '"></head><body>' + t.innerHTML + '</body></html>';
+    stage.prepend(f);
+    mounted.push({ f, stage, w, h });
+  }
+  function fit() {
+    for (const m of mounted) {
+      const s = Math.min(1, m.stage.clientWidth / m.w);
+      m.f.style.transform = 'scale(' + s + ')';
+      m.stage.style.height = Math.round(m.h * s) + 'px';
+    }
+  }
+  fit(); addEventListener('resize', fit);
+  const r = document.body.dataset.round; const el = document.querySelector('[data-round-no]');
+  if (r && el) el.textContent = r;
+})();
+</script>
+</body>
+</html>

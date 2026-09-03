@@ -124,6 +124,12 @@ These are facts, not process — the process lives in SKILL.md.
   "Grounded in the live product" proves a surface *renders*, not that it's *current* —
   classify liveness (on the current design system? reachable from primary nav? touched by
   recent commits?) and name the chosen surface explicitly in the spec.
+- **The first design artifact read as a document, not a design** (Pete, 2026-09-03: "it's
+  more of a document and less like working with a designer who gives me HTML which is
+  mostly just mockups of the app"). Round 1 had a TL;DR, research sections and a scope
+  contract with the comps somewhere below. DISCOVER now opens with a storyboard — frames
+  of the app at ship size, captions, the questions — and the spec is written after his
+  go, never before.
 - **Idealized-input tests hide writer/reader contract drift.** Unit tests over hand-built
   rows passed while the real ledger writers produced garbage for two of three metrics
   (one always 100%, one always null); only the adversarial review caught it. A task that

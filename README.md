@@ -1,14 +1,14 @@
 # ship
 
-A Claude Code plugin: **`/ship`** takes a feature from **idea to merged in one command** — `worktree → discover → plan → build → review` — gating only on the two decisions that are actually yours: **the design direction**, and **"go"**. Everything in between is automatic.
+A Claude Code plugin: **`/ship`** takes a feature from **idea to merged in one command** — `worktree → discover → plan → build → review` — gating only on the two decisions that are actually yours: **locking the storyboard**, and **"go"** on the plan. Everything in between is automatic.
 
 It's opinionated. Built for a hands-off, PM-style workflow: you stay in your lane (product, design, taste, scope); the machine handles the mechanics and only stops at the two gates.
 
 ## What it does
 
-- **Two gates, only two.** Design direction (after discovery), then "go" (after planning). Everything else runs without you.
+- **Two gates, only two.** Lock the storyboard (after discovery), then "go" on the plan (after planning). Everything else runs without you.
 - **Sized to the ask.** Three lanes, ship picks: **express** (quick fix — no spec/plan, straight through to dev), **self-directed** (writes its own spec + plan, builds, reviews, merges — zero stops), **gated** (the two gates, when your taste is in play). Same worktree → merge → dev rails in all three; gates fire only when your answer would change what gets built.
-- **You read the meta, never the diff.** Every checkpoint auto-opens a condensed HTML card in your browser — a design spec, a go-card, and a **review card** at merge. Never "go read the PR."
+- **You read the meta, never the diff.** Every checkpoint auto-opens an HTML page in your browser — a **storyboard** (live mockups of the app, not a document), a one-screen **plan card**, and a **review card** at merge. Never "go read the PR."
 - **Gate notifications.** When a ship parks at a gate, a desktop notification taps you on the shoulder (Ghostty-native, with a macOS fallback) — so you can walk away.
 - **Stage-aware status line.** Which ship, what phase (`designing → planning → building → reviewing`), ships-in-flight, your context + weekly budget, effort level. A bold banner when a ship needs you.
 - **BUILD supervised, not shelled out.** Each closed-brief build task goes to an Opus subagent that owns one codex session end to end — brief, launch, patience, fix rounds, verdict — while the driver owns the plan, the diff review, the gates, and git. Orchestration stays inside Claude Code; codex still does the drafting.
@@ -16,7 +16,7 @@ It's opinionated. Built for a hands-off, PM-style workflow: you stay in your lan
 
 ## What's in the plugin
 
-- `skills/ship` — the pipeline playbook + the go-card / review-card templates + the design record.
+- `skills/ship` — the pipeline playbook + the storyboard / plan-card / review-card templates + the design record.
 - `skills/codex-supervisor` — how a subagent runs and babysits one codex task (bundled).
 - `skills/verify` — fresh read-only verification against the running app before merge.
 - `hooks/` — the gate desktop-notification hook.
@@ -25,7 +25,7 @@ It's opinionated. Built for a hands-off, PM-style workflow: you stay in your lan
 
 ## Requires
 
-Declared as plugin `dependencies` (Claude Code will prompt/handle them): **superpowers**, **ponytail**, **worktrunk** (`wt`). Optional but recommended: **impeccable** (HTML design sprints) and **pix** (image generation) for the discovery stage — without them, discovery degrades to text + CSS, still fine.
+Declared as plugin `dependencies` (Claude Code will prompt/handle them): **superpowers**, **ponytail**, **worktrunk** (`wt`). Optional but recommended: **impeccable** (the craft floor) and the **image-gen** skill (imagery inside a frame) for the discovery stage — without them, the storyboard is drawn from the product's stylesheet alone, still fine.
 
 ## Your standing stack stays personal
 
