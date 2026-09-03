@@ -163,7 +163,12 @@ anomaly, and `stderr.log` is where it explains itself.
 
 ## Fix rounds, and when to stop
 
-You own up to **two** fix rounds. Resume the thread with a specific, narrow follow-up —
+**A fix under ~20 lines with no design question is yours to make by hand.** Edit the
+file, rerun the gates, count it as `fixed-N`. A codex round costs 5–10 minutes before
+it writes a line; a null sentinel, a missed import, an off-by-one, a stale assertion
+never earns one. A codex round is for a wrong approach, not a wrong line.
+
+You own up to **two** codex fix rounds. Resume the thread with a specific, narrow follow-up —
 what's wrong, which file, what the correct behaviour is — by writing the follow-up to a
 new brief file and re-running with `--thread <threadId>` (from `status.json` or the
 summary line). The thread keeps its context; a thread codex has forgotten falls back to
