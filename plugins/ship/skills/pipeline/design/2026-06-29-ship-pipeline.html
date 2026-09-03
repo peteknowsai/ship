@@ -208,7 +208,7 @@
   <table class="ledger">
     <tr><td>Gating model</td><td>Two gates — design direction, then go. Spec/plan never gate. Scales out for non-visual features.</td></tr>
     <tr><td>Ponytail placement</td><td>Both — scope critic at Plan (primary), posture at Build.</td></tr>
-    <tr><td>Build ownership</td><td>One Opus supervisor owns one codex session; the driver owns review, gates, and git; one writer per branch.</td></tr>
+    <tr><td>Build ownership</td><td>One Opus supervisor owns one codex session; the driver owns review, gates, and git; one writer per tree, so disjoint tasks fan out into sub-worktrees and merge back in plan order.</td></tr>
     <tr><td>Persona</td><td>Technical PM, not engineer. Guide + recommend; taste leads.</td></tr>
     <tr><td>Library threshold</td><td>Standing stack never re-asked; escalate only architectural + outside-canon.</td></tr>
     <tr><td>Shape</td><td>Design up front (interleaved with brainstorm); spec is Discover's artifact, not a stage.</td></tr>

@@ -110,8 +110,11 @@ context and crowd out the work. Now it fills a subagent that's cheap to spawn an
 to discard. **Keeping the run alive is the supervisor's headline duty**, not a footnote —
 a run killed early gets logged as a failure it didn't earn.
 
-Work smaller than a dispatch's ~5–10 min fixed overhead, the driver writes inline;
-skill/agent prose and design taste never route. **Codex draws coding drafts and nothing
+**The driver writes inline anything under one file and ~50 lines** — config, glue
+between two codex tasks, a test tweak, a small fix from triage. A dispatch costs 5–10
+minutes before codex writes a line, so a task that would take the driver five minutes
+never routes (Pete, 2026-09-03: builds were bogged down; the driver does some of it
+itself). Skill/agent prose and design taste never route either. **Codex draws coding drafts and nothing
 else** — recon, expert consults, verify walks, design QA, and review fan-outs run on
 plain harness subagents (the Agent tool) with the `/browse` skill for anything in a
 browser. Never
@@ -381,7 +384,10 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
   data, routes, behaviour, states, a11y, test cases, and for each UI task the frame it
   must match (`<storyboard>.html#<frame-id>`, never a prose description of the frame).
   Pete never reads it. A change he asks for after go is an express round, not a
-  re-plan.
+  re-plan. **Each task names its files, the signatures it adds or changes, and its
+  test cases** — brief-grade, so the BUILD brief is a paste plus deviations. Every
+  4-minute first-pass-clean dispatch in the ledger had this; every 25-minute one
+  left codex to find the shape itself.
 - **A task that computes from rows another code path writes gets one end-to-end test
   through the real writer** — not just unit tests over hand-built rows, which pass while
   the production writers produce garbage (incidents: Design).
@@ -391,9 +397,21 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
 - Write `build:0:<M>`; bump N per task. Build **all M tasks** in one session; commit
   each task on the branch as it lands, merge only when the whole plan is built.
 - Invoke `superpowers:subagent-driven-development` (the driver drives) and dispatch
-  each task to a `codex-supervisor` subagent — drafting goes to codex; sub-overhead
-  work inline. The driver owns the brief, the diff review, the gates, and git. One
-  writer per branch at a time.
+  each drafting task to a `codex-supervisor` subagent; sub-threshold work inline
+  (Engines). The driver owns the brief, the diff review, the gates, and git. One
+  writer per **tree** at a time — which is why fan-out means sub-worktrees, below.
+- **Fan out by file overlap, before the first dispatch.** The plan names each task's
+  files. Group tasks that share a file; every group is a lane. Each lane past the
+  first gets its own sub-worktree off the branch (`git worktree add <dir> -b
+  <branch>-<lane> <branch>`) and its own supervisor, all launched together; a lane's
+  tasks run in plan order inside it. The driver merges lanes back in plan order and
+  runs the gates once after each merge. Serial is only for tasks that share files.
+  A run that serialized three disjoint tasks spent 90 minutes on two of nine
+  (2026-09-03); the same three run in the time of the slowest one.
+- **A task's check is the diff and the gates, nothing else.** Read the diff, run
+  tsc/tests/lint, commit. Nobody drives the app or CLI per task — the smoke-walk is
+  once at the end of BUILD and `verify` runs once in REVIEW. A reviewer hand-driving
+  the product per task cost 20 minutes a task and found nothing the gates missed.
 - **Standing brief boilerplate** (each line from a burned run — incidents: Dispatch):
   test files whose assertions the planned change invalidates are **always in scope**,
   allowlist or not; the result goes to the `-o` file and is **never committed**; the
@@ -406,11 +424,9 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
   `parked-on-watchers: …` before every idle. Idle *with* a park line = healthy, leave it
   alone until the stall budget. A **bare** idle notification with no park line in front
   of it is the anomaly worth chasing — that's the only ping.
-- **Single-writer vs fan-out — pick by the diff, not reflex.** Default one writer.
-  Fan out writers (own worktrees, merged back) only for genuinely independent AND
-  numerous tasks — a migration, a mechanical sweep. The high-value fan-out is the
-  **review**, regardless of build size: don't parallelize 5 small edits; do
-  parallelize 5 verifiers.
+- **Small edits don't fan out.** A lane whose tasks are all sub-threshold is the
+  driver's, inline, while the dispatched lanes run. Review fans out regardless of
+  build size: several verifiers on one diff beats one.
 - `ponytail` posture; `superpowers:verification-before-completion` before claiming any
   task done — actually run it; `superpowers:systematic-debugging` on a red test.
 - **UI-writing briefs carry the storyboard frame and the craft floor** — every
