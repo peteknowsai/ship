@@ -68,7 +68,7 @@ gate genuinely needs him.** What scales is the ceremony, and **you size it, not 
   visual. Pete finds out from the `result:` line, not before.
 - **SELF-DIRECTED — real work with no taste question in it.** Write whatever
   machine-facing spec/plan *you* need to build it well, then build, run the full REVIEW
-  machinery (codex review + `verify` — a `works` verdict is the merge bar), merge,
+  machinery (the fresh-eyes review + `verify` — a `works` verdict is the merge bar), merge,
   deploy to dev, `result:`. **Zero stops — the artifacts are for the record, not
   approval.**
 - **GATED — Pete's taste or direction is genuinely in play.** A new user-facing
@@ -100,7 +100,7 @@ tell a stalled run from a slow one and burned an hour finding out. The superviso
 event to a JSONL log with a clock, keeps a `status.json` a driver can read at any
 moment, interrupts a turn that has gone silent past its stall budget and says so in its
 exit code, and writes the final message to the result file. The model is `gpt-5.6-sol`
-and the effort is `high` on every dispatch, review included; nothing here reads the
+and the effort is `high` on every dispatch; nothing here reads the
 model off `~/.codex/config.toml`.
 
 Why the layer: codex tokens buy drafts, driver tokens buy judgment — and the *watching*
@@ -460,17 +460,16 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
 - **Freeze the tree while a verifier is driving** — no merges, rebases, or edits until
   its verdict lands (incidents: Worktrees). Absorb upstream *before* dispatching a
   round, never during.
-- **Correctness review — a supervisor on a codex review thread, launched first** so it
-  works while the rest of REVIEW proceeds (`dispatch.mjs review --base <lane-target>`,
-  an app-server thread whose brief is the diff and whose result is the findings file;
-  the supervisor owns the mechanics, and there is no `codex exec review` any more). Meanwhile the driver runs `ponytail-review` (the
-  over-build sweep). The **driver triages every finding** — adversarial reviewers
-  over-flag by design — fixes what's real, puts judgment calls on the card. Codex
-  unavailable → `/code-review` + `ponytail-review` on the driver. The high-value
-  fan-out is here: several verifiers on one diff beats one. **A missing or empty result
-  file means the review did not run** — it can exit 0 in seconds having done nothing.
-  Never read that as a clean bill: retry once, and if the retry is empty too, review on
-  the driver (incidents: Dispatch).
+- **Correctness review — a fresh harness subagent on the driver's model, launched
+  first** so it works while the rest of REVIEW proceeds. Codex drafted the branch one
+  task at a time; the reviewer reads it whole (`git diff <lane-target>...HEAD`) in a
+  clean context, with the spec, and hunts the seams between tasks as hard as the tasks
+  themselves — a writer and its reader drifting apart, a helper two tasks each
+  invented, a test that only passes on hand-built rows. It touches nothing and returns
+  findings as file:line, the failure scenario, and a severity. Meanwhile the driver
+  runs `ponytail-review` (the over-build sweep). The **driver triages every finding**
+  — adversarial reviewers over-flag by design — fixes what's real, puts judgment calls
+  on the card. The high-value fan-out is here: several verifiers on one diff beats one.
 - **Design QA for visual features** — a background supervisor first runs
   impeccable's deterministic detector over the branch's changed UI files
   (`node ~/.claude/skills/impeccable/scripts/detect.mjs --json <files>` — local, no

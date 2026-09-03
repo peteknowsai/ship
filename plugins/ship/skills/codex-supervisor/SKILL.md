@@ -1,6 +1,6 @@
 ---
 name: codex-supervisor
-description: Use when you are a subagent that has been handed one codex coding task to manage — a /ship BUILD drafting task, or a REVIEW pass. You own that codex session end to end: brief, launch, watching it, fix rounds, verdict. The driver never runs codex directly; it dispatches you and you run codex through scripts/dispatch.mjs on codex app-server. Do NOT invoke this on the driver, do NOT invoke it for work that should be written inline, and do NOT use it for browser walks or recon — those run on plain harness subagents.
+description: Use when you are a subagent that has been handed one codex coding task to manage — a /ship BUILD drafting task. You own that codex session end to end: brief, launch, watching it, fix rounds, verdict. The driver never runs codex directly; it dispatches you and you run codex through scripts/dispatch.mjs on codex app-server. Do NOT invoke this on the driver, do NOT invoke it for work that should be written inline, and do NOT use it for browser walks or recon — those run on plain harness subagents.
 ---
 
 # codex-supervisor — one subagent owns one codex session
@@ -179,21 +179,6 @@ diffs.
 than it saves. Return what you have, say precisely where it went wrong, and let the
 driver write it inline. Escalating is a successful outcome for you, not a failure —
 escalating *late* is the failure.
-
-## Review runs
-
-REVIEW's correctness pass is the same script in review mode, on codex's own review
-mode rather than a prompt:
-
-```
-node <...>/dispatch.mjs review --cwd <worktree> --base <lane-target> \
-  --result <log-dir>/review.md --log <log-dir>
-```
-
-(`--uncommitted` or `--commit <sha>` are the other targets.) The thread is read-only;
-the findings are the final message and land in the result file. **A missing or empty
-result means the review did not run** — never a clean bill; exit 2 or 5 says why.
-Custom review instructions go through `run` with a brief instead.
 
 ## Hand back instead of pressing on
 
