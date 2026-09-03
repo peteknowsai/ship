@@ -1,6 +1,6 @@
 {
   "name": "ship",
-  "description": "/ship \u2014 take a feature from idea to merged in one command: worktree \u2192 discover \u2192 plan \u2192 build \u2192 review, gating only on design direction and 'go'. Auto-opening HTML design/go/review cards, gate desktop notifications, a stage-aware status line, BUILD dispatched to Opus subagents that supervise codex runs, and fresh-agent verification before merge. Bundles codex-supervisor + verify.",
+  "description": "/ship \u2014 take a feature from idea to merged in one command: worktree \u2192 discover \u2192 plan \u2192 build \u2192 review, gating only on design direction and 'go'. Auto-opening HTML storyboard (live mockups), plan card and review card, gate desktop notifications, a stage-aware status line, BUILD dispatched to Opus subagents that supervise codex runs, and fresh-agent verification before merge. Bundles codex-supervisor + verify.",
   "author": {
     "name": "Pete McCarthy"
   },

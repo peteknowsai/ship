@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Storyboard first — /ship design phase</title>
+<style>
+  :root { --bg:#faf9f7; --ink:#1a1a1a; --muted:#6b6b6b; --line:#e4e1db; --accent:#b4552d; --good:#2d7a4f; --card:#fff; --code-bg:#f0eee9; --amber-soft:#f3ead6; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#161513; --ink:#e8e6e1; --muted:#9a978f; --line:#2e2c28; --accent:#e07a4a; --good:#5bbd8a; --card:#1e1d1a; --code-bg:#26241f; --amber-soft:#3a2f1a; } }
+  * { box-sizing:border-box; margin:0 }
+  body { background:var(--bg); color:var(--ink); font:16px/1.6 -apple-system,"SF Pro Text",Segoe UI,sans-serif; max-width:960px; margin:0 auto; padding:3rem 1.5rem 6rem }
+  h1 { font-size:1.9rem; line-height:1.2; letter-spacing:-.02em; margin-bottom:.4rem }
+  h2 { font-size:1.2rem; margin:2.6rem 0 .9rem; padding-top:1.3rem; border-top:1px solid var(--line) }
+  p { margin:.6rem 0 } .kicker { color:var(--accent); font-weight:600; font-size:.8rem; text-transform:uppercase; letter-spacing:.08em }
+  .sub { color:var(--muted); font-size:.95rem }
+  .tldr { background:var(--card); border:1px solid var(--line); border-left:4px solid var(--accent); border-radius:8px; padding:1rem 1.3rem; margin:1.6rem 0 }
+  code { background:var(--code-bg); border-radius:4px; padding:.1em .35em; font-size:.85em; font-family:"SF Mono",ui-monospace,Menlo,monospace }
+  table { border-collapse:collapse; width:100%; margin:1rem 0; font-size:.9rem } th { text-align:left; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); padding:.5rem .7rem; border-bottom:2px solid var(--line) }
+  td { padding:.55rem .7rem; border-bottom:1px solid var(--line); vertical-align:top }
+  .flow { display:flex; gap:8px; flex-wrap:wrap; margin:1rem 0 }
+  .step { flex:1 1 120px; background:var(--card); border:1px solid var(--line); border-radius:8px; padding:.6rem .8rem; font-size:.88rem }
+  .step b { display:block; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:var(--accent) }
+  .step.you { border-color:var(--accent); background:var(--amber-soft) }
+  /* the live example storyboard */
+  .board { border:1px solid var(--line); border-radius:10px; overflow:hidden; background:#f6f1e7; color:#23262d; padding:18px 20px }
+  .board .k { font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:#c8892b; font-weight:700 }
+  .board h3 { font-family:Georgia,serif; font-size:22px; margin:4px 0 2px; font-weight:600 }
+  .board .s { color:#5a5e6b; font-size:14px; margin:0 0 14px }
+  .row { display:flex; gap:14px } figure { margin:0; flex:1 }
+  .stage { background:#111; border-radius:8px; overflow:hidden; position:relative } .stage iframe { display:block; border:0; transform-origin:0 0 }
+  figcaption { font-size:13px; color:#5a5e6b; margin-top:6px } figcaption b { color:#23262d }
+  .tag { display:inline-block; font-size:10px; letter-spacing:.12em; text-transform:uppercase; background:#f3ead6; color:#7a5a18; border:1px solid #e7d6ad; border-radius:5px; padding:0 6px; font-weight:700; margin-right:6px }
+  .q { border-left:3px solid #c8892b; padding:4px 0 4px 12px; margin:14px 0 0; font-size:14px; color:#23262d }
+  .pick { display:inline-block; font-size:12px; background:#f3ead6; color:#7a5a18; border:1px solid #e7d6ad; border-radius:5px; padding:0 8px; font-weight:600; margin-top:3px }
+  .good { color:var(--good); font-weight:600 }
+</style>
+</head>
+<body>
+<div class="kicker">/ship · design phase · 2026-09-03</div>
+<h1>Storyboard first</h1>
+<p class="sub">The first thing you see in DISCOVER is the app, not a document about it.</p>
+
+<div class="tldr">
+  <p><b>What changed.</b> DISCOVER now opens with a <b>storyboard</b>: one HTML page that is mostly live mockups of the screens the feature touches, at the size they ship, in the product's own stylesheet. One caption per frame, two or three designer questions, everything else folded away at the foot. You react, I redraw, until you say "this is it". That lock is gate 1.</p>
+  <p>Then PLAN renders a one-screen <b>plan card</b>: the storyboard in a glance and a plain-English punch list of what gets built. You say <b>go</b>. That is gate 2, and it always waits for you now. Only after go do I write the machine-facing execution plan and start the build.</p>
+  <p>Pen is no longer the default. The storyboard is the design of record; a frame goes to pen only when you ask.</p>
+</div>
+
+<h2>The flow</h2>
+<div class="flow">
+  <div class="step"><b>discover</b>recon, grounding, consults</div>
+  <div class="step you"><b>storyboard · you</b>frames of the app; reactions, rounds</div>
+  <div class="step you"><b>lock · gate 1</b>"this is it"</div>
+  <div class="step"><b>plan</b>ponytail cut, punch list</div>
+  <div class="step you"><b>go · gate 2</b>the plan card, one screen</div>
+  <div class="step"><b>spec</b>execution plan, machine-facing</div>
+  <div class="step"><b>build · review</b>codex app-server, verify, land</div>
+</div>
+
+<h2>What a round 1 looks like</h2>
+<p class="sub">A live example of the template, with a toy app. A real one links the repo's own stylesheet (cells: the three grok sheets) and the frames are the real screens.</p>
+<div class="board">
+  <div class="k">║ Storyboard · round 1 ║ &nbsp;·&nbsp; documents-tab</div>
+  <h3>A document tab on the info pane</h3>
+  <p class="s">a bot's page sits on the stage beside its computer &nbsp;·&nbsp; <b>reactions?</b></p>
+  <div class="row">
+    <figure><div class="stage" data-mount="a"></div><figcaption><span class="tag">A</span><b>three icon tabs above the stage</b><br>Computer · Browser · Document, the lit one amber</figcaption></figure>
+    <figure><div class="stage" data-mount="b"></div><figcaption><span class="tag">B</span><b>a segmented control inside the stage header</b><br>denser; the page keeps 40px more height</figcaption></figure>
+  </div>
+  <div class="q">Tabs above (A) or a control inside the header (B)? A reads at a glance from the chat; B keeps the page taller. <br><span class="pick">I'd pick: A</span></div>
+  <div class="q">The earlier documents: a footer list under the page, or a menu on the tab? <br><span class="pick">I'd pick: the footer list</span></div>
+  <p style="margin:14px 0 0;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#8a8d99;font-weight:700">▸ for the record</p>
+</div>
+
+<template data-frame="a">
+  <style>html,body{margin:0;height:100%;background:#1f1f1f;color:#ddd;font:13px -apple-system,sans-serif}.win{display:flex;height:100%}.side{width:170px;background:#181818;border-right:1px solid #2a2a2a;padding:10px}.side div{padding:5px 6px;border-radius:6px}.side .on{background:#2a2a2a}.chat{flex:1;padding:14px;border-right:1px solid #2a2a2a}.bub{background:#2a2a2a;border-radius:10px;padding:8px 10px;max-width:260px;margin:8px 0}.pane{width:300px;padding:10px}.tabs{display:flex;gap:6px}.tabs span{padding:4px 9px;border-radius:6px;background:#262626;color:#aaa}.tabs .lit{background:#c8892b;color:#111;font-weight:600}.stage{margin-top:8px;height:200px;background:#fff;color:#222;border-radius:8px;padding:14px;font-family:Georgia,serif}.foot{margin-top:8px;color:#888;font-size:11px}</style>
+  <div class="win"><div class="side"><div>CELLS</div><div class="on">Marlow</div><div>Tamsin</div><div>Orrin</div></div>
+  <div class="chat"><div class="bub">write up the launch plan as a page</div><div class="bub" style="margin-left:40px">Done, it's on the stage.</div></div>
+  <div class="pane"><div class="tabs"><span>▣ Computer</span><span>◎ Browser</span><span class="lit">▤ Document</span></div>
+  <div class="stage"><b>Launch plan</b><br><span style="font-size:11px">Three weeks, two cells, one page.</span></div>
+  <div class="foot">earlier · Roadmap (yesterday) · Notes (Mon)</div></div></div>
+</template>
+<template data-frame="b">
+  <style>html,body{margin:0;height:100%;background:#1f1f1f;color:#ddd;font:13px -apple-system,sans-serif}.win{display:flex;height:100%}.side{width:170px;background:#181818;border-right:1px solid #2a2a2a;padding:10px}.side div{padding:5px 6px;border-radius:6px}.side .on{background:#2a2a2a}.chat{flex:1;padding:14px;border-right:1px solid #2a2a2a}.bub{background:#2a2a2a;border-radius:10px;padding:8px 10px;max-width:260px;margin:8px 0}.pane{width:300px;padding:10px}.hdr{display:flex;justify-content:space-between;align-items:center;background:#262626;border-radius:8px 8px 0 0;padding:6px 8px}.seg{display:flex;background:#1a1a1a;border-radius:6px;padding:2px}.seg span{padding:2px 7px;border-radius:5px;color:#aaa;font-size:11px}.seg .lit{background:#c8892b;color:#111;font-weight:600}.stage{height:240px;background:#fff;color:#222;border-radius:0 0 8px 8px;padding:14px;font-family:Georgia,serif}</style>
+  <div class="win"><div class="side"><div>CELLS</div><div class="on">Marlow</div><div>Tamsin</div><div>Orrin</div></div>
+  <div class="chat"><div class="bub">write up the launch plan as a page</div><div class="bub" style="margin-left:40px">Done, it's on the stage.</div></div>
+  <div class="pane"><div class="hdr"><span style="font-size:11px;color:#aaa">Marlow's stage</span><div class="seg"><span>Computer</span><span>Browser</span><span class="lit">Document</span></div></div>
+  <div class="stage"><b>Launch plan</b><br><span style="font-size:11px">Three weeks, two cells, one page.</span></div></div></div>
+</template>
+<script>
+(function(){const T={};for(const t of document.querySelectorAll('template[data-frame]'))T[t.dataset.frame]=t;const M=[];
+for(const st of document.querySelectorAll('.stage[data-mount]')){const t=T[st.dataset.mount];if(!t)continue;const f=document.createElement('iframe');f.width=760;f.height=380;
+f.srcdoc='<!doctype html><html><head><meta charset="utf-8"></head><body>'+t.innerHTML+'</body></html>';st.appendChild(f);M.push({f,st,w:760,h:380});}
+function fit(){for(const m of M){const s=Math.min(1,m.st.clientWidth/m.w);m.f.style.transform='scale('+s+')';m.st.style.height=Math.round(m.h*s)+'px';}}fit();addEventListener('resize',fit);})();
+</script>
+
+<h2>Before and after</h2>
+<table>
+<tr><th>Stage</th><th>Was</th><th>Now</th></tr>
+<tr><td>DISCOVER round 1</td><td>an HTML spec: TL;DR, research, scope, comps somewhere below; pen frames in the Pencil app</td><td>a storyboard: frames of the app at ship size, captions, the questions; research collapsed at the foot</td></tr>
+<tr><td>Gate 1</td><td>your "go" on the pen file</td><td>your lock on the storyboard ("this is it")</td></tr>
+<tr><td>PLAN</td><td>markdown execution plan first, then a go-card that auto-passed with zero calls</td><td>a plan card: the storyboard in a glance plus a plain-English punch list; always waits for go</td></tr>
+<tr><td>Spec</td><td>written before the plan, HTML, for you</td><td>written after go, markdown, machine-facing; you never read it</td></tr>
+<tr><td>Build briefs</td><td>point codex at a pen PNG</td><td>point codex at the frame (<code>storyboard.html#frame-id</code>); it reads the markup and CSS</td></tr>
+<tr><td>Design QA</td><td>built surface beside the pen export</td><td>built surface beside the frame at the same size</td></tr>
+<tr><td>Status line</td><td><code>✋ slug — design?</code></td><td><code>✋ slug — storyboard?</code>, then <code>go?</code></td></tr>
+</table>
+
+<h2>How a frame works</h2>
+<p>Each frame is a <code>&lt;template&gt;</code> in the storyboard file. A short script mounts it into its own iframe, so the product's stylesheet styles the frame and nothing else, the theme's root tokens resolve, and a hover, a menu or a tab inside the frame works. In cells a frame links <code>web/public/grok-shipped.css</code> and the dark theme sheet by relative path, and a <code>sand-</code> or <code>ui-</code> frame is the lifted markup itself, so the mockup is already what gets built.</p>
+
+<h2>Checked</h2>
+<table>
+<tr><td>Worktrunk</td><td class="good">0.63.0 to 0.76.0</td><td><code>wt switch --create … --no-cd --format=json -y</code>, <code>wt remove -f</code> and <code>wt merge</code> all still exist; a probe fork returned its path in the JSON and was removed cleanly</td></tr>
+<tr><td>Status line</td><td class="good">works</td><td>the plugin copy was behind the live one at <code>~/.claude/statusline.sh</code> (model name, the two quota buckets) and is now the same file; a probe worktree at <code>gate:1</code> rendered the amber banner and <code>build:2:5</code> the stage bar</td></tr>
+<tr><td>Gate hook</td><td class="good">fires</td><td>at <code>gate:2</code> it took the macOS notification path in a backgrounded session</td></tr>
+<tr><td>Frame mechanism</td><td class="good">renders</td><td>a probe storyboard in cells mounted two frames side by side; a box inside one took <code>.ui-1q4ynmn</code> from the shipped sheet and computed a 10px radius</td></tr>
+</table>
+</body>
+</html>

@@ -33,9 +33,9 @@ read-only — each *queued ship* forks as its own first act instead.
 - **`/ship express <tweak>`** — pins EXPRESS. The verb pins ceremony *down*, never
   safety down: a money path or a taste call promotes per the mid-flight rule regardless.
 - **`/ship design <idea>`** — pins GATED and mandates the full design workshop in
-  DISCOVER (pencil pass → rounds → lock → pen build-out → Pete iterates in pen →
-  go). The verb is Pete asserting taste is in
-  play; never downgrade it, however mechanical the work looks.
+  DISCOVER (storyboard → rounds → lock → HTML plan → go → spec → build). The verb is
+  Pete asserting taste is in play; never downgrade it, however mechanical the work
+  looks.
 - **`/ship next`** — ship the board's **Next column** as one batch (board-backed repos
   only; no board → say so and stop):
   1. **Sweep + enrich.** Pull every Next card; bring each up to standard anatomy
@@ -149,15 +149,17 @@ lands. Same posture at gates: notify, then keep doing non-gated work.
    landing-page-styled gate artifacts against the plain doc and kept the doc: "this is
    taking it far too radical an approach… maybe there's just a little bit of pruning."
    Cut any section that doesn't change a decision; shorter ledes, depth collapsed.
-2. **Two gates, at most.** GATE 1 = Pete's "go" on the pen design of record (DISCOVER runs as
-   presented rounds, each a hard stop — see stage 1) — always gated on the GATED lane. GATE 2 = go (after PLAN, via the go-card) — a hard stop
-   **only when the card carries a genuine call for Pete**: a PM tradeoff, a money path,
-   or something you judge he'd genuinely want to see before build. **A zero-call
-   go-card auto-passes** (Pete, 2026-07-28): render it, `open` it, narrate
-   "gate 2 auto-passed — nothing needed you," and keep going. Schema or auth alone
-   don't force the stop — stop only when you deem it genuinely necessary. Money paths
-   always stop. When a gate does fire, it is a **HARD STOP** — present the artifact and
-   wait.
+   **The storyboard is the one page that is not condensed prose: it is mockups**, and
+   its words are captions (stage 1). A storyboard that reads as a document has failed
+   (Pete, 2026-09-03: "more of a document and less like working with a designer").
+2. **Two gates, both his.** GATE 1 = Pete's lock on the storyboard (DISCOVER runs as
+   presented rounds, each a hard stop — see stage 1). GATE 2 = his "go" on the HTML
+   plan card (stage 2). **Both always fire on the GATED lane** (Pete, 2026-09-03:
+   storyboard, lock, plan, go, spec, build). This supersedes the 2026-07-28 rule that a
+   zero-call go-card auto-passes: a storyboard he iterated earns a plan he reads, and
+   the plan is one screen. SELF-DIRECTED and EXPRESS render no cards and stop for
+   nobody; a money path stops on any lane. When a gate fires, it is a **HARD STOP** —
+   present the artifact and wait.
 
 **Pete's stack:** his global instructions carry the standing stack — flue · Cloudflare ·
 Convex · Clerk · Stripe · Next. Never re-ask it. **The repo's own `CLAUDE.md` /
@@ -302,109 +304,87 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
 - For any visual/UI feature, invoke `impeccable` and follow its Setup (context.mjs —
   the repo's PRODUCT.md/DESIGN.md are the visual authority): a new surface or
   replacement look routes through its `shape`/new-work path; a refinement stays on the
-  incumbent world. Use `/image-gen` for imagery freely — the spec *is* the prototype.
+  incumbent world. Use `/image-gen` freely for imagery inside a frame.
   *Transplant:* a surface the reference owns gets none of this. Its design is the
-  reference bundle; the spec names the reference component (the i18n id, the chunk,
-  the class strings) and says "lift", and the workshop below runs only for the repo's
-  own surfaces. A ship that touches nothing of the repo's own skips pen entirely and
-  gates on the board alone.
+  reference bundle; its frame in the storyboard is the lifted markup (the i18n id, the
+  chunk and the class strings named in the caption), and the workshop below runs only
+  for the repo's own surfaces. A ship that touches nothing of the repo's own still
+  storyboards — Pete sees where the lifted thing sits in the app — and locks on that.
   **Ground the design in the live product**: a subagent walks the running app /
   deployed URL over `/browse` and reports the real theme/CSS with screenshots;
   design from those, never from in-repo mockups (incidents: Design).
-- **DISCOVER is a design workshop, not a handoff.** The first thing Pete sees is
-  never a finished spec — it's a working session, opened the way a designer opens one:
-  **ONE .pen file per ship** — `specs/designs/pen/YYYY-MM-DD-<slug>.pen` holds the
-  whole design phase as frames: the direction pencils, then the chosen design at
-  full fidelity. Pete flips between designs side by side in one document, deletes
-  the frames he doesn't like, iterates the survivor — and PLAN reads that one file.
-  Never scatter a ship's design across multiple .pen files.
-  1. **Pencil pass — rough directions first.** Open with 2–4 cheap, throwaway
-     directions, each a NAMED FRAME in the ship's one .pen file — **impeccable
-     briefs, pen draws**: run impeccable's context first, then
-     `pen --repo <project> --in/--out <the ship's .pen> --prompt "<direction
-     briefs, one frame per direction>" --prompt-file <live-product screenshot>
-     --export <png>` so pen's agent designs from PRODUCT.md/DESIGN.md and the real
-     product (the DISCOVER grounding screenshots), never from generic taste; embed
-     the per-frame exports in the HTML board (`02-exploration-visual-designs`,
-     side by side). Judge exports by eye against craft-floor taste — never lint a
-     pencil; impeccable's deterministic checks stay on the HTML spec and built UI.
-     No pen → sketch directly in HTML.
-     Present the board with the open questions a designer would actually bring
-     ("went denser on B, unsure about the nav, which tone?") — never a fait
-     accompli. Write `gate:1`, fire the gate notification, `open` the board, end
-     the turn with `needs input:` ("workshop round 1 — reactions?").
-     **HARD STOP** — every round is one.
-  2. **Workshop rounds.** Pete reacts; revise the frames + board in place — minutes
-     per round, not a re-spec — re-`open`, end the turn with `needs input:` again.
-     Push back where taste warrants it: a designer with no opinions is a renderer.
-     Loop until Pete locks a direction ("go with B", "lock it").
-  3. **Lock → pen builds it out, same file.** On the lock, drive pen to add the
-     locked direction as HIGH-FIDELITY frames of every specced surface to the SAME
-     .pen (`pen --repo <project> --in/--out <the ship's .pen> --prompt "<locked
-     direction, full surface inventory, real copy>" --prompt-file <grounding
-     screenshots>`), PNG exports beside it (`--export`, one per surface). Discarded
-     pencil frames are Pete's to delete — never prune them for him. **The pen file
-     is the DESIGN OF RECORD from here on** — committed on the branch, it travels
-     with the ship.
-  4. **Hand it to Pete where pen actually looks.** The Pen app's dashboard lists
-     ONLY its home folder — repo paths are invisible there, and an invisible
-     design is a dead workshop. Copy the working file to
-     `~/Library/Mobile Documents/com~apple~CloudDocs/Pencil/ship/<slug>.pen`
-     (create `ship/`; give it a human name, e.g. "homezero 404 — empty lot.pen")
-     and `open -a Pen "<that copy>"` so it's on his canvas and in his Recents.
-     End the turn with `needs input:` ("design is in pen — iterate there, say go
-     when it's right"). He edits at his own pace, in pen's own UI, no driver
-     round-trips. **The Pencil-folder copy is the live one while he iterates.**
-  5. **His "go" harvests the design.** Copy the Pencil-folder file BACK over
-     `specs/designs/pen/YYYY-MM-DD-<slug>.pen`, commit it, re-export the PNGs —
-     **whatever the file says at "go" IS the design**; never build from the
-     pre-iteration exports. The go IS GATE 1. Leave his Pencil copy in place
-     (it's his; a later express round harvests it again the same way).
-  6. **Go → spec.** Produce the thin HTML spec: the scope contract wrapped around
-     the pen exports (embed them) plus everything a comp can't carry — copy as
-     data, routes, behavior, states, a11y. `open` it for the record; no re-gate.
-- **Commit every gate artifact to the branch before you fire the gate** (board, spec,
-  pen file, go-card). A parked ship with uncommitted work looks disposable to another
+- **DISCOVER is a storyboard, not a document** (Pete, 2026-09-03). The first thing he
+  sees is the app: an HTML page that is mostly mockups of the screens the feature
+  touches, the way a designer opens a session by putting comps on the table. He reads
+  it like a storyboard, reacts, and you redraw. Nothing in DISCOVER is a spec; the
+  spec is written after his go (stage 2).
+  1. **Round 1 — the storyboard.** One file per ship,
+     `specs/designs/YYYY-MM-DD-<slug>.html` in the docs home, from
+     `reference/storyboard.html` (contract below). Each frame is a live HTML mockup of
+     one screen or state at the size it ships — the window, not a cropped component:
+     the sidebar, the titlebar, the new thing in place — drawn in the product's own
+     stylesheet and tokens. A transplant frame is the lifted markup. Where a direction
+     is genuinely open, draw it as two or three frames of the same screen side by side
+     (`02-exploration-visual-designs`), never as prose options. The words on the page
+     are captions: one line under each frame saying what is new in it, and the two or
+     three questions a designer would actually bring ("went denser on B, unsure about
+     the nav, which tone?"). Recon, consults and the reuse audit go in one collapsed
+     block at the foot, for the record; they never sit above a frame. No TL;DR essay,
+     no section per research finding, no fait accompli. Write `gate:1`, commit, fire
+     the gate notification, `open` the storyboard, end the turn with `needs input:`
+     ("storyboard round 1 — reactions?"). **HARD STOP** — every round is one.
+  2. **Rounds.** Pete reacts; redraw the frames in place — minutes per round, not a
+     re-spec. A frame he killed is deleted, never greyed out. Re-`open`, end the turn
+     with `needs input:` again. Push back where taste warrants it: a designer with no
+     opinions is a renderer. Loop until he locks it ("this is it", "lock it", "yes").
+  3. **Lock = GATE 1.** Commit the storyboard as it stands: **it is the design of
+     record from here on.** Every frame left in it ships; nothing not in it does. Log
+     the direction to decision memory, then straight into PLAN.
+  Pen (the Pencil app) is no longer the default. When Pete asks to take a frame into
+  pen, put it there, let him iterate, and harvest the result back into the frame
+  before the lock; the storyboard stays the single design of record either way.
+- **Commit every gate artifact to the branch before you fire the gate** (storyboard,
+  plan card). A parked ship with uncommitted work looks disposable to another
   session's cleanup sweep, and one nearly lost its spec that way (incidents: Worktrees).
-- The spec lives in the repo's docs home (`specs/` or `docs/`, whichever it uses) —
-  e.g. `specs/designs/YYYY-MM-DD-<slug>.html`. **The driver authors boards, briefs,
-  and spec prose inline** (taste is the deliverable, never dispatched); pen authors
-  the comps.
-- **Spec shape:** `14-research-feature-explainer` body (TL;DR first, collapsible
-  depth); the pen exports are the mockups; flows are diagrams
-  (`13-flowchart-diagram`).
-- A trivial visual change where multiple directions would be noise may collapse the
-  workshop to one board + one confirm — never to zero showings on the GATED lane.
-  A non-visual GATED ship (pure product tradeoff, no UI) skips pen and gates on the
-  board alone.
+- **The driver draws the frames and writes the captions inline** (taste is the
+  deliverable, never dispatched). Codex never draws a storyboard.
+- A trivial visual change where several frames would be noise may collapse the
+  storyboard to one frame + one confirm — never to zero showings on the GATED lane.
+  A non-visual GATED ship (pure product tradeoff, no UI) has no storyboard; it gates
+  on a one-screen board in the `14-research-feature-explainer` shape: TL;DR first,
+  the one question that matters, depth collapsed.
 
-### 2 · PLAN — automatic  → marker: `plan`, then `gate:2` (or straight through)
+### 2 · PLAN — the plan Pete says go on  → marker: `plan`, then `gate:2`
 
-- Write `plan`. Invoke `superpowers:writing-plans` for ONE execution plan covering the
-  **entire spec** — never sliced into phases. **The pen exports are the design source
-  of truth**: the plan's UI tasks reference the export image for each surface (path,
-  not prose description) and plan to match it. Run `ponytail` as the *waste* critic,
-  not a scope critic — it cuts reinvention and gold-plating, never specced scope.
-  *Transplant:* ponytail's ladder stops above the reference. A wrapper, a class, a
-  token or an element the reference's markup carries is never waste, however empty it
-  looks (the padding lives in it); "shortest working diff" applies to the repo's own
-  code only. Save
-  the markdown plan to the docs home (e.g. `specs/plans/YYYY-MM-DD-<slug>.md`).
+- Write `plan`. Run `ponytail` as the *waste* critic, not a scope critic — it cuts
+  reinvention and gold-plating, never a frame Pete locked. *Transplant:* ponytail's
+  ladder stops above the reference. A wrapper, a class, a token or an element the
+  reference's markup carries is never waste, however empty it looks (the padding
+  lives in it); "shortest working diff" applies to the repo's own code only.
+- **Consult a domain expert again only for a question the plan raises and the
+  storyboard didn't settle** — schema shape, index or migration order, an API's real
+  constraint, an auth boundary. Same rules as DISCOVER's consult: harness subagent, a
+  question not a task, the driver decides. **On SELF-DIRECTED — which skips DISCOVER's
+  storyboard — this is the lane's only consult**, so a stack question that would change
+  the plan gets asked here or nowhere.
+- **Render the plan card** from `reference/go-card.html` (contract below): the locked
+  storyboard in one glance, then what gets built as a punch list in plain English
+  (one line per piece of work, in build order), the cut list, his calls with your
+  recommendation, the risk line, and "go". Commit it, `open` it.
+- **GATE 2 is his go, always, on the GATED lane** (Two principles). Write `gate:2`,
+  fire the gate notification, end the turn with `needs input:` ("go?"). **HARD STOP.**
+  SELF-DIRECTED renders no card and stops for nobody.
+- **His go → spec it out.** Only now does the machine-facing writing happen: invoke
+  `superpowers:writing-plans` for ONE execution plan covering the **entire
+  storyboard** — never sliced into phases — saved to the docs home
+  (`specs/plans/YYYY-MM-DD-<slug>.md`). It carries everything a frame can't: copy as
+  data, routes, behaviour, states, a11y, test cases, and for each UI task the frame it
+  must match (`<storyboard>.html#<frame-id>`, never a prose description of the frame).
+  Pete never reads it. A change he asks for after go is an express round, not a
+  re-plan.
 - **A task that computes from rows another code path writes gets one end-to-end test
   through the real writer** — not just unit tests over hand-built rows, which pass while
   the production writers produce garbage (incidents: Design).
-- **Consult a domain expert again only for a question the plan raises and the spec
-  didn't settle** — schema shape, index or migration order, an API's real constraint,
-  an auth boundary. Same rules as DISCOVER's consult: harness subagent, a question not
-  a task, the driver decides. **On SELF-DIRECTED — which skips DISCOVER's workshop —
-  this is the lane's only consult**, so a stack question that would change the plan
-  gets asked here or nowhere.
-- Render the HTML **go-card** from `reference/go-card.html` (contract below) and
-  `open` it.
-- **Gate or go:** if the card carries a genuine call (PM tradeoff, money path, your
-  judgment says he'd want to see it) — write `gate:2`, fire the gate notification, end
-  the turn with `needs input:` ("go?"). **HARD STOP.** Otherwise **auto-pass**: narrate
-  "gate 2 auto-passed — nothing needed you" and continue to BUILD.
 
 ### 3 · BUILD — automatic  → marker: `build:N:M` (N done of M tasks)
 
@@ -433,9 +413,11 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
   parallelize 5 verifiers.
 - `ponytail` posture; `superpowers:verification-before-completion` before claiming any
   task done — actually run it; `superpowers:systematic-debugging` on a red test.
-- **UI-writing briefs carry the pen comp and the craft floor** — every dispatch that
-  writes UI names the surface's pen export (`specs/designs/pen/…png`) as the comp to
-  match, and — since codex has no impeccable installed — tells codex to read
+- **UI-writing briefs carry the storyboard frame and the craft floor** — every
+  dispatch that writes UI names the frame to match
+  (`specs/designs/<storyboard>.html#<frame-id>`; codex reads the frame's markup and
+  CSS, which is why a frame beats a PNG), and — since codex has no impeccable
+  installed — tells codex to read
   `~/.claude/skills/impeccable/reference/craft-floor.md` and honor its checks and bans.
   *Transplant:* a brief that touches a reference surface carries the reference path,
   the component to lift (grep the bundle for the id, take the class strings and the
@@ -477,18 +459,18 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
   impeccable's deterministic detector over the branch's changed UI files
   (`node ~/.claude/skills/impeccable/scripts/detect.mjs --json <files>` — local, no
   network), then walks the built surfaces and judges them **side-by-side against the
-  pen design of record** (screenshot each built surface next to its pen export —
-  impeccable's approved-comp critique: hero and sections as their own crops, never one
-  full-page thumbnail) plus the GATE 1 spec and the craft-floor checklist (contrast,
-  depth, spacing, type, motion, states, copy, and the bans). The review card shows the
-  pen-vs-built pairs — Pete reviews the design he iterated against the thing that got
-  built. Bounded per impeccable's own ceiling: one batched round, one confirm, no
+  storyboard** (screenshot each built surface next to its frame rendered at the same
+  size — impeccable's approved-comp critique: hero and sections as their own crops,
+  never one full-page thumbnail) plus the craft-floor checklist (contrast, depth,
+  spacing, type, motion, states, copy, and the bans). The review card shows the
+  frame-vs-built pairs — Pete reviews the storyboard he locked against the thing that
+  got built. Bounded per impeccable's own ceiling: one batched round, one confirm, no
   open-ended polish loops. **Report only — the driver owns every fix**; check
   `git status` the moment the round lands, because nothing enforces read-only at the
   tool layer (incidents: Dispatch). Driver triages: real gaps fixed before the card,
   nits land on the card for Pete. *Transplant:* for a reference surface the pair is
   the reference product beside ours (the repo's own tree audit and its screenshots),
-  never a pen export, and a visible difference is a finding whatever the checks say.
+  never a frame, and a visible difference is a finding whatever the checks say.
 - **Put it in front of Pete, running.** For any visual/interactive feature, boot the
   worktree's dev server **detached, never through a bounded pipe** (`nohup npm run dev >
   dev.log 2>&1 &`, then curl-probe — a `| head -50` has SIGPIPE'd a server mid-verify)
@@ -577,20 +559,42 @@ gh issue create -R peteknowsai/ship --label ship-retro --title "retro: <one-line
 **Most runs teach nothing — skip silently.** Never invent a lesson. Don't gate
 `result:` on this.
 
-## The go-card contract (GATE 2 artifact)
+## The storyboard contract (GATE 1 artifact)
+
+Render `reference/storyboard.html` — a page that is the app, not a page about it:
+
+- **Frames** — one per screen or state, live HTML at ship size, in the product's own
+  stylesheet: a repo that ships one links it by relative path from the docs home
+  (cells: the three grok sheets under `web/public/`); anything else inlines the tokens
+  it uses. Each frame is authored as a `<template>` and mounted into its own iframe by
+  the page's script, so the product's sheet styles the frame and nothing else, `:root`
+  tokens resolve, and a hover, an open menu or a tab works where the feature has one,
+  so Pete can poke it. Directions in play are sibling frames of the same screen.
+- **Captions** — one line per frame: what is new in it. A transplant frame's caption
+  names the reference component it lifts.
+- **The questions** — two or three, the ones a designer would bring, each with the
+  pick you'd make. Never a recommendation dressed as a question.
+- **For the record** — one collapsed block at the foot: recon, consults, reuse audit,
+  surface liveness. Never above a frame.
+
+No TL;DR, no research sections, no scope contract, no plan: the page is the mockups.
+
+## The plan card contract (GATE 2 artifact)
 
 Render `reference/go-card.html` filled with the meta only — one screen (a
-`16-implementation-plan` boiled down to its decision surface):
+`16-implementation-plan` boiled down to what he says go on):
 
-- **What gets built** — one line of scope.
+- **The storyboard** — the locked page embedded scaled-down in one glance, linked.
+- **What gets built** — the punch list: one plain-English line per piece of work, in
+  build order, five to twelve lines. Not files, not tasks numbered for a machine.
 - **Ponytail's cut-list** — what was dropped, and why.
-- **Pete's 1–3 calls** — each a PM tradeoff *with your recommendation*. Zero calls →
-  the gate auto-passes (see Two principles); the card is still rendered for the record.
+- **Pete's 1–3 calls** — each a PM tradeoff *with your recommendation*. Zero calls is
+  fine; the card still stops for his go.
 - **Risk** — one line.
-- **Mockup thumbnail** — if visual, from the design spec.
 - **Go** — one line.
 
-It is the *only* thing Pete reads before a build starts. Never make him read the plan.
+It is the *only* thing Pete reads before a build starts. The execution plan is written
+after his go and he never reads it.
 
 ## The review card (REVIEW artifact)
 
@@ -671,7 +675,7 @@ Desktop session:
 
 At a gate, three things fire so Pete notices whether he's watching or away:
 
-1. **Status line** — the `gate:N` marker shows `✋ <slug> — design?/go?` in bold amber.
+1. **Status line** — the `gate:N` marker shows `✋ <slug> — storyboard?/go?` in bold amber.
 2. **FleetView bucket** — the turn ends with a `needs input:` line → the row jumps to
    *awaiting input*.
 3. **Desktop notification** — the gate Stop-hook fires a Ghostty notification

@@ -288,7 +288,7 @@ function page(cards) {
     <li><code>/ship design</code> — full walk, your taste</li>
     <li><code>/ship next</code> — ship the Next column</li></ul></div>
   <div class="card"><h3>When you're needed</h3><ul>
-    <li><span class="chip c-gate"><span class="dot"></span>GATE 1</span> design direction</li>
+    <li><span class="chip c-gate"><span class="dot"></span>GATE 1</span> storyboard — lock it?</li>
     <li><span class="chip c-gate"><span class="dot"></span>GATE 2</span> go?</li>
     <li><span class="chip c-gate"><span class="dot"></span>REVIEW</span> merge? (it's running)</li>
     <li style="color:var(--ink3)">everything else is automatic</li></ul></div>

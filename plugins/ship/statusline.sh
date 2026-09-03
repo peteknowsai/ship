@@ -40,11 +40,16 @@ if [ "$HAS_JQ" -eq 1 ]; then
   current_dir=$(echo "$input" | jq -r '.workspace.current_dir // .cwd // "~"' 2>/dev/null | sed "s|^$HOME|~|g")
   cc_version=$(echo "$input" | jq -r '.version // ""' 2>/dev/null)
   effort=$(echo "$input" | jq -r '.effort.level // ""' 2>/dev/null)
+  model_name=$(echo "$input" | jq -r '.model.display_name // .model.id // ""' 2>/dev/null)
   context_pct=$(echo "$input" | jq -r '.context_window.used_percentage // 0' 2>/dev/null)
   context_pct=$(printf "%.0f" "$context_pct" 2>/dev/null)
 else
-  current_dir="~"; cc_version=""; effort=""; context_pct=0
+  current_dir="~"; cc_version=""; effort=""; context_pct=0; model_name=""
 fi
+
+# The context-window size never changes mid-session, so "(1M context)" is a constant
+# taking up room. Drop any trailing parenthetical: "Opus 5 (1M context)" -> "Opus 5".
+model_name=$(printf '%s' "$model_name" | sed 's/ *([^)]*)//g')
 
 # ---- git: branch only (the slug / fallback identity) ----
 git_branch=""
@@ -89,10 +94,15 @@ if [ "$cache_stale" -eq 1 ] && [ "$HAS_JQ" -eq 1 ]; then
     echo "$fresh_data" | jq -e '.seven_day' >/dev/null 2>&1 && echo "$fresh_data" > "$usage_cache"
   fi
 fi
+scoped_pct=""
+scoped_label=""
 if [ -f "$usage_cache" ] && [ "$HAS_JQ" -eq 1 ]; then
-  weekly_val=$(jq -r '.seven_day.utilization // empty' "$usage_cache" 2>/dev/null)
+  weekly_val=$(jq -r '(.limits[]? | select(.kind == "weekly_all") | .percent) // .seven_day.utilization // empty' "$usage_cache" 2>/dev/null)
   [ -n "$weekly_val" ] && [ "$weekly_val" != "null" ] && weekly_pct=$(printf "%.0f" "$weekly_val" 2>/dev/null)
   weekly_resets=$(jq -r '.seven_day.resets_at // empty' "$usage_cache" 2>/dev/null)
+  # model-scoped weekly bucket (e.g. Fable) — label comes from the API, not hardcoded
+  scoped_pct=$(jq -r '(.limits[]? | select(.kind == "weekly_scoped") | .percent) // empty' "$usage_cache" 2>/dev/null)
+  scoped_label=$(jq -r '(.limits[]? | select(.kind == "weekly_scoped") | .scope.model.display_name) // empty' "$usage_cache" 2>/dev/null | tr '[:upper:]' '[:lower:]')
 fi
 
 # ---- update available? (cached 30m; render only when actually behind) ----
@@ -148,6 +158,11 @@ weekly_color() {
   elif [ "${weekly_pct:-0}" -ge 50 ]; then c '38;5;215'
   else c '38;5;158'; fi
 }
+scoped_color() {
+  if [ "${scoped_pct:-0}" -ge 80 ]; then c '38;5;203'
+  elif [ "${scoped_pct:-0}" -ge 50 ]; then c '38;5;215'
+  else c '38;5;158'; fi
+}
 
 # ============================ render ============================
 # Line 1 — identity only: which ship (or repo·branch) + ships-in-flight count.
@@ -155,7 +170,7 @@ weekly_color() {
 is_gate=0; phase=""
 if [ -n "$ship_stage" ]; then
   case "$ship_stage" in
-    gate:1*) printf "$(gate_c)✋ %s — design?$(rst)" "$ship_slug"; is_gate=1; phase="$(stage_bar design)" ;;
+    gate:1*) printf "$(gate_c)✋ %s — storyboard?$(rst)" "$ship_slug"; is_gate=1; phase="$(stage_bar design)" ;;
     gate:2*) printf "$(gate_c)✋ %s — go?$(rst)" "$ship_slug"; is_gate=1; phase="$(stage_bar plan)" ;;
     discover*) printf "$(ship_c)🚢 %s$(rst)" "$ship_slug"; phase="$(stage_bar design)" ;;
     plan*)     printf "$(ship_c)🚢 %s$(rst)" "$ship_slug"; phase="$(stage_bar plan)" ;;
@@ -175,10 +190,22 @@ printf "\n"
 
 # Line 2 — phase (when in a ship), then the gauges + effort.
 [ -n "$phase" ] && printf "$(phase_c)%s$(rst)  " "$phase"
+[ -n "$model_name" ] && printf "$(c '38;5;183')🤖 %s$(rst)  " "$model_name"
 printf "$(context_color)🧠 %d%%$(rst)" "${context_pct:-0}"
 if [ -n "$weekly_pct" ]; then
-  printf "  $(weekly_color)📊 %d%%$(rst)" "$weekly_pct"
-  if [ "${weekly_pct:-0}" -ge 50 ]; then
+  # Quota reads as initials, not a chart icon and a spelled-out model name:
+  # "O 1% · F 0%". The letters ARE the labels, so they carry their own meaning
+  # at a glance and cost four columns instead of twelve.
+  # ponytail: the API exposes no Opus-only bucket — weekly_all covers every model,
+  # so O is really "everything", which is Opus plus a rounding error in practice.
+  # If a second scoped model ever appears, split it out rather than folding it in.
+  printf "  "
+  if [ -n "$scoped_pct" ] && [ -n "$scoped_label" ]; then
+    scoped_initial=$(printf '%s' "${scoped_label:0:1}" | tr '[:lower:]' '[:upper:]')
+    printf "$(scoped_color)%s %d%%$(rst) $(c '38;5;245')·$(rst) " "$scoped_initial" "$scoped_pct"
+  fi
+  printf "$(weekly_color)O %d%%$(rst)" "$weekly_pct"
+  if [ "${weekly_pct:-0}" -ge 50 ] || [ "${scoped_pct:-0}" -ge 50 ]; then
     rs=$(format_reset "$weekly_resets")
     [ -n "$rs" ] && printf " $(c '38;5;245')↻ %s$(rst)" "$rs"
   fi
