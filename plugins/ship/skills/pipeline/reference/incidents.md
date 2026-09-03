@@ -154,6 +154,13 @@ These are facts, not process — the process lives in SKILL.md.
   unrelated skill-loading error and stopped). A missing or empty result file means the
   review DID NOT RUN — never a clean bill. A plain retry of the identical command then
   produced five genuine findings, two of them serious.
+- **`codex exec` runs went dark and nobody could tell** (Pete, 2026-09-03). A held stdin,
+  a startup error and a model that stopped calling tools all looked like a slow
+  high-effort run from outside; the supervisor's only tells were a rollout file under
+  `~/.codex/sessions` and `ps`, and a ship lost an hour on a dispatch that had died at
+  startup. Every run is now `codex app-server` through `dispatch.mjs`: events with a
+  clock, a `status.json` with `idleSeconds` and `lastCommand`, a watchdog that
+  interrupts a silent turn and exits 3. Slow still is not failure; unknown is.
 - **codex's workspace-write sandbox can't commit from a linked worktree** — the index
   lives under the primary repo's `.git`, outside the sandbox root. Add the common git dir
   (`git rev-parse --git-common-dir`) to `sandbox_workspace_write.writable_roots`.

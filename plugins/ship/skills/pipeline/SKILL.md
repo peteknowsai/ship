@@ -56,7 +56,8 @@ read-only — each *queued ship* forks as its own first act instead.
 
 ## Sizing — every change ships; you pick the ceremony
 
-The rails are constant: worktree off main → change → prove it → merge via PR → dev
+The rails are constant: worktree off main → change → prove it → merge via PR (or the
+contract's `land:` command) → dev
 lane — **nothing ever edits main directly, however tiny, and Pete does nothing unless a
 gate genuinely needs him.** What scales is the ceremony, and **you size it, not Pete**:
 
@@ -90,6 +91,17 @@ dispatch restored 2026-08-12, reversing the 08-10 all-Claude retirement; supervi
 Each codex session is owned by an **Opus subagent supervisor** (`codex-supervisor`
 skill) that carries the brief down, launches the run, **keeps the session alive**, judges
 what comes back, spends the fix rounds, and hands the driver a verdict.
+
+**Every codex run is a `codex app-server` thread, never `codex exec`** (Pete,
+2026-09-03). `codex exec` runs went dark: a held stdin, a startup error, or a model that
+stopped calling tools all looked the same from outside, and the supervisor could not
+tell a stalled run from a slow one and burned an hour finding out. The supervisor's
+`scripts/dispatch.mjs` owns the app-server process: it streams every item and turn
+event to a JSONL log with a clock, keeps a `status.json` a driver can read at any
+moment, interrupts a turn that has gone silent past its stall budget and says so in its
+exit code, and writes the final message to the result file. The model is `gpt-5.6-sol`
+and the effort is `high` on every dispatch, review included; nothing here reads the
+model off `~/.codex/config.toml`.
 
 Why the layer: codex tokens buy drafts, driver tokens buy judgment — and the *watching*
 is neither. Polling, liveness tells, stall budgets, a session id threaded through three
@@ -160,6 +172,21 @@ preview provisioning** where a shared backend exists, a **test-auth path** verif
 use, and — for repos that shouldn't ship at all (wikis, civic work) — **`ship: no`**,
 which means decline and say why. homezero's AGENTS.md is the model. A repo with no
 contract gets best-effort: whatever gates you can find, merge to main, no deploy claim.
+
+Two more keys, each from a repo that could not run ship without it (cells, 2026-09-03):
+
+- **`land: <command>`** — how a finished branch reaches main when the PR path is wrong
+  for the repo (a mirror remote, a local-only main, a promote hook that builds on push).
+  Ship runs that command from the worktree in place of the PR merge (stage 4 says
+  where), then tears down as usual. The command is the repo's; ship never invents one.
+- **`design of record: transplant <path>`** — the repo's chrome is a byte-level transplant
+  of another product's renderer, and `<path>` is that product's bundle. Under it,
+  surfaces the reference owns are **lifted, never designed, measured or minimised**: the
+  contract names which hooks are the reference's and which are the repo's own (cells:
+  `sand-`/`ui-` are Grok's, `cells-` are ours), and ship applies its design machinery
+  only to the repo's own. The clauses marked *transplant* in DISCOVER, PLAN, BUILD and
+  REVIEW below say what changes; the repo's parity check joins the gates. Without the
+  key, nothing below changes.
 
 A repo that publishes releases may also declare a **release ritual**: it keeps a
 `VERSION` file and a `CHANGELOG.md`, and its contract says to bump them at ship time.
@@ -275,7 +302,12 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
 - For any visual/UI feature, invoke `impeccable` and follow its Setup (context.mjs —
   the repo's PRODUCT.md/DESIGN.md are the visual authority): a new surface or
   replacement look routes through its `shape`/new-work path; a refinement stays on the
-  incumbent world. Use `/pix` for imagery freely — the spec *is* the prototype.
+  incumbent world. Use `/image-gen` for imagery freely — the spec *is* the prototype.
+  *Transplant:* a surface the reference owns gets none of this. Its design is the
+  reference bundle; the spec names the reference component (the i18n id, the chunk,
+  the class strings) and says "lift", and the workshop below runs only for the repo's
+  own surfaces. A ship that touches nothing of the repo's own skips pen entirely and
+  gates on the board alone.
   **Ground the design in the live product**: a subagent walks the running app /
   deployed URL over `/browse` and reports the real theme/CSS with screenshots;
   design from those, never from in-repo mockups (incidents: Design).
@@ -352,7 +384,11 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
   **entire spec** — never sliced into phases. **The pen exports are the design source
   of truth**: the plan's UI tasks reference the export image for each surface (path,
   not prose description) and plan to match it. Run `ponytail` as the *waste* critic,
-  not a scope critic — it cuts reinvention and gold-plating, never specced scope. Save
+  not a scope critic — it cuts reinvention and gold-plating, never specced scope.
+  *Transplant:* ponytail's ladder stops above the reference. A wrapper, a class, a
+  token or an element the reference's markup carries is never waste, however empty it
+  looks (the padding lives in it); "shortest working diff" applies to the repo's own
+  code only. Save
   the markdown plan to the docs home (e.g. `specs/plans/YYYY-MM-DD-<slug>.md`).
 - **A task that computes from rows another code path writes gets one end-to-end test
   through the real writer** — not just unit tests over hand-built rows, which pass while
@@ -401,6 +437,11 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
   writes UI names the surface's pen export (`specs/designs/pen/…png`) as the comp to
   match, and — since codex has no impeccable installed — tells codex to read
   `~/.claude/skills/impeccable/reference/craft-floor.md` and honor its checks and bans.
+  *Transplant:* a brief that touches a reference surface carries the reference path,
+  the component to lift (grep the bundle for the id, take the class strings and the
+  tree between), the rule **lift it, never re-measure it**, and the repo's parity check
+  as a gate the worker runs before reporting. No craft floor and no comp for those
+  surfaces; the comp is the bundle.
 - **Before BUILD is done, smoke-walk the whole feature yourself** — boot the app and
   drive the spec's real user paths (the formal `verify` runs in REVIEW; don't invoke it
   twice). Two preconditions that have each cost a red deploy (incidents: Backends): a
@@ -421,9 +462,10 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
 - **Freeze the tree while a verifier is driving** — no merges, rebases, or edits until
   its verdict lands (incidents: Worktrees). Absorb upstream *before* dispatching a
   round, never during.
-- **Correctness review — a supervisor on codex review mode, launched first** so it
-  works while the rest of REVIEW proceeds (`codex exec review --base <lane-target>`;
-  the supervisor owns the mechanics). Meanwhile the driver runs `ponytail-review` (the
+- **Correctness review — a supervisor on a codex review thread, launched first** so it
+  works while the rest of REVIEW proceeds (`dispatch.mjs review --base <lane-target>`,
+  an app-server thread whose brief is the diff and whose result is the findings file;
+  the supervisor owns the mechanics, and there is no `codex exec review` any more). Meanwhile the driver runs `ponytail-review` (the
   over-build sweep). The **driver triages every finding** — adversarial reviewers
   over-flag by design — fixes what's real, puts judgment calls on the card. Codex
   unavailable → `/code-review` + `ponytail-review` on the driver. The high-value
@@ -444,7 +486,9 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
   open-ended polish loops. **Report only — the driver owns every fix**; check
   `git status` the moment the round lands, because nothing enforces read-only at the
   tool layer (incidents: Dispatch). Driver triages: real gaps fixed before the card,
-  nits land on the card for Pete.
+  nits land on the card for Pete. *Transplant:* for a reference surface the pair is
+  the reference product beside ours (the repo's own tree audit and its screenshots),
+  never a pen export, and a visible difference is a finding whatever the checks say.
 - **Put it in front of Pete, running.** For any visual/interactive feature, boot the
   worktree's dev server **detached, never through a bounded pipe** (`nohup npm run dev >
   dev.log 2>&1 &`, then curl-probe — a `| head -50` has SIGPIPE'd a server mid-verify)
@@ -492,6 +536,10 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
     `--delete-branch`, `git push origin --delete <branch>`, leave the worktree.
   - No GitHub remote → `wt merge` (squashes, ff's main, removes the worktree) is the
     fallback.
+  - **A `land:` key in the contract replaces steps 0–4**: sync with main, re-gate, run
+    the contract's command from the worktree, confirm main moved (`git log -1 main`),
+    then teardown from the main checkout as above. No PR is opened and none is merged;
+    a mirror remote is pushed only if the contract says so.
   - Then `rm .ship-stage`, **stop the review dev server**, **deprovision the preview
     backend** stage 0 spun up (or skip if previews auto-expire). Verify with
     `git worktree list` — zero ship-created worktrees must remain; a leftover means
