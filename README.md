@@ -42,4 +42,26 @@ If you want the bundled status line, point your `statusLine` at it (or let the p
 
 ## Codex Desktop
 
-Ship also runs under Codex Desktop — `.codex-plugin/plugin.json` is the manifest Codex reads. Same pipeline, same gates; the mechanics swap: Codex owns worktree birth/cleanup (no `wt` against Codex-managed worktrees), artifacts open in the in-app Browser (served over localhost), merges go through the PR path, and — with no status line or FleetView there — every status line carries a `branch <branch> · worktree <path>` breadcrumb. The full swap list lives in the ship skill under **"Running under Codex Desktop"**.
+The Codex package uses `codex/ship.md` and `codex/verify.md`. It keeps the shared
+express, design, and next processes, but uses Astra subagents directly. It has no
+supervisors or app-server dispatcher. Small changes stay with the driver; independent
+build tasks and final reviews can run in parallel.
+
+Build a portable package into a new directory:
+
+```sh
+python3 scripts/test-codex.py
+python3 scripts/build-codex.py /tmp/ship-codex
+```
+
+The builder copies the current storyboard, plan-card, and review-card templates from
+`plugins/ship`, adds the Codex instructions and manifest, and records the source commit
+in `SOURCE.json`. Install the result as the personal marketplace's ship package.
+Before replacing an existing local package or installed cache, back it up. Preserve
+its registered manifest version for an in-place refresh. New tasks rediscover the
+skills; an active task must explicitly reread them.
+
+When the Claude pipeline changes, review the matching native process in `codex/`
+and rerun the behavioral cases in [the sync notes](specs/2026-09-05-codex-ship.html).
+The bundle shares templates, not Claude tool instructions. Do not copy supervisors
+or Claude-only tools into the Codex package.
