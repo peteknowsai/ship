@@ -84,58 +84,46 @@ a gate. Never use an autonomous lane to slip a taste call past Pete.
 
 ## Engines
 
-**Fable always drives — every stage, including BUILD** (Pete, 2026-07-28; codex
-dispatch restored 2026-08-12, reversing the 08-10 all-Claude retirement; supervised
-2026-08-12). The driver owns design, briefs, triage, gates, git, and the final say, and
-**dispenses the plan's coding tasks to GPT-5.6 sol — but never touches codex itself.**
-Each codex session is owned by an **Opus subagent supervisor** (`codex-supervisor`
-skill) that carries the brief down, launches the run, **keeps the session alive**, judges
-what comes back, spends the fix rounds, and hands the driver a verdict.
+**Fable always drives — every stage, including BUILD** (Pete, 2026-07-28). The driver
+owns design, briefs, triage, gates, git, and the final say, and **dispenses the plan's
+coding tasks to Opus subagents** — the Agent tool, `model: "opus"`, one per task.
 
-**Every codex run is a `codex app-server` thread, never `codex exec`** (Pete,
-2026-09-03). `codex exec` runs went dark: a held stdin, a startup error, or a model that
-stopped calling tools all looked the same from outside, and the supervisor could not
-tell a stalled run from a slow one and burned an hour finding out. The supervisor's
-`scripts/dispatch.mjs` owns the app-server process: it streams every item and turn
-event to a JSONL log with a clock, keeps a `status.json` a driver can read at any
-moment, interrupts a turn that has gone silent past its stall budget and says so in its
-exit code, and writes the final message to the result file. The model is `gpt-5.6-sol`
-and the effort is `high` on every dispatch; nothing here reads the
-model off `~/.codex/config.toml`.
-
-Why the layer: codex tokens buy drafts, driver tokens buy judgment — and the *watching*
-is neither. Polling, liveness tells, stall budgets, a session id threaded through three
-commands, retries after a run dies at startup: that noise used to fill the driver's
-context and crowd out the work. Now it fills a subagent that's cheap to spawn and cheap
-to discard. **Keeping the run alive is the supervisor's headline duty**, not a footnote —
-a run killed early gets logged as a failure it didn't earn.
+**Coding drafts run on plain harness subagents; codex is not a ship engine** (Pete,
+2026-09-06, retiring the supervised `codex app-server` dispatch that ran from
+2026-08-12 and the `codex-supervisor` skill with it). A subagent returns its result to
+the driver and wakes it on completion, so the entire watching layer the supervisor
+existed for — an app-server process, a JSONL stream, a `status.json`, stall budgets,
+park lines, a session id threaded through three commands, a retry after a run dies at
+startup — has nothing left to watch. Two engines meant two sets of failure modes and a
+subagent whose whole job was telling them apart. One engine means the harness owns
+liveness and the driver owns judgment, which is the split that was wanted all along.
 
 **The driver writes inline anything under one file and ~50 lines** — config, glue
-between two codex tasks, a test tweak, a small fix from triage. A dispatch costs 5–10
-minutes before codex writes a line, so a task that would take the driver five minutes
-never routes (Pete, 2026-09-03: builds were bogged down; the driver does some of it
-itself). Skill/agent prose and design taste never route either. **Codex draws coding drafts and nothing
-else** — recon, expert consults, verify walks, design QA, and review fan-outs run on
-plain harness subagents (the Agent tool) with the `/browse` skill for anything in a
-browser. Never
-`claude -p` from inside a session. Never Sonnet.
+between two tasks, a test tweak, a small fix from triage. Spawning costs a brief and a
+context, so a task that would take the driver five minutes never routes (Pete,
+2026-09-03: builds were bogged down; the driver does some of it itself). Skill/agent
+prose and design taste never route either. **Everything that is not the driver's
+judgment routes the same way** — coding drafts, recon, expert consults, verify walks,
+design QA, review fan-outs — with the `/browse` skill for anything in a browser. Never
+`claude -p` from inside a session. **Opus for anything that writes code or returns a
+verdict. Never Sonnet.**
 
-**The driver owns the envelope**, whoever drafts: it writes the brief the supervisor
+**The driver owns the envelope**, whoever drafts: it writes the brief the subagent
 carries (exact files, signatures, test cases, constraints — a vague brief burns the
 savings in fix rounds), reviews the returned diff and runs the gates before anything is
-committed (never trust a "tests pass" claim, from a supervisor or from codex), and owns
-git entirely. **One writer per branch at a time** — concurrent writers on one tree
-collide; serialize, or give each its own sub-worktree.
+committed (never trust a "tests pass" claim from a subagent), and owns git entirely.
+**One writer per branch at a time** — concurrent writers on one tree collide;
+serialize, or give each its own sub-worktree.
 
 **Browser work splits by wall** (Pete's standing rule): plain headless QA and
 unauthenticated browsing — verify walks, design QA, live-product grounding — run on
 **`/browse`**; **auth-walled or bot-walled surfaces run on `pane`** (open a tab as your
 agent name, raise a handoff when a human is genuinely needed). Never the
 `mcp__claude-in-chrome__*` tools. A subagent drives the browser against the running app
-and reports what it saw; browser work does not go to codex.
+and reports what it saw; a coding subagent never drives one.
 
-**Never idle while a dispatch or subagent runs** — a codex draft, review, or QA pass
-is 10–25 minutes.
+**Never idle while a subagent runs** — a draft, review, or QA pass is minutes, not
+seconds.
 Work the standing non-tree list meanwhile (draft the review card, the board update, the
 commit message, groom `/ship next` cards) so the stage closes minutes after the result
 lands. Same posture at gates: notify, then keep doing non-gated work.
@@ -273,8 +261,8 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
 - **Resurface decision memory first** (see Decision memory) — settled calls constrain
   the brainstorm; don't re-litigate them inside it.
 - Invoke `superpowers:brainstorming`. PM-framed, one question at a time.
-- **Recon runs on a supervisor, synthesis stays with the driver.** Codebase
-  evidence-gathering dispatches as a read-only codex run (report findings, edit
+- **Recon runs on a subagent, synthesis stays with the driver.** Codebase
+  evidence-gathering dispatches as a read-only Opus subagent (report findings, edit
   nothing).
   The recon brief includes a **reuse audit**: for every core noun the feature
   introduces, grep the whole repo — data layer included — for existing infra before the
@@ -288,7 +276,7 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
   repo does; an expert tells you what the *stack* will do to you. Where the change
   lands in a domain some installed agent knows better than you, ask it — as harness
   subagents (the Agent tool, `subagent_type`), fired in parallel while recon runs, one
-  round, before the board is drawn. Not codex; not a second recon pass.
+  round, before the board is drawn. Not a coding subagent; not a second recon pass.
   - **Read the session's own roster** — the available agent types and skills are listed
     in-session — and **match against the surface the change actually touches**:
     `convex/` → the Convex expert (and its authz auditor when the change moves
@@ -350,7 +338,7 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
   plan card). A parked ship with uncommitted work looks disposable to another
   session's cleanup sweep, and one nearly lost its spec that way (incidents: Worktrees).
 - **The driver draws the frames and writes the captions inline** (taste is the
-  deliverable, never dispatched). Codex never draws a storyboard.
+  deliverable, never dispatched). A subagent never draws a storyboard.
 - A trivial visual change where several frames would be noise may collapse the
   storyboard to one frame + one confirm — never to zero showings on the GATED lane.
   A non-visual GATED ship (pure product tradeoff, no UI) has no storyboard; it gates
@@ -387,7 +375,7 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
   re-plan. **Each task names its files, the signatures it adds or changes, and its
   test cases** — brief-grade, so the BUILD brief is a paste plus deviations. Every
   4-minute first-pass-clean dispatch in the ledger had this; every 25-minute one
-  left codex to find the shape itself.
+  left the worker to find the shape itself.
 - **A task that computes from rows another code path writes gets one end-to-end test
   through the real writer** — not just unit tests over hand-built rows, which pass while
   the production writers produce garbage (incidents: Design).
@@ -397,13 +385,13 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
 - Write `build:0:<M>`; bump N per task. Build **all M tasks** in one session; commit
   each task on the branch as it lands, merge only when the whole plan is built.
 - Invoke `superpowers:subagent-driven-development` (the driver drives) and dispatch
-  each drafting task to a `codex-supervisor` subagent; sub-threshold work inline
-  (Engines). The driver owns the brief, the diff review, the gates, and git. One
+  each drafting task to its own Opus subagent (the Agent tool, `model: "opus"`);
+  sub-threshold work inline (Engines). The driver owns the brief, the diff review, the gates, and git. One
   writer per **tree** at a time — which is why fan-out means sub-worktrees, below.
 - **Fan out by file overlap, before the first dispatch.** The plan names each task's
   files. Group tasks that share a file; every group is a lane. Each lane past the
   first gets its own sub-worktree off the branch (`git worktree add <dir> -b
-  <branch>-<lane> <branch>`) and its own supervisor, all launched together; a lane's
+  <branch>-<lane> <branch>`) and its own subagent, all launched together; a lane's
   tasks run in plan order inside it. The driver merges lanes back in plan order and
   runs the gates once after each merge. Serial is only for tasks that share files.
   A run that serialized three disjoint tasks spent 90 minutes on two of nine
@@ -414,16 +402,13 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
   the product per task cost 20 minutes a task and found nothing the gates missed.
 - **Standing brief boilerplate** (each line from a burned run — incidents: Dispatch):
   test files whose assertions the planned change invalidates are **always in scope**,
-  allowlist or not; the result goes to the `-o` file and is **never committed**; the
-  worker never runs `git reset/checkout/stash`.
-- **A quiet supervisor never blocks the build.** Each one relays its `-o <result-file>`
-  path at launch; if it goes silent, ping it once, then self-serve — read the result
-  file, review the diff, run the gates yourself. Dead air on the *reporting* path has
-  stalled a real ship twice in one run; the work was already done both times.
-- **Read the park line, don't ping on reflex.** A supervisor announces
-  `parked-on-watchers: …` before every idle. Idle *with* a park line = healthy, leave it
-  alone until the stall budget. A **bare** idle notification with no park line in front
-  of it is the anomaly worth chasing — that's the only ping.
+  allowlist or not; the worker reports its result and **never commits**; the worker
+  never runs `git reset/checkout/stash`.
+- **A quiet subagent never blocks the build.** The harness wakes the driver when one
+  finishes, so silence is not itself a signal to chase. If a lane's work is visibly in
+  the tree and no report has landed, self-serve — review the diff and run the gates
+  yourself rather than pinging. Dead air on the *reporting* path has stalled a real
+  ship twice in one run; the work was already done both times.
 - **Small edits don't fan out.** A lane whose tasks are all sub-threshold is the
   driver's, inline, while the dispatched lanes run. Review fans out regardless of
   build size: several verifiers on one diff beats one.
@@ -431,9 +416,9 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
   task done — actually run it; `superpowers:systematic-debugging` on a red test.
 - **UI-writing briefs carry the storyboard frame and the craft floor** — every
   dispatch that writes UI names the frame to match
-  (`specs/designs/<storyboard>.html#<frame-id>`; codex reads the frame's markup and
-  CSS, which is why a frame beats a PNG), and — since codex has no impeccable
-  installed — tells codex to read
+  (`specs/designs/<storyboard>.html#<frame-id>`; the worker reads the frame's markup
+  and CSS, which is why a frame beats a PNG), and — since a subagent does not get the
+  impeccable hook — tells it to read
   `~/.claude/skills/impeccable/reference/craft-floor.md` and honor its checks and bans.
   *Transplant:* a brief that touches a reference surface carries the reference path,
   the component to lift (grep the bundle for the id, take the class strings and the
@@ -461,7 +446,7 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
   its verdict lands (incidents: Worktrees). Absorb upstream *before* dispatching a
   round, never during.
 - **Correctness review — a fresh harness subagent on the driver's model, launched
-  first** so it works while the rest of REVIEW proceeds. Codex drafted the branch one
+  first** so it works while the rest of REVIEW proceeds. The branch was drafted one
   task at a time; the reviewer reads it whole (`git diff <lane-target>...HEAD`) in a
   clean context, with the spec, and hunts the seams between tasks as hard as the tasks
   themselves — a writer and its reader drifting apart, a helper two tasks each

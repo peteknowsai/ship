@@ -17,7 +17,6 @@ It's opinionated. Built for a hands-off, PM-style workflow: you stay in your lan
 ## What's in the plugin
 
 - `skills/ship` — the pipeline playbook + the storyboard / plan-card / review-card templates + the design record.
-- `skills/codex-supervisor` — how a subagent runs and babysits one codex task (bundled).
 - `skills/verify` — fresh read-only verification against the running app before merge.
 - `hooks/` — the gate desktop-notification hook.
 - `statusline.sh` — the stage-aware status line.

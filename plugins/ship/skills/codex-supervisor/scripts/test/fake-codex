@@ -1,4 +1,0 @@
-#!/bin/sh
-# Stands in for the codex binary: `fake-codex app-server` runs the fake app-server.
-[ "$1" = "app-server" ] || { echo "fake-codex: only app-server is faked" >&2; exit 64; }
-exec node "$(dirname "$0")/fake-app-server.mjs"
