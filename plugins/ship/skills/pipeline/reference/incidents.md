@@ -138,14 +138,17 @@ These are facts, not process — the process lives in SKILL.md.
 
 ## Dispatch
 
+The four codex bullets below are kept as history: codex stopped being a ship engine on
+2026-09-06 (Engines). Every other line here is about delegation itself and still holds.
+
 - **Runs killed at a 2-minute timeout got mislogged as failures** — they were healthy
   high-effort runs that hadn't written anything yet. **Slow is not failure.** Give a
   dispatch a generous window and check in rather than killing; escalate on a wrong diff,
   never on a slow one.
 - **A worker has auto-opened PRs and committed unprompted** — git stays with the driver,
   whoever drafts. One also committed its own result markdown into the repo, and a `--hard`
-  reset cleaning that up ate an unstaged driver edit: results go to the `-o` file, and
-  workers never run `git reset/checkout/stash`.
+  reset cleaning that up ate an unstaged driver edit: a worker reports its result and
+  never commits, and workers never run `git reset/checkout/stash`.
 - **A vague brief costs more than it saves** — the fix rounds eat the delegation savings
   outright. Exact files, signatures, test cases, constraints, or write it inline.
 - **A read-only brief needs the driver to check it held** — nothing enforces read-only at
