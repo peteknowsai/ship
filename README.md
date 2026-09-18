@@ -11,7 +11,7 @@ It's opinionated. Built for a hands-off, PM-style workflow: you stay in your lan
 - **You read the meta, never the diff.** Every checkpoint auto-opens an HTML page in your browser — a **storyboard** (live mockups of the app, not a document), a one-screen **plan card**, and a **review card** at merge. Never "go read the PR."
 - **Gate notifications.** When a ship parks at a gate, a desktop notification taps you on the shoulder (Ghostty-native, with a macOS fallback) — so you can walk away.
 - **Stage-aware status line.** Which ship, what phase (`designing → planning → building → reviewing`), ships-in-flight, your context + weekly budget, effort level. A bold banner when a ship needs you.
-- **BUILD supervised, not shelled out.** Each closed-brief build task goes to an Opus subagent that owns one codex session end to end — brief, launch, patience, fix rounds, verdict — while the driver owns the plan, the diff review, the gates, and git. Orchestration stays inside Claude Code; codex still does the drafting.
+- **Fable drives, Astra builds.** Each build task is one `codex exec` run on Astra from the task's worktree, launched through `scripts/astra.sh`, which watches the run with a shell loop: a startup deadline, an idle deadline, and a refusal to call an empty result a success. The driver owns the brief, the diff review, the gates, and git. A fresh Claude subagent reviews the branch, so a second model family reads what Astra wrote.
 - **Fresh-agent verification.** REVIEW invokes the bundled `verify` skill before the card so the running app is driven and judged before merge.
 
 ## What's in the plugin
