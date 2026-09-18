@@ -84,31 +84,59 @@ a gate. Never use an autonomous lane to slip a taste call past Pete.
 
 ## Engines
 
-**Fable always drives — every stage, including BUILD** (Pete, 2026-07-28). The driver
-owns design, briefs, triage, gates, git, and the final say, and **dispenses the plan's
-coding tasks to Opus subagents** — the Agent tool, `model: "opus"`, one per task.
+**Fable always drives, every stage, including BUILD** (Pete, 2026-07-28). The driver
+owns design, briefs, triage, gates, git, and the final say, and **sends the plan's
+coding tasks to Astra through `codex exec`**, one run per task, from the task's
+worktree (Pete, 2026-09-18, for every repo; it was a Cells-only contract line from
+2026-09-17, and Opus subagents before that, from 2026-09-06).
 
-**Coding drafts run on plain harness subagents; codex is not a ship engine** (Pete,
-2026-09-06, retiring the supervised `codex app-server` dispatch that ran from
-2026-08-12 and the `codex-supervisor` skill with it). A subagent returns its result to
-the driver and wakes it on completion, so the entire watching layer the supervisor
-existed for — an app-server process, a JSONL stream, a `status.json`, stall budgets,
-park lines, a session id threaded through three commands, a retry after a run dies at
-startup — has nothing left to watch. Two engines meant two sets of failure modes and a
-subagent whose whole job was telling them apart. One engine means the harness owns
-liveness and the driver owns judgment, which is the split that was wanted all along.
+**Every dispatch goes through `scripts/astra.sh`** in this skill's directory, never a
+hand-typed `codex exec`:
+
+```bash
+astra.sh run    <worktree> <brief.md> <out-dir> [effort]   # a coding task, workspace-write
+astra.sh review <worktree> <brief.md> <out-dir> [effort]   # read-only, fresh context
+astra.sh fix    <worktree> <brief.md> <out-dir> [effort]   # findings into the same thread
+```
+
+Run it in the background; the harness wakes the driver when it exits. `<out-dir>` sits
+outside the repo (the session's scratch directory) and gets `events.jsonl`, `last.md`
+and `stderr.txt`. **The exit code is the verdict on the run, not on the work**: 0 it
+finished and said something; 3 the watchdog killed it (no `thread.started` in 45 s, or
+no event for 15 minutes; `ASTRA_IDLE` raises that for a known-long task); 4 it exited
+clean and wrote no final message, which means it did not run, so retry it; anything
+else is codex's own failure, and `stderr.txt` says why. Effort is `medium` for
+transcription (the plan's code pasted in) and `high` for integration; the wrapper
+passes it on every run because the user's codex config may default higher.
+
+**Why `exec` and not `codex app-server`** (measured 2026-09-18): a new task costs about
+5 s either way, all of it the model's first round trip; app-server saves 2 to 3 s only
+on a second turn in a live thread, against tasks that run for minutes. What app-server
+adds is a conversation (streaming, interrupt, approvals), and every piece of it needs
+a long-lived client that answers the server or wedges the thread. That client was the
+supervisor retired on 2026-09-06. Bare `exec` was not safe either: runs went dark on
+2026-09-03 and nobody could tell (incidents: Dispatch). The wrapper is the watcher,
+as a shell loop with no model in it. Reach for app-server only if a run ever has
+to be steered while it runs.
+
+**Codex is down or signed out** (exit codes that repeat, `refresh_token_invalidated`
+in `stderr.txt`): build inline or on an Opus subagent meanwhile rather than parking the
+ship, and say so on the review card.
 
 **The driver writes inline anything under one file and ~50 lines** — config, glue
 between two tasks, a test tweak, a small fix from triage. Spawning costs a brief and a
 context, so a task that would take the driver five minutes never routes (Pete,
 2026-09-03: builds were bogged down; the driver does some of it itself). Skill/agent
-prose and design taste never route either. **Everything that is not the driver's
-judgment routes the same way** — coding drafts, recon, expert consults, verify walks,
-design QA, review fan-outs — with the `/browse` skill for anything in a browser. Never
-`claude -p` from inside a session. **Opus for anything that writes code or returns a
-verdict. Never Sonnet.**
+prose and design taste never route either. **Everything else that is not the driver's
+judgment routes to a harness subagent** (the Agent tool): recon, expert consults,
+verify walks, design QA, review fan-outs, with the `/browse` skill for anything in a
+browser. Never
+`claude -p` from inside a session. **Code is Astra's. Everything else that returns a
+verdict (recon, consults, verify, QA, the correctness review) is an Opus or
+driver-model harness subagent, never Sonnet**: a second model family reads what Astra
+wrote, and those jobs need the harness's tools.
 
-**The driver owns the envelope**, whoever drafts: it writes the brief the subagent
+**The driver owns the envelope**, whoever drafts: it writes the brief the run
 carries (exact files, signatures, test cases, constraints — a vague brief burns the
 savings in fix rounds), reviews the returned diff and runs the gates before anything is
 committed (never trust a "tests pass" claim from a subagent), and owns git entirely.
@@ -122,7 +150,7 @@ agent name, raise a handoff when a human is genuinely needed). Never the
 `mcp__claude-in-chrome__*` tools. A subagent drives the browser against the running app
 and reports what it saw; a coding subagent never drives one.
 
-**Never idle while a subagent runs** — a draft, review, or QA pass is minutes, not
+**Never idle while a run or a subagent works** — a draft, review, or QA pass is minutes, not
 seconds.
 Work the standing non-tree list meanwhile (draft the review card, the board update, the
 commit message, groom `/ship next` cards) so the stage closes minutes after the result
@@ -385,13 +413,13 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
 - Write `build:0:<M>`; bump N per task. Build **all M tasks** in one session; commit
   each task on the branch as it lands, merge only when the whole plan is built.
 - Invoke `superpowers:subagent-driven-development` (the driver drives) and dispatch
-  each drafting task to its own Opus subagent (the Agent tool, `model: "opus"`);
-  sub-threshold work inline (Engines). The driver owns the brief, the diff review, the gates, and git. One
+  each drafting task as its own `astra.sh run` in the background (Engines);
+  sub-threshold work inline. The driver owns the brief, the diff review, the gates, and git. One
   writer per **tree** at a time — which is why fan-out means sub-worktrees, below.
 - **Fan out by file overlap, before the first dispatch.** The plan names each task's
   files. Group tasks that share a file; every group is a lane. Each lane past the
   first gets its own sub-worktree off the branch (`git worktree add <dir> -b
-  <branch>-<lane> <branch>`) and its own subagent, all launched together; a lane's
+  <branch>-<lane> <branch>`) and its own Astra run, all launched together; a lane's
   tasks run in plan order inside it. The driver merges lanes back in plan order and
   runs the gates once after each merge. Serial is only for tasks that share files.
   A run that serialized three disjoint tasks spent 90 minutes on two of nine
@@ -400,15 +428,27 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
   tsc/tests/lint, commit. Nobody drives the app or CLI per task — the smoke-walk is
   once at the end of BUILD and `verify` runs once in REVIEW. A reviewer hand-driving
   the product per task cost 20 minutes a task and found nothing the gates missed.
-- **Standing brief boilerplate** (each line from a burned run — incidents: Dispatch):
-  test files whose assertions the planned change invalidates are **always in scope**,
-  allowlist or not; the worker reports its result and **never commits**; the worker
-  never runs `git reset/checkout/stash`.
-- **A quiet subagent never blocks the build.** The harness wakes the driver when one
-  finishes, so silence is not itself a signal to chase. If a lane's work is visibly in
-  the tree and no report has landed, self-serve — review the diff and run the gates
-  yourself rather than pinging. Dead air on the *reporting* path has stalled a real
-  ship twice in one run; the work was already done both times.
+- **Standing brief boilerplate** (each line from a burned run, incidents: Dispatch):
+  one task per brief, with the plan's complete code pasted in, the exact test commands
+  and the files it may touch; **"do it, do not propose"**, because Astra stops and
+  proposes on an open ask (a tight single-purpose brief went 18 of 18 where a loose one
+  did not); test files whose assertions the planned change invalidates are **always in
+  scope**, allowlist or not; the final message is STATUS, TESTS, CONCERNS, and a longer
+  report goes in a file inside the worktree, since the sandbox writes nowhere else; the
+  worker **never commits** (the sandbox cannot reach a linked worktree's common `.git`
+  anyway) and never runs `git reset/checkout/stash`. The sandbox has no network: the
+  driver adds dependencies before the dispatch. A repo whose rules load by path
+  (`.claude/rules/`, a `scripts/rules-for.py`) gets those rule files named in the brief,
+  because `codex exec` loads none of them.
+- **A fix round is `astra.sh fix`** with the findings as the brief: same thread, the
+  context already paid for. A second `run` for the same task starts cold and re-reads
+  the tree.
+- **A quiet run never blocks the build.** The harness wakes the driver when
+  `astra.sh` exits, and the watchdog ends a run that died or went silent, so silence is
+  not a signal to chase. If a lane's work is visibly in the tree and no report has
+  landed, self-serve: review the diff and run the gates yourself. Dead air on the
+  *reporting* path has stalled a real ship twice in one run; the work was already done
+  both times.
 - **Small edits don't fan out.** A lane whose tasks are all sub-threshold is the
   driver's, inline, while the dispatched lanes run. Review fans out regardless of
   build size: several verifiers on one diff beats one.

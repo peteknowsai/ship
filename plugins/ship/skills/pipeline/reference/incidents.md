@@ -138,8 +138,11 @@ These are facts, not process — the process lives in SKILL.md.
 
 ## Dispatch
 
-The four codex bullets below are kept as history: codex stopped being a ship engine on
-2026-09-06 (Engines). Every other line here is about delegation itself and still holds.
+Codex is the BUILD engine again since 2026-09-18, through `codex exec` inside
+`scripts/astra.sh` (Engines). It was the engine through `codex app-server` and a
+supervisor from 2026-08-12, and not an engine at all from 2026-09-06. The codex bullets
+below are why the wrapper has each of its guards; every other line is about delegation
+itself and holds for any worker.
 
 - **Runs killed at a 2-minute timeout got mislogged as failures** — they were healthy
   high-effort runs that hadn't written anything yet. **Slow is not failure.** Give a
@@ -161,17 +164,20 @@ The four codex bullets below are kept as history: codex stopped being a ship eng
   say so up front: test files whose assertions the change invalidates are always in scope.
 - **`codex exec review` can exit 0 in seconds without writing its result file** (it hit an
   unrelated skill-loading error and stopped). A missing or empty result file means the
-  review DID NOT RUN — never a clean bill. A plain retry of the identical command then
+  review DID NOT RUN — never a clean bill. `astra.sh` exits 4 on exactly this. A plain retry of the identical command then
   produced five genuine findings, two of them serious.
 - **`codex exec` runs went dark and nobody could tell** (Pete, 2026-09-03). A held stdin,
   a startup error and a model that stopped calling tools all looked like a slow
   high-effort run from outside; the supervisor's only tells were a rollout file under
   `~/.codex/sessions` and `ps`, and a ship lost an hour on a dispatch that had died at
-  startup. Every run is now `codex app-server` through `dispatch.mjs`: events with a
-  clock, a `status.json` with `idleSeconds` and `lastCommand`, a watchdog that
-  interrupts a silent turn and exits 3. Slow still is not failure; unknown is.
+  startup. The first answer was `codex app-server` through `dispatch.mjs` with a model
+  watching the stream, retired on 2026-09-06 as heavier than the work it watched. The
+  answer now is `astra.sh`: the brief from a file so stdin closes, a startup deadline on
+  `thread.started`, an idle deadline on the JSONL's mtime, exit 3 for either. Slow
+  still is not failure; unknown is.
 - **codex's workspace-write sandbox can't commit from a linked worktree** — the index
-  lives under the primary repo's `.git`, outside the sandbox root. Add the common git dir
+  lives under the primary repo's `.git`, outside the sandbox root. The driver commits, so
+  nothing needs this now; kept for anyone tempted to let the worker commit. Add the common git dir
   (`git rev-parse --git-common-dir`) to `sandbox_workspace_write.writable_roots`.
 - **codex's ChatGPT auth can die mid-BUILD.** A second machine refreshing the same OAuth
   session invalidated it (`refresh_token_invalidated`); in-flight runs survived on their

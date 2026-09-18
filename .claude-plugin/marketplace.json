@@ -10,7 +10,7 @@
   "plugins": [
     {
       "name": "ship",
-      "description": "/ship — idea to merged in one command: worktree → discover → plan → build → review, gating only on design direction and 'go'. Auto-opening HTML cards, gate desktop notifications, a stage-aware status line, BUILD on Opus subagents, and fresh-agent verification. Bundles verify.",
+      "description": "/ship — idea to merged in one command: worktree → discover → plan → build → review, gating only on design direction and 'go'. Auto-opening HTML cards, gate desktop notifications, a stage-aware status line, BUILD on Astra through a guarded codex exec, and fresh-agent verification. Bundles verify.",
       "source": "./plugins/ship"
     }
   ]
