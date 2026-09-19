@@ -18,6 +18,15 @@ These are facts, not process — the process lives in SKILL.md.
 - **`gh pr merge` run from inside the worktree fails** with `fatal: 'main' is already
   used by worktree …` — the PR merges on GitHub but local teardown never runs, stranding
   an orphan worktree. Merge from the main checkout, always.
+- **A lane that borrowed `node_modules` by symlink committed the link** (cells,
+  2026-09-19). Five lane worktrees symlinked `agent/`, `web/` and
+  `electron/node_modules` to the main worktree's installs. The repo ignored
+  `node_modules/`, which matches a directory and not a link, so one lane's `git add -A`
+  tracked `agent/node_modules`, and merging that lane replaced the main worktree's real
+  install with a link pointing at itself. Typecheck and build then failed with exit 127
+  (`tsc: command not found`), which read as broken code. The fix was `git rm --cached`,
+  a reinstall, and dropping the slash from the ignore pattern. Exclude the links in
+  `info/exclude` before the first lane commit.
 - **Tearing down a worktree before confirming its PR is `MERGEABLE`** strands the ship
   with no worktree and no merge — that recovery is all manual. Pre-flight first.
 - **Squash merges from the GitHub UI don't satisfy `git branch --merged`** and don't
@@ -144,6 +153,12 @@ supervisor from 2026-08-12, and not an engine at all from 2026-09-06. The codex 
 below are why the wrapper has each of its guards; every other line is about delegation
 itself and holds for any worker.
 
+- **Astra's sandbox cannot bind a loopback port**, so any test that starts a local
+  server fails inside a run with `listen EPERM` or `EADDRINUSE` on port 0 (cells,
+  2026-09-19: `loopback.test.ts`, `bridgeWorkflows.test.ts`, in all seven runs). It is
+  never the task's fault and never worth a fix round. Tell the worker in the brief which
+  tests those are so it reports and moves on, and treat the driver's own gate run,
+  outside the sandbox, as the only real one.
 - **Runs killed at a 2-minute timeout got mislogged as failures** — they were healthy
   high-effort runs that hadn't written anything yet. **Slow is not failure.** Give a
   dispatch a generous window and check in rather than killing; escalate on a wrong diff,
