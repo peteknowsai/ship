@@ -424,6 +424,16 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
   runs the gates once after each merge. Serial is only for tasks that share files.
   A run that serialized three disjoint tasks spent 90 minutes on two of nine
   (2026-09-03); the same three run in the time of the slowest one.
+- **A lane worktree has no installs, and a borrowed one must be excluded before the
+  first commit.** A fresh `git worktree add` carries no `node_modules` (or `.venv`,
+  `vendor`, `.build`). Either run the repo's frozen-lockfile install in the lane, or
+  symlink the main worktree's installs in. If you symlink, write each link's path to
+  `$(git rev-parse --git-common-dir)/info/exclude` first, where `.ship-stage` already
+  goes: a `.gitignore` line like `node_modules/` ignores a directory and not a link, so
+  `git add -A` commits it and the merge swaps the real install for a link to itself
+  (incidents: Worktrees). Commit lanes with the links excluded, and after the last lane
+  merges confirm the main worktree's install is still a directory before trusting a red
+  gate.
 - **A task's check is the diff and the gates, nothing else.** Read the diff, run
   tsc/tests/lint, commit. Nobody drives the app or CLI per task — the smoke-walk is
   once at the end of BUILD and `verify` runs once in REVIEW. A reviewer hand-driving
@@ -437,7 +447,9 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
   report goes in a file inside the worktree, since the sandbox writes nowhere else; the
   worker **never commits** (the sandbox cannot reach a linked worktree's common `.git`
   anyway) and never runs `git reset/checkout/stash`. The sandbox has no network: the
-  driver adds dependencies before the dispatch. A repo whose rules load by path
+  driver adds dependencies before the dispatch. It cannot bind a port either, so name
+  the repo's server-starting tests in the brief as expected failures (incidents:
+  Dispatch). A repo whose rules load by path
   (`.claude/rules/`, a `scripts/rules-for.py`) gets those rule files named in the brief,
   because `codex exec` loads none of them.
 - **A fix round is `astra.sh fix`** with the findings as the brief: same thread, the
