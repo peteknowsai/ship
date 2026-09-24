@@ -6,6 +6,14 @@ These are facts, not process — the process lives in SKILL.md.
 
 ## Worktrees & git
 
+- **Landed worktrees piled up in cells, 82 GB of instances with them** (2026-09-24).
+  Seven clean, merged worktrees sat for days, three holding a later ship's branch
+  because a session had switched branches inside a finished tree; cells names each
+  instance after the branch, so every switch orphaned one, and `wt remove` never ran
+  `make wt-clean` anyway. Teardown misses from many causes (a Codex session, a closed
+  terminal), so the backstop is `wt-sweep -f` hourly from launchd (`md.pete.wt-sweep`),
+  skipping any worktree under 12h old, dirty, or with a live session; cells' own
+  `pre-remove` hook runs `make wt-clean` on every removal.
 - **Cross-repo `EnterWorktree` silently doesn't take.** It only adopts worktrees of the
   session's *primary* repo. Against any other repo the cwd never moves and the status
   line stays blind — the worktree and `.ship-stage` are real but invisible. Work by

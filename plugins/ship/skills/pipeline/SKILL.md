@@ -273,9 +273,15 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
   `--preview-name` flag does not override it (incidents: Backends). From here on the
   preview's *name* comes from that file, never from the branch.
 - **Cross-repo case:** `EnterWorktree` only takes for the session's primary repo
-  (incidents: Worktrees). Against any other repo, work the worktree by **absolute
-  path** and **narrate the fork the moment you create it** (`forked feature/<slug> off
-  main @ <path>`) — a blind status line must never make it look like nothing forked.
+  (incidents: Worktrees). If the target repo's `git rev-parse --git-common-dir` differs
+  from the launch repo's, never call it: work the worktree by **absolute path**, point
+  the status line at it with `mkdir -p ~/.claude/ship-active && echo <path> >
+  ~/.claude/ship-active/$CLAUDE_CODE_SESSION_ID`, and **narrate the fork the moment you
+  create it** (`forked feature/<slug> off main @ <path>`).
+- **A new ship always forks a new worktree.** A session that just landed one and gets
+  the next never runs `git switch -c` inside the old tree: the old worktree then
+  outlives its merge under another branch's name, and cells names its instance after
+  the branch, so the first instance is orphaned.
 - **Recon may contradict the fork — then re-fork.** In a multi-repo workspace the target
   repo is itself a recon finding (incidents: Worktrees). Exit, `wt remove` the empty
   worktree, fork in the right repo, narrate the move. Fork-first stays; being wrong
@@ -574,7 +580,8 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
     the contract's command from the worktree, confirm main moved (`git log -1 main`),
     then teardown from the main checkout as above. No PR is opened and none is merged;
     a mirror remote is pushed only if the contract says so.
-  - Then `rm .ship-stage`, **stop the review dev server**, **deprovision the preview
+  - Then `rm .ship-stage` and `rm -f ~/.claude/ship-active/$CLAUDE_CODE_SESSION_ID`,
+    **stop the review dev server**, **deprovision the preview
     backend** stage 0 spun up (or skip if previews auto-expire). Verify with
     `git worktree list` — zero ship-created worktrees must remain; a leftover means
     teardown failed (usually a merge run inside the worktree) — recover before
