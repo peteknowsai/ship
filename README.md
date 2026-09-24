@@ -42,7 +42,7 @@ If you want the bundled status line, point your `statusLine` at it (or let the p
 ## Codex Desktop
 
 The Codex package uses `codex/ship.md` and `codex/verify.md`. It keeps the shared
-express, design, and next processes, but uses Astra subagents directly. It has no
+express and design processes, but uses Astra subagents directly. It has no
 supervisors or app-server dispatcher. Small changes stay with the driver; independent
 build tasks and final reviews can run in parallel.
 

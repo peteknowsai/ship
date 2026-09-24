@@ -1,6 +1,6 @@
 ---
 name: pipeline
-description: Use for any code change in a product/web repo, quick fix to full feature — ship sizes the ceremony itself and stops only when Pete's taste is in play. Explicit verbs pin the process — "/ship express <tweak>", "/ship design <idea>", "/ship next" (ship the board's Next column as a batch); anything else sizes itself. EXPRESS (tweak — no spec/plan, straight through to dev), SELF-DIRECTED (writes its own spec+plan, builds, reviews, merges, deploys — zero stops), or GATED (design direction + "go" gates) — gates fire only when Pete's answer would change what gets built. Auto-triggers on change requests; you never type it. Do NOT use for a question or pure analysis. Never edit main directly.
+description: Use for any code change in a product/web repo, quick fix to full feature — ship sizes the ceremony itself and stops only when Pete's taste is in play. Explicit verbs pin the process — "/ship express <tweak>", "/ship design <idea>"; anything else sizes itself. EXPRESS (tweak — no spec/plan, straight through to dev), SELF-DIRECTED (writes its own spec+plan, builds, reviews, merges, deploys — zero stops), or GATED (design direction + "go" gates) — gates fire only when Pete's answer would change what gets built. Auto-triggers on change requests; you never type it. Do NOT use for a question or pure analysis. Never edit main directly.
 ---
 
 # /ship — idea to merged, in one command
@@ -20,15 +20,14 @@ the relevant section before merges, teardowns, deploys, or debugging a dispatch.
 
 ## Verbs — Pete pins the process explicitly
 
-If the invocation's first word is `express`, `design`, or `next`, that verb pins the
+If the invocation's first word is `express` or `design`, that verb pins the
 process and skips the sizing judgment below. Anything else — bare `/ship <idea>` or
 the auto-trigger — sizes itself. Every verb rides the same rails: stage 0's worktree
 off main via `wt`, never a primary checkout.
 
 **The fork is the verb's FIRST act — before any question, recon agent, or authoring
 step.** The moment a verb lands, resolve the target repo and run stage 0 there. The
-marker flip is how Pete *sees* ship engage. One exception: `/ship next`'s board sweep is
-read-only — each *queued ship* forks as its own first act instead.
+marker flip is how Pete *sees* ship engage.
 
 - **`/ship express <tweak>`** — pins EXPRESS. The verb pins ceremony *down*, never
   safety down: a money path or a taste call promotes per the mid-flight rule regardless.
@@ -36,23 +35,6 @@ read-only — each *queued ship* forks as its own first act instead.
   DISCOVER (storyboard → rounds → lock → HTML plan → go → spec → build). The verb is
   Pete asserting taste is in play; never downgrade it, however mechanical the work
   looks.
-- **`/ship next`** — ship the board's Next column as one batch (board-backed repos
-  only; no board → say so and stop):
-  1. **Sweep + enrich.** Pull every Next card; bring each up to standard anatomy
-     (What / Why / Done when) from card context + the repo before judging it.
-  2. **Triage** into ship-now (spec inferable, no taste call), needs-design
-     (Pete's taste genuinely in play — same test as the GATED lane), or too-thin
-     (can't design it without Pete). Narrate the three lists before firing anything.
-  3. **Fire ship-now as a sequential queue** — one ship at a time, each a normal lane
-     run with its own worktree and card flow. Never a parallel swarm: merges
-     serialize onto main, one preview backend at a time; a failed ship parks its card
-     (comment why) and the queue moves on.
-  4. **Bulk GATE 1 for needs-design: ONE design doc, one sitting** — a single HTML,
-     a section per ticket (direction, mockup where visual, the one question that
-     matters). Publish, link on each ticket, present once. Approved sections run
-     straight through; redirected ones get revised. Nothing builds on a guess.
-  5. **Too-thin cards** stay in Next with one clarifying question commented.
-  End with a batch `result:` line: `shipped N · awaiting design answers M · too thin K`.
 
 ## Sizing — every change ships; you pick the ceremony
 
@@ -169,7 +151,7 @@ Pete's real login and has no test-auth path in the repo is his: hand it off with
 browser against the running app and reports what it saw; a coding worker never does.
 
 **Never idle while a run or a subagent works.** Work the non-tree list meanwhile (the
-review card, the board update, the commit message, `/ship next` grooming) so the stage
+review card, the commit message, the ledger lines) so the stage
 closes minutes after the result lands. Same posture at gates: notify, then keep doing
 non-gated work.
 
@@ -247,9 +229,12 @@ repos skip this entirely.
 `scripts/decisions.py` in this skill's directory keeps one decision log per repo. Run
 it from inside the target repo.
 
-- **DISCOVER start:** run `decisions.py recent 5` and treat what it lists as settled
-  calls with their rationale. Don't re-ask Pete a settled question; reversing one is
-  allowed, but say so explicitly.
+- **DISCOVER start, and PLAN start on SELF-DIRECTED:** run
+  `decisions.py relevant "<the idea in one sentence>"`. It returns the six decisions
+  that bear on the idea, whatever their age (Jev scores every active one; if Jev is
+  down it prints the newest instead and says so). Treat them as settled calls with
+  their rationale. Don't re-ask Pete a settled question; reversing one is allowed, but
+  say so explicitly.
 - **When a gate (or Pete mid-run) resolves a durable call** — design direction, scope
   cut, architecture or tool choice — log it:
   `decisions.py log '{"decision":"…","rationale":"…","source":"user"}'`. A reversal is
@@ -333,7 +318,7 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
   repo does; an expert tells you what the *stack* will do to you. Where the change
   lands in a domain some installed agent knows better than you, ask it — as harness
   subagents (the Agent tool, `subagent_type`), fired in parallel while recon runs, one
-  round, before the board is drawn. Not a coding subagent; not a second recon pass.
+  round, before the storyboard is drawn. Not a coding subagent; not a second recon pass.
   - **Read the session's own roster** — the available agent types and skills are listed
     in-session — and match against the surface the change actually touches:
     `convex/` → the Convex expert (and its authz auditor when the change moves
@@ -717,39 +702,14 @@ Render `reference/review-card.html` filled with the meta only — PM-framed, one
   link is there for the curious, but he shouldn't need it. (A money path, or a repo
   where merge auto-deploys to prod, is the exception that still asks — say why.)
 
-## The board is the run's record (board-backed repos)
-
-Where the repo has a backlog-board skill (e.g. homezero → the `linear` skill, which
-holds the mutations and recipes), the ticket mirrors the run. The board is a mirror,
-never a gate — an API hiccup gets one line of narration and the pipeline rolls on.
-
-- **Run start** — card to In Progress (GATED ships with no card get one created).
-  EXPRESS skips the board unless a card already exists.
-- **GATE 1 approved** — publish the spec HTML to the repo's public specs host (never
-  the dev deploy), comment the 3-line summary + link. Ticket links are always public
-  URLs — never localhost or file paths.
-- **PLAN** — mirror the punch list into the description as checkboxes; tick as tasks
-  land.
-- **Merge** — card to For Review; the ticket becomes the review ask: a
-  `## For your review` section with the dev-lane URL, checkboxes for what needs his
-  eye, and a 1–2 line what-shipped; close with a comment carrying the `result:` line +
-  verdict. Link the review-card HTML only when the ticket can't hold the depth.
-  **Never move to Done — Done is Pete's drag.**
-- **Bigger than this round** — real phases beyond this ship become a board *project*:
-  this issue joins it, later phases are filed inside it, the spec link lives on the
-  project.
-
-## Backlog candidates — collect deferrals, file on approval
+## Backlog candidates — collect deferrals for the card
 
 A run throws off build-worthy ideas that aren't this round's job. Keep a running list
 (no scratch file — you're one continuous run) of the ones you'd *actually build*, each
 with a one-line why-deferred. A candidate is a thing OUTSIDE the spec's scope —
 never a specced surface you chose not to build; this is not a loophole around the scope
-law. Surface them on the review card; the `result:` line names the count. When Pete
-says *file them*, file through the repo's board skill and reply with links (Backlog
-default, Icebox for the speculative; phases of one design go into its board project).
-No board → the card is the record; don't invent a tracker. Never gate the merge on
-this — approval is always async.
+law. Surface them on the review card; the `result:` line names the count. The card is
+the record; don't invent a tracker. Never gate the merge on this.
 
 ## Running under Codex Desktop
 
