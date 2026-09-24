@@ -54,7 +54,8 @@ and the driver eyeballs `git status` in the worktree after the run
 
 ```
 READ-ONLY: you may not edit, create, or delete any source file — screenshots go under
-<session cwd>/.ship-shots/<slug>/ only (the browser tool can write nowhere else).
+<absolute shots path>/ only, always as absolute paths (the browser tool can write
+nowhere else, and it resolves relative paths somewhere it can't write).
 Independently confirm THIS feature works by driving the running app in the browser (the
 stack is already up at <URL> — reuse it, never boot your own). First load the browser
 tools in one call: ToolSearch "select:mcp__chrome-devtools__new_page,

@@ -71,8 +71,9 @@ These are facts, not process — the process lives in SKILL.md.
 - **Screenshots don't belong in the branch, and don't survive teardown.** ~6MB of verify
   PNGs committed to a branch broke the push outright (sideband disconnect, branch had to
   be rebuilt); storyboard images left in the worktree 404'd on the published review card
-  after `wt remove`. Keep them out of the repo (the job tmp dir), and copy anything a
-  presented card references somewhere durable before the merge.
+  after `wt remove`. Keep them out of commits (`.ship-shots/`, excluded; SKILL.md says
+  where), and copy anything a presented card references somewhere durable before the
+  merge.
 
 ## Backends & deploys
 

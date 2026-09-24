@@ -572,12 +572,17 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
   as broken (incidents: Backends). Never deploy to let him review; never tell him to
   "go look at the live site" — the worktree's localhost is the review surface.
   (Non-UI change → show the demo/test output instead.)
-- **Screenshots go in `.ship-shots/<slug>/` under the session's working directory**,
-  because the chrome-devtools MCP writes only inside the session's workspace roots.
-  Exclude `.ship-shots` in that repo's `info/exclude` the way `.ship-stage` is, since
-  it is never committed (~6MB of PNGs broke a push). Copy anything the presented card
-  references somewhere durable before teardown, or the card 404s its own proof
-  (incidents: Worktrees), then delete the folder.
+- **Screenshots go in `<shots-root>/.ship-shots/<slug>/`, always as an absolute path**,
+  because the chrome-devtools MCP writes only inside the session's workspace roots and
+  resolves a relative path against the launch directory, which stops being a root once
+  the session enters a worktree. `<shots-root>` is the worktree the session entered;
+  on a cross-repo ship, where the session never entered one, it is the session's launch
+  directory. The driver writes that absolute path into every brief that screenshots.
+  Exclude `.ship-shots` in `<shots-root>`'s repo `info/exclude` the way `.ship-stage`
+  is, since it is never committed (~6MB of PNGs broke a push). Copy anything the
+  presented card references somewhere durable before teardown, or the card 404s its
+  own proof (incidents: Worktrees), then delete `<shots-root>/.ship-shots/<slug>/`,
+  which on a cross-repo ship is not inside the worktree teardown removes.
 - **Prove it works — invoke `verify` before the card.** A fresh read-only subagent
   drives the feature and returns `works | broken | unverifiable` + a
   screenshot storyboard; verify loops-to-fix (cap ~3). `broken` after the cap, or

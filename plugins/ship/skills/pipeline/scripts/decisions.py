@@ -66,10 +66,14 @@ def decide(raw, supersedes=None):
     try:
         payload = json.loads(raw)
     except ValueError:
-        raise SystemExit('decisions: the decision must be JSON')
+        payload = None
+    if not isinstance(payload, dict):
+        raise SystemExit('decisions: the decision must be a JSON object')
     if not str(payload.get('decision', '')).strip() or not str(payload.get('rationale', '')).strip():
         raise SystemExit('decisions: "decision" and "rationale" are both required')
-    event = {'id': str(uuid.uuid4()), 'kind': 'decide', 'scope': 'repo', 'source': 'user', **payload,
+    for key in ('id', 'kind', 'date', 'supersedes'):  # the store owns these
+        payload.pop(key, None)
+    event = {'scope': 'repo', 'source': 'user', **payload, 'id': str(uuid.uuid4()), 'kind': 'decide',
              'date': datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='seconds')}
     if supersedes:
         event['supersedes'] = supersedes
@@ -113,11 +117,14 @@ def selftest():
         check('a short id prefix resolves', full_id(path, replacement['id'][:8]) == replacement['id'])
         open(path, 'a').write('{"half\n')
         check('a broken line is skipped', len(active(path)) == 1)
-        try:
-            decide('{"decision":"no why"}')
-            check('a decision without a rationale is refused', False)
-        except SystemExit:
-            check('a decision without a rationale is refused', True)
+        for name, raw in [('without a rationale', '{"decision":"no why"}'), ('that is not an object', '["a"]')]:
+            try:
+                decide(raw)
+                check(f'a decision {name} is refused', False)
+            except SystemExit:
+                check(f'a decision {name} is refused', True)
+        forged = decide('{"decision":"C","rationale":"r","id":"aaaa","kind":"note"}')
+        check('a payload cannot set its own id or kind', forged['id'] != 'aaaa' and forged['kind'] == 'decide')
     print(f'decisions self-test: {fails} failed')
     return fails == 0
 
@@ -127,6 +134,8 @@ if __name__ == '__main__':
     if args == ['--selftest']:
         sys.exit(0 if selftest() else 1)
     if args and args[0] == 'recent' and len(args) <= 2:
+        if len(args) == 2 and not args[1].isdigit():
+            sys.exit('decisions: recent takes a positive count')
         print(recent(store(), int(args[1]) if len(args) == 2 else 5))
     elif len(args) == 2 and args[0] == 'log':
         append(store(), decide(args[1]))
