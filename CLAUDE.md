@@ -32,9 +32,11 @@ cp -R ~/.claude/plugins/marketplaces/ship/plugins/ship ~/.claude/plugins/cache/s
 ```
 
 then repoint `~/.claude/plugins/installed_plugins.json` (`installPath`, `version` =
-short SHA, `gitCommitSha`, `lastUpdated`) at the new cache dir, and remove the old
-cache dir. Already-running sessions keep the text they loaded at startup — only new
-sessions get the change.
+short SHA, `gitCommitSha`, `lastUpdated`) at the new cache dir. Repoint every entry
+under `ship@ship`, not just the user-scope one: cells and other repos carry
+project-scope installs, and a missed one keeps loading the old copy. Remove the old
+cache dir once no running ship still calls its scripts. Already-running sessions keep
+the text they loaded at startup — only new sessions get the change.
 
 ## House rules
 
