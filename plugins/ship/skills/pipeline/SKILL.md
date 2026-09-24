@@ -151,8 +151,8 @@ ship, and say so on the review card.
 between two tasks, a test tweak, a small fix from triage. Mark those tasks `(inline)`
 in the plan so the router skips them. Skill and agent prose and design taste never
 route either. Recon, expert consults, verify walks, design QA and review fan-outs go
-to Opus 5.5 harness subagents (the Agent tool), with the `/browse` skill for anything
-in a browser. Never `claude -p` from inside a session, and never Sonnet.
+to Opus 5.5 harness subagents (the Agent tool), with the chrome-devtools MCP for
+anything in a browser. Never `claude -p` from inside a session, and never Sonnet.
 
 **The driver owns the envelope**, whoever drafts: it writes the brief (exact files,
 signatures, test cases, constraints; a vague brief burns the savings in fix rounds),
@@ -160,10 +160,12 @@ reviews the returned diff and runs the gates before anything is committed (never
 a "tests pass" claim from a worker), and owns git entirely. One writer per tree at a
 time: serialize, or give each lane its own sub-worktree.
 
-**Browser work splits by wall**: headless QA and unauthenticated browsing (verify walks,
-design QA, live-product grounding) run on `/browse`; auth-walled or bot-walled
-surfaces run on `pane` (open a tab as your agent name, raise a handoff when a human is
-genuinely needed). Never the `mcp__claude-in-chrome__*` tools. A subagent drives the
+**Browser work runs on the chrome-devtools MCP** (`mcp__chrome-devtools__*`: headless,
+a fresh isolated profile per session, so parallel walks never collide and no window
+opens on Pete's screen): verify walks, design QA, live-product grounding. A subagent
+loads those tools with one ToolSearch call before its first step. A surface that needs
+Pete's real login and has no test-auth path in the repo is his: hand it off with
+`needs input:`. Never the `mcp__claude-in-chrome__*` tools. A subagent drives the
 browser against the running app and reports what it saw; a coding worker never does.
 
 **Never idle while a run or a subagent works.** Work the non-tree list meanwhile (the
@@ -242,19 +244,17 @@ repos skip this entirely.
 
 ## Decision memory — settled calls survive the session
 
-Where gstack is installed (`~/.claude/skills/gstack/bin/gstack-decision-search` on
-disk), the pipeline reuses its per-project decision store — never hand-roll one:
+`scripts/decisions.py` in this skill's directory keeps one decision log per repo. Run
+it from inside the target repo.
 
-- **DISCOVER start:** run `gstack-decision-search --recent 5` and treat what it lists
-  as settled calls with their rationale. Don't re-ask Pete a settled question;
-  reversing one is allowed, but say so explicitly.
-- **When a gate (or Pete mid-run) resolves a DURABLE call** — design direction, scope
-  cut, architecture or tool choice, or a reversal — log it:
-  `gstack-decision-log '{"decision":"…","rationale":"…","scope":"repo","source":"user","confidence":8}'`
-  (`--supersede <id>` for a reversal). Turn-level edits and phrasing tweaks are never
-  logged — a noisy store is worse than none.
-
-No gstack on the machine → skip silently; the pipeline runs unchanged.
+- **DISCOVER start:** run `decisions.py recent 5` and treat what it lists as settled
+  calls with their rationale. Don't re-ask Pete a settled question; reversing one is
+  allowed, but say so explicitly.
+- **When a gate (or Pete mid-run) resolves a durable call** — design direction, scope
+  cut, architecture or tool choice — log it:
+  `decisions.py log '{"decision":"…","rationale":"…","source":"user"}'`. A reversal is
+  `decisions.py supersede <id> '<json>'`, with the id `recent` prints. Turn-level edits
+  and phrasing tweaks are never logged — a noisy store is worse than none.
 
 ## The pipeline — create a todo for each stage
 
@@ -359,7 +359,7 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
   for the repo's own surfaces. A ship that touches nothing of the repo's own still
   storyboards — Pete sees where the lifted thing sits in the app — and locks on that.
   **Ground the design in the live product**: a subagent walks the running app /
-  deployed URL over `/browse` and reports the real theme/CSS with screenshots;
+  deployed URL over the chrome-devtools MCP and reports the real theme/CSS with screenshots;
   design from those, never from in-repo mockups (incidents: Design).
 - **DISCOVER is a storyboard, not a document.** The first thing he
   sees is the app: an HTML page that is mostly mockups of the screens the feature
@@ -572,9 +572,17 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
   as broken (incidents: Backends). Never deploy to let him review; never tell him to
   "go look at the live site" — the worktree's localhost is the review surface.
   (Non-UI change → show the demo/test output instead.)
-- **Screenshots live outside the repo** — the job tmp dir, never committed (~6MB of PNGs
-  broke a push); copy anything the presented card references somewhere durable before
-  teardown, or the card 404s its own proof (incidents: Worktrees).
+- **Screenshots go in `<shots-root>/.ship-shots/<slug>/`, always as an absolute path**,
+  because the chrome-devtools MCP writes only inside the session's workspace roots and
+  resolves a relative path against the launch directory, which stops being a root once
+  the session enters a worktree. `<shots-root>` is the worktree the session entered;
+  on a cross-repo ship, where the session never entered one, it is the session's launch
+  directory. The driver writes that absolute path into every brief that screenshots.
+  Exclude `.ship-shots` in `<shots-root>`'s repo `info/exclude` the way `.ship-stage`
+  is, since it is never committed (~6MB of PNGs broke a push). Copy anything the
+  presented card references somewhere durable before teardown, or the card 404s its
+  own proof (incidents: Worktrees), then delete `<shots-root>/.ship-shots/<slug>/`,
+  which on a cross-repo ship is not inside the worktree teardown removes.
 - **Prove it works — invoke `verify` before the card.** A fresh read-only subagent
   drives the feature and returns `works | broken | unverifiable` + a
   screenshot storyboard; verify loops-to-fix (cap ~3). `broken` after the cap, or

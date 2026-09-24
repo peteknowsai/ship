@@ -31,37 +31,38 @@ boots its own.
 **The generic seam (don't cross it):** if the feature is behind auth, the **repo** must
 provide a local/test way to reach authed surfaces. verify does **not** mint sessions, bypass
 auth, or stand up infra — that's repo plumbing, and baking it in here would couple this skill
-to one app. If authed surfaces are unreachable and the repo offers no test-auth path, the
-blessed alternative before `unverifiable`: walk it in **`pane`**, which owns auth-walled
-and bot-walled surfaces (open a tab as your agent name; it keeps the logged-in session
-between calls and raises a handoff when a human is genuinely needed). Note in
-the verdict which route was used. Otherwise return `unverifiable` with the reason —
-never fake a pass.
+to one app. If authed surfaces are unreachable and the repo offers no test-auth path,
+return `unverifiable` naming the wall, and Pete walks it — never fake a pass.
 
 **The seeded account is the verifier's alone while a walk is in flight.** Never invite Pete
 to poke at the app on the same seeded user mid-round — his concurrent clicks read as bugs
 (a shared account once produced a false `broken` that cost a diagnosis round). Seed a second
-user for his hands-on look, or wait for the verdict. `/browse` is headless and
-isolated, so it never fights Pete for a tab — but its session state IS shared across
-calls, so two concurrent walks on one seeded account collide the same way.
+user for his hands-on look, or wait for the verdict. The chrome-devtools browser is
+headless with a fresh profile per session, so it never fights Pete for a tab — but two
+concurrent walks on one seeded account still collide on the backend.
 
 ## 2. Verify the feature (delegate) → fix → re-verify (loop ≤ 3)
 
 Brief from the plan/spec file if one exists (point the verifier at it), else inline the
 acceptance criteria. The verifier is a **fresh subagent** — fresh so it judges the
-feature rather than its own work. It drives the running app through the **`/browse`
-skill** (Pete's standing rule: `/browse` for plain headless browsing, `pane` for
-auth-walled surfaces, never the claude-in-chrome tools) and captures screenshots as it goes. The brief must open with "READ-ONLY: edit no source
+feature rather than its own work. It drives the running app through the
+**chrome-devtools MCP** (`mcp__chrome-devtools__*`, loaded with one ToolSearch call;
+never the claude-in-chrome tools) and captures screenshots as it goes. The brief must open with "READ-ONLY: edit no source
 files" — nothing enforces that at the tool layer, so the brief carries the constraint,
 and the driver eyeballs `git status` in the worktree after the run
 (any dirt → discard it, count the round as `unverifiable`):
 
 ```
-READ-ONLY: you may not edit, create, or delete any source file — throwaway Playwright
-scripts and screenshots go under /tmp/verify-<slug>/ only. Independently confirm THIS
-feature works by driving the running app with Playwright (the stack is already up at
-<URL> — reuse it, never boot your own). Most new features have no automated spec —
-verify it agentically.
+READ-ONLY: you may not edit, create, or delete any source file — screenshots go under
+<absolute shots path>/ only, always as absolute paths (the browser tool can write
+nowhere else, and it resolves relative paths somewhere it can't write).
+Independently confirm THIS feature works by driving the running app in the browser (the
+stack is already up at <URL> — reuse it, never boot your own). First load the browser
+tools in one call: ToolSearch "select:mcp__chrome-devtools__new_page,
+mcp__chrome-devtools__navigate_page,mcp__chrome-devtools__take_snapshot,
+mcp__chrome-devtools__click,mcp__chrome-devtools__fill,mcp__chrome-devtools__take_screenshot,
+mcp__chrome-devtools__list_console_messages,mcp__chrome-devtools__evaluate_script".
+Most new features have no automated spec — verify it agentically.
 
 FEATURE (what a user should now be able to do + the observable success state):
   <intent / acceptance criteria>            (or: see plan/spec file <path>)
@@ -77,8 +78,8 @@ BACKEND (repos with per-branch/preview backends):
   app reads, so your seeds land on one backend and the browser on another — that split-brain
   reports as a broken feature and burns the whole round.
 
-Drive the REAL flow with Playwright — walk the exact steps a user would, like clicking through
-it. Screenshot the MEANINGFUL BEATS (start → action → success), not a random dump. Judge
+Drive the REAL flow — walk the exact steps a user would, clicking through it. Check the
+console for errors along the way. Screenshot the MEANINGFUL BEATS (start → action → success), not a random dump. Judge
 observed vs expected. Return ONLY:
 
 VERDICT: works | broken | unverifiable
@@ -87,17 +88,13 @@ EXPECTED: <criteria>
 OBSERVED: <what actually happened>
 TASTE: <0-3 short "looked off / couldn't confirm" notes, or "none">
 
-This report is your FINAL MESSAGE — it lands in the -o result file the caller reads;
+This report is your FINAL MESSAGE — it is what the caller reads;
 finishing without it is an incomplete run.
 ```
 
-**Auth-walled surface (the AUTH line forces it):** walk it in **`pane`**, not
-`/browse` — pane is the standing route for anything credentialed or bot-walled, holds
-the logged-in session across calls, and raises a handoff when the wall (CAPTCHA, MFA,
-fingerprinting) genuinely needs a human. Say in the verdict which route was used. Park
-with a `needs input:` only when even that handoff needs Pete's hands. Screenshot reality:
-storyboard substitutes for the rest (acceptable evidence). Note in the verdict which
-route was used.
+**Auth-walled surface with no test-auth path (the AUTH line says so):** the verifier
+walks everything short of the wall, and the verdict is `unverifiable` naming the
+wall. Park with a `needs input:` so Pete walks that part himself.
 
 - **broken** → fix the implementation, then spawn a **fresh** verifier (never reuse the one
   that saw the bug — it's no longer independent of the fix). Cap at ~3 rounds.
@@ -117,7 +114,7 @@ behavior, re-verify (§2).
 ## 4. Crystallize — core journeys only
 
 If the feature is a genuine **core journey** — auth, money, a primary product flow, NOT every
-small feature — write the Playwright drive you just ran out as a committed `.spec.ts` in the
+small feature — write the drive you just walked as a committed Playwright `.spec.ts` in the
 repo's e2e location, folded into the feature's own diff. Stable selectors (role/label/text;
 add a small `data-testid` only when there's no good handle — never a brittle CSS path). Most
 features: skip this — drive, prove, report, done. The standing suite stays thin: core flows,
