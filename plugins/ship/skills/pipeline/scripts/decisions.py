@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Settled calls per repo, so a later ship doesn't re-ask Pete what he already decided.
 
+  decisions.py relevant "<idea>" [N]         the N decisions (default 6) that bear on the idea
   decisions.py recent [N]                    the N newest active decisions (default 5)
   decisions.py log '<json>'                  record one: {"decision","rationale","source"}
   decisions.py supersede <id> '<json>'       record a reversal; the old one stops showing
@@ -10,6 +11,11 @@ Run from inside the repo. Each repo has one append-only event log,
 ~/.claude/ship-decisions/<owner>-<repo>.jsonl (SHIP_DECISIONS overrides the directory),
 named from the origin remote, else from the main checkout's folder. The format is the
 one gstack's decision store used, so its history migrated as is.
+
+`relevant` asks Jev (route.py's key and endpoint) to score every active decision
+against the idea in one request, because the newest five hide the old call that
+settles the thing being changed. Any failure falls back to `recent`, so recall never
+blocks a run.
 """
 import datetime
 import json
@@ -80,13 +86,71 @@ def decide(raw, supersedes=None):
     return event
 
 
-def recent(path, n):
+def show(chosen):
     lines = []
-    for e in sorted(active(path), key=lambda e: e.get('date', ''), reverse=True)[:n]:
+    for e in chosen:
         lines.append(f"- {e['decision']} ({e.get('source', '?')}, {e.get('date', '')[:10]}) [{e['id'][:8]}]")
         if e.get('rationale'):
             lines.append(f"  why: {e['rationale']}")
     return '\n'.join(lines)
+
+
+def recent(path, n):
+    return show(sorted(active(path), key=lambda e: e.get('date', ''), reverse=True)[:n])
+
+
+RELEVANCE = [
+    'Unrelated to the idea',
+    'Same area, but does not settle anything the idea needs',
+    'Settles a choice the idea will face, or rules out an approach to it',
+]
+BATCH = 150  # decisions per Jev request, well under its 64k-token limit
+
+
+def scores(idea, decisions):
+    """Jev's relevance score for each decision, in order. Raises on any failure."""
+    if os.environ.get('DECISIONS_RESPONSE'):  # the self-test's canned reply
+        answers = json.load(open(os.environ['DECISIONS_RESPONSE']))['answers']
+    else:
+        import urllib.request
+        import route
+        key = route.api_key()
+        if not key:
+            raise RuntimeError('no TypeSafe key')
+        answers = {}
+        for start in range(0, len(decisions), BATCH):
+            chunk = {f'd{i}': decisions[i]['decision'][:2000]
+                     for i in range(start, min(start + BATCH, len(decisions)))}
+            questions = {k: {'type': 'score', 'criteria': RELEVANCE, 'instructions': {
+                'decision': f'`decisions.{k}`', 'idea': '`idea`',
+                'question': 'Does this settled decision constrain or answer something the new idea will have to decide?'}}
+                for k in chunk}
+            body = json.dumps({'model': 'jev-latest', 'state': {'idea': idea, 'decisions': chunk},
+                               'questions': questions}).encode()
+            request = urllib.request.Request(route.JEV_URL, body, {'Authorization': f'Bearer {key}',
+                                                                   'Content-Type': 'application/json'})
+            with urllib.request.urlopen(request, timeout=30) as response:
+                answers.update(json.load(response)['answers'])
+    out = []
+    for i in range(len(decisions)):
+        score = answers[f'd{i}']['score']
+        if not isinstance(score, (int, float)) or isinstance(score, bool):
+            raise ValueError(f'd{i}: no numeric score')
+        out.append(score)
+    return out
+
+
+def relevant(path, idea, n):
+    decisions = active(path)
+    if not decisions:
+        return ''
+    try:
+        ranked = sorted(zip(scores(idea, decisions), decisions), key=lambda p: -p[0])
+    except Exception as error:  # recall must never block a run
+        print(f'decisions: Jev unavailable ({type(error).__name__}: {error}); showing the newest instead',
+              file=sys.stderr)
+        return recent(path, n)
+    return show(e for _, e in ranked[:n])
 
 
 def full_id(path, prefix):
@@ -125,6 +189,18 @@ def selftest():
                 check(f'a decision {name} is refused', True)
         forged = decide('{"decision":"C","rationale":"r","id":"aaaa","kind":"note"}')
         check('a payload cannot set its own id or kind', forged['id'] != 'aaaa' and forged['kind'] == 'decide')
+
+        many = os.path.join(tmp, 'many.jsonl')
+        for i, text in enumerate(['old voice rule', 'billing', 'newest thing', 'sidebar']):
+            append(many, {**decide(json.dumps({'decision': text, 'rationale': 'r'})), 'date': f'2026-09-0{i + 1}'})
+        reply = os.path.join(tmp, 'reply.json')
+        json.dump({'answers': {'d0': {'score': 1.9}, 'd1': {'score': 0.1},
+                               'd2': {'score': 0.2}, 'd3': {'score': 0.3}}}, open(reply, 'w'))
+        os.environ['DECISIONS_RESPONSE'] = reply
+        check('relevance beats recency', relevant(many, 'pick a voice', 1).startswith('- old voice rule'))
+        json.dump({'answers': {'d0': 1}}, open(reply, 'w'))
+        check('a bad reply falls back to the newest', relevant(many, 'pick a voice', 1).startswith('- sidebar'))
+        del os.environ['DECISIONS_RESPONSE']
     print(f'decisions self-test: {fails} failed')
     return fails == 0
 
@@ -133,7 +209,11 @@ if __name__ == '__main__':
     args = sys.argv[1:]
     if args == ['--selftest']:
         sys.exit(0 if selftest() else 1)
-    if args and args[0] == 'recent' and len(args) <= 2:
+    if args and args[0] == 'relevant' and len(args) in (2, 3):
+        if len(args) == 3 and not args[2].isdigit():
+            sys.exit('decisions: relevant takes a positive count')
+        print(relevant(store(), args[1], int(args[2]) if len(args) == 3 else 6))
+    elif args and args[0] == 'recent' and len(args) <= 2:
         if len(args) == 2 and not args[1].isdigit():
             sys.exit('decisions: recent takes a positive count')
         print(recent(store(), int(args[1]) if len(args) == 2 else 5))

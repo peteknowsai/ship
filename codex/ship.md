@@ -1,6 +1,6 @@
 ---
 name: ship
-description: Ship product changes with express, self-directed, or gated workflows. Supports /ship express, /ship design, and /ship next. Use for implementation requests, not questions or pure research.
+description: Ship product changes with express, self-directed, or gated workflows. Supports /ship express and /ship design. Use for implementation requests, not questions or pure research.
 ---
 
 # Ship in Codex
@@ -20,11 +20,6 @@ nested coding sessions, or user-visible tasks for internal work.
 - Bare `/ship <change>` or an implementation request: choose express for a small
   change. Otherwise work self-directed unless a new design or unresolved scope needs
   Pete's judgment. Do not invent gates for mechanics already authorized.
-- `/ship next`: read the board's Next column, enrich thin cards using repo context,
-  and report ship-now, needs-design, and too-thin groups. Ship whole cards sequentially,
-  each in its own worktree. Present one combined design review for needs-design cards.
-  Leave too-thin cards with the specific missing question. No board means explain that
-  this verb cannot run. A failed card does not block unrelated cards.
 
 Self-directed work needs only the execution notes required to coordinate it. No
 storyboard, plan card, or review card unless it helps a real decision. Scope stays
@@ -142,7 +137,7 @@ Stop run-owned servers, remove the stage marker, and release run-owned previews 
 safe. Never delete another run's resources. Deploy only through the repo's authorized
 lane and watch the exact commit's deployment to completion before claiming it is live.
 
-Update existing board cards when authorized. Keep unrelated suggestions as notes until
+Keep unrelated suggestions as notes on the review card until
 Pete asks to file them. Read existing decision history when helpful, but never write
 persistent memory without an explicit request. Do not turn a run into skill surgery.
 
