@@ -127,7 +127,9 @@ Dispatch).
 
 **Codex down or signed out** (repeating exit codes, `refresh_token_invalidated` in
 `stderr.txt`): send Astra's tasks to Opus subagents meanwhile rather than parking the
-ship, and say so on the review card.
+ship, and say so on the review card. Down means this ship's own `astra.sh` run failed
+that way. A note in the ship's args, a memory or an earlier session's outage is not
+evidence: route to Astra and let the run say.
 
 **The driver writes inline anything under one file and ~50 lines**: config, glue
 between two tasks, a test tweak, a small fix from triage. Mark those tasks `(inline)`
@@ -433,7 +435,10 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
 
 ### 3 · BUILD — automatic  → marker: `build:N:M` (N done of M tasks)
 
-- Write `build:0:<M>`; bump N per task. Build all M tasks in one session; commit
+- `route.py plan` already moved the marker to `build:0:<M>`, and each `route.py log`
+  counts one task done, so `(inline)` and `(driver)` tasks log too, with
+  `engine=driver`. A run that skipped the router writes `build:0:<M>` itself before the
+  first dispatch; a status line still on `plan` mid-BUILD is the tell. Build all M tasks in one session; commit
   each task on the branch as it lands, merge only when the whole plan is built.
 - Invoke `superpowers:subagent-driven-development` (the driver drives) and send each
   task to the engine `route.py plan` picked (Engines), in the background; `(inline)`
@@ -496,7 +501,8 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
   (`specs/designs/<storyboard>.html#<frame-id>`; the worker reads the frame's markup
   and CSS, which is why a frame beats a PNG), and — since a subagent does not get the
   impeccable hook — tells it to read
-  `~/.claude/skills/impeccable/reference/craft-floor.md` and honor its checks and bans.
+  `~/.claude/skills/impeccable/reference/craft-floor.md` and honor its checks and bans,
+  plus the three model defaults the storyboard contract bans.
   *Transplant:* a brief that touches a reference surface carries the reference path,
   the component to lift (grep the bundle for the id, take the class strings and the
   tree between), the rule lift it, never re-measure it, and the repo's parity check
@@ -655,6 +661,9 @@ Render `reference/storyboard.html` — a page that is the app, not a page about 
   the page's script, so the product's sheet styles the frame and nothing else, `:root`
   tokens resolve, and a hover, an open menu or a tab works where the feature has one,
   so Pete can poke it. Directions in play are sibling frames of the same screen.
+- **Where the product's sheet doesn't decide, the model's own defaults are out**: a
+  cream or off-white page, an italic accent word in a headline, pill-shaped buttons.
+  The craft floor already bans numbered section labels and monospace as costume.
 - **Captions** — one line per frame: what is new in it. A transplant frame's caption
   names the reference component it lifts.
 - **The questions** — two or three, the ones a designer would bring, each with the
