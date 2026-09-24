@@ -97,7 +97,7 @@ code{font-size:14px}
 <ul>
 <li>Fable quota: a quarter of BUILD plus two reviews. On a 12-task plan that is 3 tasks.</li>
 <li>Sandbox asymmetry: only Astra cannot start a local server, so its server tests are expected failures. The ledger's first-pass rate reads Astra's gates after the driver's own run, not the sandbox's.</li>
-<li>Tiny plans: a 1-task plan sends that task to Fable, because it is the hardest by rank. Mark small tasks (inline).</li>
+<li>Rounding: odd splits round toward Astra, and Fable gets a quarter rounded down, but the hardest task always goes to Fable. Five tasks split 3, 1, 1. A 1-task plan sends its task to Fable, so mark small tasks (inline).</li>
 </ul>
 </details>
 

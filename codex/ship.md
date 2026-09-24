@@ -70,8 +70,6 @@ For `/ship design` or a visual gated change:
    choices with recommendations, and material risk. Mark `gate:2` and wait for go.
 4. After go, write machine-facing execution notes with acceptance criteria, reusable
    components, file ownership, relevant gates, and exact storyboard frame references.
-   A fresh Astra subagent reviews the notes against the design before BUILD: a missing
-   task, a wrong file, a test that cannot fail, an order that breaks. Fix what's real.
 
 A nonvisual taste or scope decision can be resolved in concise prose without a mockup.
 Use the existing docs home. Open HTML through Codex's file panel or serve it locally
@@ -82,6 +80,10 @@ Read installed impeccable guidance when designing UI. Do not expand approved sco
 
 Make small, coherent edits directly. Delegate only when context isolation, independent
 judgment, or parallel execution saves work. Don't pay for an agent just to relay a task.
+
+Any lane with execution notes gets them reviewed first: a fresh Astra subagent reads
+them against the request or the locked design and reports a missing task, a wrong
+file, a test that cannot fail, or an order that breaks. Fix what's real, then build.
 
 - Use collaboration subagents with `model: "gpt-6-astra"`, `fork_turns: "none"`, and
   a self-contained brief. Reasoning effort is high for every worker and for the

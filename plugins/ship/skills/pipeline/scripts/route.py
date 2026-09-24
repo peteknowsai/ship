@@ -35,7 +35,13 @@ LEVELS = [
     'modes that need careful reasoning to get right.',
 ]
 QUESTION = 'How hard is this coding task for an AI coding agent to complete correctly on the first attempt?'
-BUDGET_CHARS = 180_000  # Jev takes 64k tokens per request; this keeps the whole plan well under it
+# Jev takes 64k tokens per request, and pasted code runs near 3 characters a token. Each
+# task's question repeats the rubric (~800 characters), so a request packs tasks until
+# text plus questions reach this, and a big plan takes several requests. The scores sit
+# on one fixed rubric, so tasks from different requests still rank against each other.
+REQUEST_CHARS = 120_000
+TASK_CHARS = 20_000
+QUESTION_CHARS = 800
 
 
 def ledger_path():
@@ -43,12 +49,20 @@ def ledger_path():
 
 
 def parse_tasks(text):
-    parts = re.split(r'^#{2,3} (Task\b[^\n]*)\n', text, flags=re.M)
-    tasks = []
-    for i in range(1, len(parts), 2):
-        title = parts[i].strip()
-        tasks.append({'n': len(tasks) + 1, 'title': title, 'body': parts[i + 1].strip(),
-                      'driver': bool(re.search(r'\((driver|inline)\)', title, re.I))})
+    """`## Task` / `### Task` headings outside code fences; a plan pastes code into its tasks."""
+    tasks, fenced = [], False
+    for line in text.splitlines():
+        if line.lstrip().startswith(('```', '~~~')):
+            fenced = not fenced
+        heading = None if fenced else re.match(r'#{2,3} (Task\b.*)', line)
+        if heading:
+            title = heading.group(1).strip()
+            tasks.append({'n': len(tasks) + 1, 'title': title, 'lines': [],
+                          'driver': bool(re.search(r'\((driver|inline)\)', title, re.I))})
+        elif tasks:
+            tasks[-1]['lines'].append(line)
+    for t in tasks:
+        t['body'] = '\n'.join(t.pop('lines')).strip()
     return tasks
 
 
@@ -63,40 +77,65 @@ def api_key():
         return None
 
 
+def batches(routable):
+    batch, size = [], 0
+    for t in routable:
+        cost = min(len(t['title']) + len(t['body']) + 1, TASK_CHARS) + QUESTION_CHARS
+        if batch and size + cost > REQUEST_CHARS:
+            yield batch
+            batch, size = [], 0
+        batch.append(t)
+        size += cost
+    if batch:
+        yield batch
+
+
 def ask_jev(routable):
     """Scores by task number, and the model that gave them. Raises on any failure."""
     if os.environ.get('ROUTE_RESPONSE'):  # the self-test's canned reply
-        reply = json.load(open(os.environ['ROUTE_RESPONSE']))
+        replies = [json.load(open(os.environ['ROUTE_RESPONSE']))]
     else:
         key = api_key()
         if not key:
             raise RuntimeError('no TypeSafe key (TYPESAFE_API_KEY or keychain service "typesafe")')
-        cap = min(20_000, BUDGET_CHARS // max(1, len(routable)))
-        state = {'tasks': {f"t{t['n']}": (t['title'] + '\n' + t['body'])[:cap] for t in routable}}
-        questions = {f"t{t['n']}": {'type': 'score', 'criteria': LEVELS,
-                                    'instructions': {'task': f"`tasks.t{t['n']}`", 'question': QUESTION}}
-                     for t in routable}
-        body = json.dumps({'model': 'jev-latest', 'state': state, 'questions': questions}).encode()
-        request = urllib.request.Request(JEV_URL, body, {'Authorization': f'Bearer {key}',
-                                                         'Content-Type': 'application/json'})
-        with urllib.request.urlopen(request, timeout=30) as response:
-            reply = json.load(response)
-    answers = reply['answers']
-    return {t['n']: answers[f"t{t['n']}"] for t in routable}, reply.get('model')
+        replies = []
+        for batch in batches(routable):
+            state = {'tasks': {f"t{t['n']}": (t['title'] + '\n' + t['body'])[:TASK_CHARS] for t in batch}}
+            questions = {f"t{t['n']}": {'type': 'score', 'criteria': LEVELS,
+                                        'instructions': {'task': f"`tasks.t{t['n']}`", 'question': QUESTION}}
+                         for t in batch}
+            body = json.dumps({'model': 'jev-latest', 'state': state, 'questions': questions}).encode()
+            request = urllib.request.Request(JEV_URL, body, {'Authorization': f'Bearer {key}',
+                                                             'Content-Type': 'application/json'})
+            with urllib.request.urlopen(request, timeout=30) as response:
+                replies.append(json.load(response))
+    answers = {k: v for reply in replies for k, v in reply['answers'].items()}
+    scores = {}
+    for t in routable:
+        answer = answers[f"t{t['n']}"]
+        if not isinstance(answer.get('score'), (int, float)) or isinstance(answer['score'], bool):
+            raise ValueError(f"t{t['n']}: no numeric score in {answer!r}"[:200])
+        scores[t['n']] = answer
+    return scores, replies[0].get('model')
 
 
 def assign(routable, scores):
-    """The ladder: rank by score, ties in plan order, and cut at the 50th and 75th percentile."""
+    """The ladder: rank by score, ties in plan order. The easier half goes to Astra
+    (rounded up), the hardest quarter to Fable (rounded down, but the hardest task
+    always), and Opus takes what is between. Rounding favours the plentiful engine."""
     ranked = sorted(routable, key=lambda t: (scores[t['n']]['score'], t['n']))
-    engines = {}
-    for i, t in enumerate(ranked):
-        pct = (i + 1) / len(ranked)
-        engines[t['n']] = 'astra' if pct <= 0.5 else 'opus' if pct <= 0.75 else 'fable'
-    return engines
+    n = len(ranked)
+    fable = max(1, n // 4)
+    astra = min(n - fable, (n + 1) // 2)
+    return {t['n']: 'astra' if i < astra else 'fable' if i >= n - fable else 'opus'
+            for i, t in enumerate(ranked)}
 
 
 def plan(path):
-    tasks = parse_tasks(open(path).read())
+    try:
+        tasks = parse_tasks(open(path).read())
+    except OSError as error:
+        raise SystemExit(f'route: {error}')
     if not tasks:
         raise SystemExit(f'route: no "### Task" headings in {path}')
     routable = [t for t in tasks if not t['driver']]
@@ -107,7 +146,7 @@ def plan(path):
             engines = assign(routable, scores)
         except Exception as error:  # a router must never stop a build
             fallback = f'{type(error).__name__}: {error}'
-            engines = {t['n']: 'astra' for t in routable}
+            scores, engines = {}, {t['n']: 'astra' for t in routable}
     out = []
     for t in tasks:
         s = scores.get(t['n'], {})
@@ -122,8 +161,8 @@ def plan(path):
 
 
 def coerce(value):
-    if value in ('true', 'false'):
-        return value == 'true'
+    if value.lower() in ('true', 'false'):
+        return value.lower() == 'true'
     for kind in (int, float):
         try:
             return kind(value)
@@ -133,6 +172,8 @@ def coerce(value):
 
 
 def log(pairs):
+    if not pairs:
+        raise SystemExit('route log: nothing to log; pass key=value pairs')
     row = {'ts': time.strftime('%Y-%m-%dT%H:%M:%S')}
     for pair in pairs:
         key, sep, value = pair.partition('=')
@@ -151,10 +192,15 @@ def band(score):
 
 
 def report():
+    rows = []
     try:
-        rows = [json.loads(line) for line in open(ledger_path()) if line.strip()]
+        for line in open(ledger_path()):
+            try:
+                rows.append(json.loads(line))
+            except ValueError:
+                pass  # a half-written line from a concurrent ship; the rest still counts
     except FileNotFoundError:
-        rows = []
+        pass
     groups = {}
     for row in rows:
         groups.setdefault((row.get('engine', '?'), band(row.get('score'))), []).append(row)
@@ -195,16 +241,31 @@ def selftest():
         check('bottom half on Astra', sorted(n for n, e in got.items() if e == 'astra') == [1, 5, 7, 9])
         check('50th to 75th on Opus', sorted(n for n, e in got.items() if e == 'opus') == [4, 8])
         check('top quarter on Fable', sorted(n for n, e in got.items() if e == 'fable') == [2, 6])
+        for name, answers in [('bare numbers', {f't{n}': 1 for n in scores}),
+                              ('string scores', {f't{n}': {'score': str(s)} for n, s in scores.items()})]:
+            json.dump({'answers': answers}, open(reply, 'w'))
+            result = plan(plan_md)
+            check(f'a reply of {name} falls back instead of crashing', result['fallback'] and
+                  {t['engine'] for t in result['tasks'] if t['n'] != 3} == {'astra'})
+        few = os.path.join(tmp, 'few.md')
+        open(few, 'w').write(''.join(f'### Task {n}: t\n\n```md\n### Task 99: an example inside a fence\n```\n\n'
+                                     for n in range(1, 6)))
+        json.dump({'answers': {f't{n}': {'score': n} for n in range(1, 6)}}, open(reply, 'w'))
+        got = [t['engine'] for t in plan(few)['tasks']]
+        check('a heading inside a code fence is not a task', len(got) == 5)
+        check('five tasks round toward Astra: 3, 1, 1', got == ['astra'] * 3 + ['opus', 'fable'])
         del os.environ['ROUTE_RESPONSE']
         os.environ.update(TYPESAFE_API_KEY='', ROUTE_NO_KEYCHAIN='1')
         result = plan(plan_md)
         check('no key falls back to Astra', result['fallback'] and
               {t['engine'] for t in result['tasks'] if t['n'] != 3} == {'astra'})
         log(['repo=ship', 'task=2', 'engine=fable', 'score=3.4', 'seconds=300', 'fix_rounds=1', 'gates_first_pass=false'])
-        log(['repo=ship', 'task=1', 'engine=astra', 'score=0.8', 'seconds=120', 'fix_rounds=0', 'gates_first_pass=true'])
+        open(ledger_path(), 'a').write('{"half a line\n')
+        log(['repo=ship', 'task=1', 'engine=astra', 'score=0.8', 'seconds=120', 'fix_rounds=0', 'gates_first_pass=True'])
         table = report()
-        check('the ledger reports by engine and difficulty',
-              'fable   hard 2.5+      1         0%        1.0      5.0' in table and 'astra   easy <1.5' in table)
+        check('the ledger reports by engine and difficulty, past a broken line',
+              'fable   hard 2.5+      1         0%        1.0      5.0' in table and
+              'astra   easy <1.5      1       100%' in table)
     print(f'route self-test: {fails} failed')
     return fails == 0
 

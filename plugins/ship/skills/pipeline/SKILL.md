@@ -217,7 +217,7 @@ use, and — for repos that shouldn't ship at all (wikis, civic work) — `ship:
 which means decline and say why. homezero's AGENTS.md is the model. A repo with no
 contract gets best-effort: whatever gates you can find, merge to main, no deploy claim.
 
-Two more keys, each from a repo that could not run ship without it (cells, 2026-09-03):
+Two more keys, each from a repo that could not run ship without it:
 
 - **`land: <command>`** — how a finished branch reaches main when the PR path is wrong
   for the repo (a mirror remote, a local-only main, a promote hook that builds on push).
@@ -259,8 +259,8 @@ No gstack on the machine → skip silently; the pipeline runs unchanged.
 ## The pipeline — create a todo for each stage
 
 Each stage writes its marker to `.ship-stage` at the git root (the status line + the
-FleetView row read it). Written for Claude Code; a Codex Desktop driver applies the
-swaps in "Running under Codex Desktop" below.
+FleetView row read it). Written for Claude Code; a Codex driver runs `codex/ship.md` instead (see
+"Running under Codex Desktop" below).
 
 ### 0 · Worktree (invisible)  → marker: `discover`
 
@@ -283,7 +283,7 @@ even though `.ship-stage` is being written faithfully in the worktree (he has ha
 mid-BUILD whether a run forked at all). Absolute-path driving is the *cross-repo*
 fallback only, where `EnterWorktree` can't take. Self-heal: notice mid-pipeline that
 the session cwd isn't the worktree → `EnterWorktree({path})` right then; it works fine
-after the fact. Codex Desktop: absolute paths throughout. `--no-cd` is load-bearing. A `.config/wt.toml` auto-provisions
+after the fact. `--no-cd` is load-bearing. A `.config/wt.toml` auto-provisions
 gitignored runtime files. Write `printf 'discover' > <root>/.ship-stage`, then
 **`echo .ship-stage >> $(git rev-parse --git-common-dir)/info/exclude`** — `git add -A`
 sweeps the marker into commits otherwise (incidents: Worktrees). Never build on main.
@@ -548,7 +548,7 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
   runs `ponytail-review` (the over-build sweep). The driver triages every finding
   — adversarial reviewers over-flag by design — fixes what's real, puts judgment calls
   on the card. The high-value fan-out is here: several verifiers on one diff beats one.
-- **Design QA for visual features** — a background supervisor first runs
+- **Design QA for visual features** — a background Opus 5.5 subagent first runs
   impeccable's deterministic detector over the branch's changed UI files
   (`node ~/.claude/skills/impeccable/scripts/detect.mjs --json <files>` — local, no
   network), then walks the built surfaces and judges them side-by-side against the
@@ -575,7 +575,7 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
 - **Screenshots live outside the repo** — the job tmp dir, never committed (~6MB of PNGs
   broke a push); copy anything the presented card references somewhere durable before
   teardown, or the card 404s its own proof (incidents: Worktrees).
-- **Prove it works — invoke `verify` before the card.** A fresh read-only supervisor
+- **Prove it works — invoke `verify` before the card.** A fresh read-only subagent
   drives the feature and returns `works | broken | unverifiable` + a
   screenshot storyboard; verify loops-to-fix (cap ~3). `broken` after the cap, or
   `unverifiable` → do NOT merge: end the turn with `needs input:` ("review: <feature>
@@ -598,8 +598,7 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
   Worktrees — both orderings that deviate have stranded ships):
   0. Pre-flight *from the worktree*: `git fetch origin`; if main moved, absorb +
      re-gate + push; confirm `gh pr view <#> --json mergeable` says `MERGEABLE`.
-  1. Return to the main checkout (`ExitWorktree({action:"keep"})`; Codex: absolute
-     paths).
+  1. Return to the main checkout (`ExitWorktree({action:"keep"})`).
   2. `wt remove feature/<slug> -f` — frees the branch for `--delete-branch`.
   3. `gh pr merge <#> --squash --delete-branch` — from the main checkout.
   4. `git pull --ff-only` (+ `git branch -D feature/<slug>` if a local branch
@@ -746,28 +745,11 @@ this — approval is always async.
 
 ## Running under Codex Desktop
 
-Same pipeline, gates, and artifacts — these swaps apply only when the driver is a Codex
-Desktop session:
-
-- **Astra drives and builds; no Anthropic model runs.** No `route.py`, no Opus or
-  Fable subagents: Astra writes the plan, builds every task (itself or through Astra
-  workers), and a fresh Astra context does the plan review and the correctness review.
-  High effort throughout. The packaged Codex skill is `codex/ship.md`.
-
-- **Worktrees: Codex owns birth and cleanup — never run `wt` against a Codex-managed
-  worktree.** Preferred start: the thread already in Worktree mode off `main`. Sanity-
-  check location (`git rev-parse --show-toplevel`); if detached HEAD, `git switch -c
-  feature/<slug>` before the first commit. Thread is Local on `main` → do NOT edit;
-  stop with `needs input: click Fork into new worktree for this ship`.
-- **Artifacts open in Codex's in-app Browser** — serve the artifact's directory on
-  localhost and navigate there (`file://` is unreliable); a running app's URL opens
-  directly.
-- **Merge is the PR path only**, never from inside the branch's worktree; then
-  `rm .ship-stage`, stop the dev server, deprovision the preview — but leave worktree
-  cleanup to Codex (archive the thread).
-- **No status line, no FleetView** — narration carries the load alone; every status /
-  `needs input:` / `result:` line ends with the breadcrumb, and `hooks/gate-notify.sh`
-  runs manually at gates if present.
+A Codex driver does not run this file. It runs the packaged Codex skill, built from
+`codex/ship.md` by `scripts/build-codex.py`, which owns every Codex difference: Astra
+drives and builds, no Anthropic model and no `route.py` run, a fresh Astra context
+reviews the plan and the branch, effort is high throughout, and Codex's own worktree,
+browser and landing rules apply. Change Codex behavior there, never here.
 
 ## Gate signals — how a parked ship reaches Pete
 
@@ -793,8 +775,7 @@ The dashboard reflects the session — make it a ship board:
   it starts `result:` → *completed*. Mid-work narration keeps it in *working*.
 - **End `needs input:` and `result:` lines with `branch <branch> · worktree <path>`**
   (`detached@<short-sha>` until a branch exists) — Pete must always know which checkout
-  he's looking at; it's what catches the cross-repo case, and under Codex Desktop it's
-  the only location signal there is.
+  he's looking at; it's what catches the cross-repo case.
 
 ## What this skill deliberately does NOT do — including two standing skill overrides
 
