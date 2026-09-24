@@ -6,6 +6,12 @@ These are facts, not process — the process lives in SKILL.md.
 
 ## Worktrees & git
 
+- **The browser writes screenshots only inside the session's workspace roots**
+  (2026-09-24, when gstack's `/browse` gave way to the chrome-devtools MCP). A verifier
+  saving to `/tmp` got "Access denied: not within any of the configured workspace
+  roots". The session's working directory and its added directories are roots; the
+  scratchpad and `~/.claude` are not. Hence `.ship-shots/<slug>/` under the session's
+  working directory, excluded from git.
 - **Landed worktrees piled up in cells, 82 GB of instances with them** (2026-09-24).
   Seven clean, merged worktrees sat for days, three holding a later ship's branch
   because a session had switched branches inside a finished tree; cells names each

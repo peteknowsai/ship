@@ -20,7 +20,7 @@ Start the brief with "READ-ONLY: do not edit, create, or delete source files."
 Temporary checks and screenshots go under a per-run temporary directory. Tell the
 verifier to use available browser or native app tools for UI, or shell tools for API
 and CLI behavior. For skill changes, exercise realistic workflow decisions instead
-of inventing a browser UI. Do not require `/browse`, `pane`, or Claude-specific tools.
+of inventing a browser UI. Do not require Claude-specific tools.
 
 An existing authorized session or the repo's test-auth path is usable. Never bypass
 auth or manufacture credentials. Unreachable real behavior is `unverifiable`.
