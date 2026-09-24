@@ -15,9 +15,11 @@ expect() { local name=$1 want=$2 got=$3
   case "$got" in *"$want"*) echo "  ok   $name" ;; *) echo "  FAIL $name: got '$got', wanted '$want'"; fails=$((fails+1)) ;; esac; }
 
 printf 'REVIEW\nbranch: x\n' > "$T/target.thing/.ship-stage"
-expect "codex bare word on line 1" "plan · build" "$(line1 s0 "$T/target.thing")"
+expect "codex bare word on line 1" "build · test" "$(line1 s0 "$T/target.thing")"
 printf 'stage: gate:1\nbranch: x\n' > "$T/target.thing/.ship-stage"
 expect "codex stage key"           "thing — storyboard?" "$(line1 s0 "$T/target.thing")"
+echo 'test' > "$T/target.thing/.ship-stage"
+expect "parked for Pete's test"    "thing — test it, then merge main?" "$(line1 s0 "$T/target.thing")"
 echo 'build:2:5' > "$T/target.thing/.ship-stage"
 echo "$T/target.thing" > "$HOME/.claude/ship-active/s1"
 expect "cross-repo pointer"        "🚢 thing" "$(line1 s1 "$T/launch")"

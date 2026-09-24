@@ -38,28 +38,32 @@ marker flip is how Pete *sees* ship engage.
 
 ## Sizing — every change ships; you pick the ceremony
 
-The rails are constant: worktree off main → change → prove it → merge via PR (or the
-contract's `land:` command) → dev
-lane — nothing ever edits main directly, however tiny, and Pete does nothing unless a
-gate genuinely needs him. What scales is the ceremony, and you size it, not Pete:
+The rails are constant: worktree off main, its branch pushed at once with a draft PR
+tracking it → change, pushed at every milestone so the host builds a preview → prove it →
+**TEST: Pete tries it on the preview links and says "merge main"** → land (squash the PR)
+→ the host deploys what main deploys. Nothing ever edits main directly, however tiny, and
+nothing lands without Pete's word: main is where things go live. What scales is the
+ceremony before TEST, and you size it, not Pete:
 
 - **EXPRESS — a quick tweak or fix.** Whole diff visible before you start, no money
   path. No spec, no plan, no cards, no stops: worktree → change → repo gates
-  (tsc/tests) → self-drive the affected flow → fast PR, merged on green → dev lane →
+  (tsc/tests) → self-drive the affected flow → push, links → TEST → land on his word →
   `result:` line. A dab of `ponytail` (smallest diff), and `impeccable` for anything
-  visual. Pete finds out from the `result:` line, not before.
+  visual. The first Pete hears of it is the links.
 - **SELF-DIRECTED — real work with no taste question in it.** Write whatever
   machine-facing spec/plan *you* need to build it well, then build, run the full REVIEW
-  machinery (the fresh-eyes review + `verify` — a `works` verdict is the merge bar), merge,
-  deploy to dev, `result:`. Zero stops — the artifacts are for the record, not
-  approval.
+  machinery (the fresh-eyes review + `verify` — a `works` verdict is the bar for TEST),
+  then TEST, land on his word, `result:`. No stops before TEST — the artifacts are for the
+  record, not approval.
 - **GATED — Pete's taste or direction is genuinely in play.** A new user-facing
   surface, visual identity, a product tradeoff, ambiguous scope, a money path — the
   gated pipeline below.
 
 **The gate test is never size — it's whether Pete's answer would change what gets
 built** (or the change is risky/irreversible). If his input wouldn't change the outcome,
-don't stop. Autonomous lanes merge only on green gates + a `works` verdict.
+don't stop. Every lane reaches TEST only on green gates + a `works` verdict, and lands
+only on Pete's "merge main". A repo whose main deploys nothing may declare `land: auto`,
+and only there does a green `works` land without him.
 Mid-flight, promote the moment taste or direction appears (park, write the spec from
 what you've learned, present GATE 1); size alone moves EXPRESS → SELF-DIRECTED, never to
 a gate. Never use an autonomous lane to slip a taste call past Pete.
@@ -185,30 +189,59 @@ harness wakes you when it lands.
    presented rounds, each a hard stop — see stage 1). GATE 2 = his "go" on the HTML
    plan card (stage 2). Both always fire on the GATED lane: storyboard, lock, plan,
    go, spec, build. A storyboard he iterated earns a plan he reads, even with zero
-   calls on it, and the plan is one screen. SELF-DIRECTED and EXPRESS render no cards and stop for
-   nobody; a money path stops on any lane. When a gate fires, it is a **HARD STOP** —
-   present the artifact and wait.
+   calls on it, and the plan is one screen. SELF-DIRECTED and EXPRESS render no cards and stop
+   only at TEST; a money path stops on any lane. When a gate fires, it is a **HARD STOP** —
+   present the artifact and wait. TEST is not a third gate on the design: it is where
+   Pete tries the running thing, and it applies to every lane.
 
-**Pete's stack:** his global instructions carry the standing stack — flue · Cloudflare ·
-Convex · Clerk · Stripe · Next. Never re-ask it. The repo's own `CLAUDE.md` /
+**Pete's stack:** his global instructions carry the standing stack — Eve · Vercel ·
+Convex · Clerk · Stripe · Next (Cloudflare keeps DNS, R2 and the Workers already running). Never re-ask it. The repo's own `CLAUDE.md` /
 `AGENTS.md` overrides it where it diverges.
 Escalate a library choice only when it's both architectural *and* outside the canon.
 
 ## The ship contract — what a repo tells ship
 
-A repo declares how ship runs it in its `CLAUDE.md` / `AGENTS.md`: the gate commands
-(tests, typecheck, production build), the deploy lanes and their scripts, per-branch
-preview provisioning where a shared backend exists, a test-auth path verify may
-use, and — for repos that shouldn't ship at all (wikis, civic work) — `ship: no`,
-which means decline and say why. homezero's AGENTS.md is the model. A repo with no
-contract gets best-effort: whatever gates you can find, merge to main, no deploy claim.
+A repo declares how ship runs it in its `CLAUDE.md` / `AGENTS.md`, as a short list of
+facts. The workflow is ship's; the contract only says what this repo's commands are.
+Every key is optional, and the default is what a repo with no contract gets:
 
-Two more keys, each from a repo that could not run ship without it:
+- **`gates:`** the commands that must pass: tests, typecheck, production build. Default:
+  whatever you can find.
+- **`preview:`** a command that prints this branch's preview links, one per app, with
+  each build's state (cells-app: `scripts/preview-links.sh`, which reads Vercel). Ship
+  runs it after every push and posts what it prints. Default: no hosted preview; the
+  worktree's localhost is the only link.
+- **`dev:`** the command that starts the worktree's own dev server on a port of its own
+  and prints its URL (cells-app: `npm run dev`, via `scripts/dev.sh`). Default: the
+  repo's dev script, detached.
+- **`test-auth:`** how a tester signs in. `seed <how>` is the old path: a seeded account
+  and a secret verify may use. `form <how>` means the app's own sign-in form works with
+  test credentials (Clerk test instances: any address, code 424242), and verify may use
+  it. `none` makes an auth-gated walk `unverifiable`.
+- **`backend:`** `shared-dev` (the default): previews and localhost use the app's dev
+  database, ship never rewrites an env file, and it says so on the card when a branch
+  changes a schema. `per-branch`: ship provisions a database preview per branch at
+  stage 0 and deprovisions it at teardown (incidents: Backends).
+- **`stack:`** how to run `scripts/stack-check.sh` (in this skill's directory) for the
+  repo: the host team and the app projects, plus where each app's Convex dev deployment
+  and prod deploy key are. It checks that dev and prod never cross: git link and
+  production branch, protection, the Convex deploy key on Production only, every dev
+  Convex setting present on prod, Clerk `pk_live` on Production and `pk_test` elsewhere.
+  Ship runs it before cueing TEST and before landing; a ✗ is ship's to fix, never Pete's.
+- **`live:`** what landing on main deploys, and how to watch it. cells-app: "main is
+  production; each touched pack's Vercel production build pushes its Convex functions,
+  then the app." Default: nothing, and ship claims no deploy.
+- **`land:`** how a branch reaches main on Pete's word. `pr` (the default) squash-merges
+  the tracker PR. `direct` pushes `HEAD:main` after a rebase and opens no PR. `auto` lands
+  on green `works` without TEST, for a repo whose main deploys nothing. Any other value is
+  a command ship runs from the worktree in place of the merge (a mirror remote, a
+  local-only main, a promote hook that builds on push); the command is the repo's, and
+  ship never invents one.
+- **`ship: no`** — for repos that shouldn't ship at all (wikis, civic work): decline and
+  say why.
 
-- **`land: <command>`** — how a finished branch reaches main when the PR path is wrong
-  for the repo (a mirror remote, a local-only main, a promote hook that builds on push).
-  Ship runs that command from the worktree in place of the PR merge (stage 4 says
-  where), then tears down as usual. The command is the repo's; ship never invents one.
+One more key, from a repo that could not run ship without it:
+
 - **`design of record: transplant <path>`** — the repo's chrome is a byte-level transplant
   of another product's renderer, and `<path>` is that product's bundle. Under it,
   surfaces the reference owns are lifted, never designed, measured or minimised: the
@@ -275,13 +308,18 @@ gitignored runtime files. Write `printf 'discover' > <root>/.ship-stage`, then
 **`echo .ship-stage >> $(git rev-parse --git-common-dir)/info/exclude`** — `git add -A`
 sweeps the marker into commits otherwise (incidents: Worktrees). Never build on main.
 
-- **Provision the per-branch backend now** if the repo's ship contract has one — a
-  worktree building against a shared backend clobbers it (incidents: Backends). No
-  preview lane → build against the repo's dev stack. Rewrite the worktree's env file
-  to the preview before the first backend command and confirm the first deploy's host
-  is the preview: the inherited `.env.local` carries the shared key, and the
-  `--preview-name` flag does not override it (incidents: Backends). From here on the
-  preview's *name* comes from that file, never from the branch.
+- **Push the branch at once** (`git push -u origin feature/<slug>`), and open the
+  **tracker PR** as a draft with the first commit (`gh pr create --draft --base main
+  --fill`; GitHub refuses a PR with no commits). Its body is the one-line why and the
+  preview links, refreshed as they change. It is GitHub's record of what is in flight and,
+  once squashed, of what shipped; it is never a review step. `land: direct` opens none.
+- **Backend:** `shared-dev` (the default) → build against the app's dev database and touch
+  no env file. `per-branch` → provision the branch's database preview now; a worktree
+  building against a shared backend it changes clobbers it (incidents: Backends). Rewrite
+  the worktree's env file to the preview before the first backend command and confirm the
+  first deploy's host is the preview: the inherited `.env.local` carries the shared key,
+  and the `--preview-name` flag does not override it (incidents: Backends). From here on
+  the preview's *name* comes from that file, never from the branch.
 - **Cross-repo case:** `EnterWorktree` only takes for the session's primary repo
   (incidents: Worktrees). If the target repo's `git rev-parse --git-common-dir` differs
   from the launch repo's, never call it: work the worktree by absolute path, point
@@ -297,8 +335,9 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
   worktree, fork in the right repo, narrate the move. Fork-first stays; being wrong
   about the repo is cheap, being invisible is not.
 - **Opportunistic tidy:** glance at `git worktree list` and `wt remove <branch> -f`
-  any worktree that provably landed (merged PR whose `headRefOid` matches its HEAD,
-  clean tree — incidents: Worktrees). Never touch one with uncommitted work.
+  any worktree that provably landed (a merged PR whose `headRefOid` matches its HEAD, or,
+  with no PR, a HEAD inside `origin/main` by `git merge-base --is-ancestor`; clean tree —
+  incidents: Worktrees). Never touch one with uncommitted work.
 
 ### 1 · DISCOVER — Pete's taste, up front  → marker: `discover`, then `gate:1`
 
@@ -439,7 +478,12 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
   counts one task done, so `(inline)` and `(driver)` tasks log too, with
   `engine=driver`. A run that skipped the router writes `build:0:<M>` itself before the
   first dispatch; a status line still on `plan` mid-BUILD is the tell. Build all M tasks in one session; commit
-  each task on the branch as it lands, merge only when the whole plan is built.
+  each task on the branch as it lands, land only when the whole plan is built.
+- **Push at every milestone, and hand Pete the links.** After a task (or a lane's merge)
+  is committed, push the branch. When the repo has `preview:`, run it once the builds
+  settle, never blocking the next dispatch on them, and post one line per app with what
+  changed and what to try. Pete works solo and tests mid-flight, so the links always show
+  the worktree's latest. A build that failed is yours to fix before you post.
 - Invoke `superpowers:subagent-driven-development` (the driver drives) and send each
   task to the engine `route.py plan` picked (Engines), in the background; `(inline)`
   and `(driver)` tasks the driver writes itself. The driver owns the brief, the diff
@@ -511,18 +555,25 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
 - **Before BUILD is done, smoke-walk the whole feature yourself** — boot the app and
   drive the spec's real user paths (the formal `verify` runs in REVIEW; don't invoke it
   twice). Two preconditions that have each cost a red deploy (incidents: Backends): a
-  framework with its own production build → run that build too; the branch touched
-  `convex/` → re-push the preview (`npx convex deploy --preview-name <name-from-
+  framework with its own production build → run that build too; on `backend: per-branch`,
+  the branch touched `convex/` → re-push the preview (`npx convex deploy --preview-name <name-from-
   .env.local> -y`, from the worktree root — the branch name and the shell's leftover cwd
   have each sent a deploy to the wrong place). *You* find the breakage, never Pete.
 - Raise a hand only for a genuine fork (PM-framed, with a rec).
 
-### 4 · REVIEW / MERGE — automatic  → marker: `review`, then remove the file
+### 4 · TEST — ship proves it, then Pete tries it  → marker: `review`, then `test`
+
+Three phases after the plan, as Pete sees them: BUILD, TEST, LAND. TEST's first half is
+ship testing its own work (the review below: gates, a cold correctness read, design QA,
+`verify`), so that Pete only ever tries something already proven; its second half is
+Pete trying it on the links. His test comes after ship's on purpose: a bug the review
+finds after his OK would land unfixed or land fixed without his seeing it.
+
 
 - Write `review`. Sync with main first: `git fetch origin`; absorb upstream in the
   worktree (rebase, or merge if unsafe), re-run the gates, then dispatch review — and
-  re-sync right before the merge if main moved again (incidents: Worktrees). If the
-  absorbed commits touched `convex/`, re-deploy the preview before any further
+  re-sync right before landing if main moved again (incidents: Worktrees). On
+  `backend: per-branch`, if the absorbed commits touched `convex/`, re-deploy the preview before any further
   verification — function skew is invisible to tsc, vitest and the production build,
   and has hard-crashed a page after a green rebase (incidents: Backends).
 - **Freeze the tree while a verifier is driving** — no merges, rebases, or edits until
@@ -555,13 +606,14 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
   nits land on the card for Pete. *Transplant:* for a reference surface the pair is
   the reference product beside ours (the repo's own tree audit and its screenshots),
   never a frame, and a visible difference is a finding whatever the checks say.
-- **Put it in front of Pete, running.** For any visual/interactive feature, boot the
-  worktree's dev server detached, never through a bounded pipe (`nohup npm run dev >
-  dev.log 2>&1 &`, then curl-probe — a `| head -50` has SIGPIPE'd a server mid-verify)
-  and `open http://localhost:<port>` so the live local app is on his screen. A feature
-  behind an auth gate needs its secret in the worktree env, or localhost 403s and reads
-  as broken (incidents: Backends). Never deploy to let him review; never tell him to
-  "go look at the live site" — the worktree's localhost is the review surface.
+- **Put it in front of Pete, running.** Two surfaces, both his: the branch's **preview
+  links** (the contract's `preview:`, the real host, database and sign-in), and the
+  worktree's **localhost** (the contract's `dev:` command, else the dev script), for the
+  instant look. Boot the dev server detached, never through a bounded pipe (`nohup <dev>
+  > dev.log 2>&1 &`, then curl-probe — a `| head -50` has SIGPIPE'd a server mid-verify)
+  and `open` the URL it printed. A feature behind an auth gate needs its test-auth path
+  working on both, or it 403s and reads as broken (incidents: Backends). Never run a
+  production deploy to let him review, and never tell him to "go look at the live site".
   (Non-UI change → show the demo/test output instead.)
 - **Screenshots go in `<shots-root>/.ship-shots/<slug>/`, always as an absolute path**,
   because the chrome-devtools MCP writes only inside the session's workspace roots and
@@ -574,29 +626,44 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
   presented card references somewhere durable before teardown, or the card 404s its
   own proof (incidents: Worktrees), then delete `<shots-root>/.ship-shots/<slug>/`,
   which on a cross-repo ship is not inside the worktree teardown removes.
-- **Prove it works — invoke `verify` before the card.** A fresh read-only subagent
+- **Prove it works — invoke `verify` before the card.** It walks the branch's preview
+  link when the repo has `preview:` (what Pete will test), else the localhost. A fresh read-only subagent
   drives the feature and returns `works | broken | unverifiable` + a
   screenshot storyboard; verify loops-to-fix (cap ~3). `broken` after the cap, or
-  `unverifiable` → do NOT merge: end the turn with `needs input:` ("review: <feature>
+  `unverifiable` → do NOT go to TEST: end the turn with `needs input:` ("review: <feature>
   — couldn't prove it works: <reason>") and hand Pete the verdict + evidence.
 - **Render the review card** from `reference/review-card.html` (contract below) to the
-  docs home and `open` it, pointed at the running localhost. Never tell Pete to "go
-  read the PR" — the review comes to him, running and labeled.
-- **The merge is not a gate: every lane merges itself.** A GATED ship whose
-  design he approved at GATE 1, with green gates and a `works` verdict, merges without
-  stopping: put the running app and the card in front of him as a report, in the same
-  turn as the merge — he approved the build; landing it on a reversible dev lane is
-  mechanics, not a decision. Changes he wants after the fact ride an express round.
-  **Two things still hard-stop:** a money path, and a repo where merge
-  auto-deploys to production (there the merge is the release). Neither is "it's a big
-  feature" — size never gates.
+  docs home and `open` it, with the preview links and the running localhost on it. Never
+  tell Pete to "go read the PR" — the review comes to him, running and labeled.
+- **Before cueing him, check the wiring.** Run the contract's `stack:` (a ✗ is yours to
+  fix first), and look at what landing will change in the backend: a change that
+  **removes or renames** a backend function or table lands in two passes, first the app
+  stops using it and then it goes, because landing ships the backend before the app and
+  a failed app build would leave the old app calling what is gone.
+- **His word is "merge main".** It means: take this worktree all the way, PR merge,
+  deploy, cleanup (LAND). The same intent in other words counts ("push to main", "merge
+  it", "ship it"); approval of the work without that intent ("looks good") does not land.
+- **TEST — Pete tries it, and his word lands it.** With green gates and a `works`
+  verdict, push, write `test` to `.ship-stage`, post the links (and the card, where the
+  lane has one), and end the turn: `needs input: test <slug> — <what to try> · say "push
+  to main"`, then the branch · worktree tail. This is every lane's stop, EXPRESS included,
+  because main is where things go live. Only `land: auto` skips it. While parked, keep
+  the dev server up; a change he asks for goes back through BUILD's push-and-links loop
+  and `verify`, then parks at TEST again. A money path adds nothing new here: it already
+  stops, and his word is the release.
 - Changes Pete asks for at the card go through `superpowers:receiving-code-review` —
   verify the ask against the code, do the work, loop the changed flow back through
   `verify` before re-presenting.
-- **Merge — the PR path, from the MAIN CHECKOUT, teardown first** (incidents:
-  Worktrees — both orderings that deviate have stranded ships):
+### 5 · LAND — on Pete's "merge main"  → marker removed
+
+Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
+
+- **Land on "merge main" — `land: pr` (the default), from the MAIN CHECKOUT, teardown
+  first** (incidents: Worktrees — both orderings that deviate have stranded ships):
   0. Pre-flight *from the worktree*: `git fetch origin`; if main moved, absorb +
-     re-gate + push; confirm `gh pr view <#> --json mergeable` says `MERGEABLE`.
+     re-gate + push; run `stack:` once more; update the tracker PR's body to what actually shipped (the squash
+     commit takes it); `gh pr ready <#>`; confirm `gh pr view <#> --json mergeable`
+     says `MERGEABLE`.
   1. Return to the main checkout (`ExitWorktree({action:"keep"})`).
   2. `wt remove feature/<slug> -f` — frees the branch for `--delete-branch`.
   3. `gh pr merge <#> --squash --delete-branch` — from the main checkout.
@@ -608,20 +675,26 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
     `--delete-branch`, `git push origin --delete <branch>`, leave the worktree.
   - No GitHub remote → `wt merge` (squashes, ff's main, removes the worktree) is the
     fallback.
-  - **A `land:` key in the contract replaces steps 0–4**: sync with main, re-gate, run
+  - **`land: direct`** replaces steps 0–4: from the worktree, `git fetch origin && git
+    rebase origin/main`, re-gate, `git push origin HEAD:main`, confirm main moved, then
+    teardown and `git push origin --delete <branch>`.
+  - **A `land: <command>`** replaces steps 0–4 the same way: sync with main, re-gate, run
     the contract's command from the worktree, confirm main moved (`git log -1 main`),
-    then teardown from the main checkout as above. No PR is opened and none is merged;
-    a mirror remote is pushed only if the contract says so.
+    then teardown from the main checkout as above. No PR is merged; a mirror remote is
+    pushed only if the contract says so.
   - Then `rm .ship-stage` and `rm -f ~/.claude/ship-active/$CLAUDE_CODE_SESSION_ID`,
-    **stop the review dev server**, deprovision the preview
-    backend stage 0 spun up (or skip if previews auto-expire). Verify with
+    **stop the review dev server**, deprovision the per-branch
+    backend stage 0 spun up, if any (or skip if previews auto-expire). Verify with
     `git worktree list` — zero ship-created worktrees must remain; a leftover means
     teardown failed (usually a merge run inside the worktree) — recover before
     declaring done.
-- **Deploy to the integration lane, never production.** Push merged main to the repo's
-  dev lane per its ship contract — its dev-deploy step runs from the main checkout
-  (shared-plane writer; incidents: Backends) — and hand back the lane's URL. CI
-  auto-deploy → say so and hand the URL once up. Never make Pete run a deploy. Watch
+- **Watch what landing deploys (the contract's `live:`).** Where main is production and
+  the host builds it (cells-app: each touched pack's Vercel production build, Convex
+  first), watch every such build to READY or ERROR and report it with the live URLs; ship
+  never runs a production deploy or pushes a production database by hand. Where the
+  contract names a separate integration lane instead, push merged main to it — its
+  dev-deploy step runs from the main checkout (shared-plane writer; incidents: Backends)
+  — and hand back the lane's URL. Never make Pete run a deploy. Watch
   rules (each from a real incident — incidents: Backends): watch the deploy to
   conclusion (red = unfinished work, fix-forward on a new express branch); watch
   the run for YOUR commit — `gh run list --commit $(git rev-parse <sha>)`, full SHA
@@ -629,14 +702,15 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
   artifact-check the lane; a red shared
   lane you didn't cause is a shared resource — check for an existing fix PR, claim
   with a draft PR first.
-- **Promotion to production is NOT ship's job.** "Merged" means live on *dev*. Never
-  promote to prod / `www`, never offer to (the repo's promote script is Pete's own
-  human-gated ritual). Only where merge auto-deploys straight to prod is the merge
-  itself the release — there, and only there, the merge asks first.
-- Run RETRO, then end with a `result:` line: what shipped, one sentence — plus
-  `· ship-retro #N filed` and/or `· K backlog candidates` when applicable.
+- **A separate promotion is NOT ship's job.** Where a repo promotes from an integration
+  lane to production by its own script, that is Pete's human-gated ritual: never run it,
+  never offer to. Where main is production, his "merge main" is the release and ship
+  watches it through.
+- Run RETRO, then end with a `result:` line: what shipped, one sentence, with the live
+  links (or the lane's) — plus `· ship-retro #N filed` and/or `· K backlog candidates`
+  when applicable.
 
-### 5 · RETRO — autonomous; only if the run taught something  → no marker
+### 6 · RETRO — autonomous; only if the run taught something  → no marker
 
 The *running* agent never edits the skill — you're shipping a feature, not doing skill
 surgery, and one run is too narrow for a general fix. If this run surfaced a real gap
@@ -704,12 +778,13 @@ Render `reference/review-card.html` filled with the meta only — PM-framed, one
   public surfaces).
 - **Verifier flagged / suggested** — taste notes, if any. Reports, not work — Pete
   decides: fix now / backlog / ignore.
-- **Only you can confirm** — the 1–2 things that need his eye, on the open localhost.
+- **Only you can confirm** — the 1–2 things that need his eye, on the preview links or
+  the open localhost.
 - **Also worth building — didn't make this round** — the run's backlog candidates (see
   below). Most rounds have none — omit the section entirely; never pad it.
-- **Merged** — stated, not asked: it's on the dev lane with the URL, reversible. The PR
-  link is there for the curious, but he shouldn't need it. (A money path, or a repo
-  where merge auto-deploys to prod, is the exception that still asks — say why.)
+- **Try it, then say "merge main"** — the preview links, one per app, and the
+  localhost; what landing will deploy (the contract's `live:`). The tracker PR link is
+  there for the record, but he shouldn't need it.
 
 ## Backlog candidates — collect deferrals for the card
 
@@ -732,11 +807,12 @@ browser and landing rules apply. Change Codex behavior there, never here.
 
 At a gate, three things fire so Pete notices whether he's watching or away:
 
-1. **Status line** — the `gate:N` marker shows `✋ <slug> — storyboard?/go?` in bold amber.
+1. **Status line** — the `gate:N` marker shows `✋ <slug> — storyboard?/go?` in bold amber,
+   and TEST's `test` marker `✋ <slug> — test it, then merge main?`.
 2. **FleetView bucket** — the turn ends with a `needs input:` line → the row jumps to
    *awaiting input*.
 3. **Desktop notification** — the gate Stop-hook fires a Ghostty notification
-   (`<slug> → GATE N`). Gates are rare, so this is never noisy.
+   (`<slug> → GATE N`, or `<slug> → ready to test`). Gates are rare, so this is never noisy.
 
 ## FleetView narration contract
 
@@ -748,8 +824,8 @@ The dashboard reflects the session — make it a ship board:
   `📐 planning · <slug>`): status-of-work, not an echo of the last tool call. A bare
   status line ends a turn only while you wait on background work (Engines: how a
   turn ends).
-- **At a gate, the closing line starts `needs input:`** → *awaiting input*. At merge,
-  it starts `result:` → *completed*. Mid-work narration keeps it in *working*.
+- **At a gate and at TEST, the closing line starts `needs input:`** → *awaiting input*.
+  At landing, it starts `result:` → *completed*. Mid-work narration keeps it in *working*.
 - **End `needs input:` and `result:` lines with `branch <branch> · worktree <path>`**
   (`detached@<short-sha>` until a branch exists) — Pete must always know which checkout
   he's looking at; it's what catches the cross-repo case.
@@ -764,6 +840,7 @@ test-first (`superpowers:test-driven-development`) is reserved for money paths.
 
 Also not ship's job: arbitrary phasing (the scope law); `executing-plans`
 (checkpoint-heavy — the opposite of hands-off); manual git worktree management (`wt`
-owns birth-to-death in Claude Code; Codex Desktop owns its own); promoting to
-production (ship ends at the integration lane — promotion is Pete's separate,
-human-gated ritual, never ship's to run, gate, or offer).
+owns birth-to-death in Claude Code; Codex Desktop owns its own); landing without Pete's
+"merge main" (except `land: auto`); running a production deploy or pushing a production
+database by hand (the host's build does it); a separate promotion script, which is Pete's
+human-gated ritual, never ship's to run, gate, or offer.

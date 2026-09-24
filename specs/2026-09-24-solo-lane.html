@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ship's solo lane</title>
+<style>
+:root{--bg:#fbfbfa;--fg:#1d1d1b;--dim:#6b6b66;--line:#e2e1dc;--card:#fff;--go:#1f8a57;--stop:#b0701c;--new:#2f6fb3}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#161615;--fg:#ecebe6;--dim:#9a9993;--line:#34332f;--card:#1f1f1d;--go:#4cc38a;--stop:#e0a24f;--new:#6fa8e6}}
+:root[data-theme="dark"]{--bg:#161615;--fg:#ecebe6;--dim:#9a9993;--line:#34332f;--card:#1f1f1d;--go:#4cc38a;--stop:#e0a24f;--new:#6fa8e6}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 -apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",sans-serif}
+main{max-width:860px;margin:0 auto;padding:40px 16px 80px}
+h1{font-size:32px;line-height:1.15;margin:0 0 8px;letter-spacing:-.02em}
+h2{font-size:20px;margin:40px 0 12px}
+p,li{color:var(--fg)}
+.dim{color:var(--dim)}
+.tldr{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 20px;margin:20px 0}
+.tldr b{color:var(--go)}
+.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:16px 0}
+.step{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:14px;flex:1 1 140px}
+.step b{display:block;font-size:13px;color:var(--dim);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.step.you{border-color:var(--stop)}
+.step.you b{color:var(--stop)}
+.arrow{color:var(--dim)}
+table{width:100%;border-collapse:collapse;font-size:14px;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--dim);font-weight:600}
+tr:last-child td{border-bottom:0}
+code{font:13px ui-monospace,"SF Mono",Menlo,monospace;background:color-mix(in srgb,var(--line) 55%,transparent);padding:1px 5px;border-radius:5px}
+.tag{font-size:11px;font-weight:700;padding:2px 7px;border-radius:99px;border:1px solid currentColor;white-space:nowrap}
+.tag.new{color:var(--new)}.tag.chg{color:var(--stop)}.tag.del{color:var(--dim)}
+details{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin:8px 0}
+summary{cursor:pointer;font-weight:600}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.col{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.col h3{margin:0 0 6px;font-size:15px}
+.col ul{margin:0;padding-left:18px;font-size:14px}
+</style>
+</head>
+<body>
+<main>
+<h1>Ship's solo lane</h1>
+<p class="dim">Recommended changes to the ship plugin so every app runs the same way: work in a worktree, test on real links, say "merge main", and it goes live, with the database, hosting and sign-in in step. 2026-09-24.</p>
+
+<div class="tldr">
+<b>In one line:</b> Three phases: <b>build, test, land</b>. Ship pushes each worktree's branch early and keeps a draft PR as the roadmap record. When the build is done, ship proves it works on the branch's own links, then hands them to you and waits. You try it. You say <b>"merge main"</b>. Ship merges the PR, and the app's own build ships the database first and then the app. Each repo only declares its facts: how to print its links, how to run it locally, how test sign-in works, how to check its wiring, and what going live deploys.
+</div>
+
+<h2>The flow, for every app</h2>
+<div class="flow">
+  <div class="step"><b>1 · Build</b>Worktree, pushed at once with a draft PR; pushed again at each milestone, links posted each time</div><span class="arrow">→</span>
+  <div class="step you"><b>2 · Test</b>Ship first: gates, review, a verify walk on the preview link, the stack check. Then you try the links. Ship waits here</div><span class="arrow">→</span>
+  <div class="step you"><b>3 · Land</b>On your "merge main": rebase, gates, stack check, merge the PR. Live in minutes; worktree removed; live links in the result</div>
+</div>
+<p class="dim">Orange is where you come in. Ship's own review sits inside Test, before you are cued, so you only ever try something that already passed. The stop at Test applies to every lane wherever main is live; "looks good" is not "merge main".</p>
+
+<h2>What changes in Ship</h2>
+<table>
+<tr><th>#</th><th>Change</th><th>Where</th></tr>
+<tr><td>1</td><td><span class="tag chg">change</span> <b>Landing waits for your word.</b> After ship's own review says <code>works</code>, it posts the links, sets the stage marker to <code>test</code> and stops. On "merge main" it runs the repo's <code>land:</code> (default <code>pr</code>: rebase, gates, mark the PR ready, squash-merge). Every lane stops here, EXPRESS included, because main is live; a repo whose main deploys nothing can say <code>land: auto</code>.</td><td>pipeline TEST and LAND, sizing, codex copy</td></tr>
+<tr><td>2</td><td><span class="tag chg">change</span> <b>The PR is a tracker, not a gate.</b> Opened as a draft when the branch is first pushed, its body updated at landing, merged on your word. Nobody reviews it; it is the roadmap on GitHub. <code>land: direct</code> skips it for a repo that wants none. The global CLAUDE.md bullet changes to match.</td><td>stage 0, LAND, ~/.claude/CLAUDE.md</td></tr>
+<tr><td>3</td><td><span class="tag new">new</span> <b>Push early.</b> The branch goes to GitHub at fork time and after every accepted BUILD task, so the host builds a preview of the worktree's latest.</td><td>stage 0, BUILD</td></tr>
+<tr><td>4</td><td><span class="tag new">new</span> <b>Links after every push.</b> Ship runs the repo's <code>preview:</code> command once the builds settle and posts one link per app, with what changed and what to try. The links go on the review card and in the <code>result:</code> line. A build that fails is ship's to fix before posting.</td><td>BUILD, review card, result line</td></tr>
+<tr><td>5</td><td><span class="tag chg">change</span> <b>Local dev per worktree.</b> Ship starts the server with the repo's <code>dev:</code> command, which gives each worktree its own steady port and prints its URL, instead of <code>nohup npm run dev</code>.</td><td>stage 4 localhost, verify</td></tr>
+<tr><td>6</td><td><span class="tag chg">change</span> <b>Verify walks the preview.</b> When a repo has <code>preview:</code>, the headless walk opens the branch link, passing the host's bypass header, so it tests what you will test. Localhost stays the fallback.</td><td>verify skill</td></tr>
+<tr><td>7</td><td><span class="tag chg">change</span> <b>Test sign-in through the real form.</b> A repo can declare <code>test-auth: form &lt;how&gt;</code> (for Clerk: any address, code 424242), and verify may then sign in through the app's own form, which it refuses today.</td><td>verify skill</td></tr>
+<tr><td>8</td><td><span class="tag chg">change</span> <b>Backends by declaration.</b> Per-branch database previews become opt-in (<code>backend: per-branch</code>). The default is <code>shared-dev</code>: previews and localhost use the app's dev database, ship never rewrites env files, and it says so when a branch changes a schema.</td><td>stage 0, smoke walk, teardown, incidents</td></tr>
+<tr><td>9</td><td><span class="tag chg">change</span> <b>Going live belongs to the host's build.</b> Ship never pushes to a production database or deploys by hand. After "merge main" it watches the production builds to the end and reports them, instead of running a "dev lane".</td><td>stage 4 deploy</td></tr>
+<tr><td>10</td><td><span class="tag chg">change</span> <b>Tidy either way.</b> A worktree has landed when its PR merged or its branch is inside <code>origin/main</code>. Teardown also deletes the remote branch.</td><td>stage 0 tidy, teardown</td></tr>
+<tr><td>11</td><td><span class="tag new">new</span> <b>A stack check.</b> <code>stack-check.sh</code> reads each Vercel project and says what is crossed: not linked to git, protection too loose, the Convex deploy key outside Production, a test Clerk key on production or a live one on a preview, and a prod Convex missing a setting dev has. The repo names it as <code>stack:</code>; ship runs it before cueing you and again before landing, and a ✗ is ship's to fix.</td><td>new script, TEST, LAND</td></tr>
+<tr><td>13</td><td><span class="tag new">new</span> <b>Removing a backend function takes two landings.</b> The live app still calls what the new database no longer has for the minutes the build takes, so the first landing stops using it and the second deletes it.</td><td>TEST</td></tr>
+<tr><td>12</td><td><span class="tag chg">change</span> <b>Stack line.</b> Ship still names flue and Cloudflare as the default; it becomes Eve, Vercel, Convex, Clerk, Stripe and Next.</td><td>pipeline</td></tr>
+</table>
+
+<h2>What each repo declares</h2>
+<p>The contract becomes a short list of facts. For cells-app:</p>
+<table>
+<tr><th>Key</th><th>cells-app's value</th></tr>
+<tr><td><code>preview:</code></td><td><code>scripts/preview-links.sh</code>: one <code>&lt;app&gt;-git-&lt;branch&gt;-pkai.vercel.app</code> link per pack</td></tr>
+<tr><td><code>dev:</code></td><td><code>scripts/dev.sh</code>: main on 3000, each worktree its own port</td></tr>
+<tr><td><code>test-auth:</code></td><td><code>form</code>: any address becomes <code>+clerk_test</code>, code <code>424242</code></td></tr>
+<tr><td><code>backend:</code></td><td><code>shared-dev</code>: each pack's dev Convex deployment</td></tr>
+<tr><td><code>live:</code></td><td>main is production: each touched pack's Vercel build pushes its Convex functions, then the app</td></tr>
+<tr><td><code>stack:</code></td><td><code>stack-check.sh --scope pkai homebody swain cells</code></td></tr>
+<tr><td><code>land:</code></td><td>default <code>pr</code> (rebase, gates, merge the tracker PR)</td></tr>
+<tr><td><code>gates:</code></td><td>unchanged: test, build, typecheck per pack, network checks for Convex changes</td></tr>
+</table>
+<p class="dim">The prose now in cells-app's "Testing a branch" (push early, hand the links, two speeds, "merge main") moves into ship. cells-app keeps its facts and its scripts.</p>
+
+<h2>The three services, in step</h2>
+<div class="cols">
+  <div class="col"><h3>Local and previews</h3><ul><li>Convex: the app's dev deployment</li><li>Clerk: test keys, any address signs in</li><li>Vercel: a private branch link per app</li><li>Safe to break anything</li></ul></div>
+  <div class="col"><h3>Production</h3><ul><li>Convex: the app's prod deployment, pushed by the build with its deploy key, drop check first</li><li>Clerk: live keys on the app's own domain</li><li>Vercel: the custom domain is public, every <code>vercel.app</code> URL stays behind your login</li></ul></div>
+  <div class="col"><h3>Never</h3><ul><li>A preview on prod data</li><li>Production on test sign-in</li><li>A prod push by hand</li><li>An env file edited to aim somewhere</li></ul></div>
+</div>
+
+<h2>Decisions for you</h2>
+<details open><summary>Does EXPRESS wait for "merge main" too?</summary><p>Recommended: yes, wherever main is live. A one-line fix still reaches real people, and your word is the only thing standing between a push and production. A repo whose main deploys nothing can declare <code>land: auto</code> and keep landing on green.</p></details>
+<details><summary>Verify on the preview, or on localhost?</summary><p>Recommended: the preview when a repo has one, since that is the real host, database and sign-in you will test. It costs the five minutes of a build. Localhost stays the fallback and the quick look.</p></details>
+<details><summary>PRs or not?</summary><p>Settled: a draft PR per branch, as the record on GitHub. It never waits for a reviewer and never merges on its own.</p></details>
+
+<h2>Where this sits in the overall plan</h2>
+<table>
+<tr><th>Order</th><th>Step</th></tr>
+<tr><td>1</td><td>Done: the cells-app pipeline branch landed; Homebody and Swain are live on their own Convex and Clerk, and the stack check passes for both</td></tr>
+<tr><td>2</td><td>Ship's solo lane, from this page (built on <code>feature/solo-lane</code>)</td></tr>
+<tr><td>3</td><td>Finish the Cells pack and set up its Vercel project, now run the new way</td></tr>
+<tr><td>4</td><td>Switch the domains one at a time, starting with meethomebody.com</td></tr>
+</table>
+</main>
+</body>
+</html>

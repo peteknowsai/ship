@@ -24,14 +24,22 @@ diff and concluding "looks right" is exactly the failure this skill exists to pr
 
 ## 1. Preconditions — the caller owns these
 
-The running app is **already up** — in ship's REVIEW the worktree's dev server is booted for
-you; standalone, boot it first and note the URL. The verifier **reuses** that stack, never
-boots its own.
+The running app is **already up** — in ship's TEST the target is the branch's preview link
+when the repo's contract has `preview:` (the host, database and sign-in Pete will test),
+else the worktree's dev server, booted for you; standalone, boot it first and note the URL.
+The verifier **reuses** that stack, never boots its own. A preview behind the host's login
+wall (Vercel protection) is reached with its automation bypass: the caller passes the
+`x-vercel-protection-bypass` value, and the verifier sets it as an extra header on its
+page (and `x-vercel-set-bypass-cookie: true` on the first load), never through Pete's
+browser.
 
 **The generic seam (don't cross it):** if the feature is behind auth, the **repo** must
-provide a local/test way to reach authed surfaces. verify does **not** mint sessions, bypass
-auth, or stand up infra — that's repo plumbing, and baking it in here would couple this skill
-to one app. If authed surfaces are unreachable and the repo offers no test-auth path,
+provide a test way to reach authed surfaces: its contract's `test-auth:`. `seed <how>` is a
+seeded account and its secret. `form <how>` means the app's own sign-in form works with test
+credentials (a Clerk test instance: any address, the fixed code 424242), and then signing in
+through that form, with a fresh test address per walk, is the path. verify does **not** mint
+sessions, bypass auth, or stand up infra — that's repo plumbing, and baking it in here would
+couple this skill to one app. If authed surfaces are unreachable and the repo offers no test-auth path,
 return `unverifiable` naming the wall, and Pete walks it — never fake a pass.
 
 **The seeded account is the verifier's alone while a walk is in flight.** Never invite Pete
@@ -69,10 +77,14 @@ FEATURE (what a user should now be able to do + the observable success state):
 HOW TO EXERCISE IT:
   <route + steps / API call / CLI>
 AUTH (if behind login):
-  <the repo's local/test-auth path, or 'none'>. Use ONLY that path. Do NOT mint sessions, set
-  auth cookies, log in through the real login UI, or hit a dev-login endpoint yourself. If it's
-  'none' or the path fails, return `unverifiable` and stop — never improvise a way past auth.
-BACKEND (repos with per-branch/preview backends):
+  <the repo's test-auth path: a seeded account, or `form` with its test credentials, or
+  'none'>. Use ONLY that path. Do NOT mint sessions, set auth cookies, or hit a dev-login
+  endpoint yourself, and use the real login UI only when the path is `form`. If it's 'none' or
+  the path fails, return `unverifiable` and stop — never improvise a way past auth.
+PROTECTION (a preview behind the host's login wall):
+  <the bypass value, or 'none'>. Send it as the `x-vercel-protection-bypass` header on
+  every request of your page; never sign in to the host yourself.
+BACKEND (repos with `backend: per-branch`):
   <the exact deployment the app is serving>. Pin it on EVERY CLI call
   (--preview-name/--deployment). Unpinned calls resolve to a different deployment than the
   app reads, so your seeds land on one backend and the browser on another — that split-brain

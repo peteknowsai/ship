@@ -77,6 +77,20 @@ These are facts, not process — the process lives in SKILL.md.
 
 ## Backends & deploys
 
+Most entries below are about `backend: per-branch`, a database preview per branch. The
+default since 2026-09-24 is `shared-dev`: previews and localhost use the app's dev database
+and ship edits no env file, because a solo dev rarely has two branches changing one schema
+at once, and the card says so when one does. The clobbering entry below is the reason to
+opt a repo into `per-branch`.
+
+- **Main is production, so the build does the production push (2026-09-24, cells-app).**
+  A manual "network deploy after merge" step was forgotten or run from the wrong checkout;
+  now each pack's Vercel production build pushes its Convex functions (drop check first)
+  before building the app, with the deploy key only in the Production environment. Ship
+  watches those builds after landing and never pushes a production database itself.
+- **A Vercel project with no git link deploys to production on a plain `vercel deploy`.**
+  So does any project's first deployment. By hand, always `--target preview`.
+
 - **A worktree building against a shared backend clobbers it** — pushing the branch's
   schema reconciles the shared plane to this branch and drops indexes other branches
   added. Per-branch preview backends exist for this; the shared dev deploy runs only

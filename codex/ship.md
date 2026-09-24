@@ -27,9 +27,14 @@ exactly what Pete requested. Never turn a complete approved feature into a parti
 
 ## Establish the repo and worktree
 
-Read the repo's AGENTS.md and CLAUDE.md. Honor `ship: no`, gate commands, preview
-backend, test-auth route, deployment lane, release ritual, `land:`, and any
+Read the repo's AGENTS.md and CLAUDE.md. Honor `ship: no`, `gates:`, `preview:`, `dev:`,
+`test-auth:`, `backend:`, `live:`, `land:`, the release ritual, and any
 `design of record: transplant <path>` contract. Inspect current git state first.
+
+The phases after the plan are BUILD, TEST and LAND. TEST is ship proving its own work
+(gates, a cold correctness review, `ship:verify`) and then Pete trying it on the preview
+links; LAND is mechanics on his word "merge main". Nothing lands without that word unless
+the contract says `land: auto`.
 
 A new ship gets a new worktree. Reuse only the one this ship started in, never a
 worktree whose branch already landed. For a Codex-managed worktree, create a feature branch if
@@ -38,13 +43,17 @@ Starting on main: create a worktree with `wt switch --create`, otherwise use
 `git worktree add`. Keep the primary checkout on main and use absolute paths.
 Follow an explicit repo base-branch override, otherwise branch from main.
 
-Provision only the preview resources the repo requires. Keep its backend, URL, and
-test account isolated from other runs. Record the branch and worktree at start,
+Push the branch at once and open a draft tracker PR with the first commit (`land:
+direct` opens none); it records work in flight and is never a review step. Push again at
+every milestone and post the output of the contract's `preview:` command, one link per
+app, so Pete can test mid-flight. With `backend: shared-dev` (the default), use the app's
+dev database and edit no env file; provision a per-branch backend only for `backend:
+per-branch`. Keep test accounts isolated from other runs. Record the branch and worktree at start,
 input gates, and completion. Before writing `.ship-stage`, ensure it is ignored
 with `git check-ignore`; if needed add it to the shared git info/exclude resolved
 through `git rev-parse --git-path info/exclude`. Update it at stage transitions with
 one line, the bare stage word the status line reads: `discover`, `gate:1`, `plan`,
-`gate:2`, `build:N:M`, or `review`.
+`gate:2`, `build:N:M`, `review`, or `test`.
 
 ## Design when needed
 
@@ -111,11 +120,17 @@ only if those checks do not mutate the verifier's data, build, or backend.
 The reviewer checks the whole branch against the approved scope, especially interfaces
 between workers. It reports actionable findings with file, line, and failure scenario.
 The verifier drives actual behavior and returns `works`, `broken`, or `unverifiable`.
-Do not merge on a mockup, a worker's claim, or tests that miss the requested behavior.
+Do not go to TEST on a mockup, a worker's claim, or tests that miss the requested
+behavior. The verifier walks the preview link when the contract has `preview:`, else the
+worktree's dev server.
 
 Fix real findings. Re-run affected checks and use a fresh verifier if behavior changed.
 Cap repeated verification at three rounds, then report the specific blocker. Preserve
 all unrelated edits. Never blindly reset or discard a dirty worktree.
+
+Then park for Pete: push, write `test` to `.ship-stage`, post the links and what to try,
+and end with `needs input: test <slug> — say "merge main"`. A change he asks for goes
+back through build, push, links and verify, and parks again.
 
 For gated visual work, `reference/review-card.html` can collect the delivered behavior
 and observed evidence. Fill `LANDING_STATUS` with the verified landing result or
@@ -124,18 +139,21 @@ results in the conversation. Do not write a card just because a template exists.
 
 ## Land and clean up
 
-Honor `land:` when present, including a local-only repo. Otherwise use a GitHub PR,
-wait for required checks, and squash-merge on green within existing authorization.
-Re-sync and recheck if the landing target moved. Never commit directly to main.
-Only pause for a genuinely unapproved choice, money action, or production release.
+Land only on Pete's "merge main" (or on green with `land: auto`). `land: pr`, the
+default: update the tracker PR's body to what shipped, mark it ready, and squash-merge it.
+`land: direct`: rebase on main, re-gate, push `HEAD:main`, delete the remote branch.
+Any other `land:` value is the repo's command, including a local-only repo. Re-sync and
+recheck if the landing target moved. Never commit directly to main.
 Do not re-ask for permission already granted. No remote and no landing contract means
 report the missing integration route rather than inventing a remote or release command.
 
 Verify landing before removing a worktree created by this run. Leave pre-existing and
 Codex-managed worktrees to their owner. Never archive the user's task for cleanup.
 Stop run-owned servers, remove the stage marker, and release run-owned previews when
-safe. Never delete another run's resources. Deploy only through the repo's authorized
-lane and watch the exact commit's deployment to completion before claiming it is live.
+safe. Never delete another run's resources. Never run a production deploy or push a
+production database by hand: where the contract's `live:` says main is production, the
+host's build does it, and you watch the exact commit's builds to completion and report the
+live links before claiming it is live.
 
 Keep unrelated suggestions as notes on the review card until
 Pete asks to file them. Read existing decision history when helpful, but never write
