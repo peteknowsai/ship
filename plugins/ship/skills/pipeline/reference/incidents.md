@@ -89,7 +89,11 @@ opt a repo into `per-branch`.
   before building the app, with the deploy key only in the Production environment. Ship
   watches those builds after landing and never pushes a production database itself.
 - **A Vercel project with no git link deploys to production on a plain `vercel deploy`.**
-  So does any project's first deployment. By hand, always `--target preview`.
+  So does any project's first deployment, a git push of a branch included: a new project's
+  first branch push built as production and began a production build that would have pushed
+  its database. Before a new project's first push, give it a placeholder production deployment
+  (a static page from a scratch dir) with its database deploy key pulled, then restore the key.
+  By hand, always `--target preview`.
 
 - **A worktree building against a shared backend clobbers it** — pushing the branch's
   schema reconciles the shared plane to this branch and drops indexes other branches
