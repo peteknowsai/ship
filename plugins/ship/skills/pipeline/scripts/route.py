@@ -3,6 +3,8 @@
 
   route.py plan <plan.md>        rank the plan's tasks with Jev; JSON on stdout, a table on stderr
   route.py log key=value ...     append one task's outcome to the ledger
+Inside a ship, `plan` moves the stage marker to build:0:<tasks> and each `log` counts one
+task done, so the status line reaches BUILD without the driver remembering to say so.
   route.py report                the ledger as a table by engine and difficulty
   route.py --selftest
 
@@ -46,6 +48,38 @@ QUESTION_CHARS = 800
 
 def ledger_path():
     return os.environ.get('SHIP_LEDGER') or os.path.expanduser('~/.claude/ship-ledger.jsonl')
+
+
+def stage_marker(start):
+    """The run's .ship-stage: the repo holding `start`, else the session's cross-repo pointer."""
+    roots = []
+    try:
+        roots.append(subprocess.check_output(['git', '-C', start, 'rev-parse', '--show-toplevel'],
+                                             text=True, stderr=subprocess.DEVNULL).strip())
+    except (OSError, subprocess.CalledProcessError):
+        pass
+    session = os.environ.get('CLAUDE_CODE_SESSION_ID')
+    pointer = os.path.expanduser(f'~/.claude/ship-active/{session}')
+    if session and os.path.isfile(pointer):
+        roots.append(open(pointer).read().strip())
+    for root in roots:
+        path = os.path.join(root, '.ship-stage')
+        if os.path.isfile(path):
+            return path
+    return None
+
+
+def mark_build(start, done=None, total=None):
+    """build:0:<total> when routing ends, or one more task done. Outside a ship, nothing."""
+    path = stage_marker(start)
+    if not path:
+        return
+    current = re.match(r'build:(\d+):(\d+)', open(path).read().strip())
+    if total is not None and not current:  # a re-route mid-build keeps the count
+        open(path, 'w').write(f'build:0:{total}')
+    elif done and current:
+        n, m = int(current.group(1)), int(current.group(2))
+        open(path, 'w').write(f'build:{min(n + 1, m)}:{m}')
 
 
 def parse_tasks(text):
@@ -157,6 +191,7 @@ def plan(path):
         print(f"{row['engine']:6} {score}  {row['title'][:80]}", file=sys.stderr)
     if fallback:
         print(f'route: Jev unavailable, every task on Astra ({fallback})', file=sys.stderr)
+    mark_build(os.path.dirname(os.path.abspath(path)), total=len(tasks))
     return {'model': model, 'fallback': fallback, 'tasks': out}
 
 
@@ -182,6 +217,7 @@ def log(pairs):
         row[key] = coerce(value)
     with open(ledger_path(), 'a') as ledger:
         ledger.write(json.dumps(row) + '\n')
+    mark_build(os.getcwd(), done=True)
     return row
 
 
@@ -225,6 +261,7 @@ def selftest():
         print(f"  {'ok  ' if ok else 'FAIL'} {name}")
         fails += 0 if ok else 1
 
+    os.environ.pop('CLAUDE_CODE_SESSION_ID', None)  # never touch the live run's marker
     with tempfile.TemporaryDirectory() as tmp:
         plan_md = os.path.join(tmp, 'plan.md')
         titles = ['Task 1: docs', 'Task 2: hard socket', 'Task 3: glue (driver)', 'Task 4: medium wiring',
@@ -266,6 +303,26 @@ def selftest():
         check('the ledger reports by engine and difficulty, past a broken line',
               'fable   hard 2.5+      1         0%        1.0      5.0' in table and
               'astra   easy <1.5      1       100%' in table)
+        repo = os.path.join(tmp, 'repo')
+        subprocess.run(['git', 'init', '-q', repo], check=True)
+        stage = os.path.join(repo, '.ship-stage')
+        open(stage, 'w').write('plan')
+        os.makedirs(os.path.join(repo, 'specs'))
+        shipped = os.path.join(repo, 'specs', 'plan.md')
+        open(shipped, 'w').write(open(plan_md).read())
+        plan(shipped)
+        check('routing moves the marker to build:0:9', open(stage).read() == 'build:0:9')
+        here = os.getcwd()
+        os.chdir(repo)
+        try:
+            log(['task=1', 'engine=astra'])
+            plan(shipped)
+        finally:
+            os.chdir(here)
+        check('a logged task counts one done, and a re-route keeps the count', open(stage).read() == 'build:1:9')
+        os.remove(stage)
+        plan(shipped)
+        check('outside a ship no marker appears', not os.path.exists(stage))
     print(f'route self-test: {fails} failed')
     return fails == 0
 

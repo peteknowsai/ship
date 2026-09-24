@@ -174,6 +174,12 @@ itself and holds for any worker.
   both 10/10. Sol wrote 75% more tokens in less time, so it generates about twice as
   fast, but reading files and running tests set a task's wall time. That is why Sol
   left the ladder. Put it back only on a ledger showing generation-heavy tasks.
+- **The first ladder build ran its Astra tasks on Opus and sat on `plan`** (cells-app
+  packs, 2026-09-24). The driver's own ship args said "Codex is out", carried over from
+  a September 23 outage, so it overrode the router's three Astra picks without trying one.
+  The same run went from the router straight to fan-out and never wrote `build:0:<M>`,
+  and Pete asked which stage it was in. The router now moves the marker, and "down"
+  needs this ship's own failed run.
 - **`app-server` over `exec` buys nothing a fire-and-collect task uses** (measured
   2026-09-18): a new task costs about 5 s either way, and app-server saves 2 to 3 s only
   on a second turn in a live thread, while needing a long-lived client that answers
