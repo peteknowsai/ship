@@ -155,11 +155,22 @@ These are facts, not process — the process lives in SKILL.md.
 
 ## Dispatch
 
-Codex is the BUILD engine again since 2026-09-18, through `codex exec` inside
-`scripts/astra.sh` (Engines). It was the engine through `codex app-server` and a
+Since 2026-09-24 BUILD routes each task by difficulty: Astra through `codex exec` inside
+`scripts/astra.sh` for the easier half, Opus 5.5 and Fable subagents above it
+(Engines). Codex was the only engine from 2026-09-18, through `codex app-server` and a
 supervisor from 2026-08-12, and not an engine at all from 2026-09-06. The codex bullets
 below are why the wrapper has each of its guards; every other line is about delegation
 itself and holds for any worker.
+
+- **Sol is not 6x faster on a coding task** (2026-09-24). The same brief (a model
+  argument for `astra.sh` plus a selftest case) at high effort: Sol 81 s, Astra 91 s,
+  both 10/10. Sol wrote 75% more tokens in less time, so it generates about twice as
+  fast, but reading files and running tests set a task's wall time. That is why Sol
+  left the ladder. Put it back only on a ledger showing generation-heavy tasks.
+- **`app-server` over `exec` buys nothing a fire-and-collect task uses** (measured
+  2026-09-18): a new task costs about 5 s either way, and app-server saves 2 to 3 s only
+  on a second turn in a live thread, while needing a long-lived client that answers
+  the server or wedges the thread.
 
 - **Astra's sandbox cannot bind a loopback port**, so any test that starts a local
   server fails inside a run with `listen EPERM` or `EADDRINUSE` on port 0 (cells,

@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ship engine routing</title>
+<style>
+:root{--bg:#fbfbfa;--fg:#1d1d1b;--dim:#6b6b66;--line:#e2e1dc;--card:#fff;--astra:#2f6fb3;--opus:#b0701c;--fable:#7a3fb0;--driver:#5b5b57}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#161615;--fg:#ecebe6;--dim:#9a9993;--line:#34332f;--card:#1f1f1d;--astra:#6fa8e6;--opus:#e0a24f;--fable:#b58ae6;--driver:#a3a29c}}
+:root[data-theme="dark"]{--bg:#161615;--fg:#ecebe6;--dim:#9a9993;--line:#34332f;--card:#1f1f1d;--astra:#6fa8e6;--opus:#e0a24f;--fable:#b58ae6;--driver:#a3a29c}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:17px/1.6 system-ui,-apple-system,sans-serif}
+main{max-width:780px;margin:0 auto;padding:48px 16px 80px}
+h1{font-size:34px;line-height:1.2;margin:0 0 8px}
+h2{font-size:21px;margin:40px 0 10px}
+p.lede{font-size:19px;margin:0 0 8px}
+.dim{color:var(--dim)}
+.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:20px 0}
+.stage{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px}
+.stage b{display:block;font-size:13px;letter-spacing:.06em;color:var(--dim)}
+.stage div{font-size:15px;margin-top:4px}
+.tag{display:inline-block;font-size:13px;font-weight:600;padding:1px 8px;border-radius:99px;color:#fff}
+.astra{background:var(--astra)}.opus{background:var(--opus)}.fable{background:var(--fable)}.driver{background:var(--driver)}
+table{border-collapse:collapse;width:100%;font-size:15px}
+td,th{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;color:var(--dim);font-size:13px}
+td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+details{border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin:10px 0;background:var(--card)}
+summary{cursor:pointer;font-weight:600}
+code{font-size:14px}
+.bar{display:flex;height:14px;border-radius:7px;overflow:hidden;margin:6px 0 2px}
+@media (max-width:620px){.flow{grid-template-columns:1fr 1fr}}
+</style>
+<main>
+<h1>Ship engine routing</h1>
+<p class="lede">Opus 5.5 drives /ship now. Each BUILD task goes to the model its difficulty earns, and Jev, a fast classifier, measures that difficulty. Fable reviews the plan before anything is built and the whole branch before it merges. Every task's outcome goes into a ledger, so after one real build we tune the split from numbers.</p>
+<p class="dim">Pete, 2026-09-24. All models at high effort. The Codex version is simpler: Astra does everything.</p>
+
+<h2>Who does what</h2>
+<div class="flow">
+  <div class="stage"><b>DISCOVER</b><div>Opus 5.5 drives. Recon and consults on Opus subagents.</div></div>
+  <div class="stage"><b>PLAN</b><div>Opus writes the plan. <span class="tag fable">Fable</span> reviews it.</div></div>
+  <div class="stage"><b>BUILD</b><div>Jev ranks tasks. <span class="tag astra">Astra</span> <span class="tag opus">Opus</span> <span class="tag fable">Fable</span></div></div>
+  <div class="stage"><b>REVIEW</b><div><span class="tag fable">Fable</span> reads the whole branch. Opus verifies the running app.</div></div>
+</div>
+
+<h2>The BUILD ladder</h2>
+<p>Tasks are ranked against the rest of the same plan, not scored against a fixed bar, so every plan splits the same way.</p>
+<div class="bar" aria-label="50 percent Astra, 25 percent Opus, 25 percent Fable"><span class="astra" style="flex:2"></span><span class="opus" style="flex:1"></span><span class="fable" style="flex:1"></span></div>
+<table>
+<tr><th>Difficulty rank</th><th>Engine</th><th>Runs as</th></tr>
+<tr><td>bottom 50%</td><td><span class="tag astra">Astra</span></td><td><code>astra.sh run</code>, codex sandbox</td></tr>
+<tr><td>50th to 75th</td><td><span class="tag opus">Opus 5.5</span></td><td>harness subagent</td></tr>
+<tr><td>top 25%</td><td><span class="tag fable">Fable 5.1</span></td><td>harness subagent</td></tr>
+<tr><td>marked (inline) or (driver)</td><td><span class="tag driver">driver</span></td><td>not ranked, the driver writes it</td></tr>
+</table>
+<p class="dim">Jev unreachable means every task goes to Astra, noted on the review card. The router never blocks a build. Two wrong diffs on one task move it up a rung.</p>
+
+<h2>Jev on a real plan</h2>
+<p>The gemini-live-voice plan from cells, 16 tasks, one request, 0.36 s, about $0.0007. Score is Jev's difficulty on a 0 to 4 scale.</p>
+<table>
+<tr><th>Engine</th><th>Score</th><th>Task</th></tr>
+<tr><td><span class="tag fable">Fable</span></td><td class="n">3.33</td><td>The window's Gemini socket, with a fresh session after every turn</td></tr>
+<tr><td><span class="tag fable">Fable</span></td><td class="n">3.28</td><td>The Gemini session, its routes, the clerk on Muse and the ten minutes</td></tr>
+<tr><td><span class="tag fable">Fable</span></td><td class="n">3.04</td><td>The call session speaks through Gemini</td></tr>
+<tr><td><span class="tag opus">Opus</span></td><td class="n">2.96</td><td>The relay mints a Gemini call pass and settles what a call spent</td></tr>
+<tr><td><span class="tag opus">Opus</span></td><td class="n">2.92</td><td>The brain transcribes a recording through Muse Transcribe</td></tr>
+<tr><td><span class="tag opus">Opus</span></td><td class="n">2.82</td><td>Grok's recorder, hook and ⌘D, ported</td></tr>
+<tr><td><span class="tag astra">Astra</span></td><td class="n">2.72</td><td>Every signed-in account gets the mic, with a daily hour</td></tr>
+<tr><td><span class="tag astra">Astra</span></td><td class="n">2.18</td><td>The composer gets Grok's mic</td></tr>
+<tr><td><span class="tag astra">Astra</span></td><td class="n">1.84</td><td>The host answers transcribeAudio</td></tr>
+<tr><td><span class="tag astra">Astra</span></td><td class="n">1.77</td><td>The Voice row lists Gemini's voices</td></tr>
+<tr><td><span class="tag astra">Astra</span></td><td class="n">1.37</td><td>The brain knows Gemini's voices by American name</td></tr>
+<tr><td><span class="tag astra">Astra</span></td><td class="n">1.25</td><td>A 2,000-token voice prompt for the Cells lane</td></tr>
+<tr><td><span class="tag driver">driver</span></td><td class="n">-</td><td>Probes, docs, relay deploy, smoke walk (4 tasks marked driver)</td></tr>
+</table>
+
+<h2>How we judge it</h2>
+<p>Every accepted task appends one line to <code>~/.claude/ship-ledger.jsonl</code>: engine, Jev score, minutes, fix rounds, whether the gates passed first try, and the driver's verdict. After the first build on this ladder, <code>route.py report</code> gives one table by engine and difficulty, and we move the cuts from it.</p>
+
+<details><summary>Codex version</summary>
+<p>Astra drives, writes the plan, builds every task, and a fresh Astra context reviews the plan and the branch. No Jev, no Anthropic models, high effort throughout. Its stage marker is now one line, so the status line reads it.</p>
+</details>
+
+<details><summary>Why Sol left the ladder</summary>
+<p>Same brief, both at high effort: Sol 81 s, Astra 91 s, both passed 10/10. Sol writes about twice as fast, but reading files and running tests set a task's wall time, so the 6x never showed up. It comes back only if the ledger shows generation-heavy tasks where it would pay.</p>
+</details>
+
+<details><summary>Prompt changes from the Opus 5.5 guide</summary>
+<ul>
+<li>A paragraph naming the four ways a turn ends early while work is owed. Status notes ride with the next tool call; a turn ends only at a gate, a result, or while waiting on background work.</li>
+<li>Effort high everywhere. <code>astra.sh</code> defaulted to medium and now defaults to high.</li>
+<li>Dated provenance notes cut, and 73 bold spans inside sentences unwrapped. Bullet lead-ins and HARD STOP keep their bold.</li>
+</ul>
+</details>
+
+<details><summary>Risks worth watching</summary>
+<ul>
+<li>Fable quota: a quarter of BUILD plus two reviews. On a 12-task plan that is 3 tasks.</li>
+<li>Sandbox asymmetry: only Astra cannot start a local server, so its server tests are expected failures. The ledger's first-pass rate reads Astra's gates after the driver's own run, not the sandbox's.</li>
+<li>Tiny plans: a 1-task plan sends that task to Fable, because it is the hardest by rank. Mark small tasks (inline).</li>
+</ul>
+</details>
+
+<details><summary>What changed in the repo</summary>
+<ul>
+<li><code>scripts/route.py</code>: plan, log, report, selftest. Key from the keychain.</li>
+<li><code>SKILL.md</code>: Engines rewritten, Fable plan review in PLAN, routed BUILD, Fable correctness review, turn-ending rule.</li>
+<li><code>codex/ship.md</code>: high effort, one-line stage marker, fresh worktree per ship, Astra plan review.</li>
+<li><code>astra.sh</code> default effort, README, incidents.</li>
+</ul>
+</details>
+</main>
+</html>

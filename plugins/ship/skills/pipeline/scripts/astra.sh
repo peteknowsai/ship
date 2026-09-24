@@ -37,7 +37,7 @@ mcp_off() {
 }
 
 dispatch() {
-  local mode=$1 worktree=$2 brief=$3 out=$4 effort=${5:-medium}
+  local mode=$1 worktree=$2 brief=$3 out=$4 effort=${5:-high}
   [ -d "${worktree}" ] || { echo "astra: no worktree at ${worktree}" >&2; return 2; }
   [ -s "${brief}" ] || { echo "astra: brief ${brief} is missing or empty" >&2; return 2; }
   mkdir -p "${out}"; out=$(cd "${out}" && pwd); worktree=$(cd "${worktree}" && pwd)   # a fix round runs from the worktree
