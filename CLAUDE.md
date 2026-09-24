@@ -2,7 +2,8 @@
 
 The Claude Code plugin behind `/ship` (marketplace `peteknowsai/ship`). Skills live in
 `plugins/ship/skills/` (`pipeline` is /ship itself, plus `verify`). BUILD's dispatcher is
-`plugins/ship/skills/pipeline/scripts/astra.sh`, and `astra.sh --selftest` is its check. The bare
+`plugins/ship/skills/pipeline/scripts/astra.sh`, and `astra.sh --selftest` is its check;
+`route.py --selftest` checks the router that picks each task's engine. The bare
 `/ship` slash command is a *personal* command at `~/.claude/commands/ship.md` (a thin
 dispatcher to `ship:pipeline`) — plugin commands are always namespaced `plugin:command`,
 so a command in this repo would surface as the awkward `/ship:ship`. Don't add one back.

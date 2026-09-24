@@ -36,7 +36,8 @@ Read the repo's AGENTS.md and CLAUDE.md. Honor `ship: no`, gate commands, previe
 backend, test-auth route, deployment lane, release ritual, `land:`, and any
 `design of record: transplant <path>` contract. Inspect current git state first.
 
-Reuse a feature worktree. For a Codex-managed worktree, create a feature branch if
+A new ship gets a new worktree. Reuse only the one this ship started in, never a
+worktree whose branch already landed. For a Codex-managed worktree, create a feature branch if
 detached. Never nest or remove Worktrunk worktrees inside an app-managed worktree.
 Starting on main: create a worktree with `wt switch --create`, otherwise use
 `git worktree add`. Keep the primary checkout on main and use absolute paths.
@@ -46,7 +47,9 @@ Provision only the preview resources the repo requires. Keep its backend, URL, a
 test account isolated from other runs. Record the branch and worktree at start,
 input gates, and completion. Before writing `.ship-stage`, ensure it is ignored
 with `git check-ignore`; if needed add it to the shared git info/exclude resolved
-through `git rev-parse --git-path info/exclude`. Update it at stage transitions.
+through `git rev-parse --git-path info/exclude`. Update it at stage transitions with
+one line, the bare stage word the status line reads: `discover`, `gate:1`, `plan`,
+`gate:2`, `build:N:M`, or `review`.
 
 ## Design when needed
 
@@ -78,9 +81,13 @@ Read installed impeccable guidance when designing UI. Do not expand approved sco
 Make small, coherent edits directly. Delegate only when context isolation, independent
 judgment, or parallel execution saves work. Don't pay for an agent just to relay a task.
 
+Any lane with execution notes gets them reviewed first: a fresh Astra subagent reads
+them against the request or the locked design and reports a missing task, a wrong
+file, a test that cannot fail, or an order that breaks. Fix what's real, then build.
+
 - Use collaboration subagents with `model: "gpt-6-astra"`, `fork_turns: "none"`, and
-  a self-contained brief. Let the configured reasoning effort apply unless the task
-  or user needs an explicit setting. Do not lower it merely to chase speed.
+  a self-contained brief. Reasoning effort is high for every worker and for the
+  driver. No Anthropic models run in this workflow.
 - Each worker owns named files and acceptance criteria. Tell workers they are not
   alone, must preserve others' edits, and must not commit, push, or open PRs.
 - Parallelize tasks whose file ownership and dependencies do not overlap. Keep
