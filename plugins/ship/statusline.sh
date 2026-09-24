@@ -27,7 +27,7 @@ update_c()   { c '38;5;179'; }   # muted gold
 # so which stage we're in always reads — not just a single dim word.
 stage_bar() {
   active="$1"; out=""
-  for s in design plan build review; do
+  for s in design plan build test land; do
     [ -n "$out" ] && out="$out$(c '38;5;239') · $(rst)"
     if [ "$s" = "$active" ]; then out="$out$(c '1;38;5;215')$s$(rst)"
     else out="$out$(c '38;5;242')$s$(rst)"; fi
@@ -188,10 +188,11 @@ if [ -n "$ship_stage" ]; then
   case "$ship_stage" in
     gate:1*) printf "$(gate_c)✋ %s — storyboard?$(rst)" "$ship_slug"; is_gate=1; phase="$(stage_bar design)" ;;
     gate:2*) printf "$(gate_c)✋ %s — go?$(rst)" "$ship_slug"; is_gate=1; phase="$(stage_bar plan)" ;;
+    test*)   printf "$(gate_c)✋ %s — test it, then merge main?$(rst)" "$ship_slug"; is_gate=1; phase="$(stage_bar test)" ;;
     discover*) printf "$(ship_c)🚢 %s$(rst)" "$ship_slug"; phase="$(stage_bar design)" ;;
     plan*)     printf "$(ship_c)🚢 %s$(rst)" "$ship_slug"; phase="$(stage_bar plan)" ;;
     build*)    printf "$(ship_c)🚢 %s$(rst)" "$ship_slug"; phase="$(stage_bar build)" ;;
-    review*)   printf "$(ship_c)🚢 %s$(rst)" "$ship_slug"; phase="$(stage_bar review)" ;;
+    review*)   printf "$(ship_c)🚢 %s$(rst)" "$ship_slug"; phase="$(stage_bar test)" ;;
     *)         printf "$(ship_c)🚢 %s$(rst)" "$ship_slug" ;;
   esac
 else
