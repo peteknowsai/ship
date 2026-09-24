@@ -51,6 +51,17 @@ fi
 # taking up room. Drop any trailing parenthetical: "Opus 5 (1M context)" -> "Opus 5".
 model_name=$(printf '%s' "$model_name" | sed 's/ *([^)]*)//g')
 
+# A ship aimed at another repo can't move the session's cwd (EnterWorktree refuses a
+# foreign worktree), so /ship leaves the worktree's path under this session's id.
+# Follow it while that worktree still carries a stage marker; teardown ends it.
+if [ "$HAS_JQ" -eq 1 ]; then
+  ship_ptr="$HOME/.claude/ship-active/$(echo "$input" | jq -r '.session_id // "none"' 2>/dev/null)"
+  if [ -f "$ship_ptr" ]; then
+    ship_wt=$(head -1 "$ship_ptr")
+    if [ -f "$ship_wt/.ship-stage" ]; then cd "$ship_wt" 2>/dev/null; else rm -f "$ship_ptr"; fi
+  fi
+fi
+
 # ---- git: branch only (the slug / fallback identity) ----
 git_branch=""
 git_root=""
@@ -70,10 +81,15 @@ if git rev-parse --git-dir >/dev/null 2>&1; then
 fi
 
 # ---- ship stage (worktree pipeline marker written by /ship) ----
+# Claude Code writes the bare stage word; Codex writes "key: value" lines with a
+# "stage:" key (or a bare word on line 1). Take the stage key when present.
 ship_stage=""
-[ -n "$git_root" ] && [ -f "$git_root/.ship-stage" ] && \
-  ship_stage=$(head -1 "$git_root/.ship-stage" 2>/dev/null | tr -d ' \n')
-ship_slug="${git_branch#feature/}"
+if [ -n "$git_root" ] && [ -f "$git_root/.ship-stage" ]; then
+  ship_stage=$(sed -n 's/^stage:[[:space:]]*//p' "$git_root/.ship-stage" | head -1)
+  [ -n "$ship_stage" ] || ship_stage=$(head -1 "$git_root/.ship-stage")
+  ship_stage=$(printf '%s' "$ship_stage" | tr -d ' \n' | tr '[:upper:]' '[:lower:]')
+fi
+ship_slug="${git_branch#*/}"
 
 # ---- weekly Max usage (cached; OAuth token from Keychain) ----
 weekly_pct=""
