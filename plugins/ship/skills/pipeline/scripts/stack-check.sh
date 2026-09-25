@@ -8,6 +8,9 @@
 #            every *.vercel.app URL needs a login)
 #   convex   CONVEX_DEPLOY_KEY on Production only (the production build pushes functions)
 #   clerk    pk_live on Production, pk_test on Preview and Development
+#   bypass   an automation bypass exposed as an env var: behind the login wall, a durable
+#            workflow's own queue callbacks are refused without it, and a session started
+#            on a deployment that lacked it never wakes again
 # Exit 1 when anything is crossed. Uses the vercel CLI's own login (or VERCEL_TOKEN).
 set -uo pipefail
 scope=""
@@ -37,6 +40,13 @@ for project in "$@"; do
     all) say guard ✓ "everything behind login (the custom domain too: switch to all_except_custom_domains to go public)" ;;
     *) say guard ✗ "protection '$guard': preview URLs are public" ;;
   esac
+  if [ "$guard" != none ]; then
+    if jq -e '[.protectionBypass // {} | to_entries[] | select(.value.scope=="automation-bypass" and .value.isEnvVar)] | length > 0' <<<"$info" >/dev/null; then
+      say bypass ✓ "automation bypass on every new deployment"
+    else
+      say bypass ✗ "no automation bypass: background jobs (Eve sessions, workflows) are refused by the login wall; add one before the first session"
+    fi
+  fi
 
   envs=$(api "/v10/projects/$project/env?teamId=$team")
   targets_of() { jq -r --arg k "$1" '[.envs[] | select(.key==$k) | .target[]] | unique | join(",")' <<<"$envs"; }
