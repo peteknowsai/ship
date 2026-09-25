@@ -1,9 +1,10 @@
 #!/bin/bash
 # stack-check: is this app's Vercel + Convex + Clerk wiring split cleanly into dev and prod?
 # Reads each Vercel project and flags anything crossed. Values are never printed.
-#   usage: stack-check.sh --scope <team> <project> [<project>...]
+#   usage: stack-check.sh --scope <team> [--production-branch <branch>] <project> [<project>...]
 # Checks, per project:
-#   git      linked to a repo, production branch main
+#   git      linked to a repo, production branch main (or --production-branch, for a repo
+#            that builds production from a release branch)
 #   guard    protection at least all_except_custom_domains (the custom domain may be public,
 #            every *.vercel.app URL needs a login)
 #   convex   CONVEX_DEPLOY_KEY on Production only (the production build pushes functions)
@@ -14,7 +15,9 @@
 # Exit 1 when anything is crossed. Uses the vercel CLI's own login (or VERCEL_TOKEN).
 set -uo pipefail
 scope=""
+prod=main
 [ "${1:-}" = --scope ] && { scope=$2; shift 2; }
+[ "${1:-}" = --production-branch ] && { prod=$2; shift 2; }
 [ -n "$scope" ] && [ $# -gt 0 ] || { sed -n '3p' "$0"; exit 2; }
 auth="$HOME/Library/Application Support/com.vercel.cli/auth.json"
 [ -f "$auth" ] || auth="$HOME/.local/share/com.vercel.cli/auth.json"
@@ -31,8 +34,8 @@ for project in "$@"; do
   info=$(api "/v9/projects/$project?teamId=$team")
   repo=$(jq -r '.link.repo // empty' <<<"$info"); branch=$(jq -r '.link.productionBranch // empty' <<<"$info")
   if [ -z "$repo" ]; then say git ✗ "not linked to a repo: a push deploys nothing, and a plain vercel deploy lands on production"
-  elif [ "$branch" != main ]; then say git ✗ "production branch is '$branch', not main"
-  else say git ✓ "$(jq -r '.link.org // .link.projectNamespace // ""' <<<"$info")/$repo, production = main"; fi
+  elif [ "$branch" != "$prod" ]; then say git ✗ "production branch is '$branch', not $prod"
+  else say git ✓ "$(jq -r '.link.org // .link.projectNamespace // ""' <<<"$info")/$repo, production = $prod"; fi
 
   guard=$(jq -r '.ssoProtection.deploymentType // "none"' <<<"$info")
   case "$guard" in

@@ -25,8 +25,7 @@ diff and concluding "looks right" is exactly the failure this skill exists to pr
 ## 1. Preconditions — the caller owns these
 
 The running app is **already up** — in ship's TEST the target is the branch's preview link
-when the repo's contract has `preview:` (the host, database and sign-in Pete will test),
-else the worktree's dev server, booted for you; standalone, boot it first and note the URL.
+when ship built one (the host, database and sign-in Pete will test), else the worktree's dev server, booted for you; standalone, boot it first and note the URL.
 The verifier **reuses** that stack, never boots its own. A preview behind the host's login
 wall (Vercel protection) is reached with its automation bypass: the caller passes the
 `x-vercel-protection-bypass` value, and the verifier sets it as an extra header on its
