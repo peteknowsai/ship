@@ -88,6 +88,14 @@ opt a repo into `per-branch`.
   now each pack's Vercel production build pushes its Convex functions (drop check first)
   before building the app, with the deploy key only in the Production environment. Ship
   watches those builds after landing and never pushes a production database itself.
+- **A session started on a deployment without an automation bypass never wakes again.** Eve
+  sessions are durable workflows pinned to the deployment that started them, and behind
+  Vercel's login wall the workflow queue's own callbacks get a challenge page unless that
+  deployment carries an automation bypass as an env var. A new project's first sessions were
+  born before the bypass existed: every later message to them was accepted (202) and never
+  run, retried every 5 s as `ForbiddenError: This request requires a challenge`. Add the
+  bypass before the first session; `stack-check.sh` flags a project without one. Sessions
+  already stuck stay stuck: start a fresh account.
 - **A Vercel project with no git link deploys to production on a plain `vercel deploy`.**
   So does any project's first deployment, a git push of a branch included: a new project's
   first branch push built as production and began a production build that would have pushed
