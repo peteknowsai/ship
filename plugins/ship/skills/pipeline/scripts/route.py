@@ -9,8 +9,8 @@ task done, so the status line reaches BUILD without the driver remembering to sa
   route.py --selftest
 
 The ladder (Pete, 2026-09-24) ranks the routable tasks by Jev's difficulty score: the
-bottom half goes to Astra, the 50th to 75th percentile to Opus 5.5, the top quarter to
-Fable. A task whose heading says (driver) or (inline) stays with the driver and is not
+bottom half goes to Astra, the 50th to 75th percentile to Fable 5.1, the top quarter to
+Opus 5.5 (flipped 2026-09-25: Opus 5.5 is the stronger builder). A task whose heading says (driver) or (inline) stays with the driver and is not
 ranked. Jev unreachable or no key: every task goes to Astra and `fallback` says why,
 because a router must never stop a build.
 
@@ -155,13 +155,13 @@ def ask_jev(routable):
 
 def assign(routable, scores):
     """The ladder: rank by score, ties in plan order. The easier half goes to Astra
-    (rounded up), the hardest quarter to Fable (rounded down, but the hardest task
-    always), and Opus takes what is between. Rounding favours the plentiful engine."""
+    (rounded up), the hardest quarter to Opus (rounded down, but the hardest task
+    always), and Fable takes what is between. Rounding favours the plentiful engine."""
     ranked = sorted(routable, key=lambda t: (scores[t['n']]['score'], t['n']))
     n = len(ranked)
-    fable = max(1, n // 4)
-    astra = min(n - fable, (n + 1) // 2)
-    return {t['n']: 'astra' if i < astra else 'fable' if i >= n - fable else 'opus'
+    opus = max(1, n // 4)
+    astra = min(n - opus, (n + 1) // 2)
+    return {t['n']: 'astra' if i < astra else 'opus' if i >= n - opus else 'fable'
             for i, t in enumerate(ranked)}
 
 
@@ -276,8 +276,8 @@ def selftest():
         got = {t['n']: t['engine'] for t in plan(plan_md)['tasks']}
         check('the driver task stays with the driver', got[3] == 'driver')
         check('bottom half on Astra', sorted(n for n, e in got.items() if e == 'astra') == [1, 5, 7, 9])
-        check('50th to 75th on Opus', sorted(n for n, e in got.items() if e == 'opus') == [4, 8])
-        check('top quarter on Fable', sorted(n for n, e in got.items() if e == 'fable') == [2, 6])
+        check('50th to 75th on Fable', sorted(n for n, e in got.items() if e == 'fable') == [4, 8])
+        check('top quarter on Opus', sorted(n for n, e in got.items() if e == 'opus') == [2, 6])
         for name, answers in [('bare numbers', {f't{n}': 1 for n in scores}),
                               ('string scores', {f't{n}': {'score': str(s)} for n, s in scores.items()})]:
             json.dump({'answers': answers}, open(reply, 'w'))
@@ -290,7 +290,7 @@ def selftest():
         json.dump({'answers': {f't{n}': {'score': n} for n in range(1, 6)}}, open(reply, 'w'))
         got = [t['engine'] for t in plan(few)['tasks']]
         check('a heading inside a code fence is not a task', len(got) == 5)
-        check('five tasks round toward Astra: 3, 1, 1', got == ['astra'] * 3 + ['opus', 'fable'])
+        check('five tasks round toward Astra: 3, 1, 1', got == ['astra'] * 3 + ['fable', 'opus'])
         del os.environ['ROUTE_RESPONSE']
         os.environ.update(TYPESAFE_API_KEY='', ROUTE_NO_KEYCHAIN='1')
         result = plan(plan_md)
