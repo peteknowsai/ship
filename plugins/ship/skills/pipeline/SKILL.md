@@ -301,6 +301,12 @@ refs/remotes/origin/HEAD` (strip `refs/remotes/origin/`), else `origin/main`, el
 `origin/master`, else local `main`. Every `main` in this pipeline means that detected
 base branch.
 
+**Never stack on a branch that hasn't landed.** Asked to build on top of another
+ship's branch, branch off main anyway, cherry-pick only the commits you need from it,
+and open the tracker PR against main. Its own rebase later finds those commits already
+there. A PR based on the other branch strands at "merge main" whenever that branch
+hasn't landed first (incidents: Worktrees).
+
 ```
 wt switch --create feature/<slug> --no-cd --format=json -y
 ```
@@ -682,6 +688,12 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
   - Session living in a worktree ship didn't create (Zero's sibling convention):
     don't tear down what isn't yours — merge with `-R <owner/repo>` sans
     `--delete-branch`, `git push origin --delete <branch>`, leave the worktree.
+  - Session *launched* inside its worktree, not entered through `EnterWorktree`: it
+    can't leave. `ExitWorktree` does nothing, and once the directory is gone the harness
+    refuses every shell command, in subagents too. Run step 0, merge from the worktree
+    (`gh pr merge <#> --squash --delete-branch` merges on GitHub and only fails its local
+    checkout of main), do everything else that needs a shell, and make `wt remove` the
+    very last action or leave it to `wt-sweep`.
   - No GitHub remote → `wt merge` (squashes, ff's main, removes the worktree) is the
     fallback.
   - **`land: direct`** replaces steps 0–4: from the worktree, `git fetch origin && git

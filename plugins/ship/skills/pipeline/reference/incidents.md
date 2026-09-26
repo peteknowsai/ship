@@ -6,6 +6,17 @@ These are facts, not process — the process lives in SKILL.md.
 
 ## Worktrees & git
 
+- **A PR stacked on an unlanded branch stranded at "merge main"** (cells-app local-hosts,
+  2026-09-25). Pete said to build on top of feature/muse-chat, still a draft (#19), so
+  #24 took it as its base. At "merge main" #19 hadn't landed: reset onto origin/main,
+  cherry-pick our commits and the two of theirs we needed, force-push, retarget. Branch
+  off main and cherry-pick from the start.
+- **Removing the worktree a session was launched in locks the session out** (same
+  landing). The session's launch directory was the worktree, so `ExitWorktree` was a
+  no-op; after `wt remove` the guard refused every Bash command, a subagent inherited
+  the pin, and the only way out was recreating the directory by hand. Such a session
+  merges from the worktree and removes it last, or leaves it to `wt-sweep`.
+
 - **The browser writes screenshots only inside the session's workspace roots**
   (2026-09-24, when gstack's `/browse` gave way to the chrome-devtools MCP). A verifier
   saving to `/tmp` got "Access denied: not within any of the configured workspace
