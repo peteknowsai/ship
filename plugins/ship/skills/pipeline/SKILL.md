@@ -75,9 +75,8 @@ final say. Every model runs at high effort: the driver, Fable, Opus subagents, a
 Astra. Never xhigh or max, and never medium to save time.
 
 **Fable 5.1 is the second opinion in three places**: the plan review at the end of
-PLAN, the 50th to 75th percentile of BUILD tasks, and REVIEW's correctness pass. It has
-the tightest quota, so it goes nowhere else. The hardest quarter goes to Opus 5.5, the
-stronger builder (Pete, 2026-09-25).
+PLAN, the middle band of BUILD tasks, and REVIEW's correctness pass. The hardest band
+goes to Opus 5.5, the stronger builder (Pete, 2026-09-25).
 
 **BUILD routes by difficulty.** Once the execution plan is written and reviewed, run
 `scripts/route.py plan <plan.md>` from this skill's directory. It asks Jev, TypeSafe's
@@ -86,10 +85,13 @@ fraction of a cent) and ranks the routable tasks:
 
 | Rank among the plan's routable tasks | Engine | How it runs |
 |---|---|---|
-| bottom 50%, scored under 2.0 | Astra (`gpt-6-astra`) | `scripts/astra.sh run`, in the background |
-| bottom 50%, scored 2.0 or more | Opus 5.5 | harness subagent, `model: "opus"`, in the background |
-| 50th to 75th percentile | Fable 5.1 | harness subagent, `model: "fable"`, in the background |
-| top 25% | Opus 5.5 | harness subagent, `model: "opus"`, in the background |
+| easiest 33%, scored under 2.0 | Astra (`gpt-6-astra`) | `scripts/astra.sh run`, in the background |
+| easiest 33%, scored 2.0 or more, and the middle 43% | Fable 5.1 | harness subagent, `model: "fable"`, in the background |
+| hardest 24% | Opus 5.5 | harness subagent, `model: "opus"`, in the background |
+
+The shares are a temporary lean on Fable (Pete, 2026-09-26); the standing split is half
+Astra, a quarter each Fable and Opus, with a too-hard Astra task on Opus. `route.py`
+holds them in `ASTRA_SHARE`, `OPUS_SHARE` and `ASTRA_OVERFLOW`.
 
 A task headed `(driver)` or `(inline)` is never ranked; the driver writes it. When the
 JSON's `fallback` is set, Jev was unreachable and every task went to Astra: say so on
