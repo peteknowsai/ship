@@ -5,6 +5,9 @@
   route.py log key=value ...     append one task's outcome to the ledger
 Inside a ship, `plan` moves the stage marker to build:0:<tasks> and each `log` counts one
 task done, so the status line reaches BUILD without the driver remembering to say so.
+`plan` also saves its picks to .ship-route.json beside the marker, and `log task=<n>`
+fills that task's `score` and `routed` engine from it, so an override shows as
+engine != routed and nobody re-asks Jev or types a score by hand.
   route.py report                the ledger as a table by engine and difficulty
   route.py --selftest
 
@@ -69,6 +72,11 @@ def stage_marker(start):
     return None
 
 
+def route_file(start):
+    marker = stage_marker(start)
+    return marker and os.path.join(os.path.dirname(marker), '.ship-route.json')
+
+
 def mark_build(start, done=None, total=None):
     """build:0:<total> when routing ends, or one more task done. Outside a ship, nothing."""
     path = stage_marker(start)
@@ -88,7 +96,7 @@ def parse_tasks(text):
     for line in text.splitlines():
         if line.lstrip().startswith(('```', '~~~')):
             fenced = not fenced
-        heading = None if fenced else re.match(r'#{2,3} (Task\b.*)', line)
+        heading = None if fenced else re.match(r'#{2,3} (Task\s+\d+\b.*)', line)
         if heading:
             title = heading.group(1).strip()
             tasks.append({'n': len(tasks) + 1, 'title': title, 'lines': [],
@@ -191,8 +199,14 @@ def plan(path):
         print(f"{row['engine']:6} {score}  {row['title'][:80]}", file=sys.stderr)
     if fallback:
         print(f'route: Jev unavailable, every task on Astra ({fallback})', file=sys.stderr)
-    mark_build(os.path.dirname(os.path.abspath(path)), total=len(tasks))
-    return {'model': model, 'fallback': fallback, 'tasks': out}
+    result = {'model': model, 'fallback': fallback, 'tasks': out}
+    where = os.path.dirname(os.path.abspath(path))
+    saved = route_file(where)
+    if saved:
+        with open(saved, 'w') as f:
+            json.dump(result, f)
+    mark_build(where, total=len(tasks))
+    return result
 
 
 def coerce(value):
@@ -215,6 +229,12 @@ def log(pairs):
         if not sep:
             raise SystemExit(f'route log: "{pair}" is not key=value')
         row[key] = coerce(value)
+    saved = route_file(os.getcwd())
+    if saved and os.path.isfile(saved) and 'task' in row:
+        picked = {t['n']: t for t in json.load(open(saved))['tasks']}.get(row['task'])
+        if picked:
+            row.setdefault('score', picked['score'])
+            row.setdefault('routed', picked['engine'])
     with open(ledger_path(), 'a') as ledger:
         ledger.write(json.dumps(row) + '\n')
     mark_build(os.getcwd(), done=True)
@@ -285,11 +305,12 @@ def selftest():
             check(f'a reply of {name} falls back instead of crashing', result['fallback'] and
                   {t['engine'] for t in result['tasks'] if t['n'] != 3} == {'astra'})
         few = os.path.join(tmp, 'few.md')
-        open(few, 'w').write(''.join(f'### Task {n}: t\n\n```md\n### Task 99: an example inside a fence\n```\n\n'
+        open(few, 'w').write('### Task list\n\nan overview, not a task\n\n' +
+                             ''.join(f'### Task {n}: t\n\n```md\n### Task 99: an example inside a fence\n```\n\n'
                                      for n in range(1, 6)))
         json.dump({'answers': {f't{n}': {'score': n} for n in range(1, 6)}}, open(reply, 'w'))
         got = [t['engine'] for t in plan(few)['tasks']]
-        check('a heading inside a code fence is not a task', len(got) == 5)
+        check('a fenced heading and "### Task list" are not tasks', len(got) == 5)
         check('five tasks round toward Astra: 3, 1, 1', got == ['astra'] * 3 + ['fable', 'opus'])
         del os.environ['ROUTE_RESPONSE']
         os.environ.update(TYPESAFE_API_KEY='', ROUTE_NO_KEYCHAIN='1')
@@ -312,14 +333,21 @@ def selftest():
         open(shipped, 'w').write(open(plan_md).read())
         plan(shipped)
         check('routing moves the marker to build:0:9', open(stage).read() == 'build:0:9')
+        json.dump({'model': 'jev-test', 'answers': {f't{n}': {'score': s, 'confidence': 0.7}
+                                                    for n, s in scores.items()}}, open(reply, 'w'))
+        os.environ['ROUTE_RESPONSE'] = reply
+        open(stage, 'w').write('plan')
+        plan(shipped)
         here = os.getcwd()
         os.chdir(repo)
         try:
-            log(['task=1', 'engine=astra'])
+            row = log(['task=2', 'engine=opus'])
             plan(shipped)
         finally:
             os.chdir(here)
         check('a logged task counts one done, and a re-route keeps the count', open(stage).read() == 'build:1:9')
+        check('log fills the score and the routed engine from the saved picks',
+              row.get('score') == 3.4 and row.get('routed') == 'opus' and row['engine'] == 'opus')
         os.remove(stage)
         plan(shipped)
         check('outside a ship no marker appears', not os.path.exists(stage))

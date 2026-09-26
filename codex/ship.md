@@ -126,6 +126,13 @@ Do not go to TEST on a mockup, a worker's claim, or tests that miss the requeste
 behavior. The verifier walks the preview link when one was built, else the worktree's dev
 server.
 
+The walk covers the surface Pete will open, signed in as he will be, with real clicks
+rather than script-dispatched events. A path it could not reach (a mic, a bot check)
+makes the verdict partial, and partial is `unverifiable`: stop and tell Pete, never cue
+TEST with the gap as a footnote. Any plan item cut or swapped after his go is named in
+the next message. Every wait has a deadline and a never-started check. Only a landing
+ends with `result:`.
+
 Fix real findings. Re-run affected checks and use a fresh verifier if behavior changed.
 Cap repeated verification at three rounds, then report the specific blocker. Preserve
 all unrelated edits. Never blindly reset or discard a dirty worktree.
