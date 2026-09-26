@@ -28,7 +28,7 @@ exactly what Pete requested. Never turn a complete approved feature into a parti
 ## Establish the repo and worktree
 
 Read the repo's AGENTS.md and CLAUDE.md. Honor `ship: no`, `gates:`, `preview:`, `dev:`,
-`test-auth:`, `backend:`, `live:`, `land:`, the release ritual, and any
+`test-auth:`, `backend:`, `stack:`, `live:`, `land:`, `release:`, the release ritual, and any
 `design of record: transplant <path>` contract. Inspect current git state first.
 
 The phases after the plan are BUILD, TEST and LAND. TEST is ship proving its own work
@@ -46,7 +46,9 @@ Follow an explicit repo base-branch override, otherwise branch from main.
 Push the branch at once and open a draft tracker PR with the first commit (`land:
 direct` opens none); it records work in flight and is never a review step. Push again at
 every milestone and post the output of the contract's `preview:` command, one link per
-app, so Pete can test mid-flight. With `backend: shared-dev` (the default), use the app's
+app, so Pete can test mid-flight. When `preview:` is on demand, post the localhost
+instead and build a preview once before TEST only when the contract or Pete calls for it.
+A `release:` word runs its command only when Pete says it, never as part of landing. With `backend: shared-dev` (the default), use the app's
 dev database and edit no env file; provision a per-branch backend only for `backend:
 per-branch`. Keep test accounts isolated from other runs. Record the branch and worktree at start,
 input gates, and completion. Before writing `.ship-stage`, ensure it is ignored
@@ -121,8 +123,8 @@ The reviewer checks the whole branch against the approved scope, especially inte
 between workers. It reports actionable findings with file, line, and failure scenario.
 The verifier drives actual behavior and returns `works`, `broken`, or `unverifiable`.
 Do not go to TEST on a mockup, a worker's claim, or tests that miss the requested
-behavior. The verifier walks the preview link when the contract has `preview:`, else the
-worktree's dev server.
+behavior. The verifier walks the preview link when one was built, else the worktree's dev
+server.
 
 Fix real findings. Re-run affected checks and use a fresh verifier if behavior changed.
 Cap repeated verification at three rounds, then report the specific blocker. Preserve

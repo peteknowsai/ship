@@ -210,8 +210,11 @@ Every key is optional, and the default is what a repo with no contract gets:
   whatever you can find.
 - **`preview:`** a command that prints this branch's preview links, one per app, with
   each build's state (cells-app: `scripts/preview-links.sh`, which reads Vercel). Ship
-  runs it after every push and posts what it prints. Default: no hosted preview; the
-  worktree's localhost is the only link.
+  runs it after every push and posts what it prints. A contract may mark it `on demand`
+  (cells-app: a push builds nothing): then ship posts the localhost after each push and
+  runs `preview:` once before TEST, only when the change needs what localhost cannot show
+  (the contract says what) or Pete asks. Default: no hosted preview; the worktree's
+  localhost is the only link.
 - **`dev:`** the command that starts the worktree's own dev server on a port of its own
   and prints its URL (cells-app: `npm run dev`, via `scripts/dev.sh`). Default: the
   repo's dev script, detached.
@@ -226,12 +229,16 @@ Every key is optional, and the default is what a repo with no contract gets:
 - **`stack:`** how to run `scripts/stack-check.sh` (in this skill's directory) for the
   repo: the host team and the app projects, plus where each app's Convex dev deployment
   and prod deploy key are. It checks that dev and prod never cross: git link and
-  production branch, protection, the Convex deploy key on Production only, every dev
+  production branch (`--production-branch <branch>` where it is not main), protection, the Convex deploy key on Production only, every dev
   Convex setting present on prod, Clerk `pk_live` on Production and `pk_test` elsewhere.
   Ship runs it before cueing TEST and before landing; a ✗ is ship's to fix, never Pete's.
 - **`live:`** what landing on main deploys, and how to watch it. cells-app: "main is
   production; each touched pack's Vercel production build pushes its Convex functions,
   then the app." Default: nothing, and ship claims no deploy.
+- **`release:`** for a repo whose main is a parking lot: the word that puts main on
+  production and the command it runs (cells-app: "release" runs `npm run release`). Ship
+  runs it only on that word, never as part of landing, and watches what `live:` names.
+  Without it, landing is the release wherever main deploys.
 - **`land:`** how a branch reaches main on Pete's word. `pr` (the default) squash-merges
   the tracker PR. `direct` pushes `HEAD:main` after a rebase and opens no PR. `auto` lands
   on green `works` without TEST, for a repo whose main deploys nothing. Any other value is
@@ -481,9 +488,9 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
   first dispatch; a status line still on `plan` mid-BUILD is the tell. Build all M tasks in one session; commit
   each task on the branch as it lands, land only when the whole plan is built.
 - **Push at every milestone, and hand Pete the links.** After a task (or a lane's merge)
-  is committed, push the branch. When the repo has `preview:`, run it once the builds
-  settle, never blocking the next dispatch on them, and post one line per app with what
-  changed and what to try. Pete works solo and tests mid-flight, so the links always show
+  is committed, push the branch. When the repo has a per-push `preview:`, run it once the
+  builds settle, never blocking the next dispatch on them, and post one line per app with
+  what changed and what to try; with an on-demand one, post the localhost. Pete works solo and tests mid-flight, so the links always show
   the worktree's latest. A build that failed is yours to fix before you post.
 - Invoke `superpowers:subagent-driven-development` (the driver drives) and send each
   task to the engine `route.py plan` picked (Engines), in the background; `(inline)`
@@ -628,7 +635,8 @@ finds after his OK would land unfixed or land fixed without his seeing it.
   own proof (incidents: Worktrees), then delete `<shots-root>/.ship-shots/<slug>/`,
   which on a cross-repo ship is not inside the worktree teardown removes.
 - **Prove it works — invoke `verify` before the card.** It walks the branch's preview
-  link when the repo has `preview:` (what Pete will test), else the localhost. A fresh read-only subagent
+  link when there is one (a per-push `preview:`, or an on-demand one ship built), else
+  the localhost. A fresh read-only subagent
   drives the feature and returns `works | broken | unverifiable` + a
   screenshot storyboard; verify loops-to-fix (cap ~3). `broken` after the cap, or
   `unverifiable` → do NOT go to TEST: end the turn with `needs input:` ("review: <feature>
@@ -705,8 +713,9 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
   with a draft PR first.
 - **A separate promotion is NOT ship's job.** Where a repo promotes from an integration
   lane to production by its own script, that is Pete's human-gated ritual: never run it,
-  never offer to. Where main is production, his "merge main" is the release and ship
-  watches it through.
+  never offer to, unless the contract's `release:` names it: then Pete's release word runs
+  it. Where main is production, his "merge main" is the release and ship watches it
+  through.
 - Run RETRO, then end with a `result:` line: what shipped, one sentence, with the live
   links (or the lane's) — plus `· ship-retro #N filed` and/or `· K backlog candidates`
   when applicable.
