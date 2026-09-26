@@ -99,7 +99,10 @@ def parse_tasks(text):
         heading = None if fenced else re.match(r'#{2,3} (Task\s+\d+\b.*)', line)
         if heading:
             title = heading.group(1).strip()
-            tasks.append({'n': len(tasks) + 1, 'title': title, 'lines': [],
+            n = int(re.match(r'Task\s+(\d+)', title).group(1))  # the plan's own number, gaps and all
+            if any(t['n'] == n for t in tasks):
+                n = max(t['n'] for t in tasks) + 1
+            tasks.append({'n': n, 'title': title, 'lines': [],
                           'driver': bool(re.search(r'\((driver|inline)\)', title, re.I))})
         elif tasks:
             tasks[-1]['lines'].append(line)
@@ -203,8 +206,11 @@ def plan(path):
     where = os.path.dirname(os.path.abspath(path))
     saved = route_file(where)
     if saved:
-        with open(saved, 'w') as f:
-            json.dump(result, f)
+        try:
+            with open(saved, 'w') as f:
+                json.dump(result, f)
+        except OSError as error:  # the table on stdout still carries the picks
+            print(f'route: could not save {saved}: {error}', file=sys.stderr)
     mark_build(where, total=len(tasks))
     return result
 
@@ -230,11 +236,18 @@ def log(pairs):
             raise SystemExit(f'route log: "{pair}" is not key=value')
         row[key] = coerce(value)
     saved = route_file(os.getcwd())
+    picked = None
     if saved and os.path.isfile(saved) and 'task' in row:
-        picked = {t['n']: t for t in json.load(open(saved))['tasks']}.get(row['task'])
-        if picked:
-            row.setdefault('score', picked['score'])
-            row.setdefault('routed', picked['engine'])
+        try:
+            picked = {t['n']: t for t in json.load(open(saved))['tasks']}.get(row['task'])
+        except (OSError, ValueError, KeyError, TypeError):
+            pass  # a broken route file costs the fill, never the row
+    if picked:
+        row.setdefault('score', picked['score'])
+        row.setdefault('routed', picked['engine'])
+    elif 'task' in row and 'routed' not in row:
+        print('route log: no saved route for this task here, so score and routed are not filled '
+              '(run log from the ship worktree)', file=sys.stderr)
     with open(ledger_path(), 'a') as ledger:
         ledger.write(json.dumps(row) + '\n')
     mark_build(os.getcwd(), done=True)
@@ -342,12 +355,19 @@ def selftest():
         os.chdir(repo)
         try:
             row = log(['task=2', 'engine=opus'])
+            moved = log(['task=1', 'engine=opus'])
+            missing = log(['task=42', 'engine=astra'])
             plan(shipped)
         finally:
             os.chdir(here)
-        check('a logged task counts one done, and a re-route keeps the count', open(stage).read() == 'build:1:9')
+        check('logged tasks count done, and a re-route keeps the count', open(stage).read() == 'build:3:9')
         check('log fills the score and the routed engine from the saved picks',
               row.get('score') == 3.4 and row.get('routed') == 'opus' and row['engine'] == 'opus')
+        check('an override shows as engine differing from routed, and an unknown task logs unfilled',
+              moved.get('routed') == 'astra' and moved['engine'] == 'opus' and 'routed' not in missing)
+        gaps = os.path.join(tmp, 'gaps.md')
+        open(gaps, 'w').write('### Task 1: a\n\nx\n\n### Task 3: b\n\ny\n')
+        check('tasks keep the numbers the plan gives them', [t['n'] for t in parse_tasks(open(gaps).read())] == [1, 3])
         os.remove(stage)
         plan(shipped)
         check('outside a ship no marker appears', not os.path.exists(stage))

@@ -325,9 +325,10 @@ hasn't landed first (incidents: Worktrees).
 
 ```
 git fetch origin
-wt switch --create feature/<slug> --base origin/main --no-cd --format=json -y
+wt switch --create feature/<slug> --base origin/<base> --no-cd --format=json -y
 ```
-(`origin/main`, because a stale local main has cost a rebase and reinstall), then enter
+(`origin/<base>`, the base branch resolved above, because a stale local copy has cost a
+rebase and reinstall), then enter
 the path from the JSON. A second ship in the same session calls
 `ExitWorktree({action:"keep"})` before `EnterWorktree` on the new path. In the session's primary repo, `EnterWorktree({path})`
 is required: the status line and FleetView read the session's cwd,
@@ -437,7 +438,7 @@ into commits otherwise (incidents: Worktrees). Never build on main.
      three questions a designer would actually bring ("went denser on B, unsure about
      the nav, which tone?"). Recon, consults and the reuse audit go in one collapsed
      block at the foot, for the record; they never sit above a frame. No TL;DR essay,
-     no section per research finding, no fait accompli. Write `gate:1`, commit, fire
+     no section per research finding, no fait accompli. `stage.sh <root> gate:1`, commit, fire
      the gate notification, `open` the storyboard, end the turn with `needs input:`
      ("storyboard round 1 — reactions?"). **HARD STOP** — every round is one.
   2. **Rounds.** Pete reacts; redraw the frames in place — minutes per round, not a
@@ -464,7 +465,7 @@ into commits otherwise (incidents: Worktrees). Never build on main.
 
 ### 2 · PLAN — the plan Pete says go on  → marker: `plan`, then `gate:2`
 
-- Write `plan`. Run `ponytail` as the *waste* critic, not a scope critic — it cuts
+- `stage.sh <root> plan`. Run `ponytail` as the *waste* critic, not a scope critic — it cuts
   reinvention and gold-plating, never a frame Pete locked. *Transplant:* ponytail's
   ladder stops above the reference. A wrapper, a class, a token or an element the
   reference's markup carries is never waste, however empty it looks (the padding
@@ -482,7 +483,7 @@ into commits otherwise (incidents: Worktrees). Never build on main.
 - **Calls on the card are plain language, and only the ones that change what he gets.**
   Each says what he'd see either way. A technical choice where you have a clear pick is
   yours: take it and log it. Never offer to phase the work.
-- **GATE 2 is his go, always, on the GATED lane** (Two principles). Write `gate:2`,
+- **GATE 2 is his go, always, on the GATED lane** (Two principles). `stage.sh <root> gate:2`,
   fire the gate notification, end the turn with `needs input:` ("go?"). **HARD STOP.**
   SELF-DIRECTED renders no card and stops for nobody.
 - **His go → spec it out.** Only now does the machine-facing writing happen: invoke
@@ -540,8 +541,8 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   first commit.** A fresh `git worktree add` carries no `node_modules` (or `.venv`,
   `vendor`, `.build`). Either run the repo's frozen-lockfile install in the lane, or
   symlink the main worktree's installs in. If you symlink, write each link's path to
-  `$(git rev-parse --git-common-dir)/info/exclude` first, where `.ship-stage` already
-  goes: a `.gitignore` line like `node_modules/` ignores a directory and not a link, so
+  the `info/exclude` that `stage.sh` already wrote `.ship-*` to (its path is `git -C
+  <root> rev-parse --git-common-dir` plus `/info/exclude`, run as its own call): a `.gitignore` line like `node_modules/` ignores a directory and not a link, so
   `git add -A` commits it and the merge swaps the real install for a link to itself
   (incidents: Worktrees). Commit lanes with the links excluded, and after the last lane
   merges confirm the main worktree's install is still a directory before trusting a red
@@ -617,7 +618,7 @@ Pete trying it on the links. His test comes after ship's on purpose: a bug the r
 finds after his OK would land unfixed or land fixed without his seeing it.
 
 
-- Write `review`. Sync with main first: `git fetch origin`; absorb upstream in the
+- `stage.sh <root> review`. Sync with main first: `git fetch origin`; absorb upstream in the
   worktree (rebase, or merge if unsafe), re-run the gates, then dispatch review — and
   re-sync right before landing if main moved again (incidents: Worktrees). On
   `backend: per-branch`, if the absorbed commits touched `convex/`, re-deploy the preview before any further
@@ -677,10 +678,12 @@ finds after his OK would land unfixed or land fixed without his seeing it.
   another skill and is refused) before the card.** The walk covers the surface Pete will
   open, signed in the way he will be, with the browser tools' real clicks and hovers,
   never events dispatched from a script (a right-click menu bug got past synthetic
-  events twice). A sign-in workaround a walker finds goes into the repo's contract under
-  `test-auth:`, so the next run doesn't rediscover it. It walks the branch's preview
-  link when there is one (a per-push `preview:`, or an on-demand one ship built), else
-  the localhost. A fresh read-only subagent
+  events twice). When the walker's report says how it got past sign-in on the repo's
+  test-auth path (Clerk's bot check, say), the driver writes that into the contract's
+  `test-auth:`, so the next run doesn't rediscover it. The walker itself never looks
+  for a way past auth. It walks the branch's preview link when there is one (a
+  per-push `preview:`, or an on-demand one ship built), else the localhost. A fresh
+  read-only subagent
   drives the feature and returns `works | broken | unverifiable` + a
   screenshot storyboard; verify loops-to-fix (cap ~3). `broken` after the cap, or
   `unverifiable` → do NOT go to TEST: end the turn with `needs input:` ("review: <feature>
@@ -700,7 +703,7 @@ finds after his OK would land unfixed or land fixed without his seeing it.
   deploy, cleanup (LAND). The same intent in other words counts ("push to main", "merge
   it", "ship it"); approval of the work without that intent ("looks good") does not land.
 - **TEST — Pete tries it, and his word lands it.** With green gates and a `works`
-  verdict, push, write `test` to `.ship-stage`, post the links (and the card, where the
+  verdict, push, `stage.sh <root> test`, post the links (and the card, where the
   lane has one), and end the turn: `needs input: test <slug> — <what to try> · say "merge
   main"`, then the branch · worktree tail. This is every lane's stop, EXPRESS included,
   because main is where things go live. Only `land: auto` skips it. While parked, keep
@@ -744,7 +747,7 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
     the contract's command from the worktree, confirm main moved (`git log -1 main`),
     then teardown from the main checkout as above. No PR is merged; a mirror remote is
     pushed only if the contract says so.
-  - Then `rm .ship-stage .ship-route.json` and `rm -f ~/.claude/ship-active/$CLAUDE_CODE_SESSION_ID`,
+  - Then `rm -f .ship-stage .ship-route.json` and `rm -f ~/.claude/ship-active/$CLAUDE_CODE_SESSION_ID`,
     **stop the review dev server**, deprovision the per-branch
     backend stage 0 spun up, if any (or skip if previews auto-expire). Verify with
     `git worktree list` — zero ship-created worktrees must remain; a leftover means
@@ -762,8 +765,8 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
   about 3 minutes says so and looks at the host's ignore step (a 25-minute wait was on
   a build Vercel never started), and nothing waits on a build the lane never makes;
   watch the deploy to conclusion (red = unfinished work, fix-forward on a new express branch); watch
-  the run for YOUR commit — `gh run list --commit $(git rev-parse <sha>)`, full SHA
-  only, a short one matches nothing and the watch times out silently — and
+  the run for YOUR commit — `gh run list --commit <full sha>` (get it with
+  `git -C <root> rev-parse <sha>` in its own call), full SHA only, a short one matches nothing and the watch times out silently — and
   artifact-check the lane; a red shared
   lane you didn't cause is a shared resource — check for an existing fix PR, claim
   with a draft PR first.

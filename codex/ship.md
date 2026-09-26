@@ -41,7 +41,9 @@ worktree whose branch already landed. For a Codex-managed worktree, create a fea
 detached. Never nest or remove Worktrunk worktrees inside an app-managed worktree.
 Starting on main: create a worktree with `wt switch --create`, otherwise use
 `git worktree add`. Keep the primary checkout on main and use absolute paths.
-Follow an explicit repo base-branch override, otherwise branch from main.
+Follow an explicit repo base-branch override, otherwise branch from main. Fetch
+first and branch from the remote's copy (`origin/<base>`), since a stale local base has
+cost a rebase and reinstall.
 
 Push the branch at once and open a draft tracker PR with the first commit (`land:
 direct` opens none); it records work in flight and is never a review step. Push again at

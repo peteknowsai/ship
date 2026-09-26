@@ -70,6 +70,12 @@ mcp__chrome-devtools__navigate_page,mcp__chrome-devtools__take_snapshot,
 mcp__chrome-devtools__click,mcp__chrome-devtools__fill,mcp__chrome-devtools__take_screenshot,
 mcp__chrome-devtools__list_console_messages,mcp__chrome-devtools__evaluate_script".
 Most new features have no automated spec — verify it agentically.
+Drive it the way a person would: click, hover, fill and press keys through the browser
+tools. evaluate_script is for reading state, never for firing events, because a
+script-fired event passes where a real right-click or drag fails. Walk the surface you
+were given, signed in the way the AUTH line says. A step you could not reach (a mic, a
+bot check, a missing device) makes the verdict `unverifiable`, naming the step, even
+when everything else worked.
 
 FEATURE (what a user should now be able to do + the observable success state):
   <intent / acceptance criteria>            (or: see plan/spec file <path>)
