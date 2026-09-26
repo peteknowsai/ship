@@ -42,6 +42,10 @@ LEVELS = [
     'modes that need careful reasoning to get right.',
 ]
 ASTRA_MAX = 2.0
+# The split, as shares of the ranked tasks: Astra the easiest, Opus the hardest, Fable
+# between. Pete, 2026-09-26, for a while, to lean on Fable: 33/43/24, and a too-hard
+# task in Astra's share goes to Fable. The standing split is 0.50/0.25 with it on Opus.
+ASTRA_SHARE, OPUS_SHARE, ASTRA_OVERFLOW = 0.33, 0.24, 'fable'
 QUESTION = 'How hard is this coding task for an AI coding agent to complete correctly on the first attempt?'
 # Jev takes 64k tokens per request, and pasted code runs near 3 characters a token. Each
 # task's question repeats the rubric (~800 characters), so a request packs tasks until
@@ -168,14 +172,14 @@ def ask_jev(routable):
 
 
 def assign(routable, scores):
-    """The ladder: rank by score, ties in plan order. The easier half goes to Astra
-    (rounded up) when it scores under ASTRA_MAX, else to Opus; the hardest quarter to
-    Opus (rounded down, but the hardest task always), and Fable takes what is between."""
+    """The ladder: rank by score, ties in plan order. The easiest ASTRA_SHARE goes to
+    Astra when it scores under ASTRA_MAX, else to ASTRA_OVERFLOW; the hardest OPUS_SHARE
+    to Opus (the hardest task always), and Fable takes what is between."""
     ranked = sorted(routable, key=lambda t: (scores[t['n']]['score'], t['n']))
     n = len(ranked)
-    opus = max(1, n // 4)
-    astra = min(n - opus, (n + 1) // 2)
-    return {t['n']: ('astra' if scores[t['n']]['score'] < ASTRA_MAX else 'opus') if i < astra
+    opus = max(1, int(n * OPUS_SHARE + 0.5))
+    astra = min(n - opus, int(n * ASTRA_SHARE + 0.5))
+    return {t['n']: ('astra' if scores[t['n']]['score'] < ASTRA_MAX else ASTRA_OVERFLOW) if i < astra
             else 'opus' if i >= n - opus else 'fable'
             for i, t in enumerate(ranked)}
 
@@ -312,9 +316,9 @@ def selftest():
         os.environ.update(ROUTE_RESPONSE=reply, SHIP_LEDGER=os.path.join(tmp, 'ledger.jsonl'))
         got = {t['n']: t['engine'] for t in plan(plan_md)['tasks']}
         check('the driver task stays with the driver', got[3] == 'driver')
-        check('bottom half on Astra', sorted(n for n, e in got.items() if e == 'astra') == [1, 5, 7, 9])
-        check('50th to 75th on Fable', sorted(n for n, e in got.items() if e == 'fable') == [4, 8])
-        check('top quarter on Opus', sorted(n for n, e in got.items() if e == 'opus') == [2, 6])
+        check('easiest third on Astra', sorted(n for n, e in got.items() if e == 'astra') == [1, 5, 7])
+        check('the middle on Fable', sorted(n for n, e in got.items() if e == 'fable') == [4, 8, 9])
+        check('hardest quarter on Opus', sorted(n for n, e in got.items() if e == 'opus') == [2, 6])
         for name, answers in [('bare numbers', {f't{n}': 1 for n in scores}),
                               ('string scores', {f't{n}': {'score': str(s)} for n, s in scores.items()})]:
             json.dump({'answers': answers}, open(reply, 'w'))
@@ -328,7 +332,7 @@ def selftest():
         json.dump({'answers': {f't{n}': {'score': n} for n in range(1, 6)}}, open(reply, 'w'))
         got = [t['engine'] for t in plan(few)['tasks']]
         check('a fenced heading and "### Task list" are not tasks', len(got) == 5)
-        check('the bottom half keeps only what scores under 2 on Astra', got == ['astra', 'opus', 'opus', 'fable', 'opus'])
+        check("Astra's share keeps only what scores under 2", got == ['astra', 'fable', 'fable', 'fable', 'opus'])
         del os.environ['ROUTE_RESPONSE']
         os.environ.update(TYPESAFE_API_KEY='', ROUTE_NO_KEYCHAIN='1')
         result = plan(plan_md)
