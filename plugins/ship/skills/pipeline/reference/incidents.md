@@ -199,6 +199,15 @@ opt a repo into `per-branch`.
 
 ## Dispatch
 
+- **The first two days on the ladder, read from nine ship sessions** (2026-09-24 to 26).
+  Pete found at TEST what the walk skipped: a right-click menu synthetic events can't
+  reproduce, a voice path no walk reached, a localhost broken by a shared sign-in
+  cookie. `verify` ran by its bare name and was refused, or not at all. Worktree
+  isolation refused over 100 compound commands, the skill's own stage-0 line among
+  them. Two runs built before Fable's plan review landed. Fable's plan and branch
+  reviews found real bugs in every run. On the ledger Astra came back clean on 13 of
+  29 tasks against Opus's 18 of 26, and 4 of 13 above a Jev score of 2.
+
 Since 2026-09-24 BUILD routes each task by difficulty: Astra through `codex exec` inside
 `scripts/astra.sh` for the easier half, Opus 5.5 and Fable subagents above it
 (Engines). Codex was the only engine from 2026-09-18, through `codex app-server` and a

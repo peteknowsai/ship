@@ -86,7 +86,8 @@ fraction of a cent) and ranks the routable tasks:
 
 | Rank among the plan's routable tasks | Engine | How it runs |
 |---|---|---|
-| bottom 50% | Astra (`gpt-6-astra`) | `scripts/astra.sh run`, in the background |
+| bottom 50%, scored under 2.0 | Astra (`gpt-6-astra`) | `scripts/astra.sh run`, in the background |
+| bottom 50%, scored 2.0 or more | Opus 5.5 | harness subagent, `model: "opus"`, in the background |
 | 50th to 75th percentile | Fable 5.1 | harness subagent, `model: "fable"`, in the background |
 | top 25% | Opus 5.5 | harness subagent, `model: "opus"`, in the background |
 
@@ -106,9 +107,15 @@ briefs name the server-starting tests as expected failures.
 outcome:
 
 ```bash
-route.py log repo=<repo> ship=<slug> task=<n> engine=<engine> score=<jev score> \
+route.py log repo=<repo> ship=<slug> task=<n> engine=<engine> \
   seconds=<wall time> fix_rounds=<n> gates_first_pass=<true|false> verdict=<clean|fixed|redone>
 ```
+
+Run it from the worktree: it fills the task's score and the engine the router picked
+from the saved route, so an override shows as `engine` differing from `routed`. Seconds
+come from the run itself (the task notification's duration, or the astra out-dir's
+first and last event), and a number you don't have is left out, never estimated: a
+third of the first 81 rows were round-number guesses.
 
 `route.py report` prints the table by engine and difficulty band. Pete reads it after
 the first build on this ladder and moves the cuts.
@@ -154,7 +161,9 @@ a fresh isolated profile per session, so parallel walks never collide and no win
 opens on Pete's screen): verify walks, design QA, live-product grounding. A subagent
 loads those tools with one ToolSearch call before its first step. A surface that needs
 Pete's real login and has no test-auth path in the repo is his: hand it off with
-`needs input:`. Never the `mcp__claude-in-chrome__*` tools. A subagent drives the
+`needs input:`. A reference product behind his login (muse.ai) is his too: ask for
+screenshots of the states you need, and use the `mcp__claude-in-chrome__*` tools only
+when he asks, since they drive his own Chrome. A subagent drives the
 browser against the running app and reports what it saw; a coding worker never does.
 
 **Never idle while a run or a subagent works.** Work the non-tree list meanwhile (the
@@ -286,8 +295,16 @@ it from inside the target repo.
 
 ## The pipeline — create a todo for each stage
 
-Each stage writes its marker to `.ship-stage` at the git root (the status line + the
-FleetView row read it). Written for Claude Code; a Codex driver runs `codex/ship.md` instead (see
+Each stage writes its marker with `scripts/stage.sh <worktree> <stage>` (the status
+line and the FleetView row read `.ship-stage`), and every stage flip posts Pete one
+line: the goal, the stage, what's next. Post it again after a compaction or a side job.
+Five runs had him asking "where are we?" mid-flight.
+
+**Shell inside a worktree session.** The harness refuses a command it can't tell stays
+in the worktree: `$(git …)` substitutions, `cd <dir> && git …`, loops or heredocs that
+name git. Use `git -C <path>`, one git command per call, and put anything multi-step
+in a script file under the job's tmp directory. Two runs lost 40 commands to
+split-and-retry. Written for Claude Code; a Codex driver runs `codex/ship.md` instead (see
 "Running under Codex Desktop" below).
 
 ### 0 · Worktree (invisible)  → marker: `discover`
@@ -308,9 +325,13 @@ there. A PR based on the other branch strands at "merge main" whenever that bran
 hasn't landed first (incidents: Worktrees).
 
 ```
-wt switch --create feature/<slug> --no-cd --format=json -y
+git fetch origin
+wt switch --create feature/<slug> --base origin/<base> --no-cd --format=json -y
 ```
-then enter the path from the JSON. In the session's primary repo, `EnterWorktree({path})`
+(`origin/<base>`, the base branch resolved above, because a stale local copy has cost a
+rebase and reinstall), then enter
+the path from the JSON. A second ship in the same session calls
+`ExitWorktree({action:"keep"})` before `EnterWorktree` on the new path. In the session's primary repo, `EnterWorktree({path})`
 is required: the status line and FleetView read the session's cwd,
 so a run that keeps working by absolute path while parked on main is invisible to Pete
 even though `.ship-stage` is being written faithfully in the worktree (he has had to ask
@@ -318,9 +339,9 @@ mid-BUILD whether a run forked at all). Absolute-path driving is the *cross-repo
 fallback only, where `EnterWorktree` can't take. Self-heal: notice mid-pipeline that
 the session cwd isn't the worktree → `EnterWorktree({path})` right then; it works fine
 after the fact. `--no-cd` is load-bearing. A `.config/wt.toml` auto-provisions
-gitignored runtime files. Write `printf 'discover' > <root>/.ship-stage`, then
-**`echo .ship-stage >> $(git rev-parse --git-common-dir)/info/exclude`** — `git add -A`
-sweeps the marker into commits otherwise (incidents: Worktrees). Never build on main.
+gitignored runtime files. Run `scripts/stage.sh <root> discover`: it writes the marker
+and adds `.ship-*` to the repo's `info/exclude`, since `git add -A` sweeps the marker
+into commits otherwise (incidents: Worktrees). Never build on main.
 
 - **Push the branch at once** (`git push -u origin feature/<slug>`), and open the
   **tracker PR** as a draft with the first commit (`gh pr create --draft --base main
@@ -418,7 +439,7 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
      three questions a designer would actually bring ("went denser on B, unsure about
      the nav, which tone?"). Recon, consults and the reuse audit go in one collapsed
      block at the foot, for the record; they never sit above a frame. No TL;DR essay,
-     no section per research finding, no fait accompli. Write `gate:1`, commit, fire
+     no section per research finding, no fait accompli. `stage.sh <root> gate:1`, commit, fire
      the gate notification, `open` the storyboard, end the turn with `needs input:`
      ("storyboard round 1 — reactions?"). **HARD STOP** — every round is one.
   2. **Rounds.** Pete reacts; redraw the frames in place — minutes per round, not a
@@ -435,7 +456,8 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
   plan card). A parked ship with uncommitted work looks disposable to another
   session's cleanup sweep, and one nearly lost its spec that way (incidents: Worktrees).
 - **The driver draws the frames and writes the captions inline** (taste is the
-  deliverable, never dispatched). A subagent never draws a storyboard.
+  deliverable, never dispatched). A subagent may build a heavy asset a frame calls for
+  (an animated film) to the driver's frame and caption, never the frames themselves.
 - A trivial visual change where several frames would be noise may collapse the
   storyboard to one frame + one confirm — never to zero showings on the GATED lane.
   A non-visual GATED ship (pure product tradeoff, no UI) has no storyboard; it gates
@@ -444,7 +466,7 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
 
 ### 2 · PLAN — the plan Pete says go on  → marker: `plan`, then `gate:2`
 
-- Write `plan`. Run `ponytail` as the *waste* critic, not a scope critic — it cuts
+- `stage.sh <root> plan`. Run `ponytail` as the *waste* critic, not a scope critic — it cuts
   reinvention and gold-plating, never a frame Pete locked. *Transplant:* ponytail's
   ladder stops above the reference. A wrapper, a class, a token or an element the
   reference's markup carries is never waste, however empty it looks (the padding
@@ -459,7 +481,10 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
   storyboard in one glance, then what gets built as a punch list in plain English
   (one line per piece of work, in build order), the cut list, his calls with your
   recommendation, the risk line, and "go". Commit it, `open` it.
-- **GATE 2 is his go, always, on the GATED lane** (Two principles). Write `gate:2`,
+- **Calls on the card are plain language, and only the ones that change what he gets.**
+  Each says what he'd see either way. A technical choice where you have a clear pick is
+  yours: take it and log it. Never offer to phase the work.
+- **GATE 2 is his go, always, on the GATED lane** (Two principles). `stage.sh <root> gate:2`,
   fire the gate notification, end the turn with `needs input:` ("go?"). **HARD STOP.**
   SELF-DIRECTED renders no card and stops for nobody.
 - **His go → spec it out.** Only now does the machine-facing writing happen: invoke
@@ -484,7 +509,9 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
   missing task, a wrong file, a test that cannot fail, an order that breaks, an
   `(inline)` task that is not small, a seam two tasks each assume the other owns. The
   driver triages and edits the plan. Nothing goes back to Pete unless it changes what
-  gets built. Then `route.py plan` (Engines).
+  gets built. Then `route.py plan` (Engines). No task starts before the review lands,
+  `(inline)` ones included, unless the plan names it a spike: two runs built early and
+  rewrote what the review then flagged.
 
 ### 3 · BUILD — automatic  → marker: `build:N:M` (N done of M tasks)
 
@@ -515,8 +542,8 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
   first commit.** A fresh `git worktree add` carries no `node_modules` (or `.venv`,
   `vendor`, `.build`). Either run the repo's frozen-lockfile install in the lane, or
   symlink the main worktree's installs in. If you symlink, write each link's path to
-  `$(git rev-parse --git-common-dir)/info/exclude` first, where `.ship-stage` already
-  goes: a `.gitignore` line like `node_modules/` ignores a directory and not a link, so
+  the `info/exclude` that `stage.sh` already wrote `.ship-*` to (its path is `git -C
+  <root> rev-parse --git-common-dir` plus `/info/exclude`, run as its own call): a `.gitignore` line like `node_modules/` ignores a directory and not a link, so
   `git add -A` commits it and the merge swaps the real install for a link to itself
   (incidents: Worktrees). Commit lanes with the links excluded, and after the last lane
   merges confirm the main worktree's install is still a directory before trusting a red
@@ -538,6 +565,14 @@ sweeps the marker into commits otherwise (incidents: Worktrees). Never build on 
   repo whose rules load by path (`.claude/rules/`, a `scripts/rules-for.py`) gets those
   rule files named in every brief, because `codex exec` loads none of them and a
   subagent only sees them if told.
+- **Never add scope to a running worker by message.** New findings wait for its report
+  and go out as the next fix round, and the report is checked against every message
+  it was sent. Two workers finished before reading items sent mid-run, and both cost a
+  redo.
+- **A cut after go is said out loud.** Any plan item dropped, narrowed or swapped after
+  Pete's go, including a model or tool that differs from the reference, goes in the
+  next message and on the review card. One run dropped a settings dropdown Pete had
+  asked for and he found out by asking "this is all done?".
 - **A fix round goes back to the same worker** with the findings as the brief, so the
   context is already paid for: `astra.sh fix` for Astra, `SendMessage` to the same
   subagent for Opus or Fable. A fresh run for the same task starts cold and re-reads
@@ -584,7 +619,7 @@ Pete trying it on the links. His test comes after ship's on purpose: a bug the r
 finds after his OK would land unfixed or land fixed without his seeing it.
 
 
-- Write `review`. Sync with main first: `git fetch origin`; absorb upstream in the
+- `stage.sh <root> review`. Sync with main first: `git fetch origin`; absorb upstream in the
   worktree (rebase, or merge if unsafe), re-run the gates, then dispatch review — and
   re-sync right before landing if main moved again (incidents: Worktrees). On
   `backend: per-branch`, if the absorbed commits touched `convex/`, re-deploy the preview before any further
@@ -640,13 +675,23 @@ finds after his OK would land unfixed or land fixed without his seeing it.
   presented card references somewhere durable before teardown, or the card 404s its
   own proof (incidents: Worktrees), then delete `<shots-root>/.ship-shots/<slug>/`,
   which on a cross-repo ship is not inside the worktree teardown removes.
-- **Prove it works — invoke `verify` before the card.** It walks the branch's preview
-  link when there is one (a per-push `preview:`, or an on-demand one ship built), else
-  the localhost. A fresh read-only subagent
+- **Prove it works — invoke `ship:verify` (the full name: bare `verify` resolves to
+  another skill and is refused) before the card.** The walk covers the surface Pete will
+  open, signed in the way he will be, with the browser tools' real clicks and hovers,
+  never events dispatched from a script (a right-click menu bug got past synthetic
+  events twice). When the walker's report says how it got past sign-in on the repo's
+  test-auth path (Clerk's bot check, say), the driver writes that into the contract's
+  `test-auth:`, so the next run doesn't rediscover it. The walker itself never looks
+  for a way past auth. It walks the branch's preview link when there is one (a
+  per-push `preview:`, or an on-demand one ship built), else the localhost. A fresh
+  read-only subagent
   drives the feature and returns `works | broken | unverifiable` + a
   screenshot storyboard; verify loops-to-fix (cap ~3). `broken` after the cap, or
   `unverifiable` → do NOT go to TEST: end the turn with `needs input:` ("review: <feature>
-  — couldn't prove it works: <reason>") and hand Pete the verdict + evidence.
+  — couldn't prove it works: <reason>") and hand Pete the verdict + evidence. A path the
+  walk couldn't reach (a mic, a bot check) makes the verdict partial, and partial is
+  `unverifiable`, never a footnote on the TEST cue. Three ships went to TEST with a known
+  gap and Pete found it in minutes ("this should have been tested before you sent it").
 - **Render the review card** from `reference/review-card.html` (contract below) to the
   docs home and `open` it, with the preview links and the running localhost on it. Never
   tell Pete to "go read the PR" — the review comes to him, running and labeled.
@@ -659,9 +704,9 @@ finds after his OK would land unfixed or land fixed without his seeing it.
   deploy, cleanup (LAND). The same intent in other words counts ("push to main", "merge
   it", "ship it"); approval of the work without that intent ("looks good") does not land.
 - **TEST — Pete tries it, and his word lands it.** With green gates and a `works`
-  verdict, push, write `test` to `.ship-stage`, post the links (and the card, where the
-  lane has one), and end the turn: `needs input: test <slug> — <what to try> · say "push
-  to main"`, then the branch · worktree tail. This is every lane's stop, EXPRESS included,
+  verdict, push, `stage.sh <root> test`, post the links (and the card, where the
+  lane has one), and end the turn: `needs input: test <slug> — <what to try> · say "merge
+  main"`, then the branch · worktree tail. This is every lane's stop, EXPRESS included,
   because main is where things go live. Only `land: auto` skips it. While parked, keep
   the dev server up; a change he asks for goes back through BUILD's push-and-links loop
   and `verify`, then parks at TEST again. A money path adds nothing new here: it already
@@ -703,7 +748,7 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
     the contract's command from the worktree, confirm main moved (`git log -1 main`),
     then teardown from the main checkout as above. No PR is merged; a mirror remote is
     pushed only if the contract says so.
-  - Then `rm .ship-stage` and `rm -f ~/.claude/ship-active/$CLAUDE_CODE_SESSION_ID`,
+  - Then `rm -f .ship-stage .ship-route.json` and `rm -f ~/.claude/ship-active/$CLAUDE_CODE_SESSION_ID`,
     **stop the review dev server**, deprovision the per-branch
     backend stage 0 spun up, if any (or skip if previews auto-expire). Verify with
     `git worktree list` — zero ship-created worktrees must remain; a leftover means
@@ -716,10 +761,13 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
   contract names a separate integration lane instead, push merged main to it — its
   dev-deploy step runs from the main checkout (shared-plane writer; incidents: Backends)
   — and hand back the lane's URL. Never make Pete run a deploy. Watch
-  rules (each from a real incident — incidents: Backends): watch the deploy to
-  conclusion (red = unfinished work, fix-forward on a new express branch); watch
-  the run for YOUR commit — `gh run list --commit $(git rev-parse <sha>)`, full SHA
-  only, a short one matches nothing and the watch times out silently — and
+  rules (each from a real incident — incidents: Backends): every wait has a deadline
+  and a never-started check, so a watch that sees no deployment for the SHA within
+  about 3 minutes says so and looks at the host's ignore step (a 25-minute wait was on
+  a build Vercel never started), and nothing waits on a build the lane never makes;
+  watch the deploy to conclusion (red = unfinished work, fix-forward on a new express branch); watch
+  the run for YOUR commit — `gh run list --commit <full sha>` (get it with
+  `git -C <root> rev-parse <sha>` in its own call), full SHA only, a short one matches nothing and the watch times out silently — and
   artifact-check the lane; a red shared
   lane you didn't cause is a shared resource — check for an existing fix PR, claim
   with a draft PR first.
@@ -730,7 +778,8 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
   through.
 - Run RETRO, then end with a `result:` line: what shipped, one sentence, with the live
   links (or the lane's) — plus `· ship-retro #N filed` and/or `· K backlog candidates`
-  when applicable.
+  when applicable. Only a landing earns `result:`; a ship parked at TEST ends its turns
+  with `needs input:`.
 
 ### 6 · RETRO — autonomous; only if the run taught something  → no marker
 

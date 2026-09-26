@@ -5,12 +5,17 @@
   route.py log key=value ...     append one task's outcome to the ledger
 Inside a ship, `plan` moves the stage marker to build:0:<tasks> and each `log` counts one
 task done, so the status line reaches BUILD without the driver remembering to say so.
+`plan` also saves its picks to .ship-route.json beside the marker, and `log task=<n>`
+fills that task's `score` and `routed` engine from it, so an override shows as
+engine != routed and nobody re-asks Jev or types a score by hand.
   route.py report                the ledger as a table by engine and difficulty
   route.py --selftest
 
 The ladder (Pete, 2026-09-24) ranks the routable tasks by Jev's difficulty score: the
 bottom half goes to Astra, the 50th to 75th percentile to Fable 5.1, the top quarter to
-Opus 5.5 (flipped 2026-09-25: Opus 5.5 is the stronger builder). A task whose heading says (driver) or (inline) stays with the driver and is not
+Opus 5.5 (flipped 2026-09-25: Opus 5.5 is the stronger builder). Astra keeps a task only
+when Jev scores it under ASTRA_MAX; a harder one in the bottom half goes to Opus
+(2026-09-26: Astra came back clean on 4 of 13 tasks scored 2 or more). A task whose heading says (driver) or (inline) stays with the driver and is not
 ranked. Jev unreachable or no key: every task goes to Astra and `fallback` says why,
 because a router must never stop a build.
 
@@ -36,6 +41,7 @@ LEVELS = [
     'Novel and risky: a mechanism with no precedent in the repo, a security, auth or money boundary, or subtle failure '
     'modes that need careful reasoning to get right.',
 ]
+ASTRA_MAX = 2.0
 QUESTION = 'How hard is this coding task for an AI coding agent to complete correctly on the first attempt?'
 # Jev takes 64k tokens per request, and pasted code runs near 3 characters a token. Each
 # task's question repeats the rubric (~800 characters), so a request packs tasks until
@@ -69,6 +75,11 @@ def stage_marker(start):
     return None
 
 
+def route_file(start):
+    marker = stage_marker(start)
+    return marker and os.path.join(os.path.dirname(marker), '.ship-route.json')
+
+
 def mark_build(start, done=None, total=None):
     """build:0:<total> when routing ends, or one more task done. Outside a ship, nothing."""
     path = stage_marker(start)
@@ -88,10 +99,13 @@ def parse_tasks(text):
     for line in text.splitlines():
         if line.lstrip().startswith(('```', '~~~')):
             fenced = not fenced
-        heading = None if fenced else re.match(r'#{2,3} (Task\b.*)', line)
+        heading = None if fenced else re.match(r'#{2,3} (Task\s+\d+\b.*)', line)
         if heading:
             title = heading.group(1).strip()
-            tasks.append({'n': len(tasks) + 1, 'title': title, 'lines': [],
+            n = int(re.match(r'Task\s+(\d+)', title).group(1))  # the plan's own number, gaps and all
+            if any(t['n'] == n for t in tasks):
+                n = max(t['n'] for t in tasks) + 1
+            tasks.append({'n': n, 'title': title, 'lines': [],
                           'driver': bool(re.search(r'\((driver|inline)\)', title, re.I))})
         elif tasks:
             tasks[-1]['lines'].append(line)
@@ -155,13 +169,14 @@ def ask_jev(routable):
 
 def assign(routable, scores):
     """The ladder: rank by score, ties in plan order. The easier half goes to Astra
-    (rounded up), the hardest quarter to Opus (rounded down, but the hardest task
-    always), and Fable takes what is between. Rounding favours the plentiful engine."""
+    (rounded up) when it scores under ASTRA_MAX, else to Opus; the hardest quarter to
+    Opus (rounded down, but the hardest task always), and Fable takes what is between."""
     ranked = sorted(routable, key=lambda t: (scores[t['n']]['score'], t['n']))
     n = len(ranked)
     opus = max(1, n // 4)
     astra = min(n - opus, (n + 1) // 2)
-    return {t['n']: 'astra' if i < astra else 'opus' if i >= n - opus else 'fable'
+    return {t['n']: ('astra' if scores[t['n']]['score'] < ASTRA_MAX else 'opus') if i < astra
+            else 'opus' if i >= n - opus else 'fable'
             for i, t in enumerate(ranked)}
 
 
@@ -191,8 +206,17 @@ def plan(path):
         print(f"{row['engine']:6} {score}  {row['title'][:80]}", file=sys.stderr)
     if fallback:
         print(f'route: Jev unavailable, every task on Astra ({fallback})', file=sys.stderr)
-    mark_build(os.path.dirname(os.path.abspath(path)), total=len(tasks))
-    return {'model': model, 'fallback': fallback, 'tasks': out}
+    result = {'model': model, 'fallback': fallback, 'tasks': out}
+    where = os.path.dirname(os.path.abspath(path))
+    saved = route_file(where)
+    if saved:
+        try:
+            with open(saved, 'w') as f:
+                json.dump(result, f)
+        except OSError as error:  # the table on stdout still carries the picks
+            print(f'route: could not save {saved}: {error}', file=sys.stderr)
+    mark_build(where, total=len(tasks))
+    return result
 
 
 def coerce(value):
@@ -215,6 +239,19 @@ def log(pairs):
         if not sep:
             raise SystemExit(f'route log: "{pair}" is not key=value')
         row[key] = coerce(value)
+    saved = route_file(os.getcwd())
+    picked = None
+    if saved and os.path.isfile(saved) and 'task' in row:
+        try:
+            picked = {t['n']: t for t in json.load(open(saved))['tasks']}.get(row['task'])
+        except (OSError, ValueError, KeyError, TypeError):
+            pass  # a broken route file costs the fill, never the row
+    if picked:
+        row.setdefault('score', picked['score'])
+        row.setdefault('routed', picked['engine'])
+    elif 'task' in row and 'routed' not in row:
+        print('route log: no saved route for this task here, so score and routed are not filled '
+              '(run log from the ship worktree)', file=sys.stderr)
     with open(ledger_path(), 'a') as ledger:
         ledger.write(json.dumps(row) + '\n')
     mark_build(os.getcwd(), done=True)
@@ -285,12 +322,13 @@ def selftest():
             check(f'a reply of {name} falls back instead of crashing', result['fallback'] and
                   {t['engine'] for t in result['tasks'] if t['n'] != 3} == {'astra'})
         few = os.path.join(tmp, 'few.md')
-        open(few, 'w').write(''.join(f'### Task {n}: t\n\n```md\n### Task 99: an example inside a fence\n```\n\n'
+        open(few, 'w').write('### Task list\n\nan overview, not a task\n\n' +
+                             ''.join(f'### Task {n}: t\n\n```md\n### Task 99: an example inside a fence\n```\n\n'
                                      for n in range(1, 6)))
         json.dump({'answers': {f't{n}': {'score': n} for n in range(1, 6)}}, open(reply, 'w'))
         got = [t['engine'] for t in plan(few)['tasks']]
-        check('a heading inside a code fence is not a task', len(got) == 5)
-        check('five tasks round toward Astra: 3, 1, 1', got == ['astra'] * 3 + ['fable', 'opus'])
+        check('a fenced heading and "### Task list" are not tasks', len(got) == 5)
+        check('the bottom half keeps only what scores under 2 on Astra', got == ['astra', 'opus', 'opus', 'fable', 'opus'])
         del os.environ['ROUTE_RESPONSE']
         os.environ.update(TYPESAFE_API_KEY='', ROUTE_NO_KEYCHAIN='1')
         result = plan(plan_md)
@@ -312,14 +350,28 @@ def selftest():
         open(shipped, 'w').write(open(plan_md).read())
         plan(shipped)
         check('routing moves the marker to build:0:9', open(stage).read() == 'build:0:9')
+        json.dump({'model': 'jev-test', 'answers': {f't{n}': {'score': s, 'confidence': 0.7}
+                                                    for n, s in scores.items()}}, open(reply, 'w'))
+        os.environ['ROUTE_RESPONSE'] = reply
+        open(stage, 'w').write('plan')
+        plan(shipped)
         here = os.getcwd()
         os.chdir(repo)
         try:
-            log(['task=1', 'engine=astra'])
+            row = log(['task=2', 'engine=opus'])
+            moved = log(['task=1', 'engine=opus'])
+            missing = log(['task=42', 'engine=astra'])
             plan(shipped)
         finally:
             os.chdir(here)
-        check('a logged task counts one done, and a re-route keeps the count', open(stage).read() == 'build:1:9')
+        check('logged tasks count done, and a re-route keeps the count', open(stage).read() == 'build:3:9')
+        check('log fills the score and the routed engine from the saved picks',
+              row.get('score') == 3.4 and row.get('routed') == 'opus' and row['engine'] == 'opus')
+        check('an override shows as engine differing from routed, and an unknown task logs unfilled',
+              moved.get('routed') == 'astra' and moved['engine'] == 'opus' and 'routed' not in missing)
+        gaps = os.path.join(tmp, 'gaps.md')
+        open(gaps, 'w').write('### Task 1: a\n\nx\n\n### Task 3: b\n\ny\n')
+        check('tasks keep the numbers the plan gives them', [t['n'] for t in parse_tasks(open(gaps).read())] == [1, 3])
         os.remove(stage)
         plan(shipped)
         check('outside a ship no marker appears', not os.path.exists(stage))

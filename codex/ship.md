@@ -41,7 +41,9 @@ worktree whose branch already landed. For a Codex-managed worktree, create a fea
 detached. Never nest or remove Worktrunk worktrees inside an app-managed worktree.
 Starting on main: create a worktree with `wt switch --create`, otherwise use
 `git worktree add`. Keep the primary checkout on main and use absolute paths.
-Follow an explicit repo base-branch override, otherwise branch from main.
+Follow an explicit repo base-branch override, otherwise branch from main. Fetch
+first and branch from the remote's copy (`origin/<base>`), since a stale local base has
+cost a rebase and reinstall.
 
 Push the branch at once and open a draft tracker PR with the first commit (`land:
 direct` opens none); it records work in flight and is never a review step. Push again at
@@ -125,6 +127,13 @@ The verifier drives actual behavior and returns `works`, `broken`, or `unverifia
 Do not go to TEST on a mockup, a worker's claim, or tests that miss the requested
 behavior. The verifier walks the preview link when one was built, else the worktree's dev
 server.
+
+The walk covers the surface Pete will open, signed in as he will be, with real clicks
+rather than script-dispatched events. A path it could not reach (a mic, a bot check)
+makes the verdict partial, and partial is `unverifiable`: stop and tell Pete, never cue
+TEST with the gap as a footnote. Any plan item cut or swapped after his go is named in
+the next message. Every wait has a deadline and a never-started check. Only a landing
+ends with `result:`.
 
 Fix real findings. Re-run affected checks and use a fresh verifier if behavior changed.
 Cap repeated verification at three rounds, then report the specific blocker. Preserve
