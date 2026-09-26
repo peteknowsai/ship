@@ -86,7 +86,8 @@ fraction of a cent) and ranks the routable tasks:
 
 | Rank among the plan's routable tasks | Engine | How it runs |
 |---|---|---|
-| bottom 50% | Astra (`gpt-6-astra`) | `scripts/astra.sh run`, in the background |
+| bottom 50%, scored under 2.0 | Astra (`gpt-6-astra`) | `scripts/astra.sh run`, in the background |
+| bottom 50%, scored 2.0 or more | Opus 5.5 | harness subagent, `model: "opus"`, in the background |
 | 50th to 75th percentile | Fable 5.1 | harness subagent, `model: "fable"`, in the background |
 | top 25% | Opus 5.5 | harness subagent, `model: "opus"`, in the background |
 

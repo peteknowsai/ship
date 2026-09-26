@@ -13,7 +13,9 @@ engine != routed and nobody re-asks Jev or types a score by hand.
 
 The ladder (Pete, 2026-09-24) ranks the routable tasks by Jev's difficulty score: the
 bottom half goes to Astra, the 50th to 75th percentile to Fable 5.1, the top quarter to
-Opus 5.5 (flipped 2026-09-25: Opus 5.5 is the stronger builder). A task whose heading says (driver) or (inline) stays with the driver and is not
+Opus 5.5 (flipped 2026-09-25: Opus 5.5 is the stronger builder). Astra keeps a task only
+when Jev scores it under ASTRA_MAX; a harder one in the bottom half goes to Opus
+(2026-09-26: Astra came back clean on 4 of 13 tasks scored 2 or more). A task whose heading says (driver) or (inline) stays with the driver and is not
 ranked. Jev unreachable or no key: every task goes to Astra and `fallback` says why,
 because a router must never stop a build.
 
@@ -39,6 +41,7 @@ LEVELS = [
     'Novel and risky: a mechanism with no precedent in the repo, a security, auth or money boundary, or subtle failure '
     'modes that need careful reasoning to get right.',
 ]
+ASTRA_MAX = 2.0
 QUESTION = 'How hard is this coding task for an AI coding agent to complete correctly on the first attempt?'
 # Jev takes 64k tokens per request, and pasted code runs near 3 characters a token. Each
 # task's question repeats the rubric (~800 characters), so a request packs tasks until
@@ -166,13 +169,14 @@ def ask_jev(routable):
 
 def assign(routable, scores):
     """The ladder: rank by score, ties in plan order. The easier half goes to Astra
-    (rounded up), the hardest quarter to Opus (rounded down, but the hardest task
-    always), and Fable takes what is between. Rounding favours the plentiful engine."""
+    (rounded up) when it scores under ASTRA_MAX, else to Opus; the hardest quarter to
+    Opus (rounded down, but the hardest task always), and Fable takes what is between."""
     ranked = sorted(routable, key=lambda t: (scores[t['n']]['score'], t['n']))
     n = len(ranked)
     opus = max(1, n // 4)
     astra = min(n - opus, (n + 1) // 2)
-    return {t['n']: 'astra' if i < astra else 'opus' if i >= n - opus else 'fable'
+    return {t['n']: ('astra' if scores[t['n']]['score'] < ASTRA_MAX else 'opus') if i < astra
+            else 'opus' if i >= n - opus else 'fable'
             for i, t in enumerate(ranked)}
 
 
@@ -324,7 +328,7 @@ def selftest():
         json.dump({'answers': {f't{n}': {'score': n} for n in range(1, 6)}}, open(reply, 'w'))
         got = [t['engine'] for t in plan(few)['tasks']]
         check('a fenced heading and "### Task list" are not tasks', len(got) == 5)
-        check('five tasks round toward Astra: 3, 1, 1', got == ['astra'] * 3 + ['fable', 'opus'])
+        check('the bottom half keeps only what scores under 2 on Astra', got == ['astra', 'opus', 'opus', 'fable', 'opus'])
         del os.environ['ROUTE_RESPONSE']
         os.environ.update(TYPESAFE_API_KEY='', ROUTE_NO_KEYCHAIN='1')
         result = plan(plan_md)
