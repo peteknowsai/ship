@@ -86,8 +86,8 @@ fraction of a cent) and ranks the routable tasks:
 | Rank among the plan's routable tasks | Engine | How it runs |
 |---|---|---|
 | easiest 33%, scored under 2.0 | Astra (`gpt-6-astra`) | `scripts/astra.sh run`, in the background |
-| easiest 33%, scored 2.0 or more, and the middle 43% | Fable 5.1 | harness subagent, `model: "fable"`, in the background |
-| hardest 24% | Opus 5.5 | harness subagent, `model: "opus"`, in the background |
+| easiest 33%, scored 2.0 or more, and the middle 48% | Fable 5.1 | harness subagent, `model: "fable"`, in the background |
+| hardest 19% | Opus 5.5 | harness subagent, `model: "opus"`, in the background |
 
 The shares are a temporary lean on Fable (Pete, 2026-09-26); the standing split is half
 Astra, a quarter each Fable and Opus, with a too-hard Astra task on Opus. `route.py`

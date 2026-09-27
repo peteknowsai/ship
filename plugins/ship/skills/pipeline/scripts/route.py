@@ -43,9 +43,9 @@ LEVELS = [
 ]
 ASTRA_MAX = 2.0
 # The split, as shares of the ranked tasks: Astra the easiest, Opus the hardest, Fable
-# between. Pete, 2026-09-26, for a while, to lean on Fable: 33/43/24, and a too-hard
+# between. Pete, 2026-09-26, for a while, to lean on Fable: 33/48/19 (was 33/43/24), and a too-hard
 # task in Astra's share goes to Fable. The standing split is 0.50/0.25 with it on Opus.
-ASTRA_SHARE, OPUS_SHARE, ASTRA_OVERFLOW = 0.33, 0.24, 'fable'
+ASTRA_SHARE, OPUS_SHARE, ASTRA_OVERFLOW = 0.33, 0.19, 'fable'
 QUESTION = 'How hard is this coding task for an AI coding agent to complete correctly on the first attempt?'
 # Jev takes 64k tokens per request, and pasted code runs near 3 characters a token. Each
 # task's question repeats the rubric (~800 characters), so a request packs tasks until
