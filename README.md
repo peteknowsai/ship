@@ -39,6 +39,19 @@ Declared as plugin `dependencies` (Claude Code will prompt/handle them): **super
 
 If you want the bundled status line, point your `statusLine` at it (or let the plugin's `statusLine` field wire it).
 
+## Tab groups in Chrome
+
+`chrome/ship-tabs/` is a small Chrome extension that sorts ship's pages as they open: the
+storyboard, plan and review cards (any local file under a `specs/`, `docs/` or
+`.ship-shots/` folder) go into a blue **ship docs** group, and anything ship puts up for
+testing (localhost, `*.localhost`, a Vercel branch preview) into a green **ship test**
+group, one of each per window. A tab already in a group stays put, so dragging one out
+sticks. Ship keeps opening pages with plain `open`; nothing in the pipeline changes.
+
+Install once: `chrome://extensions`, turn on Developer mode, **Load unpacked**, pick
+`chrome/ship-tabs` in this repo's main checkout. `node chrome/ship-tabs/test.mjs` checks
+the URL rules and then the real grouping in Chrome for Testing.
+
 ## Codex Desktop
 
 The Codex package uses `codex/ship.md` and `codex/verify.md`. It keeps the shared
