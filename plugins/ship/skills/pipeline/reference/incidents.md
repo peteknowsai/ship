@@ -6,6 +6,14 @@ These are facts, not process — the process lives in SKILL.md.
 
 ## Worktrees & git
 
+- **Fifteen worktrees sat in cells-app after their ships landed** (2026-09-27). A
+  session launched inside its worktree can't remove it, the sweep waited 12 hours and
+  skipped any tree with a live session, and build lanes never counted as landed because
+  they merge into their branch, not main. Now: `stage.sh <root> landed` at landing, a
+  SessionEnd hook (`wt-sweep --end`) that removes a landed tree as its session closes,
+  lanes removed right after they merge and swept when their changes are in the parent,
+  and the sweep every 10 minutes.
+
 - **A PR stacked on an unlanded branch stranded at "merge main"** (cells-app local-hosts,
   2026-09-25). Pete said to build on top of feature/muse-chat, still a draft (#19), so
   #24 took it as its base. At "merge main" #19 hadn't landed: reset onto origin/main,
