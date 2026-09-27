@@ -537,7 +537,10 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   first gets its own sub-worktree off the branch (`git worktree add <dir> -b
   <branch>-<lane> <branch>`) and its own worker, all launched together; a lane's
   tasks run in plan order inside it, each on its routed engine. The driver merges lanes back in plan order and
-  runs the gates once after each merge. Serial is only for tasks that share files.
+  runs the gates once after each merge, then removes that lane: `git -C <worktree>
+  worktree remove <lane dir>` and `git -C <worktree> branch -D <branch>-<lane>`, as two
+  calls. If the harness refuses, leave it; `wt-sweep` removes a lane whose changes are
+  all in its parent. Serial is only for tasks that share files.
   Three disjoint tasks run serially cost the sum of their times; fanned out, the
   slowest one's.
 - **A lane worktree has no installs, and a borrowed one must be excluded before the
@@ -739,8 +742,10 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
     can't leave. `ExitWorktree` does nothing, and once the directory is gone the harness
     refuses every shell command, in subagents too. Run step 0, merge from the worktree
     (`gh pr merge <#> --squash --delete-branch` merges on GitHub and only fails its local
-    checkout of main), do everything else that needs a shell, and make `wt remove` the
-    very last action or leave it to `wt-sweep`.
+    checkout of main), do everything else that needs a shell, skip the `rm .ship-stage`
+    below, and finish with `stage.sh <root> landed`. The SessionEnd hook removes a landed
+    worktree when the session closes, and `wt-sweep` (every 10 minutes) catches any the
+    hook missed. Never `wt remove` the folder the session is standing in.
   - No GitHub remote → `wt merge` (squashes, ff's main, removes the worktree) is the
     fallback.
   - **`land: direct`** replaces steps 0–4: from the worktree, `git fetch origin && git
