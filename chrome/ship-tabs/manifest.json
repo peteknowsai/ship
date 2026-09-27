@@ -1,0 +1,8 @@
+{
+  "manifest_version": 3,
+  "name": "Ship tabs",
+  "version": "1.0",
+  "description": "Sorts /ship's pages into two tab groups: ship docs and ship test.",
+  "permissions": ["tabs", "tabGroups"],
+  "background": { "service_worker": "background.js" }
+}

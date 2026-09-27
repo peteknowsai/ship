@@ -20,6 +20,13 @@ redeploy only when the worker itself changes (`npx wrangler deploy` in that dir)
 Add a repo to the board by extending `REPOS` at the top of the script.
 `node board/shipboard.mjs --dry` renders to /tmp/shipboard.html without uploading.
 
+## ship-tabs — Chrome tab groups
+
+`chrome/ship-tabs/` is an unpacked Chrome extension Pete loads from this main checkout;
+it groups ship's docs and test tabs by URL. Edits go live when he presses reload on it in
+`chrome://extensions`. `node chrome/ship-tabs/test.mjs` is its check (the live half
+needs Chrome for Testing in `~/.cache/puppeteer`, and opens its window off-screen).
+
 ## Deploying skill changes
 
 Merging to main does NOT update the installed plugin — running and new sessions read
