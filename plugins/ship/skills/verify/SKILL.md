@@ -70,7 +70,10 @@ scripts/astra.sh test <worktree> <out-dir>/brief.md <out-dir>
 ```
 
 `test` runs `codex exec` read-only with two MCP servers on and pre-approved: the
-chrome-devtools browser and agent-device (iOS). The verdict is `<out-dir>/last.md`. Every
+chrome-devtools browser, headless, and agent-device (iOS). The browser may write only in
+the worktree and the out-dir, so the Codex tester's shots path is `<out-dir>/shots`, and
+the driver copies what the card shows into `<shots-root>/.ship-shots/<slug>/`. The
+verdict is `<out-dir>/last.md`. Every
 round is a **fresh run** in a new out-dir, never `astra.sh fix`: a tester that saw the
 bug is no longer independent of the fix. Exit 3 or 4 means the run didn't happen; retry
 once. Codex down or signed out (the same exit repeating, `refresh_token_invalidated` in
@@ -120,7 +123,9 @@ BACKEND (repos with `backend: per-branch`):
   reports as a broken feature and burns the whole round.
 
 Drive the REAL flow — walk the exact steps a user would, clicking through it. Check the
-console for errors along the way. Screenshot the MEANINGFUL BEATS (start → action → success), not a random dump. Judge
+console for errors along the way. A print flow: headless `window.print()` stalls the
+browser tool, so judge the printout with print-media emulation first and click Print last.
+Screenshot the MEANINGFUL BEATS (start → action → success), not a random dump. Judge
 observed vs expected. Return ONLY:
 
 VERDICT: works | broken | unverifiable
