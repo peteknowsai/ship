@@ -31,10 +31,11 @@ Read the repo's AGENTS.md and CLAUDE.md. Honor `ship: no`, `gates:`, `preview:`,
 `test-auth:`, `backend:`, `stack:`, `live:`, `land:`, `release:`, the release ritual, and any
 `design of record: transplant <path>` contract. Inspect current git state first.
 
-The phases after the plan are BUILD, TEST and LAND. TEST is ship proving its own work
-(gates, a cold correctness review, `ship:verify`) and then Pete trying it on the preview
-links; LAND is mechanics on his word "merge main". Nothing lands without that word unless
-the contract says `land: auto`.
+The phases after the plan are BUILD, TEST and LAND. TEST is ship proving its own work:
+gates, a cold correctness review, and `ship:verify`, whose tester uses the running thing
+the way Pete would, in a browser and on his iPhone. A `works` lands it. A money path, a
+change Pete said he wants to try himself, and an unproven verdict wait for his "merge
+main". `land: auto` skips the tester for a repo whose main deploys nothing.
 
 A new ship gets a new worktree. Reuse only the one this ship started in, never a
 worktree whose branch already landed. For a Codex-managed worktree, create a feature branch if
@@ -124,14 +125,14 @@ only if those checks do not mutate the verifier's data, build, or backend.
 The reviewer checks the whole branch against the approved scope, especially interfaces
 between workers. It reports actionable findings with file, line, and failure scenario.
 The verifier drives actual behavior and returns `works`, `broken`, or `unverifiable`.
-Do not go to TEST on a mockup, a worker's claim, or tests that miss the requested
+Do not land on a mockup, a worker's claim, or tests that miss the requested
 behavior. The verifier walks the preview link when one was built, else the worktree's dev
 server.
 
 The walk covers the surface Pete will open, signed in as he will be, with real clicks
 rather than script-dispatched events. A path it could not reach (a mic, a bot check)
-makes the verdict partial, and partial is `unverifiable`: stop and tell Pete, never cue
-TEST with the gap as a footnote. Any plan item cut or swapped after his go is named in
+makes the verdict partial, and partial is `unverifiable`: stop and tell Pete, never land
+with the gap as a footnote. Any plan item cut or swapped after his go is named in
 the next message. Every wait has a deadline and a never-started check. Only a landing
 ends with `result:`.
 
@@ -139,9 +140,10 @@ Fix real findings. Re-run affected checks and use a fresh verifier if behavior c
 Cap repeated verification at three rounds, then report the specific blocker. Preserve
 all unrelated edits. Never blindly reset or discard a dirty worktree.
 
-Then park for Pete: push, write `test` to `.ship-stage`, post the links and what to try,
-and end with `needs input: test <slug> — say "merge main"`. A change he asks for goes
-back through build, push, links and verify, and parks again.
+Write `test` to `.ship-stage` when the verifier starts, and land on `works`. Only a lane
+that waits for Pete parks: push, write `gate:test`, post the links and what to try, and end with `needs input: test <slug> —
+say "merge main"`. A change he asks for goes back through build, push, links and
+verify.
 
 For gated visual work, `reference/review-card.html` can collect the delivered behavior
 and observed evidence. Fill `LANDING_STATUS` with the verified landing result or
@@ -150,7 +152,8 @@ results in the conversation. Do not write a card just because a template exists.
 
 ## Land and clean up
 
-Land only on Pete's "merge main" (or on green with `land: auto`). `land: pr`, the
+Land on the verifier's `works`, or on Pete's "merge main" where the lane waits for him
+(or on green with `land: auto`). `land: pr`, the
 default: update the tracker PR's body to what shipped, mark it ready, and squash-merge it.
 `land: direct`: rebase on main, re-gate, push `HEAD:main`, delete the remote branch.
 Any other `land:` value is the repo's command, including a local-only repo. Re-sync and

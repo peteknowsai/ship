@@ -4,6 +4,8 @@
 #   astra.sh run    <worktree> <brief.md> <out-dir> [effort]   a coding task, workspace-write
 #   astra.sh review <worktree> <brief.md> <out-dir> [effort]   a read-only pass, fresh context
 #   astra.sh fix    <worktree> <brief.md> <out-dir> [effort]   findings into the same thread
+#   astra.sh test   <worktree> <brief.md> <out-dir> [effort]   TEST: read-only, drives the app
+#                                                             in a browser and on iOS
 #   astra.sh --selftest
 #
 # <out-dir> gets events.jsonl (liveness), last.md (the final message) and stderr.txt.
@@ -29,11 +31,19 @@ mtime() { stat -f %m "$1" 2>/dev/null || stat -c %Y "$1"; }
 
 # The user's MCP servers (a browser, a REPL) are half a second of startup each run and
 # tool schemas a coding task should never reach for. Off per run, config untouched.
-mcp_off() {
+# A test run keeps TESTER_MCP on and pre-approves their calls: under exec's approval
+# policy "never", an unapproved MCP call is refused, not asked (2026-10-01).
+TESTER_MCP="chrome-devtools agent-device"
+mcp_off() { # [servers to keep]
   local config="${CODEX_HOME:-$HOME/.codex}/config.toml"
   [ -f "${config}" ] || return 0
   sed -n 's/^\[mcp_servers\.\([A-Za-z0-9_-]*\)\]$/\1/p' "${config}" | sort -u |
-    while read -r name; do printf -- '-c\nmcp_servers.%s.enabled=false\n' "${name}"; done
+    while read -r name; do
+      case " ${1:-} " in
+        *" ${name} "*) printf -- '-c\nmcp_servers.%s.default_tools_approval_mode="approve"\n' "${name}" ;;
+        *) printf -- '-c\nmcp_servers.%s.enabled=false\n' "${name}" ;;
+      esac
+    done
 }
 
 dispatch() {
@@ -43,13 +53,14 @@ dispatch() {
   mkdir -p "${out}"; out=$(cd "${out}" && pwd); worktree=$(cd "${worktree}" && pwd)   # a fix round runs from the worktree
   local events="${out}/events.jsonl" last="${out}/last.md"
   local -a common=(-m "${MODEL}" -c "model_reasoning_effort=${effort}" --json -o "${last}")
-  local line; while read -r line; do common+=("${line}"); done < <(mcp_off)
+  local keep=""; [ "${mode}" = test ] && keep=${TESTER_MCP}
+  local line; while read -r line; do common+=("${line}"); done < <(mcp_off "${keep}")
   brief=$(cd "$(dirname "${brief}")" && pwd)/$(basename "${brief}")
   rm -f "${last}"
   local started_at; started_at=$(date +%s)
   case "${mode}" in
     run)    : > "${events}"; "${CODEX}" exec -C "${worktree}" -s workspace-write "${common[@]}" - < "${brief}" >> "${events}" 2> "${out}/stderr.txt" & ;;
-    review) : > "${events}"; "${CODEX}" exec -C "${worktree}" -s read-only "${common[@]}" - < "${brief}" >> "${events}" 2> "${out}/stderr.txt" & ;;
+    review|test) : > "${events}"; "${CODEX}" exec -C "${worktree}" -s read-only "${common[@]}" - < "${brief}" >> "${events}" 2> "${out}/stderr.txt" & ;;
     fix)
       local thread; thread=$(sed -n 's/.*"thread_id":"\([^"]*\)".*/\1/p' "${events}" 2>/dev/null | head -1)
       [ -n "${thread}" ] || { echo "astra: no thread_id in ${events}; nothing to resume" >&2; return 2; }
@@ -98,11 +109,18 @@ selftest() {
   expect 2 "a fix with no thread to resume" fix "${dir}/wt" "${dir}/brief.md" "${dir}/o6"
   : > "${dir}/empty.md"
   expect 2 "an empty brief"                 run "${dir}/wt" "${dir}/empty.md" "${dir}/o7"
-  rm -rf "${dir}"; echo "astra self-test: $((9 - fails))/9"; [ "${fails}" = 0 ]
+  printf '[mcp_servers.agent-device]\n[mcp_servers.node_repl]\n' > "${dir}/config.toml"
+  stub "echo \"\$*\" > ${dir}/args; ${write_last}; cat >/dev/null; echo '{\"type\":\"thread.started\",\"thread_id\":\"t1\"}'; echo done > \"\$out\""
+  expect 0 "a test run finishes"            test "${dir}/wt" "${dir}/brief.md" "${dir}/o8"
+  if grep -q -- '-s read-only' "${dir}/args" && grep -q 'agent-device.default_tools_approval_mode="approve"' "${dir}/args" &&
+     grep -q 'node_repl.enabled=false' "${dir}/args" && ! grep -q 'agent-device.enabled=false' "${dir}/args"; then
+    echo "  ok   a test run is read-only with only the tester's servers on, pre-approved"
+  else echo "  FAIL a test run's flags: $(cat "${dir}/args")"; fails=$((fails+1)); fi
+  rm -rf "${dir}"; echo "astra self-test: $((11 - fails))/11"; [ "${fails}" = 0 ]
 }
 
 case "${1:-}" in
   --selftest) selftest ;;
-  run|review|fix) [ $# -ge 4 ] || { sed -n '2,8p' "$0" >&2; exit 2; }; dispatch "$@" ;;
-  *) sed -n '2,12p' "$0" >&2; exit 2 ;;
+  run|review|fix|test) [ $# -ge 4 ] || { sed -n '2,10p' "$0" >&2; exit 2; }; dispatch "$@" ;;
+  *) sed -n '2,14p' "$0" >&2; exit 2 ;;
 esac

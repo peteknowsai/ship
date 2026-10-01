@@ -1,21 +1,25 @@
 ---
 name: verify
 description: >
-  Prove the feature just built actually works — a fresh read-only verifier sub-agent
-  drives the running app and judges it — before anything merges. Use in ship's REVIEW
-  stage (it's invoked there automatically) or standalone when a change is ready and you
+  Prove the feature just built actually works — a fresh read-only Codex tester uses the
+  running app the way Pete would, in a browser and on his iPhone or a simulator, and
+  judges it — before anything merges. Use in ship's TEST stage (it's invoked there
+  automatically) or standalone when a change is ready and you
   want proof it works: "verify this", "prove it works", "/verify". Never declares a
   feature working off the diff alone — it drives the real app.
 user_invocable: true
 ---
 
-# /verify — prove the feature works, then hand proof to REVIEW
+# /verify — prove the feature works, then hand proof to TEST
 
 You are the **orchestrator + fixer**. Verification splits by who's best at it:
 
 - **The subjective question — "does the feature do what was intended?"** → a fresh
-  **read-only verifier sub-agent** drives the running app and judges it. It didn't write
-  the code (independence) and app-driving is verbose (context-isolation) — both pay off.
+  **read-only Codex tester** (Astra on high, through `astra.sh test`) uses the running app
+  the way Pete would, in a browser and on iOS, and judges it. It didn't write the code and
+  comes from another model family (independence), and app-driving is verbose
+  (context-isolation). It reports; it never fixes. In ship this is the whole of TEST: a
+  `works` lands the branch without Pete.
 - **Objective codified checks** (tsc / lint / unit / existing e2e) → **you** run them as a
   regression sweep; pass/fail can't be rubber-stamped, and you need the error to fix it.
 
@@ -48,31 +52,48 @@ user for his hands-on look, or wait for the verdict. The chrome-devtools browser
 headless with a fresh profile per session, so it never fights Pete for a tab — but two
 concurrent walks on one seeded account still collide on the backend.
 
+**iOS is Pete's own iPhone ("iPhone PM") or an Xcode simulator, through agent-device.**
+The phone is the real thing, so it is the default whenever `agent-device devices` lists
+it; otherwise a booted simulator. A web app reaches iOS through Safari at the same URL; a
+native app is built and installed on the target by the caller first (the contract's
+`ios:`), never by the tester. One tester on the phone at a time: a second ship that finds
+it busy tests on a simulator. Desktop control of the Mac is never part of a test.
+
 ## 2. Verify the feature (delegate) → fix → re-verify (loop ≤ 3)
 
-Brief from the plan/spec file if one exists (point the verifier at it), else inline the
-acceptance criteria. The verifier is a **fresh subagent** — fresh so it judges the
-feature rather than its own work. It drives the running app through the
-**chrome-devtools MCP** (`mcp__chrome-devtools__*`, loaded with one ToolSearch call;
-never the claude-in-chrome tools) and captures screenshots as it goes. The brief must open with "READ-ONLY: edit no source
-files" — nothing enforces that at the tool layer, so the brief carries the constraint,
-and the driver eyeballs `git status` in the worktree after the run
-(any dirt → discard it, count the round as `unverifiable`):
+Brief from the plan/spec file if one exists (point the tester at it), else inline the
+acceptance criteria. Write the brief to `<out-dir>/brief.md`, outside the repo, and run
+it from the pipeline skill's directory, in the background:
+
+```bash
+scripts/astra.sh test <worktree> <out-dir>/brief.md <out-dir>
+```
+
+`test` runs `codex exec` read-only with two MCP servers on and pre-approved: the
+chrome-devtools browser and agent-device (iOS). The verdict is `<out-dir>/last.md`. Every
+round is a **fresh run** in a new out-dir, never `astra.sh fix`: a tester that saw the
+bug is no longer independent of the fix. Exit 3 or 4 means the run didn't happen; retry
+once. Codex down or signed out (the same exit repeating, `refresh_token_invalidated` in
+`stderr.txt`): fall back to a fresh Opus subagent driving the chrome-devtools MCP
+(`mcp__chrome-devtools__*`, loaded with one ToolSearch call; never the claude-in-chrome
+tools) with the same brief, and any iOS step in it is `unverifiable`.
+The sandbox stops the tester writing to the tree, and the driver still checks `git
+status` after the run (any dirt → discard it, count the round as `unverifiable`):
 
 ```
 READ-ONLY: you may not edit, create, or delete any source file — screenshots go under
 <absolute shots path>/ only, always as absolute paths (the browser tool can write
 nowhere else, and it resolves relative paths somewhere it can't write).
-Independently confirm THIS feature works by driving the running app in the browser (the
-stack is already up at <URL> — reuse it, never boot your own). First load the browser
-tools in one call: ToolSearch "select:mcp__chrome-devtools__new_page,
-mcp__chrome-devtools__navigate_page,mcp__chrome-devtools__take_snapshot,
-mcp__chrome-devtools__click,mcp__chrome-devtools__fill,mcp__chrome-devtools__take_screenshot,
-mcp__chrome-devtools__list_console_messages,mcp__chrome-devtools__evaluate_script".
+You are the tester, standing in for the user. Independently confirm THIS feature works
+by using the running app (the stack is already up at <URL> — reuse it, never boot your
+own): in a browser through the chrome-devtools MCP, and on iOS through the agent-device
+MCP when the IOS line names a device. Never control the Mac's desktop. Report what you
+find; never fix anything, and never write outside the shots path.
 Most new features have no automated spec — verify it agentically.
 Drive it the way a person would: click, hover, fill and press keys through the browser
-tools. evaluate_script is for reading state, never for firing events, because a
-script-fired event passes where a real right-click or drag fails. Walk the surface you
+tools, and press, fill and scroll through agent-device. evaluate_script is for reading
+state, never for firing events, because a script-fired event passes where a real
+right-click or drag fails. Walk the surface you
 were given, signed in the way the AUTH line says. A step you could not reach (a mic, a
 bot check, a missing device) makes the verdict `unverifiable`, naming the step, even
 when everything else worked.
@@ -81,6 +102,9 @@ FEATURE (what a user should now be able to do + the observable success state):
   <intent / acceptance criteria>            (or: see plan/spec file <path>)
 HOW TO EXERCISE IT:
   <route + steps / API call / CLI>
+IOS (when the change reaches a phone, else 'none'):
+  <"iPhone PM" or the booted simulator's name>, <"Safari at <URL>" or the installed app's
+  bundle id>. Start with agent-device `open <app> --foreground`; close the session when done.
 AUTH (if behind login):
   <the repo's test-auth path: a seeded account, or `form` with its test credentials, or
   'none'>. Use ONLY that path. Do NOT mint sessions, set auth cookies, or hit a dev-login
@@ -141,6 +165,6 @@ not a spec per micro-feature. **Running** the committed spec in the gate is the 
 ## 5. Hand back proof
 
 Return to the caller: `VERDICT`, `EVIDENCE` (the ordered screenshot + caption storyboard),
-`TASTE` notes, and the crystallized spec path (or none). In ship, REVIEW lays these straight
+`TASTE` notes, and the crystallized spec path (or none). In ship, TEST lays these straight
 into the review card — the storyboard becomes "Proof it works," the taste notes become
 "Verifier flagged." Pete reviews proof, not faith.

@@ -188,7 +188,8 @@ if [ -n "$ship_stage" ]; then
   case "$ship_stage" in
     gate:1*) printf "$(gate_c)✋ %s — storyboard?$(rst)" "$ship_slug"; is_gate=1; phase="$(stage_bar design)" ;;
     gate:2*) printf "$(gate_c)✋ %s — go?$(rst)" "$ship_slug"; is_gate=1; phase="$(stage_bar plan)" ;;
-    test*)   printf "$(gate_c)✋ %s — test it, then merge main?$(rst)" "$ship_slug"; is_gate=1; phase="$(stage_bar test)" ;;
+    gate:test*) printf "$(gate_c)✋ %s — try it, then merge main?$(rst)" "$ship_slug"; is_gate=1; phase="$(stage_bar test)" ;;
+    test*)   printf "$(ship_c)🧪 %s — codex testing$(rst)" "$ship_slug"; phase="$(stage_bar test)" ;;
     discover*) printf "$(ship_c)🚢 %s$(rst)" "$ship_slug"; phase="$(stage_bar design)" ;;
     plan*)     printf "$(ship_c)🚢 %s$(rst)" "$ship_slug"; phase="$(stage_bar plan)" ;;
     build*)    printf "$(ship_c)🚢 %s$(rst)" "$ship_slug"; phase="$(stage_bar build)" ;;

@@ -12,7 +12,7 @@ It's opinionated. Built for a hands-off, PM-style workflow: you stay in your lan
 - **Gate notifications.** When a ship parks at a gate, a desktop notification taps you on the shoulder (Ghostty-native, with a macOS fallback) — so you can walk away.
 - **Stage-aware status line.** Which ship, what phase (`designing → planning → building → reviewing`), ships-in-flight, your context + weekly budget, effort level. A bold banner when a ship needs you.
 - **Opus 5.5 drives; each build task goes to the engine its difficulty earns.** `scripts/route.py` asks Jev, TypeSafe's classifier, to score every task in the plan and ranks them: a quarter each, easiest to hardest, goes to GPT-6.1 Sol through `scripts/astra.sh` (a `codex exec` with a startup deadline, an idle deadline, and a refusal to call an empty result a success), a Sonnet 5.5 subagent, a Fable 5.1 subagent, and Opus 5.5. That split is an experiment the ledger will judge. Fable also reviews the plan before BUILD and the whole branch in REVIEW. The driver owns the brief, the diff review, the gates, and git, and logs every task's outcome to a ledger (`route.py report`) so the split can be tuned on data.
-- **Fresh-agent verification.** REVIEW invokes the bundled `verify` skill before the card so the running app is driven and judged before merge.
+- **Codex tests it as Pete would, and a pass lands it.** TEST invokes the bundled `verify` skill, which runs a read-only Astra tester (`astra.sh test`) in a browser and on iOS through agent-device: Pete's iPhone, or an Xcode simulator. It reports and never fixes; the driver fixes and reruns it, and its `works` lands the branch without waiting on Pete. Money paths, and changes Pete asked to try himself, still wait for his "merge main".
 
 ## What's in the plugin
 
