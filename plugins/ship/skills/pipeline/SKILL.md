@@ -71,12 +71,11 @@ a gate. Never use an autonomous lane to slip a taste call past Pete.
 ## Engines
 
 **Opus 5.5 drives every stage.** It owns design, briefs, triage, gates, git, and the
-final say. Every model runs at high effort: the driver, Fable, Opus subagents, and
-Astra. Never xhigh or max, and never medium to save time.
+final say. Every model runs at high effort: the driver, every subagent, and every
+codex run. Never xhigh or max, and never medium to save time.
 
-**Fable 5.1 is the second opinion in three places**: the plan review at the end of
-PLAN, the middle band of BUILD tasks, and REVIEW's correctness pass. The hardest band
-goes to Opus 5.5, the stronger builder (Pete, 2026-09-25).
+**Fable 5.1 is the second opinion in two places**: the plan review at the end of PLAN
+and REVIEW's correctness pass. It also builds a band of BUILD tasks.
 
 **BUILD routes by difficulty.** Once the execution plan is written and reviewed, run
 `scripts/route.py plan <plan.md>` from this skill's directory. It asks Jev, TypeSafe's
@@ -85,16 +84,16 @@ fraction of a cent) and ranks the routable tasks:
 
 | Rank among the plan's routable tasks | Engine | How it runs |
 |---|---|---|
-| easiest 33%, scored under 2.0 | Astra (`gpt-6-astra`) | `scripts/astra.sh run`, in the background |
-| easiest 33%, scored 2.0 or more, and the middle 42% | Fable 5.1 | harness subagent, `model: "fable"`, in the background |
-| hardest 25% | Opus 5.5 | harness subagent, `model: "opus"`, in the background |
+| easiest 25% (`sol`) | GPT-6.1 Sol | `ASTRA_MODEL=gpt-6.1-sol scripts/astra.sh run`, in the background |
+| next 25% (`sonnet`) | Sonnet 5.5 | harness subagent, `model: "sonnet"`, in the background |
+| next 25% (`fable`) | Fable 5.1 | harness subagent, `model: "fable"`, in the background |
+| hardest 25% (`opus`) | Opus 5.5 | harness subagent, `model: "opus"`, in the background |
 
-The shares are a temporary lean on Fable (Pete, 2026-09-26); the standing split is half
-Astra, a quarter each Fable and Opus, with a too-hard Astra task on Opus. `route.py`
-holds them in `ASTRA_SHARE`, `OPUS_SHARE` and `ASTRA_OVERFLOW`.
+The split is an experiment (Pete, 2026-10-01), and the ledger decides what stays.
+`route.py` holds it in `LADDER`.
 
 A task headed `(driver)` or `(inline)` is never ranked; the driver writes it. When the
-JSON's `fallback` is set, Jev was unreachable and every task went to Astra: say so on
+JSON's `fallback` is set, Jev was unreachable and every task went to Sol: say so on
 the review card and carry on, because the router never blocks a build. The driver may
 override one pick for a concrete reason, such as a file an Opus lane already holds, and
 logs the override in the ledger's `note`.
@@ -102,7 +101,7 @@ logs the override in the ledger's `note`.
 **Every engine gets the same brief and the same rules** (the standing boilerplate in
 BUILD): the named files only, never commit, never `git reset/checkout/stash`, end with
 STATUS, TESTS, CONCERNS. A harness subagent gets the worktree's absolute path and works
-only there. Only Astra's sandbox lacks network and a loopback port, so only Astra
+only there. Only a codex run's sandbox lacks network and a loopback port, so only Sol
 briefs name the server-starting tests as expected failures.
 
 **The ledger judges the split.** When the driver accepts a task's diff, it appends the
@@ -122,7 +121,9 @@ third of the first 81 rows were round-number guesses.
 `route.py report` prints the table by engine and difficulty band. Pete reads it after
 the first build on this ladder and moves the cuts.
 
-**Astra runs go through `scripts/astra.sh`**, never a hand-typed `codex exec`:
+**Codex runs go through `scripts/astra.sh`**, never a hand-typed `codex exec`. It
+runs `gpt-6-astra` unless `ASTRA_MODEL` names another model, so Sol's tasks set
+`ASTRA_MODEL=gpt-6.1-sol` on every call, `fix` included:
 
 ```bash
 astra.sh run    <worktree> <brief.md> <out-dir> [effort]   # a coding task, workspace-write
@@ -140,17 +141,18 @@ app-server only pays off when a run has to be steered while it runs (incidents:
 Dispatch).
 
 **Codex down or signed out** (repeating exit codes, `refresh_token_invalidated` in
-`stderr.txt`): send Astra's tasks to Opus subagents meanwhile rather than parking the
+`stderr.txt`): send Sol's tasks to Sonnet subagents meanwhile rather than parking the
 ship, and say so on the review card. Down means this ship's own `astra.sh` run failed
 that way. A note in the ship's args, a memory or an earlier session's outage is not
-evidence: route to Astra and let the run say.
+evidence: route to Sol and let the run say.
 
 **The driver writes inline anything under one file and ~50 lines**: config, glue
 between two tasks, a test tweak, a small fix from triage. Mark those tasks `(inline)`
 in the plan so the router skips them. Skill and agent prose and design taste never
 route either. Recon, expert consults, verify walks, design QA and review fan-outs go
 to Opus 5.5 harness subagents (the Agent tool), with the chrome-devtools MCP for
-anything in a browser. Never `claude -p` from inside a session, and never Sonnet.
+anything in a browser. Never `claude -p` from inside a session. Sonnet builds its
+BUILD band and nothing else.
 
 **The driver owns the envelope**, whoever drafts: it writes the brief (exact files,
 signatures, test cases, constraints; a vague brief burns the savings in fix rounds),
@@ -564,7 +566,7 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   did not); test files whose assertions the planned change invalidates are always in
   scope, allowlist or not; the final message is STATUS, TESTS, CONCERNS, and a longer
   report goes in a file inside the worktree; the worker never commits and never
-  runs `git reset/checkout/stash`. *Astra only:* the sandbox has no network, so the
+  runs `git reset/checkout/stash`. *Sol only:* the codex sandbox has no network, so the
   driver adds dependencies before the dispatch, and it cannot bind a port, so the brief
   names the repo's server-starting tests as expected failures (incidents: Dispatch). A
   repo whose rules load by path (`.claude/rules/`, a `scripts/rules-for.py`) gets those
@@ -579,8 +581,8 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   next message and on the review card. One run dropped a settings dropdown Pete had
   asked for and he found out by asking "this is all done?".
 - **A fix round goes back to the same worker** with the findings as the brief, so the
-  context is already paid for: `astra.sh fix` for Astra, `SendMessage` to the same
-  subagent for Opus or Fable. A fresh run for the same task starts cold and re-reads
+  context is already paid for: `astra.sh fix` for Sol, `SendMessage` to the same
+  subagent for Sonnet, Fable or Opus. A fresh run for the same task starts cold and re-reads
   the tree. Two wrong diffs on one task move it one rung up the ladder, and the ledger
   records `verdict=redone`.
 - **A quiet run never blocks the build.** The harness wakes the driver when
