@@ -22,10 +22,7 @@ def build(destination):
         refs.mkdir()
         if skill == 'ship':
             for name in ['storyboard.html', 'go-card.html', 'review-card.html']:
-                text = (source / 'skills/pipeline/reference' / name).read_text()
-                if name == 'review-card.html':
-                    text = text.replace('Merge? &nbsp;·&nbsp; or call a change?', '{{LANDING_STATUS}}')
-                (refs / name).write_text(text)
+                shutil.copyfile(source / 'skills/pipeline/reference' / name, refs / name)
     manifest = json.loads((source / '.codex-plugin/plugin.json').read_text())
     manifest['description'] = 'Ship express, self-directed, and storyboard-led changes with Astra subagents.'
     manifest['interface']['shortDescription'] = 'Ship changes with Astra subagents and design gates when needed.'

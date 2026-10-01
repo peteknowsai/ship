@@ -39,31 +39,31 @@ marker flip is how Pete *sees* ship engage.
 ## Sizing — every change ships; you pick the ceremony
 
 The rails are constant: worktree off main, its branch pushed at once with a draft PR
-tracking it → change, pushed at every milestone so the host builds a preview → prove it →
-**TEST: Pete tries it on the preview links and says "merge main"** → land (squash the PR)
-→ the host deploys what main deploys. Nothing ever edits main directly, however tiny, and
-nothing lands without Pete's word: main is where things go live. What scales is the
-ceremony before TEST, and you size it, not Pete:
+tracking it → change, pushed at every milestone so the host builds a preview → review →
+**TEST: a Codex tester uses it the way Pete would, in a browser and on his iPhone, and a
+pass lands it** (squash the PR) → the host deploys what main deploys. Nothing ever edits
+main directly, however tiny, and nothing lands untested: main is where things go live.
+What scales is the ceremony before TEST, and you size it, not Pete:
 
 - **EXPRESS — a quick tweak or fix.** Whole diff visible before you start, no money
   path. No spec, no plan, no cards, no stops: worktree → change → repo gates
-  (tsc/tests) → self-drive the affected flow → push, links → TEST → land on his word →
+  (tsc/tests) → self-drive the affected flow → push, links → TEST → land on a pass →
   `result:` line. A dab of `ponytail` (smallest diff), and `impeccable` for anything
   visual. The first Pete hears of it is the links.
 - **SELF-DIRECTED — real work with no taste question in it.** Write whatever
   machine-facing spec/plan *you* need to build it well, then build, run the full REVIEW
-  machinery (the fresh-eyes review + `verify` — a `works` verdict is the bar for TEST),
-  then TEST, land on his word, `result:`. No stops before TEST — the artifacts are for the
-  record, not approval.
+  machinery (the fresh-eyes review, then TEST's Codex tester — its `works` is the bar
+  for landing), land, `result:`. No stops — the artifacts are for the record, not
+  approval.
 - **GATED — Pete's taste or direction is genuinely in play.** A new user-facing
   surface, visual identity, a product tradeoff, ambiguous scope, a money path — the
   gated pipeline below.
 
 **The gate test is never size — it's whether Pete's answer would change what gets
 built** (or the change is risky/irreversible). If his input wouldn't change the outcome,
-don't stop. Every lane reaches TEST only on green gates + a `works` verdict, and lands
-only on Pete's "merge main". A repo whose main deploys nothing may declare `land: auto`,
-and only there does a green `works` land without him.
+don't stop. Every lane lands only on green gates and the Codex tester's `works`. A
+money path, and a change Pete said he wants to try himself, also wait for his "merge
+main" after the pass.
 Mid-flight, promote the moment taste or direction appears (park, write the spec from
 what you've learned, present GATE 1); size alone moves EXPRESS → SELF-DIRECTED, never to
 a gate. Never use an autonomous lane to slip a taste call past Pete.
@@ -129,6 +129,7 @@ runs `gpt-6-astra` unless `ASTRA_MODEL` names another model, so Sol's tasks set
 astra.sh run    <worktree> <brief.md> <out-dir> [effort]   # a coding task, workspace-write
 astra.sh review <worktree> <brief.md> <out-dir> [effort]   # read-only, fresh context
 astra.sh fix    <worktree> <brief.md> <out-dir> [effort]   # findings into the same thread
+astra.sh test   <worktree> <brief.md> <out-dir> [effort]   # TEST's tester: read-only, browser + iOS
 ```
 
 `<out-dir>` sits outside the repo and gets `events.jsonl`, `last.md` and `stderr.txt`.
@@ -149,8 +150,8 @@ evidence: route to Sol and let the run say.
 **The driver writes inline anything under one file and ~50 lines**: config, glue
 between two tasks, a test tweak, a small fix from triage. Mark those tasks `(inline)`
 in the plan so the router skips them. Skill and agent prose and design taste never
-route either. Recon, expert consults, verify walks, design QA and review fan-outs go
-to Opus 5.5 harness subagents (the Agent tool), with the chrome-devtools MCP for
+route either. Recon, expert consults, design QA and review fan-outs go
+to Opus 5.5 harness subagents (the Agent tool; TEST's tester is Codex, through `ship:verify`), with the chrome-devtools MCP for
 anything in a browser. Never `claude -p` from inside a session. Sonnet builds its
 BUILD band and nothing else.
 
@@ -203,10 +204,10 @@ harness wakes you when it lands.
    presented rounds, each a hard stop — see stage 1). GATE 2 = his "go" on the HTML
    plan card (stage 2). Both always fire on the GATED lane: storyboard, lock, plan,
    go, spec, build. A storyboard he iterated earns a plan he reads, even with zero
-   calls on it, and the plan is one screen. SELF-DIRECTED and EXPRESS render no cards and stop
-   only at TEST; a money path stops on any lane. When a gate fires, it is a **HARD STOP** —
-   present the artifact and wait. TEST is not a third gate on the design: it is where
-   Pete tries the running thing, and it applies to every lane.
+   calls on it, and the plan is one screen. SELF-DIRECTED and EXPRESS render no cards and never
+   stop before TEST; a money path stops on any lane, at its gates and again before landing. When a gate
+   fires, it is a **HARD STOP** — present the artifact and wait. TEST is not a gate: on
+   every lane a Codex tester uses the running thing as Pete would, and its pass lands it.
 
 **Pete's stack:** his global instructions carry the standing stack — Eve · Vercel ·
 Convex · Clerk · Stripe · Next (Cloudflare keeps DNS, R2 and the Workers already running). Never re-ask it. The repo's own `CLAUDE.md` /
@@ -244,7 +245,7 @@ Every key is optional, and the default is what a repo with no contract gets:
   and prod deploy key are. It checks that dev and prod never cross: git link and
   production branch (`--production-branch <branch>` where it is not main), protection, the Convex deploy key on Production only, every dev
   Convex setting present on prod, Clerk `pk_live` on Production and `pk_test` elsewhere.
-  Ship runs it before cueing TEST and before landing; a ✗ is ship's to fix, never Pete's.
+  Ship runs it before TEST and before landing; a ✗ is ship's to fix, never Pete's.
 - **`live:`** what landing on main deploys, and how to watch it. cells-app: "main is
   production; each touched pack's Vercel production build pushes its Convex functions,
   then the app." Default: nothing, and ship claims no deploy.
@@ -252,9 +253,13 @@ Every key is optional, and the default is what a repo with no contract gets:
   production and the command it runs (cells-app: "release" runs `npm run release`). Ship
   runs it only on that word, never as part of landing, and watches what `live:` names.
   Without it, landing is the release wherever main deploys.
-- **`land:`** how a branch reaches main on Pete's word. `pr` (the default) squash-merges
-  the tracker PR. `direct` pushes `HEAD:main` after a rebase and opens no PR. `auto` lands
-  on green `works` without TEST, for a repo whose main deploys nothing. Any other value is
+- **`ios:`** for a native iOS app, the command that builds the branch and installs it on
+  a device by name ("iPhone PM" or a simulator), so the tester can open it. Default: none;
+  a web app's iOS check is Safari at the same link.
+- **`land:`** how a branch reaches main. `pr` (the default) squash-merges
+  the tracker PR. `direct` pushes `HEAD:main` after a rebase and opens no PR. `auto`, for a repo whose main
+  deploys nothing, lands on the tester's `works` and never waits for Pete, money paths
+  included. Any other value is
   a command ship runs from the worktree in place of the merge (a mirror remote, a
   local-only main, a promote hook that builds on push); the command is the repo's, and
   ship never invents one.
@@ -325,7 +330,7 @@ base branch.
 **Never stack on a branch that hasn't landed.** Asked to build on top of another
 ship's branch, branch off main anyway, cherry-pick only the commits you need from it,
 and open the tracker PR against main. Its own rebase later finds those commits already
-there. A PR based on the other branch strands at "merge main" whenever that branch
+there. A PR based on the other branch strands at landing whenever that branch
 hasn't landed first (incidents: Worktrees).
 
 ```
@@ -617,13 +622,14 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   have each sent a deploy to the wrong place). *You* find the breakage, never Pete.
 - Raise a hand only for a genuine fork (PM-framed, with a rec).
 
-### 4 · TEST — ship proves it, then Pete tries it  → marker: `review`, then `test`
+### 4 · TEST — ship reviews it, then Codex uses it as Pete would  → marker: `review`, then `test`
 
 Three phases after the plan, as Pete sees them: BUILD, TEST, LAND. TEST's first half is
-ship testing its own work (the review below: gates, a cold correctness read, design QA,
-`verify`), so that Pete only ever tries something already proven; its second half is
-Pete trying it on the links. His test comes after ship's on purpose: a bug the review
-finds after his OK would land unfixed or land fixed without his seeing it.
+ship reviewing its own work (gates, a cold correctness read, design QA); its second half
+is a Codex tester using the running thing the way Pete would, in a browser and on his
+iPhone, in his place (Pete, 2026-10-01). The tester reports and never fixes. Its pass
+lands the branch; nothing waits for Pete unless the lane is a money path, he asked to try
+it himself, or the tester could not prove it.
 
 
 - `stage.sh <root> review`. Sync with main first: `git fetch origin`; absorb upstream in the
@@ -662,10 +668,10 @@ finds after his OK would land unfixed or land fixed without his seeing it.
   nits land on the card for Pete. *Transplant:* for a reference surface the pair is
   the reference product beside ours (the repo's own tree audit and its screenshots),
   never a frame, and a visible difference is a finding whatever the checks say.
-- **Put it in front of Pete, running.** Two surfaces, both his: the branch's **preview
+- **Keep it running, for the tester and for Pete.** Two surfaces: the branch's **preview
   links** (the contract's `preview:`, the real host, database and sign-in), and the
-  worktree's **localhost** (the contract's `dev:` command, else the dev script), for the
-  instant look. Boot the dev server detached, never through a bounded pipe (`nohup <dev>
+  worktree's **localhost** (the contract's `dev:` command, else the dev script). Pete may
+  look whenever he likes; it never holds the ship. Boot the dev server detached, never through a bounded pipe (`nohup <dev>
   > dev.log 2>&1 &`, then curl-probe — a `| head -50` has SIGPIPE'd a server mid-verify)
   and `open` the URL it printed. A feature behind an auth gate needs its test-auth path
   working on both, or it 403s and reads as broken (incidents: Backends). Never run a
@@ -682,51 +688,63 @@ finds after his OK would land unfixed or land fixed without his seeing it.
   presented card references somewhere durable before teardown, or the card 404s its
   own proof (incidents: Worktrees), then delete `<shots-root>/.ship-shots/<slug>/`,
   which on a cross-repo ship is not inside the worktree teardown removes.
-- **Prove it works — invoke `ship:verify` (the full name: bare `verify` resolves to
-  another skill and is refused) before the card.** The walk covers the surface Pete will
-  open, signed in the way he will be, with the browser tools' real clicks and hovers,
-  never events dispatched from a script (a right-click menu bug got past synthetic
-  events twice). When the walker's report says how it got past sign-in on the repo's
-  test-auth path (Clerk's bot check, say), the driver writes that into the contract's
-  `test-auth:`, so the next run doesn't rediscover it. The walker itself never looks
-  for a way past auth. It walks the branch's preview link when there is one (a
-  per-push `preview:`, or an on-demand one ship built), else the localhost. A fresh
-  read-only subagent
-  drives the feature and returns `works | broken | unverifiable` + a
-  screenshot storyboard; verify loops-to-fix (cap ~3). `broken` after the cap, or
-  `unverifiable` → do NOT go to TEST: end the turn with `needs input:` ("review: <feature>
-  — couldn't prove it works: <reason>") and hand Pete the verdict + evidence. A path the
-  walk couldn't reach (a mic, a bot check) makes the verdict partial, and partial is
-  `unverifiable`, never a footnote on the TEST cue. Three ships went to TEST with a known
-  gap and Pete found it in minutes ("this should have been tested before you sent it").
-- **Render the review card** from `reference/review-card.html` (contract below) to the
-  docs home and `open` it, with the preview links and the running localhost on it. Never
-  tell Pete to "go read the PR" — the review comes to him, running and labeled.
-- **Before cueing him, check the wiring.** Run the contract's `stack:` (a ✗ is yours to
+- **Before the tester runs, check the wiring.** Run the contract's `stack:` (a ✗ is yours to
   fix first), and look at what landing will change in the backend: a change that
   **removes or renames** a backend function or table lands in two passes, first the app
   stops using it and then it goes, because landing ships the backend before the app and
   a failed app build would leave the old app calling what is gone.
-- **His word is "merge main".** It means: take this worktree all the way, PR merge,
-  deploy, cleanup (LAND). The same intent in other words counts ("push to main", "merge
-  it", "ship it"); approval of the work without that intent ("looks good") does not land.
-- **TEST — Pete tries it, and his word lands it.** With green gates and a `works`
-  verdict, push, `stage.sh <root> test`, post the links (and the card, where the
-  lane has one), and end the turn: `needs input: test <slug> — <what to try> · say "merge
-  main"`, then the branch · worktree tail. This is every lane's stop, EXPRESS included,
-  because main is where things go live. Only `land: auto` skips it. While parked, keep
-  the dev server up; a change he asks for goes back through BUILD's push-and-links loop
-  and `verify`, then parks at TEST again. A money path adds nothing new here: it already
-  stops, and his word is the release.
-- Changes Pete asks for at the card go through `superpowers:receiving-code-review` —
-  verify the ask against the code, do the work, loop the changed flow back through
-  `verify` before re-presenting.
-### 5 · LAND — on Pete's "merge main"  → marker removed
+- **TEST — the Codex tester uses it, and a pass lands it.** With green gates and the
+  review triaged, push, `stage.sh <root> test`, and invoke `ship:verify` (the full name:
+  bare `verify` resolves to another skill and is refused). verify runs `astra.sh test`:
+  Astra on high, read-only, with the chrome-devtools browser and agent-device, the iOS
+  driver that reaches Pete's iPhone ("iPhone PM") and the Xcode simulators. Desktop
+  control of the Mac is never part of it. The brief names a device whenever the change
+  reaches a phone: a mobile layout, mobile Safari, or a native app (the contract's `ios:`
+  builds and installs it first); the phone is the default and a simulator stands in when
+  it isn't connected or another ship has it.
+  The tester covers the surface Pete would open, signed in the way he would be, with real
+  clicks, taps and keys, never events dispatched from a script (a right-click menu bug got
+  past synthetic events twice). When its report says how it got past sign-in on the
+  repo's test-auth path (Clerk's bot check, say), the driver writes that into the
+  contract's `test-auth:`, so the next run doesn't rediscover it. The tester itself never
+  looks for a way past auth. It uses the branch's preview link when there is one (a
+  per-push `preview:`, or an on-demand one ship built), else the localhost, and returns
+  `works | broken | unverifiable` + a screenshot storyboard.
+  - **`broken`: the driver fixes, the tester never does.** Fix, re-gate, push, and run a
+    fresh tester (cap ~3 rounds).
+  - **`works`: land now** (LAND), unless the lane waits for Pete (below). No stop, no
+    cue.
+  - **`broken` after the cap, or `unverifiable`: park.** End the turn with `needs input:`
+    ("test: <feature> — couldn't prove it works: <reason>") and hand Pete the verdict and
+    evidence. A path the tester couldn't reach (a mic, a bot check, a device it couldn't
+    open) makes the verdict partial, and partial is `unverifiable`, never a footnote on a
+    landing. Three ships went to Pete with a known gap and he found it in minutes ("this
+    should have been tested before you sent it").
+- **Render the review card** from `reference/review-card.html` (contract below) to the
+  docs home as soon as the tester's verdict is in, and commit it on the branch, with the
+  proof shots it shows copied beside it, before LAND's step 0: LAND removes the worktree.
+  `LANDING_STATUS` says "Tested by Codex · landing on main", or what it waits on. `open`
+  main's copy with the `result:`, or the worktree's with the park. It is the record of
+  what landed and the proof, not a gate.
+- **What still waits for Pete's "merge main" after a pass**: a money path, and a change
+  he said he wants to try himself. `stage.sh <root> gate:test`, post the links (and the
+  card), and end the turn:
+  `needs input: test <slug> — <what to try> · say "merge main"`, then the branch ·
+  worktree tail. His word means take this worktree all the way, PR merge, deploy,
+  cleanup (LAND). The same intent in other words counts ("push to main", "merge it",
+  "ship it"); "looks good" does not land. A ship parked on `unverifiable` writes
+  `gate:test` too, and the same word lands it once he has walked the gap himself.
+- **While parked, keep the dev server up**; a change he asks for goes back through
+  BUILD's push-and-links loop and the tester, and lands on its pass unless the lane
+  still waits for him.
+- Changes Pete asks for while parked go through `superpowers:receiving-code-review` —
+  verify the ask against the code, do the work, loop the changed flow back through the
+  tester. A change he asks for after landing is a new EXPRESS ship.
+### 5 · LAND — on the tester's pass, or Pete's "merge main"  → marker removed
 
 Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
 
-- **Land on "merge main" — `land: pr` (the default), from the MAIN CHECKOUT, teardown
-  first** (incidents: Worktrees — both orderings that deviate have stranded ships):
+- **Land — `land: pr` (the default), from the MAIN CHECKOUT, teardown first** (incidents: Worktrees — both orderings that deviate have stranded ships):
   0. Pre-flight *from the worktree*: `git fetch origin`; if main moved, absorb +
      re-gate + push; run `stack:` once more; update the tracker PR's body to what actually shipped (the squash
      commit takes it); `gh pr ready <#>`; confirm `gh pr view <#> --json mergeable`
@@ -783,8 +801,7 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
 - **A separate promotion is NOT ship's job.** Where a repo promotes from an integration
   lane to production by its own script, that is Pete's human-gated ritual: never run it,
   never offer to, unless the contract's `release:` names it: then Pete's release word runs
-  it. Where main is production, his "merge main" is the release and ship watches it
-  through.
+  it. Where main is production, landing is the release and ship watches it through.
 - Run RETRO, then end with a `result:` line: what shipped, one sentence, with the live
   links (or the lane's) — plus `· ship-retro #N filed` and/or `· K backlog candidates`
   when applicable. Only a landing earns `result:`; a ship parked at TEST ends its turns
@@ -850,9 +867,9 @@ Render `reference/review-card.html` filled with the meta only — PM-framed, one
 `17-pr-writeup` for a PM, never a file tour. Pete reviews *this*, not the diff:
 
 - **What you got** — plain-English bullets of what now works.
-- **Proof it works** — the verifier's captioned screenshot storyboard (start → action →
-  success) with the `works` verdict on top; the app is also still running for him at
-  localhost. (Non-visual → demo/test output.)
+- **Proof it works** — the Codex tester's captioned screenshot storyboard (start →
+  action → success, browser and phone) with the `works` verdict on top. (Non-visual →
+  demo/test output.)
 - **Already checked for you** — gates green, the flow driven end-to-end by a fresh
   agent, any committed e2e spec (name it); what was NOT touched (schema / money /
   public surfaces).
@@ -862,9 +879,10 @@ Render `reference/review-card.html` filled with the meta only — PM-framed, one
   the open localhost.
 - **Also worth building — didn't make this round** — the run's backlog candidates (see
   below). Most rounds have none — omit the section entirely; never pad it.
-- **Try it, then say "merge main"** — the preview links, one per app, and the
-  localhost; what landing will deploy (the contract's `live:`). The tracker PR link is
-  there for the record, but he shouldn't need it.
+- **Where it is** — the live links landing deployed (the contract's `live:`), or the
+  preview links and localhost when the ship parked. The verdict line (`LANDING_STATUS`)
+  says which: "Landed on main" with the live URL, or what it waits on. The tracker PR
+  link is there for the record, but he shouldn't need it.
 
 ## Backlog candidates — collect deferrals for the card
 
@@ -887,12 +905,14 @@ browser and landing rules apply. Change Codex behavior there, never here.
 
 At a gate, three things fire so Pete notices whether he's watching or away:
 
-1. **Status line** — the `gate:N` marker shows `✋ <slug> — storyboard?/go?` in bold amber,
-   and TEST's `test` marker `✋ <slug> — test it, then merge main?`.
+1. **Status line** — the `gate:N` marker shows `✋ <slug> — storyboard?/go?` in bold amber.
+   TEST's `test` marker is not a gate: it shows `🧪 <slug> — codex testing`. A ship
+   that parks for Pete writes `gate:test`: `✋ <slug> — try it, then merge main?`.
 2. **FleetView bucket** — the turn ends with a `needs input:` line → the row jumps to
    *awaiting input*.
 3. **Desktop notification** — the gate Stop-hook fires a Ghostty notification
-   (`<slug> → GATE N`, or `<slug> → ready to test`). Gates are rare, so this is never noisy.
+   (`<slug> → GATE N`, or `<slug> → try it, then merge main?`). Gates are rare, so this
+   is never noisy.
 
 ## FleetView narration contract
 
@@ -904,7 +924,8 @@ The dashboard reflects the session — make it a ship board:
   `📐 planning · <slug>`): status-of-work, not an echo of the last tool call. A bare
   status line ends a turn only while you wait on background work (Engines: how a
   turn ends).
-- **At a gate and at TEST, the closing line starts `needs input:`** → *awaiting input*.
+- **At a gate, and when TEST parks for Pete, the closing line starts `needs input:`** →
+  *awaiting input*.
   At landing, it starts `result:` → *completed*. Mid-work narration keeps it in *working*.
 - **End `needs input:` and `result:` lines with `branch <branch> · worktree <path>`**
   (`detached@<short-sha>` until a branch exists) — Pete must always know which checkout
@@ -920,7 +941,7 @@ test-first (`superpowers:test-driven-development`) is reserved for money paths.
 
 Also not ship's job: arbitrary phasing (the scope law); `executing-plans`
 (checkpoint-heavy — the opposite of hands-off); manual git worktree management (`wt`
-owns birth-to-death in Claude Code; Codex Desktop owns its own); landing without Pete's
-"merge main" (except `land: auto`); running a production deploy or pushing a production
+owns birth-to-death in Claude Code; Codex Desktop owns its own); landing without the
+Codex tester's pass or Pete's "merge main" (except `land: auto`); running a production deploy or pushing a production
 database by hand (the host's build does it); a separate promotion script, which is Pete's
 human-gated ritual, never ship's to run, gate, or offer.
