@@ -34,6 +34,12 @@ mtime() { stat -f %m "$1" 2>/dev/null || stat -c %Y "$1"; }
 # A test run keeps TESTER_MCP on and pre-approves their calls: under exec's approval
 # policy "never", an unapproved MCP call is refused, not asked (2026-10-01).
 TESTER_MCP="chrome-devtools agent-device"
+# chrome-devtools writes files only inside its MCP roots, and exec negotiates none, so the
+# server falls back to the OS temp dir and refuses the worktree and the out-dir (retro #129).
+# A test run relaunches it headless, as the Claude side runs it, with those two as roots.
+tester_browser() { # <worktree> <out-dir>
+  printf -- '-c\nmcp_servers.chrome-devtools.args=["chrome-devtools-mcp@latest","--isolated=true","--headless=true","--workspace=%s","--workspace=%s"]\n' "$1" "$2"
+}
 mcp_off() { # [servers to keep]
   local config="${CODEX_HOME:-$HOME/.codex}/config.toml"
   [ -f "${config}" ] || return 0
@@ -55,6 +61,7 @@ dispatch() {
   local -a common=(-m "${MODEL}" -c "model_reasoning_effort=${effort}" --json -o "${last}")
   local keep=""; [ "${mode}" = test ] && keep=${TESTER_MCP}
   local line; while read -r line; do common+=("${line}"); done < <(mcp_off "${keep}")
+  [ "${mode}" = test ] && while read -r line; do common+=("${line}"); done < <(tester_browser "${worktree}" "${out}")
   brief=$(cd "$(dirname "${brief}")" && pwd)/$(basename "${brief}")
   rm -f "${last}"
   local started_at; started_at=$(date +%s)
@@ -113,8 +120,9 @@ selftest() {
   stub "echo \"\$*\" > ${dir}/args; ${write_last}; cat >/dev/null; echo '{\"type\":\"thread.started\",\"thread_id\":\"t1\"}'; echo done > \"\$out\""
   expect 0 "a test run finishes"            test "${dir}/wt" "${dir}/brief.md" "${dir}/o8"
   if grep -q -- '-s read-only' "${dir}/args" && grep -q 'agent-device.default_tools_approval_mode="approve"' "${dir}/args" &&
-     grep -q 'node_repl.enabled=false' "${dir}/args" && ! grep -q 'agent-device.enabled=false' "${dir}/args"; then
-    echo "  ok   a test run is read-only with only the tester's servers on, pre-approved"
+     grep -q 'node_repl.enabled=false' "${dir}/args" && ! grep -q 'agent-device.enabled=false' "${dir}/args" &&
+     grep -q -- "--headless=true\",\"--workspace=${dir}/wt\",\"--workspace=${dir}/o8\"" "${dir}/args"; then
+    echo "  ok   a test run is read-only, only the tester's servers on and pre-approved, its browser headless and rooted in the worktree and out-dir"
   else echo "  FAIL a test run's flags: $(cat "${dir}/args")"; fails=$((fails+1)); fi
   rm -rf "${dir}"; echo "astra self-test: $((11 - fails))/11"; [ "${fails}" = 0 ]
 }
