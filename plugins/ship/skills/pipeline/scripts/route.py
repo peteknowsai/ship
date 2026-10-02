@@ -39,10 +39,11 @@ LEVELS = [
     'modes that need careful reasoning to get right.',
 ]
 # Each rung's share of the ranked tasks, easiest first; the last rung takes the rest and
-# always gets the hardest task. Pete, 2026-10-01, an experiment: a quarter each to GPT-6.1
-# Sol, Sonnet 5.5, Fable 5.1 and Opus 5.5. Before it: Astra 33% (only tasks Jev scored
-# under 2.0, else Fable), Fable 42%, Opus 25%.
-LADDER = [('sol', 0.25), ('sonnet', 0.25), ('fable', 0.25), ('opus', 0.25)]
+# always gets the hardest task. Pete, 2026-10-01, an experiment: a third each to Sonnet
+# 5.5, Fable 5.1 and Opus 5.5. Codex left BUILD because its sandbox made the driver rerun
+# the tests on most of Sol's tasks, as it had on Astra's. Before it, the same day: a
+# quarter each to Sol, Sonnet, Fable and Opus; before that, Astra 33%, Fable 42%, Opus 25%.
+LADDER = [('sonnet', 1 / 3), ('fable', 1 / 3), ('opus', 1 / 3)]
 QUESTION = 'How hard is this coding task for an AI coding agent to complete correctly on the first attempt?'
 # Jev takes 64k tokens per request, and pasted code runs near 3 characters a token. Each
 # task's question repeats the rubric (~800 characters), so a request packs tasks until
@@ -310,16 +311,15 @@ def selftest():
         os.environ.update(ROUTE_RESPONSE=reply, SHIP_LEDGER=os.path.join(tmp, 'ledger.jsonl'))
         got = {t['n']: t['engine'] for t in plan(plan_md)['tasks']}
         check('the driver task stays with the driver', got[3] == 'driver')
-        check('easiest quarter on Sol', sorted(n for n, e in got.items() if e == 'sol') == [1, 5])
-        check('next on Sonnet', sorted(n for n, e in got.items() if e == 'sonnet') == [7, 9])
-        check('then Fable', sorted(n for n, e in got.items() if e == 'fable') == [4, 8])
-        check('hardest on Opus', sorted(n for n, e in got.items() if e == 'opus') == [2, 6])
+        check('easiest third on Sonnet', sorted(n for n, e in got.items() if e == 'sonnet') == [1, 5, 7])
+        check('then Fable', sorted(n for n, e in got.items() if e == 'fable') == [4, 9])
+        check('hardest on Opus', sorted(n for n, e in got.items() if e == 'opus') == [2, 6, 8])
         for name, answers in [('bare numbers', {f't{n}': 1 for n in scores}),
                               ('string scores', {f't{n}': {'score': str(s)} for n, s in scores.items()})]:
             json.dump({'answers': answers}, open(reply, 'w'))
             result = plan(plan_md)
             check(f'a reply of {name} falls back instead of crashing', result['fallback'] and
-                  {t['engine'] for t in result['tasks'] if t['n'] != 3} == {'sol'})
+                  {t['engine'] for t in result['tasks'] if t['n'] != 3} == {'sonnet'})
         few = os.path.join(tmp, 'few.md')
         open(few, 'w').write('### Task list\n\nan overview, not a task\n\n' +
                              ''.join(f'### Task {n}: t\n\n```md\n### Task 99: an example inside a fence\n```\n\n'
@@ -327,7 +327,7 @@ def selftest():
         json.dump({'answers': {f't{n}': {'score': n} for n in range(1, 6)}}, open(reply, 'w'))
         got = [t['engine'] for t in plan(few)['tasks']]
         check('a fenced heading and "### Task list" are not tasks', len(got) == 5)
-        check('five tasks spread over every rung', got == ['sol', 'sonnet', 'sonnet', 'fable', 'opus'])
+        check('five tasks spread over every rung', got == ['sonnet', 'sonnet', 'fable', 'opus', 'opus'])
         one = os.path.join(tmp, 'one.md')
         open(one, 'w').write('### Task 1: t\n\nx\n')
         check('a lone task goes to the top rung', [t['engine'] for t in plan(one)['tasks']] == ['opus'])
@@ -335,7 +335,7 @@ def selftest():
         os.environ.update(TYPESAFE_API_KEY='', ROUTE_NO_KEYCHAIN='1')
         result = plan(plan_md)
         check('no key falls back to the first rung', result['fallback'] and
-              {t['engine'] for t in result['tasks'] if t['n'] != 3} == {'sol'})
+              {t['engine'] for t in result['tasks'] if t['n'] != 3} == {'sonnet'})
         log(['repo=ship', 'task=2', 'engine=fable', 'score=3.4', 'seconds=300', 'fix_rounds=1', 'gates_first_pass=false'])
         open(ledger_path(), 'a').write('{"half a line\n')
         log(['repo=ship', 'task=1', 'engine=astra', 'score=0.8', 'seconds=120', 'fix_rounds=0', 'gates_first_pass=True'])
@@ -370,7 +370,7 @@ def selftest():
         check('log fills the score and the routed engine from the saved picks',
               row.get('score') == 3.4 and row.get('routed') == 'opus' and row['engine'] == 'opus')
         check('an override shows as engine differing from routed, and an unknown task logs unfilled',
-              moved.get('routed') == 'sol' and moved['engine'] == 'opus' and 'routed' not in missing)
+              moved.get('routed') == 'sonnet' and moved['engine'] == 'opus' and 'routed' not in missing)
         gaps = os.path.join(tmp, 'gaps.md')
         open(gaps, 'w').write('### Task 1: a\n\nx\n\n### Task 3: b\n\ny\n')
         check('tasks keep the numbers the plan gives them', [t['n'] for t in parse_tasks(open(gaps).read())] == [1, 3])
