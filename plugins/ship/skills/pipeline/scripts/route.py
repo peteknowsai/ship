@@ -39,11 +39,11 @@ LEVELS = [
     'modes that need careful reasoning to get right.',
 ]
 # Each rung's share of the ranked tasks, easiest first; the last rung takes the rest and
-# always gets the hardest task. Pete, 2026-10-01, an experiment: a third each to Sonnet
-# 5.5, Fable 5.1 and Opus 5.5. Codex left BUILD because its sandbox made the driver rerun
+# always gets the hardest task. Pete, 2026-10-02, an experiment: Sonnet 5.5 25%, Fable
+# 5.1 50%, Opus 5.5 25%. On 2026-10-01 it was a third each. Codex left BUILD because its sandbox made the driver rerun
 # the tests on most of Sol's tasks, as it had on Astra's. Before it, the same day: a
 # quarter each to Sol, Sonnet, Fable and Opus; before that, Astra 33%, Fable 42%, Opus 25%.
-LADDER = [('sonnet', 1 / 3), ('fable', 1 / 3), ('opus', 1 / 3)]
+LADDER = [('sonnet', 0.25), ('fable', 0.5), ('opus', 0.25)]
 QUESTION = 'How hard is this coding task for an AI coding agent to complete correctly on the first attempt?'
 # Jev takes 64k tokens per request, and pasted code runs near 3 characters a token. Each
 # task's question repeats the rubric (~800 characters), so a request packs tasks until
@@ -311,9 +311,9 @@ def selftest():
         os.environ.update(ROUTE_RESPONSE=reply, SHIP_LEDGER=os.path.join(tmp, 'ledger.jsonl'))
         got = {t['n']: t['engine'] for t in plan(plan_md)['tasks']}
         check('the driver task stays with the driver', got[3] == 'driver')
-        check('easiest third on Sonnet', sorted(n for n, e in got.items() if e == 'sonnet') == [1, 5, 7])
-        check('then Fable', sorted(n for n, e in got.items() if e == 'fable') == [4, 9])
-        check('hardest on Opus', sorted(n for n, e in got.items() if e == 'opus') == [2, 6, 8])
+        check('easiest quarter on Sonnet', sorted(n for n, e in got.items() if e == 'sonnet') == [1, 5])
+        check('the middle half on Fable', sorted(n for n, e in got.items() if e == 'fable') == [4, 7, 8, 9])
+        check('hardest quarter on Opus', sorted(n for n, e in got.items() if e == 'opus') == [2, 6])
         for name, answers in [('bare numbers', {f't{n}': 1 for n in scores}),
                               ('string scores', {f't{n}': {'score': str(s)} for n, s in scores.items()})]:
             json.dump({'answers': answers}, open(reply, 'w'))
@@ -327,7 +327,7 @@ def selftest():
         json.dump({'answers': {f't{n}': {'score': n} for n in range(1, 6)}}, open(reply, 'w'))
         got = [t['engine'] for t in plan(few)['tasks']]
         check('a fenced heading and "### Task list" are not tasks', len(got) == 5)
-        check('five tasks spread over every rung', got == ['sonnet', 'sonnet', 'fable', 'opus', 'opus'])
+        check('five tasks spread over every rung', got == ['sonnet', 'fable', 'fable', 'fable', 'opus'])
         one = os.path.join(tmp, 'one.md')
         open(one, 'w').write('### Task 1: t\n\nx\n')
         check('a lone task goes to the top rung', [t['engine'] for t in plan(one)['tasks']] == ['opus'])
