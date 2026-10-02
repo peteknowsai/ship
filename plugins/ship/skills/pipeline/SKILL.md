@@ -84,11 +84,11 @@ fraction of a cent) and ranks the routable tasks:
 
 | Rank among the plan's routable tasks | Engine | How it runs |
 |---|---|---|
-| easiest third (`sonnet`) | Sonnet 5.5 | harness subagent, `model: "sonnet"`, in the background |
-| next third (`fable`) | Fable 5.1 | harness subagent, `model: "fable"`, in the background |
-| hardest third (`opus`) | Opus 5.5 | harness subagent, `model: "opus"`, in the background |
+| easiest 25% (`sonnet`) | Sonnet 5.5 | harness subagent, `model: "sonnet"`, in the background |
+| middle 50% (`fable`) | Fable 5.1 | harness subagent, `model: "fable"`, in the background |
+| hardest 25% (`opus`) | Opus 5.5 | harness subagent, `model: "opus"`, in the background |
 
-The split is an experiment (Pete, 2026-10-01), and the ledger decides what stays.
+The split is an experiment (Pete, 2026-10-02), and the ledger decides what stays.
 `route.py` holds it in `LADDER`. Codex builds nothing for now: its sandbox made the
 driver rerun the tests on most of its tasks. It still runs TEST's tester.
 
