@@ -84,16 +84,16 @@ fraction of a cent) and ranks the routable tasks:
 
 | Rank among the plan's routable tasks | Engine | How it runs |
 |---|---|---|
-| easiest 25% (`sol`) | GPT-6.1 Sol | `ASTRA_MODEL=gpt-6.1-sol scripts/astra.sh run`, in the background |
-| next 25% (`sonnet`) | Sonnet 5.5 | harness subagent, `model: "sonnet"`, in the background |
-| next 25% (`fable`) | Fable 5.1 | harness subagent, `model: "fable"`, in the background |
-| hardest 25% (`opus`) | Opus 5.5 | harness subagent, `model: "opus"`, in the background |
+| easiest third (`sonnet`) | Sonnet 5.5 | harness subagent, `model: "sonnet"`, in the background |
+| next third (`fable`) | Fable 5.1 | harness subagent, `model: "fable"`, in the background |
+| hardest third (`opus`) | Opus 5.5 | harness subagent, `model: "opus"`, in the background |
 
 The split is an experiment (Pete, 2026-10-01), and the ledger decides what stays.
-`route.py` holds it in `LADDER`.
+`route.py` holds it in `LADDER`. Codex builds nothing for now: its sandbox made the
+driver rerun the tests on most of its tasks. It still runs TEST's tester.
 
 A task headed `(driver)` or `(inline)` is never ranked; the driver writes it. When the
-JSON's `fallback` is set, Jev was unreachable and every task went to Sol: say so on
+JSON's `fallback` is set, Jev was unreachable and every task went to Sonnet: say so on
 the review card and carry on, because the router never blocks a build. The driver may
 override one pick for a concrete reason, such as a file an Opus lane already holds, and
 logs the override in the ledger's `note`.
@@ -101,8 +101,7 @@ logs the override in the ledger's `note`.
 **Every engine gets the same brief and the same rules** (the standing boilerplate in
 BUILD): the named files only, never commit, never `git reset/checkout/stash`, end with
 STATUS, TESTS, CONCERNS. A harness subagent gets the worktree's absolute path and works
-only there. Only a codex run's sandbox lacks network and a loopback port, so only Sol
-briefs name the server-starting tests as expected failures.
+only there.
 
 **The ledger judges the split.** When the driver accepts a task's diff, it appends the
 outcome:
@@ -122,8 +121,7 @@ third of the first 81 rows were round-number guesses.
 the first build on this ladder and moves the cuts.
 
 **Codex runs go through `scripts/astra.sh`**, never a hand-typed `codex exec`. It
-runs `gpt-6-astra` unless `ASTRA_MODEL` names another model, so Sol's tasks set
-`ASTRA_MODEL=gpt-6.1-sol` on every call, `fix` included:
+runs `gpt-6-astra` unless `ASTRA_MODEL` names another model:
 
 ```bash
 astra.sh run    <worktree> <brief.md> <out-dir> [effort]   # a coding task, workspace-write
@@ -140,12 +138,6 @@ final message, so it did not run and gets a retry; anything else is codex's own
 failure, and `stderr.txt` says why. It is `exec` and not `codex app-server` because
 app-server only pays off when a run has to be steered while it runs (incidents:
 Dispatch).
-
-**Codex down or signed out** (repeating exit codes, `refresh_token_invalidated` in
-`stderr.txt`): send Sol's tasks to Sonnet subagents meanwhile rather than parking the
-ship, and say so on the review card. Down means this ship's own `astra.sh` run failed
-that way. A note in the ship's args, a memory or an earlier session's outage is not
-evidence: route to Sol and let the run say.
 
 **The driver writes inline anything under one file and ~50 lines**: config, glue
 between two tasks, a test tweak, a small fix from triage. Mark those tasks `(inline)`
@@ -571,9 +563,7 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   did not); test files whose assertions the planned change invalidates are always in
   scope, allowlist or not; the final message is STATUS, TESTS, CONCERNS, and a longer
   report goes in a file inside the worktree; the worker never commits and never
-  runs `git reset/checkout/stash`. *Sol only:* the codex sandbox has no network, so the
-  driver adds dependencies before the dispatch, and it cannot bind a port, so the brief
-  names the repo's server-starting tests as expected failures (incidents: Dispatch). A
+  runs `git reset/checkout/stash`. A
   repo whose rules load by path (`.claude/rules/`, a `scripts/rules-for.py`) gets those
   rule files named in every brief, because `codex exec` loads none of them and a
   subagent only sees them if told.
@@ -586,8 +576,7 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   next message and on the review card. One run dropped a settings dropdown Pete had
   asked for and he found out by asking "this is all done?".
 - **A fix round goes back to the same worker** with the findings as the brief, so the
-  context is already paid for: `astra.sh fix` for Sol, `SendMessage` to the same
-  subagent for Sonnet, Fable or Opus. A fresh run for the same task starts cold and re-reads
+  context is already paid for: `SendMessage` to the same subagent. A fresh run for the same task starts cold and re-reads
   the tree. Two wrong diffs on one task move it one rung up the ladder, and the ledger
   records `verdict=redone`.
 - **A quiet run never blocks the build.** The harness wakes the driver when
