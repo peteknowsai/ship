@@ -53,10 +53,11 @@ If that app is missing from the phone, or talks to another server, do not build 
 one: end with `VERDICT: unverifiable` saying the branch app is missing, and ship installs it
 and sends a retest.
 
-When you and Pete agree testing is done, your final message is the report the brief asks for,
-starting with exactly one line `VERDICT: works`, `VERDICT: broken` or `VERDICT: unverifiable`.
-That line hands the result back to ship, so write it only then, never in the plan or a
-progress note. After a retest note from ship, test what it names and end the same way."""
+When the plan is done, send the report the brief asks for straight away; never ask Pete
+whether to, since he can ask for more after it and ship's retest comes back here. It starts
+with exactly one line `VERDICT: works`, `VERDICT: broken` or `VERDICT: unverifiable`. That
+line hands the result back to ship, so write it only then, never in the plan or a progress
+note. After a retest note from ship, test what it names and end the same way."""
 
 
 class Server:
@@ -253,6 +254,7 @@ def selftest():
               not os.path.exists(os.path.join(sessions, 't1.toml')))
         check('turn 1 is told to touch nothing that needs the network', 'no `curl`, browser' in RULES)
         check('the phone is the native app, never its Safari', 'Never test a web page in the phone' in RULES)
+        check('the report goes back without asking Pete', 'never ask Pete' in RULES)
     print(f'codex-handoff self-test: {bad} failed')
     return 1 if bad else 0
 
