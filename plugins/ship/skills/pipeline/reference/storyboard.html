@@ -2,77 +2,106 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Storyboard — {{SLUG}}</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>{{FEATURE_TITLE}}</title>
 <!--
-  /ship GATE 1 template. Write to specs/designs/YYYY-MM-DD-<slug>.html in the docs home
-  and `open` it. The page IS the mockups: frames of the app at ship size, one caption
-  each, the two or three questions a designer would bring, and everything else folded
-  under "for the record" at the foot. No TL;DR, no research sections, no plan.
+  /ship GATE 1 template. Write to specs/designs/YYYY-MM-DD-<slug>.html in the docs home,
+  `open` it, and publish it as a Claude artifact (SKILL.md, DISCOVER). The page IS the
+  app: a "Try it" demo that plays the flow, the frames side by side, one caption each, the
+  two or three questions a designer would bring, and everything else folded under "for
+  the record" at the foot. No TL;DR, no research sections, no plan.
 
   Authoring a frame:
-    <template data-frame="frame-id" data-title="…" data-w="1180" data-h="760">
+    <template data-frame="compose" data-title="Compose a reply" data-w="1180" data-h="760"
+              data-go='{"button.send": "sent", "a.cancel": "inbox"}'>
       <link rel="stylesheet" href="../../web/public/grok-shipped.css">   (the product's own sheet, relative to THIS file)
       …the screen's markup, in the product's own classes and tokens…
+      <script>…optional: this frame's own behaviour, a menu, a typed field, a toggle…</script>
     </template>
-  The script below mounts each template into its own iframe (srcdoc), so the product's
-  stylesheet styles the frame and nothing else, :root tokens resolve, and hovers, menus
-  and tabs inside the frame work. A transplant frame is the lifted markup, verbatim.
-  Directions in play: several <template>s with the same data-screen, drawn side by side.
-  Round N: bump data-round on <body>, delete frames Pete killed (never grey them out).
+  Each template mounts into its own iframe (srcdoc), so the product's stylesheet styles the
+  frame and nothing else, :root tokens resolve, and the frame's own script runs. Every
+  frame is a working screen: its menus open, tabs switch, fields take text. data-go maps a
+  CSS selector inside the frame to the frame its click leads to, which wires the flow
+  without touching the markup (a transplant frame stays verbatim); markup of our own may
+  carry data-go="<frame-id>" on the element instead. The demo starts at .wrap's
+  data-start, else the first template. A click on nothing wired flashes what is.
+  Directions in play: several figures in one .row, tagged A / B / C in the caption.
+  Round N: bump data-round on .wrap, delete frames Pete killed (never grey them out).
 -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-  :root{--cream:#f6f1e7;--card:#fffdf8;--ink:#23262d;--slate:#5a5e6b;--mut:#8a8d99;
-    --line:#e3dccb;--amber:#c8892b;--amber-soft:#f3ead6;}
+  /* Layout: a demo stage on top, the storyboard's frames below it, questions, record. */
+  :root{--bg:#eef0f3;--panel:#fff;--ink:#1d2330;--mut:#5d6575;--line:#d6dae1;
+    --accent:#2f6fde;--accent-soft:#e3ecfb;--stage:#0f1115;
+    --ui:"Instrument Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace}
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14171c;--panel:#1c2027;
+    --ink:#e7eaf0;--mut:#9aa3b2;--line:#2c323c;--accent:#7aa7ff;--accent-soft:#1f2a3d;--stage:#0b0d10;color-scheme:dark}}
+  :root[data-theme="dark"]{--bg:#14171c;--panel:#1c2027;--ink:#e7eaf0;--mut:#9aa3b2;--line:#2c323c;
+    --accent:#7aa7ff;--accent-soft:#1f2a3d;--stage:#0b0d10;color-scheme:dark}
   *{box-sizing:border-box}
-  body{margin:0;background:var(--cream);color:var(--ink);
-    font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-    -webkit-font-smoothing:antialiased;padding:32px 24px 80px}
-  .wrap{max-width:1240px;margin:0 auto}
-  .kicker{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--amber);font-weight:700}
-  h1{font-family:Georgia,serif;font-size:30px;line-height:1.1;margin:6px 0 2px;font-weight:600}
-  .sub{color:var(--slate);margin:0 0 20px}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--ui);
+    -webkit-font-smoothing:antialiased;padding-block:28px 64px;padding-inline:16px}
+  .wrap{max-width:1240px;margin:0 auto;display:grid;gap:28px}
+  header .kicker{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut);font-weight:600}
+  h1{font-size:30px;line-height:1.15;margin:4px 0 2px;font-weight:700;text-wrap:balance}
+  .sub{color:var(--mut);margin:0}
   .sub b{color:var(--ink)}
+  h2{font-size:17px;margin:0 0 10px;font-weight:600}
 
-  /* one screen; sibling directions sit in a row */
-  .screen{margin:26px 0 8px}
-  .screen h2{font-family:Georgia,serif;font-size:18px;margin:0 0 8px;font-weight:600}
-  .row{display:flex;gap:18px;align-items:flex-start;overflow-x:auto;padding-bottom:6px}
-  figure.frame{margin:0;flex:1 1 0;min-width:0}
-  figure.frame .stage{position:relative;background:#111;border:1px solid var(--line);
-    border-radius:10px;overflow:hidden;box-shadow:0 10px 30px rgba(35,38,45,.12)}
-  figure.frame iframe{display:block;border:0;background:#111;transform-origin:0 0}
-  figcaption .tag{display:inline-block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;
-    background:var(--amber-soft);color:#7a5a18;border:1px solid #e7d6ad;border-radius:6px;padding:0 7px;
-    font-weight:700;margin-right:6px;vertical-align:1px}
-  figcaption{margin:8px 2px 0;color:var(--slate);font-size:14px}
+  .demo{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:10px}
+  .demo .bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+  .demo .bar .label{font-weight:700}
+  .demo .bar [data-now]{color:var(--mut);min-width:0;flex:1 1 auto}
+  button{font:inherit;font-size:13px;font-weight:600;color:var(--ink);background:var(--bg);
+    border:1px solid var(--line);border-radius:7px;padding:4px 12px;cursor:pointer}
+  button:disabled{opacity:.45;cursor:default}
+  button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+  .stage{position:relative;background:var(--stage);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .stage iframe{display:block;border:0;background:var(--stage);transform-origin:0 0}
+  .row{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:18px}
+  figure.frame{margin:0;min-width:0;display:grid;gap:8px}
+  figure.frame.lit .stage{outline:3px solid var(--accent);outline-offset:3px}
+  figcaption{color:var(--mut);font-size:14px}
   figcaption b{color:var(--ink)}
-  figcaption .ref{display:block;color:var(--mut);font-size:12px;font-family:ui-monospace,Menlo,monospace;margin-top:2px}
+  figcaption .tag{display:inline-block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+    background:var(--accent-soft);color:var(--accent);border-radius:5px;padding:0 7px;font-weight:700;margin-right:6px}
+  figcaption .ref{display:block;font:12px var(--mono);color:var(--mut);margin-top:2px;overflow-wrap:anywhere}
 
-  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 22px;margin:26px 0 14px}
-  .card h2{font-family:Georgia,serif;margin:0 0 10px;text-transform:uppercase;color:var(--mut);
-    font-weight:700;font-size:12px;letter-spacing:.14em}
-  .q{border-left:3px solid var(--amber);padding:8px 0 8px 14px;margin:10px 0}
+  .asks{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 20px;display:grid;gap:12px}
+  .asks h2{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut);margin:0}
   .q p{margin:0}
-  .q .pick{display:inline-block;margin-top:4px;font-size:13px;background:var(--amber-soft);color:#7a5a18;
-    border:1px solid #e7d6ad;border-radius:6px;padding:1px 9px;font-weight:600}
-
-  details{margin-top:36px;color:var(--slate);font-size:14px}
-  summary{cursor:pointer;color:var(--mut);font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:700}
+  .q .pick{display:inline-block;margin-top:4px;font-size:13px;background:var(--accent-soft);color:var(--accent);
+    border-radius:6px;padding:1px 9px;font-weight:600}
+  details{color:var(--mut);font-size:14px}
+  summary{cursor:pointer;font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:700}
   details ul{padding-left:18px}
-  .foot{color:var(--mut);font-size:13px;margin-top:22px;text-align:center}
-  .foot code{background:#efe9dc;border-radius:5px;padding:1px 6px;font-size:12px;font-family:ui-monospace,Menlo,monospace}
+  .foot{color:var(--mut);font-size:13px;text-align:center;margin:0}
+  .foot code{font:12px var(--mono);background:var(--panel);border:1px solid var(--line);border-radius:5px;padding:1px 6px}
+  @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
 </style>
 </head>
-<body data-round="1">
-<div class="wrap">
-  <div class="kicker">║ Storyboard · round <span data-round-no>1</span> ║ &nbsp;·&nbsp; {{SLUG}}</div>
-  <h1>{{FEATURE_TITLE}}</h1>
-  <p class="sub">{{ONE_LINE_WHAT_IT_IS}} &nbsp;·&nbsp; <b>reactions?</b></p>
+<body>
+<div class="wrap" data-round="1" data-start="{{FIRST_FRAME_ID}}">
+  <header>
+    <div class="kicker">Storyboard · round <span data-round-no>1</span> · {{SLUG}}</div>
+    <h1>{{FEATURE_TITLE}}</h1>
+    <p class="sub">{{ONE_LINE_WHAT_IT_IS}} · <b>reactions?</b></p>
+  </header>
 
-  <!-- ONE .screen PER SCREEN OR STATE. Frames are mounted from the <template>s below;
-       the figure's data-mount names the template. Sibling directions: several figures
-       in one .row, tagged A / B / C in the caption. A single direction drops the tag. -->
+  <section class="demo" aria-label="Try it">
+    <div class="bar">
+      <span class="label">Try it</span><span data-now></span>
+      <button type="button" data-back disabled>Back</button>
+      <button type="button" data-restart>Restart</button>
+    </div>
+    <div class="stage" data-demo></div>
+  </section>
+
+  <!-- ONE .screen PER SCREEN OR STATE; the figure's data-mount names its template. -->
   <section class="screen">
     <h2>{{SCREEN_1_NAME}}</h2>
     <div class="row">
@@ -88,11 +117,11 @@
     </div>
   </section>
 
-  <div class="card">
+  <section class="asks">
     <h2>What I'd ask you</h2>
     <div class="q"><p>{{QUESTION_1}}</p><span class="pick">I'd pick: {{PICK_1}}</span></div>
     <div class="q"><p>{{QUESTION_2}}</p><span class="pick">I'd pick: {{PICK_2}}</span></div>
-  </div>
+  </section>
 
   <details>
     <summary>For the record</summary>
@@ -106,45 +135,97 @@
   <p class="foot">Lock it and the plan follows. Frames not on this page do not ship. <code>{{BRANCH}}</code></p>
 </div>
 
-<!-- ============ FRAMES ============ one <template> per frame, mounted above -->
-<template data-frame="{{FRAME_1_ID}}" data-w="1180" data-h="760">
+<!-- ============ FRAMES ============ one <template> per frame -->
+<template data-frame="{{FRAME_1_ID}}" data-title="{{FRAME_1_TITLE}}" data-w="1180" data-h="760"
+          data-go='{"{{FRAME_1_SELECTOR}}": "{{FRAME_2_ID}}"}'>
   <link rel="stylesheet" href="{{PRODUCT_STYLESHEET_RELATIVE_PATH}}">
   <style>html,body{margin:0;height:100%}</style>
   {{FRAME_1_MARKUP}}
 </template>
-<template data-frame="{{FRAME_2_ID}}" data-w="1180" data-h="760">
+<template data-frame="{{FRAME_2_ID}}" data-title="{{FRAME_2_TITLE}}" data-w="1180" data-h="760">
   <link rel="stylesheet" href="{{PRODUCT_STYLESHEET_RELATIVE_PATH}}">
   <style>html,body{margin:0;height:100%}</style>
   {{FRAME_2_MARKUP}}
 </template>
 
 <script>
-// Mount every <template data-frame> into the figure that names it, scaled to fit.
+// Mount every frame into an iframe scaled to fit, wire data-go clicks, and run the demo.
 (function () {
-  const templates = new Map();
-  for (const t of document.querySelectorAll('template[data-frame]')) templates.set(t.dataset.frame, t);
+  const wrap = document.querySelector('.wrap');
+  const frames = new Map([...document.querySelectorAll('template[data-frame]')].map(t => [t.dataset.frame, t]));
   const mounted = [];
-  for (const fig of document.querySelectorAll('figure.frame[data-mount]')) {
-    const t = templates.get(fig.dataset.mount);
-    const stage = fig.querySelector('.stage');
-    if (!t || !stage) continue;
+  const LIVE = 'a,button,input,select,textarea,label,summary,[role=button],[role=tab],[contenteditable]';
+
+  function fit(m) {
+    const s = Math.min(1, m.stage.clientWidth / m.w);
+    m.f.style.transform = 'scale(' + s + ')';
+    m.stage.style.height = Math.round(m.h * s) + 'px';
+  }
+  function wire(f, t, go) {
+    const d = f.contentDocument;
+    if (!d) return;
+    let map = {};
+    try { map = JSON.parse(t.dataset.go || '{}'); } catch (e) { console.warn('storyboard: bad data-go on', t.dataset.frame); }
+    for (const [sel, to] of Object.entries(map)) {
+      try { d.querySelectorAll(sel).forEach(el => { el.dataset.go = to; }); }
+      catch (e) { console.warn('storyboard: bad selector', sel, 'on', t.dataset.frame); }
+    }
+    const wired = [...d.querySelectorAll('[data-go]')];
+    wired.forEach(el => { el.style.cursor = 'pointer'; });
+    d.addEventListener('click', e => {
+      const el = e.target.closest && e.target.closest('[data-go]');
+      if (el) { e.preventDefault(); e.stopPropagation(); go(el.dataset.go); return; }
+      if (e.target.closest && e.target.closest(LIVE)) return;
+      wired.forEach(x => { x.style.outline = '2px solid #3b82f6'; x.style.outlineOffset = '2px'; });
+      setTimeout(() => wired.forEach(x => { x.style.outline = ''; }), 700);
+    }, true);
+  }
+  function mount(stage, id, go) {
+    const t = frames.get(id);
+    if (!t) { console.warn('storyboard: no frame', id); return; }
     const w = Number(t.dataset.w || 1180), h = Number(t.dataset.h || 760);
     const f = document.createElement('iframe');
-    f.width = w; f.height = h; f.title = fig.dataset.mount;
-    f.srcdoc = '<!doctype html><html><head><meta charset="utf-8"><base href="' + location.href + '"></head><body>' + t.innerHTML + '</body></html>';
-    stage.prepend(f);
-    mounted.push({ f, stage, w, h });
+    f.width = w; f.height = h; f.title = t.dataset.title || id;
+    f.addEventListener('load', () => wire(f, t, go));
+    f.srcdoc = '<!doctype html><html><head><meta charset="utf-8"><base href="' + document.baseURI +
+      '"></head><body>' + t.innerHTML + '</body></html>';
+    stage.replaceChildren(f);
+    const old = mounted.findIndex(m => m.stage === stage);
+    const m = { f, stage, w, h };
+    if (old >= 0) mounted[old] = m; else mounted.push(m);
+    fit(m);
   }
-  function fit() {
-    for (const m of mounted) {
-      const s = Math.min(1, m.stage.clientWidth / m.w);
-      m.f.style.transform = 'scale(' + s + ')';
-      m.stage.style.height = Math.round(m.h * s) + 'px';
-    }
+
+  // The demo plays the flow one frame at a time.
+  const stage = document.querySelector('[data-demo]'), now = document.querySelector('[data-now]');
+  const back = document.querySelector('[data-back]'), restart = document.querySelector('[data-restart]');
+  const first = frames.has(wrap.dataset.start) ? wrap.dataset.start : [...frames.keys()][0];
+  let trail = [], current = null;
+  function show(id, remember) {
+    if (!frames.has(id)) { console.warn('storyboard: no frame', id); return; }
+    if (remember && current) trail.push(current);
+    current = id;
+    mount(stage, id, to => show(to, true));
+    now.textContent = frames.get(id).dataset.title || id;
+    back.disabled = !trail.length;
   }
-  fit(); addEventListener('resize', fit);
-  const r = document.body.dataset.round; const el = document.querySelector('[data-round-no]');
-  if (r && el) el.textContent = r;
+  back.addEventListener('click', () => { if (trail.length) show(trail.pop(), false); });
+  restart.addEventListener('click', () => { trail = []; show(first, false); });
+  if (first) show(first, false);
+
+  // The storyboard's frames: a wired click lights the frame it leads to.
+  for (const fig of document.querySelectorAll('figure.frame[data-mount]')) {
+    mount(fig.querySelector('.stage'), fig.dataset.mount, to => {
+      const target = document.querySelector('figure.frame[data-mount="' + to + '"]');
+      if (!target) { show(to, true); stage.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      target.classList.add('lit');
+      setTimeout(() => target.classList.remove('lit'), 1400);
+    });
+  }
+  addEventListener('resize', () => mounted.forEach(fit));
+  const round = wrap.dataset.round, el = document.querySelector('[data-round-no]');
+  if (round && el) el.textContent = round;
 })();
 </script>
 </body>
