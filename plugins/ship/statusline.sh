@@ -22,8 +22,8 @@ phase_c()    { c '38;5;245'; }   # dim gray — the phase word
 gate_c()     { c '1;38;5;214'; } # bold amber — needs you
 update_c()   { c '38;5;179'; }   # muted gold
 
-# the stage breadcrumb — design · plan · build · review, active stage lit amber.
-# Shown from design through review (and at gates), next to the brain on line 2,
+# the stage breadcrumb — design · plan · build · test · land, active stage lit amber.
+# Shown for the whole ship (and at gates), next to the brain on line 2,
 # so which stage we're in always reads — not just a single dim word.
 stage_bar() {
   active="$1"; out=""
@@ -62,18 +62,25 @@ if [ "$HAS_JQ" -eq 1 ]; then
   fi
 fi
 
-# ---- git: branch only (the slug / fallback identity) ----
+# ---- git: where am I (main checkout or linked worktree) and on what ----
 git_branch=""
 git_root=""
-wt_count=0
+is_linked=0
+ships_count=0
 repo_name=$(basename "$current_dir")
 if git rev-parse --git-dir >/dev/null 2>&1; then
-  git_branch=$(git branch --show-current 2>/dev/null || git rev-parse --short HEAD 2>/dev/null)
+  # --show-current prints nothing (and succeeds) on a detached HEAD, so fall back by hand
+  git_branch=$(git branch --show-current 2>/dev/null)
+  [ -n "$git_branch" ] || git_branch="@$(git rev-parse --short HEAD 2>/dev/null)"
   git_root=$(git rev-parse --show-toplevel 2>/dev/null)
+  # a linked worktree has its own git dir inside the main checkout's common dir
+  { read -r gd; read -r gcd; } < <(git rev-parse --path-format=absolute --git-dir --git-common-dir 2>/dev/null)
+  [ -n "$gd" ] && [ "$gd" != "$gcd" ] && is_linked=1
   wt_list=$(git worktree list 2>/dev/null)
-  # ships in flight = linked worktrees (total minus the main checkout)
-  wt_count=$(printf '%s\n' "$wt_list" | grep -c .)
-  wt_count=$((wt_count - 1)); [ "$wt_count" -lt 0 ] && wt_count=0
+  # ships in flight = linked worktrees carrying a live .ship-stage (landed ones are done)
+  while read -r wt; do
+    [ -f "$wt/.ship-stage" ] && ! grep -q landed "$wt/.ship-stage" 2>/dev/null && ships_count=$((ships_count + 1))
+  done < <(printf '%s\n' "$wt_list" | tail -n +2 | awk '{print $1}')
   # canonical repo name = basename of the main (first) worktree, so a worktree shows
   # "homezero", not the long redundant "homezero.feature-x"
   main_wt=$(printf '%s\n' "$wt_list" | head -1 | awk '{print $1}')
@@ -101,7 +108,7 @@ if [ -f "$usage_cache" ]; then
   [ "$cache_age" -lt 300 ] && cache_stale=0
 fi
 if [ "$cache_stale" -eq 1 ] && [ "$HAS_JQ" -eq 1 ]; then
-  access_token=$(security find-generic-password -s "Claude Code-credentials" -w 2>/dev/null | jq -r '.claudeAiOauth.accessToken // empty' 2>/dev/null)
+  access_token=$(security find-generic-password -s "Claude Code-credentials" -a "$USER" -w 2>/dev/null | jq -r '.claudeAiOauth.accessToken // empty' 2>/dev/null)
   if [ -n "$access_token" ]; then
     fresh_data=$(curl -s --max-time 2 "https://api.anthropic.com/api/oauth/usage" \
       -H "Authorization: Bearer $access_token" \
@@ -118,8 +125,41 @@ if [ -f "$usage_cache" ] && [ "$HAS_JQ" -eq 1 ]; then
   weekly_resets=$(jq -r '.seven_day.resets_at // empty' "$usage_cache" 2>/dev/null)
   # model-scoped weekly bucket (e.g. Fable) — label comes from the API, not hardcoded
   scoped_pct=$(jq -r '(.limits[]? | select(.kind == "weekly_scoped") | .percent) // empty' "$usage_cache" 2>/dev/null)
+  scoped_resets=$(jq -r '(.limits[]? | select(.kind == "weekly_scoped") | .resets_at) // empty' "$usage_cache" 2>/dev/null)
   scoped_label=$(jq -r '(.limits[]? | select(.kind == "weekly_scoped") | .scope.model.display_name) // empty' "$usage_cache" 2>/dev/null | tr '[:upper:]' '[:lower:]')
 fi
+
+# ---- Codex weekly (cached; token from ~/.codex/auth.json) ----
+codex_pct=""; codex_reset_epoch=""
+codex_cache="$HOME/.claude/codex-usage-cache.json"
+codex_stale=1
+if [ -f "$codex_cache" ]; then
+  codex_age=$(($(date +%s) - $(stat -f %m "$codex_cache" 2>/dev/null || echo 0)))
+  [ "$codex_age" -lt 300 ] && codex_stale=0
+fi
+if [ "$codex_stale" -eq 1 ] && [ "$HAS_JQ" -eq 1 ] && [ -f "$HOME/.codex/auth.json" ]; then
+  codex_tok=$(jq -r '.tokens.access_token // empty' "$HOME/.codex/auth.json" 2>/dev/null)
+  codex_acct=$(jq -r '.tokens.account_id // empty' "$HOME/.codex/auth.json" 2>/dev/null)
+  if [ -n "$codex_tok" ]; then
+    fresh_codex=$(curl -s --max-time 2 "https://chatgpt.com/backend-api/wham/usage" \
+      -H "Authorization: Bearer $codex_tok" -H "chatgpt-account-id: $codex_acct" \
+      -H "Accept: application/json" 2>/dev/null)
+    echo "$fresh_codex" | jq -e '.rate_limit.primary_window' >/dev/null 2>&1 && echo "$fresh_codex" > "$codex_cache"
+  fi
+fi
+if [ -f "$codex_cache" ] && [ "$HAS_JQ" -eq 1 ]; then
+  codex_pct=$(jq -r '.rate_limit.primary_window.used_percent // empty' "$codex_cache" 2>/dev/null)
+  codex_reset_epoch=$(jq -r '.rate_limit.primary_window.reset_at // empty' "$codex_cache" 2>/dev/null)
+  codex_locked=$(jq -r '.rate_limit.limit_reached // false' "$codex_cache" 2>/dev/null)
+  # credits = the overage bank that keeps Codex running once the weekly locks
+  codex_credits=$(jq -r 'if .credits.has_credits then (.credits.balance | tonumber | floor) else empty end' "$codex_cache" 2>/dev/null)
+fi
+
+# ---- stale? a fetch that keeps failing leaves the last good cache behind; flag it ----
+stale_after=1800
+is_stale() { [ -f "$1" ] && [ $(( $(date +%s) - $(stat -f %m "$1" 2>/dev/null || echo 0) )) -gt "$stale_after" ]; }
+anthro_stale=0; is_stale "$usage_cache" && anthro_stale=1
+codex_stale=0;  is_stale "$codex_cache" && codex_stale=1
 
 # ---- update available? (cached 30m; render only when actually behind) ----
 update_available=""
@@ -141,26 +181,21 @@ if [ -f "$vc_cache" ] && [ "$HAS_JQ" -eq 1 ] && [ -n "$cc_version" ]; then
   fi
 fi
 
-# ---- reset time formatter (only used when week >= 50%) ----
+# ---- reset time formatter: relative, compact ("45m", "19h", "1d19h", "4d") ----
 format_reset() {
   local iso_ts="$1"; [ -z "$iso_ts" ] && return
   local stripped=$(echo "$iso_ts" | sed 's/\.[^+Z]*//; s/+.*//; s/Z//')
-  local reset_epoch=$(TZ=UTC date -jf "%Y-%m-%dT%H:%M:%S" "$stripped" "+%s" 2>/dev/null)
-  [ -z "$reset_epoch" ] && return
+  format_reset_epoch "$(TZ=UTC date -jf "%Y-%m-%dT%H:%M:%S" "$stripped" "+%s" 2>/dev/null)"
+}
+format_reset_epoch() {
+  local reset_epoch="$1"; [ -z "$reset_epoch" ] && return
   local diff=$(( reset_epoch - $(date +%s) ))
   [ "$diff" -le 0 ] && printf "now" && return
-  if [ "$diff" -lt 3600 ]; then
-    printf "%dm" $((diff / 60))
-  elif [ "$diff" -lt 86400 ]; then
-    local h=$((diff / 3600)); local m=$(((diff % 3600) / 60))
-    [ "$m" -gt 0 ] && printf "%dh%dm" "$h" "$m" || printf "%dh" "$h"
-  else
-    local local_ts=$(date -r "$reset_epoch" "+%a %-I:%M%p" 2>/dev/null | tr '[:upper:]' '[:lower:]')
-    local day=$(echo "$local_ts" | awk '{print $1}')
-    local hour=$(echo "$local_ts" | awk '{print $2}' | sed 's/m$//')
-    day="$(echo "${day:0:1}" | tr '[:lower:]' '[:upper:]')${day:1}"
-    printf "%s %s" "$day" "$hour"
-  fi
+  local d=$((diff / 86400)) h=$(((diff % 86400) / 3600))
+  if [ "$diff" -lt 3600 ]; then printf "%dm" $((diff / 60))
+  elif [ "$d" -eq 0 ]; then printf "%dh" "$h"
+  elif [ "$d" -eq 1 ] && [ "$h" -gt 0 ]; then printf "1d%dh" "$h"   # under 2d the hours matter
+  else printf "%dd" "$d"; fi
 }
 
 # ---- value-based colors ----
@@ -170,11 +205,19 @@ context_color() {
   else c '38;5;158'; fi                                    # green
 }
 weekly_color() {
+  [ "$anthro_stale" = 1 ] && { c '38;5;245'; return; }   # stale: gray, not traffic-light
   if [ "${weekly_pct:-0}" -ge 80 ]; then c '38;5;203'
   elif [ "${weekly_pct:-0}" -ge 50 ]; then c '38;5;215'
   else c '38;5;158'; fi
 }
+codex_color() {
+  [ "$codex_stale" = 1 ] && { c '38;5;245'; return; }   # stale: gray, not traffic-light
+  if [ "${codex_pct:-0}" -ge 80 ]; then c '38;5;203'
+  elif [ "${codex_pct:-0}" -ge 50 ]; then c '38;5;215'
+  else c '38;5;158'; fi
+}
 scoped_color() {
+  [ "$anthro_stale" = 1 ] && { c '38;5;245'; return; }   # stale: gray, not traffic-light
   if [ "${scoped_pct:-0}" -ge 80 ]; then c '38;5;203'
   elif [ "${scoped_pct:-0}" -ge 50 ]; then c '38;5;215'
   else c '38;5;158'; fi
@@ -197,47 +240,72 @@ if [ -n "$ship_stage" ]; then
     review*)   printf "$(ship_c)🚢 %s$(rst)" "$ship_slug"; phase="$(stage_bar test)" ;;
     *)         printf "$(ship_c)🚢 %s$(rst)" "$ship_slug" ;;
   esac
+elif [ "$is_linked" -eq 1 ]; then
+  # in a worktree: tree icon, branch without its feature/ fix/ prefix
+  printf "$(c '38;5;108')🌳 %s$(rst) $(branch_c)⎇ %s$(rst)" "$repo_name" "${git_branch#*/}"
 else
   printf "$(dir_color)📁 %s$(rst)" "$repo_name"
-  [ -n "$git_branch" ] && printf "  $(branch_c)🌿 %s$(rst)" "$git_branch"
+  if [ -n "$git_root" ]; then
+    # the main checkout stays on main; anything else is a mistake worth seeing
+    case "$git_branch" in
+      main|master) printf "  $(phase_c)%s$(rst)" "$git_branch" ;;
+      *) printf "  $(gate_c)⚠ %s$(rst)" "$git_branch" ;;
+    esac
+  fi
 fi
-# ships-in-flight count (linked worktrees) — orientation; hidden at a gate
-if [ "$is_gate" -eq 0 ] && [ "${wt_count:-0}" -ge 1 ]; then
-  printf "  $(c '38;5;108')🌳 %d$(rst)" "$wt_count"
+# ships in flight — orientation; hidden at a gate
+if [ "$is_gate" -eq 0 ] && [ "$ships_count" -ge 1 ]; then
+  printf "  $(c '38;5;80')🚢 %d$(rst)" "$ships_count"
 fi
 printf "\n"
 
 # Line 2 — phase (when in a ship), then the gauges + effort.
 [ -n "$phase" ] && printf "$(phase_c)%s$(rst)  " "$phase"
-[ -n "$model_name" ] && printf "$(c '38;5;183')🤖 %s$(rst)  " "$model_name"
-printf "$(context_color)🧠 %d%%$(rst)" "${context_pct:-0}"
-if [ -n "$weekly_pct" ]; then
-  # Quota reads as initials, not a chart icon and a spelled-out model name:
-  # "O 1% · F 0%". The letters ARE the labels, so they carry their own meaning
-  # at a glance and cost four columns instead of twelve.
-  # ponytail: the API exposes no Opus-only bucket — weekly_all covers every model,
-  # so O is really "everything", which is Opus plus a rounding error in practice.
-  # If a second scoped model ever appears, split it out rather than folding it in.
-  printf "  "
-  if [ -n "$scoped_pct" ] && [ -n "$scoped_label" ]; then
-    scoped_initial=$(printf '%s' "${scoped_label:0:1}" | tr '[:lower:]' '[:upper:]')
-    printf "$(scoped_color)%s %d%%$(rst) $(c '38;5;245')·$(rst) " "$scoped_initial" "$scoped_pct"
-  fi
-  printf "$(weekly_color)O %d%%$(rst)" "$weekly_pct"
-  if [ "${weekly_pct:-0}" -ge 50 ] || [ "${scoped_pct:-0}" -ge 50 ]; then
-    rs=$(format_reset "$weekly_resets")
-    [ -n "$rs" ] && printf " $(c '38;5;245')↻ %s$(rst)" "$rs"
-  fi
-fi
+[ -n "$model_name" ] && printf "$(c '38;5;183')🤖 %s$(rst)" "$model_name"
 # effort — reasoning tier. The harness exposes no real ultracode bit (it reports as
 # xhigh, same as plain extra-high). Pete never uses plain xhigh on Opus, so for him
 # xhigh ≡ ultracode — render it as the ultra badge: three rainbow ⚡. Other tiers plain.
 # ponytail: xhigh==ultracode is a deliberate convention, not detection — the only honest
 # proxy available. If plain xhigh ever gets used, this over-claims; swap the convention then.
 if [ "$effort" = "xhigh" ]; then
-  printf "  $(c '38;5;196')⚡$(c '38;5;220')⚡$(c '38;5;51')⚡$(rst)$(c '1;38;5;207') ultra$(rst)"
+  printf "  $(c '38;5;196')⚡$(c '38;5;220')⚡$(c '38;5;51')⚡$(rst)$(c '1;38;5;207')ultra$(rst)"
 elif [ -n "$effort" ]; then
-  printf "  $(c '38;5;147')⚡ %s$(rst)" "$effort"              # light purple
+  printf "  $(c '38;5;147')⚡%s$(rst)" "$effort"              # light purple
+fi
+[ -n "$model_name$effort" ] && printf "  "
+printf "$(context_color)🧠 %d%%$(rst)" "${context_pct:-0}"
+# Quota, grouped by vendor:  O 72% · F 53% ↻2d │ C 80% ↻4d  (or C 58k once spent)
+# O = weekly_all (every model, Fable included; Pete reads it as Opus). F = weekly_scoped,
+# Fable alone, the tighter cap. Both drain on Fable tokens; the higher one locks first.
+# Each vendor always shows its own reset right after its group: the clocks differ
+# (a Codex reset restarts its 7-day timer, an Anthropic reset only refills the percent).
+# Codex at 100% with credits left shows the balance instead of the percent ("C 58k").
+# A trailing "?" and gray numbers mean that vendor's cache is over 30 minutes old.
+dim_sep() { printf " $(c '38;5;245')%s$(rst) " "$1"; }
+if [ -n "$weekly_pct" ]; then
+  printf "  $(weekly_color)O %d%%$(rst)" "$weekly_pct"
+  hot_reset="$weekly_resets"
+  if [ -n "$scoped_pct" ] && [ -n "$scoped_label" ]; then
+    scoped_initial=$(printf '%s' "${scoped_label:0:1}" | tr '[:lower:]' '[:upper:]')
+    dim_sep "·"; printf "$(scoped_color)%s %d%%$(rst)" "$scoped_initial" "$scoped_pct"
+    [ "$scoped_pct" -gt "$weekly_pct" ] && [ -n "$scoped_resets" ] && hot_reset="$scoped_resets"
+  fi
+  rs=$(format_reset "$hot_reset")
+  [ -n "$rs" ] && printf " $(c '38;5;245')↻%s$(rst)" "$rs"
+  [ "$anthro_stale" = 1 ] && printf "$(c '38;5;245')?$(rst)"
+fi
+if [ -n "$codex_pct" ]; then
+  [ -n "$weekly_pct" ] && dim_sep "│" || printf "  "
+  if [ "${codex_pct%.*}" -ge 100 ] && [ "${codex_credits:-0}" -gt 0 ]; then
+    # sub is spent but credits are covering it: the balance is the number that matters now
+    if [ "$codex_credits" -ge 1000 ]; then cr="$((codex_credits / 1000))k"; else cr="$codex_credits"; fi
+    printf "$(codex_color)C %s$(rst)" "$cr"
+  else
+    printf "$(codex_color)C %d%%$(rst)" "$codex_pct"
+  fi
+  rs=$(format_reset_epoch "$codex_reset_epoch")
+  [ -n "$rs" ] && printf " $(c '38;5;245')↻%s$(rst)" "$rs"
+  [ "$codex_stale" = 1 ] && printf "$(c '38;5;245')?$(rst)"
 fi
 [ -n "$update_available" ] && printf "  $(update_c)⬆ update$(rst)"
 printf "\n"
