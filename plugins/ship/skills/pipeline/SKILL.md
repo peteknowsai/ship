@@ -84,16 +84,15 @@ fraction of a cent) and ranks the routable tasks:
 
 | Rank among the plan's routable tasks | Engine | How it runs |
 |---|---|---|
-| easiest 25% (`sonnet`) | Sonnet 5.5 | harness subagent, `model: "sonnet"`, in the background |
-| middle 50% (`fable`) | Fable 5.1 | harness subagent, `model: "fable"`, in the background |
-| hardest 25% (`opus`) | Opus 5.5 | harness subagent, `model: "opus"`, in the background |
+| easier half (`fable`) | Fable 5.1 | harness subagent, `model: "fable"`, in the background |
+| harder half (`opus`) | Opus 5.5 | harness subagent, `model: "opus"`, in the background |
 
-The split is an experiment (Pete, 2026-10-02), and the ledger decides what stays.
+The split is an experiment (Pete, 2026-10-05), and the ledger decides what stays.
 `route.py` holds it in `LADDER`. Codex builds nothing for now: its sandbox made the
 driver rerun the tests on most of its tasks. It still runs TEST's tester.
 
 A task headed `(driver)` or `(inline)` is never ranked; the driver writes it. When the
-JSON's `fallback` is set, Jev was unreachable and every task went to Sonnet: say so on
+JSON's `fallback` is set, Jev was unreachable and every task went to Fable: say so on
 the review card and carry on, because the router never blocks a build. The driver may
 override one pick for a concrete reason, such as a file an Opus lane already holds, and
 logs the override in the ledger's `note`.
@@ -144,8 +143,8 @@ between two tasks, a test tweak, a small fix from triage. Mark those tasks `(inl
 in the plan so the router skips them. Skill and agent prose and design taste never
 route either. Recon, expert consults, design QA and review fan-outs go
 to Opus 5.5 harness subagents (the Agent tool; TEST's tester is Codex, through `ship:verify`), with the chrome-devtools MCP for
-anything in a browser. Never `claude -p` from inside a session. Sonnet builds its
-BUILD band and nothing else.
+anything in a browser. Never `claude -p` from inside a session. Nothing runs
+on Sonnet.
 
 **The driver owns the envelope**, whoever drafts: it writes the brief (exact files,
 signatures, test cases, constraints; a vague brief burns the savings in fix rounds),
