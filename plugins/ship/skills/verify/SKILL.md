@@ -165,8 +165,8 @@ IOS (when the change reaches a phone, else 'none'):
   simulator) and the branch app's bundle id. Only that native app, never Safari. Start
   with agent-device `open <bundle> --foreground`; close the session when done.
 AUTH (if behind login):
-  <the repo's test-auth path: a seeded account, or `form` with its test credentials, or
-  'none'>. Use ONLY that path. Do NOT mint sessions, set auth cookies, or hit a dev-login
+  <the repo's test-auth path: a seeded account, or `form` with its test credentials and
+  everything a fresh account needs to get in, an invite code or a PIN, or 'none'>. Use ONLY that path. Do NOT mint sessions, set auth cookies, or hit a dev-login
   endpoint yourself, and use the real login UI only when the path is `form`. If it's 'none' or
   the path fails, return `unverifiable` and stop — never improvise a way past auth.
 PROTECTION (a preview behind the host's login wall):
