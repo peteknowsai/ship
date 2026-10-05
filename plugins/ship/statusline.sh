@@ -210,6 +210,11 @@ weekly_color() {
   elif [ "${weekly_pct:-0}" -ge 50 ]; then c '38;5;215'
   else c '38;5;158'; fi
 }
+# the balance is its own gauge: green while it's healthy, red under 10k
+credits_color() {
+  [ "$codex_stale" = 1 ] && { c '38;5;245'; return; }
+  if [ "${codex_credits:-0}" -lt 10000 ]; then c '38;5;203'; else c '38;5;158'; fi
+}
 codex_color() {
   [ "$codex_stale" = 1 ] && { c '38;5;245'; return; }   # stale: gray, not traffic-light
   if [ "${codex_pct:-0}" -ge 80 ]; then c '38;5;203'
@@ -299,7 +304,7 @@ if [ -n "$codex_pct" ]; then
   if [ "${codex_pct%.*}" -ge 100 ] && [ "${codex_credits:-0}" -gt 0 ]; then
     # sub is spent but credits are covering it: the balance is the number that matters now
     if [ "$codex_credits" -ge 1000 ]; then cr="$((codex_credits / 1000))k"; else cr="$codex_credits"; fi
-    printf "$(codex_color)C %s$(rst)" "$cr"
+    printf "$(credits_color)C %s$(rst)" "$cr"
   else
     printf "$(codex_color)C %d%%$(rst)" "$codex_pct"
   fi

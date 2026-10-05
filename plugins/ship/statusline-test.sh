@@ -56,18 +56,25 @@ J
 J
 }
 line2() { printf '{"model":{"display_name":"Opus 5.5"},"effort":{"level":"%s"}}' "${1:-high}" | (cd "$T" && NO_COLOR=1 bash "$SL") | tail -1; }
-quota 1 1 12 432000 518400
+quota 1 1 12 435600 522000
 expect "both vendors, own resets"  "O 1% · F 1% ↻5d │ C 12% ↻6d" "$(line2)"
 expect "effort after model"        "🤖 Opus 5.5  ⚡high  🧠" "$(line2)"
 expect "xhigh is the ultra badge"  "⚡⚡⚡ultra" "$(line2 xhigh)"
-quota 40 81 12 68400 518400
+quota 40 81 12 70000 522000
 expect "hotter bucket's reset"     "F 81% ↻19h" "$(line2)"
-quota 1 1 99 432000 361862
+quota 1 1 99 435600 361862
 expect "under 100%: percent only"  "C 99% ↻4d" "$(line2)"
-quota 1 1 100 432000 361862
+quota 1 1 100 435600 361862
 expect "spent with credits: balance" "C 58k ↻4d" "$(line2)"
-quota 1 1 100 432000 361862 0.00
+quota 1 1 100 435600 361862 0.00
 expect "spent, no credits: 100%"   "C 100% ↻4d" "$(line2)"
+line2c() { printf '{"model":{"display_name":"Opus 5.5"}}' | (cd "$T" && bash "$SL") | tail -1; }
+green=$'\e[38;5;158m'; red=$'\e[38;5;203m'
+quota 1 1 100 435600 361862
+expect "healthy balance is green"  "${green}C 58k" "$(line2c)"
+quota 1 1 100 435600 361862 9500
+expect "balance under 10k is red"  "${red}C 9k" "$(line2c)"
+quota 1 1 100 435600 361862 0.00
 refuse "fresh caches carry no ?"   "?" "$(line2)"
 touch -t 202001010000 "$HOME/.claude/usage-cache.json" "$HOME/.claude/codex-usage-cache.json"
 expect "stale caches get a ?"      "↻5d? │ C 100% ↻4d?" "$(line2)"
