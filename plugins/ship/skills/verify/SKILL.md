@@ -1,9 +1,10 @@
 ---
 name: verify
 description: >
-  Prove the feature just built actually works — a fresh read-only Codex tester uses the
-  running app the way Pete would, in a browser and on his iPhone or a simulator, and
-  judges it — before anything merges. Use in ship's TEST stage (it's invoked there
+  Prove the feature just built actually works — Codex uses the running app the way Pete
+  would, in a browser and on his iPhone or a simulator, and judges it — before anything
+  merges. A change Pete can try goes to him in the Codex app, where he and Codex plan and
+  run the test together; the rest gets a headless read-only Codex tester. Use in ship's TEST stage (it's invoked there
   automatically) or standalone when a change is ready and you
   want proof it works: "verify this", "prove it works", "/verify". Never declares a
   feature working off the diff alone — it drives the real app.
@@ -15,11 +16,12 @@ user_invocable: true
 You are the **orchestrator + fixer**. Verification splits by who's best at it:
 
 - **The subjective question — "does the feature do what was intended?"** → a fresh
-  **read-only Codex tester** (Astra on high, through `astra.sh test`) uses the running app
-  the way Pete would, in a browser and on iOS, and judges it. It didn't write the code and
-  comes from another model family (independence), and app-driving is verbose
-  (context-isolation). It reports; it never fixes. In ship this is the whole of TEST: a
-  `works` lands the branch without Pete.
+  **read-only Codex tester** (Astra on high) uses the running app the way Pete would, in a
+  browser and on iOS, and judges it. It didn't write the code and comes from another model
+  family (independence), and app-driving is verbose (context-isolation). It reports; it
+  never fixes. A change Pete can try is handed to him in the Codex app (§2, the hand-off);
+  anything else runs headless through `astra.sh test`, and its `works` lands the branch
+  without Pete.
 - **Objective codified checks** (tsc / lint / unit / existing e2e) → **you** run them as a
   regression sweep; pass/fail can't be rubber-stamped, and you need the error to fix it.
 
@@ -57,13 +59,47 @@ The phone is the real thing, so it is the default whenever `agent-device devices
 it; otherwise a booted simulator. A web app reaches iOS through Safari at the same URL; a
 native app is built and installed on the target by the caller first (the contract's
 `ios:`), never by the tester. One tester on the phone at a time: a second ship that finds
-it busy tests on a simulator. Desktop control of the Mac is never part of a test.
+it busy tests on a simulator. The headless tester never controls the Mac's desktop; in a
+hand-off Pete is watching, and Codex may use the app's computer use when the plan says so.
 
 ## 2. Verify the feature (delegate) → fix → re-verify (loop ≤ 3)
 
 Brief from the plan/spec file if one exists (point the tester at it), else inline the
-acceptance criteria. Write the brief to `<out-dir>/brief.md`, outside the repo, and run
-it from the pipeline skill's directory, in the background:
+acceptance criteria. Write the brief to `<out-dir>/brief.md`, outside the repo.
+
+**Which tester.** A change Pete can try, a page, a screen or the iPhone app, goes to him
+in the Codex app: the hand-off (Pete, 2026-10-05). Anything with nothing to click, a
+backend, an API, a script, gets the headless tester and lands without him. Same brief
+either way, except that a hand-off brief swaps the tools sentence for "use the Codex app's
+browser, computer use, and agent-device for iOS", and shots are optional: Pete watched,
+so the card's proof is the thread link plus whatever shots the tester saved.
+
+**The hand-off.** From the pipeline skill's directory:
+
+```bash
+scripts/codex-handoff.py start <worktree> <out-dir>/brief.md <out-dir>
+```
+
+It starts a Codex thread in the worktree (Astra on high, read-only, approvals on request)
+whose first turn turns the brief into a numbered test plan, opens the thread in Pete's
+Codex app (`codex://threads/<id>`), and prints the link and the plan. Pete and Codex
+revise the plan there and run it. Then, in the background:
+
+```bash
+scripts/codex-handoff.py wait <out-dir>
+```
+
+It returns when a turn ends on a `VERDICT:` line, prints the verdict, and writes the
+report to `<out-dir>/last.md`. Pete sets the pace, so re-arm it when its background
+timeout ends; exit 2 means the thread is gone, so start a new one. **broken**: fix,
+re-gate, push, write what changed and what to retest to `<out-dir>/retest.md`, run
+`codex-handoff.py retest <out-dir> <out-dir>/retest.md`, and `wait` again. The same
+thread keeps the context Pete built with it, which a fresh run would lose. Exit 3 means
+the app holds the thread, and a thread takes one writer: the note is on Pete's clipboard,
+and the `needs input:` line asks him to paste it there. If `start` fails (the Codex app
+missing, Codex signed out), run the headless tester and say so.
+
+**The headless tester.** From the pipeline skill's directory, in the background:
 
 ```bash
 scripts/astra.sh test <worktree> <out-dir>/brief.md <out-dir>

@@ -12,6 +12,7 @@ stage=$(head -1 "$stage_file" 2>/dev/null | tr -d ' \n')
 case "$stage" in
   gate:1*) what="GATE 1 — storyboard" ;;
   gate:2*) what="GATE 2 — go" ;;
+  gate:codex*) what="test it with Codex" ;;
   gate:test*) what="try it, then merge main?" ;;
   *) exit 0 ;;
 esac
