@@ -94,9 +94,10 @@ report to `<out-dir>/last.md`. Pete sets the pace, so re-arm it when its backgro
 timeout ends; exit 2 means the thread is gone, so start a new one. **broken**: fix,
 re-gate, push, write what changed and what to retest to `<out-dir>/retest.md`, run
 `codex-handoff.py retest <out-dir> <out-dir>/retest.md`, and `wait` again. The same
-thread keeps the context Pete built with it, which a fresh run would lose. Exit 3 means
-the app holds the thread, and a thread takes one writer: the note is on Pete's clipboard,
-and the `needs input:` line asks him to paste it there. If `start` fails (the Codex app
+thread keeps the context Pete built with it, which a fresh run would lose. `retest`
+queues the note with `codex queue` and opens the thread: the Codex app runs it there as
+soon as it has the thread loaded, so the fix round needs nothing from Pete but his eyes.
+Post one line saying what was fixed and that Codex is retesting. If `start` fails (the Codex app
 missing, Codex signed out), run the headless tester and say so.
 
 **Local sites never prompt.** The Codex app's browser asks per site, and a site is host plus
