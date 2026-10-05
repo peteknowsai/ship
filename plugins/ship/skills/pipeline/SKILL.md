@@ -228,9 +228,10 @@ Every key is optional, and the default is what a repo with no contract gets:
   production and the command it runs (cells-app: "release" runs `npm run release`). Ship
   runs it only on that word, never as part of landing, and watches what `live:` names.
   Without it, landing is the release wherever main deploys.
-- **`ios:`** for a native iOS app, the command that builds the branch and installs it on
-  a device by name ("iPhone PM" or a simulator), so the tester can open it. Default: none;
-  a web app's iOS check is Safari at the same link.
+- **`ios:`** for a native iOS app, the command that builds the branch's own app, pointed
+  at the branch's server, installs it on a device by name ("iPhone PM" or a simulator),
+  and prints its IOS line (device, udid, bundle id). Default: none, and then nothing is
+  tested on a phone: the mobile web is never tested (Pete, 2026-10-05).
 - **`land:`** how a branch reaches main. `pr` (the default) squash-merges
   the tracker PR. `direct` pushes `HEAD:main` after a rebase and opens no PR. `auto`, for a repo whose main
   deploys nothing, lands on the tester's `works` and never waits for Pete, money paths
@@ -643,14 +644,14 @@ himself, or the tester could not prove it.
   review triaged, push, `stage.sh <root> test`, and invoke `ship:verify` (the full name:
   bare `verify` resolves to another skill and is refused). A change Pete can try is a
   **hand-off**: verify runs `codex-handoff.py start`, which drafts the test plan in a
-  Codex thread and opens it in his Codex app; write `stage.sh <root> gate:codex` and end
+  Codex thread, opens it in his Codex app and starts the test there, no go needed; write `stage.sh <root> gate:codex` and end
   the turn with `needs input: test <slug> with Codex — <codex:// link>`, with
   `codex-handoff.py wait` running in the background so his verdict wakes the session.
   Anything else runs headless: `astra.sh test`, Astra on high, read-only, with the
   chrome-devtools browser and agent-device, the iOS driver that reaches Pete's iPhone
-  ("iPhone PM") and the Xcode simulators, and no control of the Mac's desktop. The brief names a device whenever the change
-  reaches a phone: a mobile layout, mobile Safari, or a native app (the contract's `ios:`
-  builds and installs it first); the phone is the default and a simulator stands in when
+  ("iPhone PM") and the Xcode simulators, and no control of the Mac's desktop. The brief names a device whenever the native
+  app can see the change, its own code or the server it calls, and the contract's `ios:`
+  builds and installs the branch's app before the tester starts; the phone is the default and a simulator stands in when
   it isn't connected or another ship has it.
   The tester covers the surface Pete would open, signed in the way he would be, with real
   clicks, taps and keys, never events dispatched from a script (a right-click menu bug got
@@ -711,7 +712,10 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
   - A worktree ship didn't create, a session launched inside its worktree, a repo with
     no GitHub remote, or `land:` other than `pr`: `reference/rare-cases.md`, Landing variants.
   - Then `rm -f .ship-stage .ship-route.json` and `rm -f ~/.claude/ship-active/$CLAUDE_CODE_SESSION_ID`,
-    **stop the review dev server**, deprovision the per-branch
+    **stop the review dev server**, remove the branch app `ios:` installed, by the udid and
+    bundle on its IOS line (`xcrun devicectl device uninstall app --device <udid>
+    <bundle>`, or `xcrun simctl uninstall <udid> <bundle>`; only that bundle, never the
+    real app; a phone that isn't connected gets one line saying so), deprovision the per-branch
     backend stage 0 spun up, if any (or skip if previews auto-expire). Verify with
     `git worktree list` — zero ship-created worktrees must remain; a leftover means
     teardown failed (usually a merge run inside the worktree) — recover before

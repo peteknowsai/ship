@@ -54,11 +54,17 @@ user for his hands-on look, or wait for the verdict. The chrome-devtools browser
 headless with a fresh profile per session, so it never fights Pete for a tab — but two
 concurrent walks on one seeded account still collide on the backend.
 
-**iOS is Pete's own iPhone ("iPhone PM") or an Xcode simulator, through agent-device.**
-The phone is the real thing, so it is the default whenever `agent-device devices` lists
-it; otherwise a booted simulator. A web app reaches iOS through Safari at the same URL; a
-native app is built and installed on the target by the caller first (the contract's
-`ios:`), never by the tester. One tester on the phone at a time: a second ship that finds
+**iOS is the native app only, on Pete's own iPhone ("iPhone PM") or an Xcode simulator,
+through agent-device.** Never the mobile web in the phone's Safari: the browser covers web
+pages (Pete, 2026-10-05). The phone is the real thing, so it is the default whenever
+`agent-device devices` lists it; otherwise a booted simulator. In a repo whose contract
+has `ios:`, the driver runs it before the tester starts whenever the app can see the
+change (its native code, or the server and APIs it calls): it builds the branch's own app,
+pointed at the branch's server, installs it, and prints the IOS line the brief carries.
+Without `ios:`, the brief says `IOS: none`. The tester never builds or installs: a
+missing app or one talking to another server comes back `unverifiable`, and the driver
+runs `ios:` and retests. Landing removes that branch app from the device again (the
+pipeline skill's Land). One tester on the phone at a time: a second ship that finds
 it busy tests on a simulator. The headless tester never controls the Mac's desktop; in a
 hand-off Pete is watching, and Codex may use the app's computer use when the plan says so.
 
@@ -82,8 +88,10 @@ scripts/codex-handoff.py start <worktree> <out-dir>/brief.md <out-dir>
 
 It starts a Codex thread in the worktree (Astra on high, read-only, approvals on request)
 whose first turn turns the brief into a numbered test plan, opens the thread in Pete's
-Codex app (`codex://threads/<id>`), and prints the link and the plan. Pete and Codex
-revise the plan there and run it. Then, in the background:
+Codex app (`codex://threads/<id>`), queues ship's go so Codex starts testing at once,
+and prints the link and the plan. Pete watches and steers there; nobody has to say go
+(Pete, 2026-10-05). The first turn runs before the app has the thread, with no network,
+so it only plans: the pre-flight already proved the app is up. Then, in the background:
 
 ```bash
 scripts/codex-handoff.py wait <out-dir>
@@ -153,8 +161,9 @@ STORYBOARD (a GATED ship's locked design, else 'none'):
   <storyboard path#frame-ids>, and ~/.claude/skills/impeccable/reference/craft-floor.md.
   The built screens should match their frames; a visible gap is a finding.
 IOS (when the change reaches a phone, else 'none'):
-  <"iPhone PM" or the booted simulator's name>, <"Safari at <URL>" or the installed app's
-  bundle id>. Start with agent-device `open <app> --foreground`; close the session when done.
+  The IOS line the contract's `ios:` printed: the device ("iPhone PM" or the booted
+  simulator) and the branch app's bundle id. Only that native app, never Safari. Start
+  with agent-device `open <bundle> --foreground`; close the session when done.
 AUTH (if behind login):
   <the repo's test-auth path: a seeded account, or `form` with its test credentials, or
   'none'>. Use ONLY that path. Do NOT mint sessions, set auth cookies, or hit a dev-login
