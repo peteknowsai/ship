@@ -99,6 +99,13 @@ the app holds the thread, and a thread takes one writer: the note is on Pete's c
 and the `needs input:` line asks him to paste it there. If `start` fails (the Codex app
 missing, Codex signed out), run the headless tester and say so.
 
+**Local sites never prompt.** The Codex app's browser asks per site, and a site is host plus
+port, so every worktree's port would ask again. `~/.codex/browser/config.toml` allows them all
+once: `[origins] allowed = ["localhost", "localhost:*", "*.localhost", "*.localhost:*",
+"127.0.0.1", "127.0.0.1:*"]` (entries are `*` globs on `host:port`). If the thread still
+can't open the app, look for a `denied` entry in `~/.codex/browser/sessions/<thread>.toml`:
+a thread's own decline beats that allow, and `start` clears the ones its first turn leaves.
+
 **The headless tester.** From the pipeline skill's directory, in the background:
 
 ```bash
