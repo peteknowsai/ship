@@ -72,7 +72,7 @@ in the Codex app: the hand-off (Pete, 2026-10-05). Anything with nothing to clic
 backend, an API, a script, gets the headless tester and lands without him. Same brief
 either way, except that a hand-off brief swaps the tools sentence for "use the Codex app's
 browser, computer use, and agent-device for iOS", and shots are optional: Pete watched,
-so the card's proof is the thread link plus whatever shots the tester saved.
+so the thread link is the proof.
 
 **The hand-off.** From the pipeline skill's directory:
 
@@ -110,8 +110,8 @@ chrome-devtools browser, headless, and agent-device (iOS). The browser may write
 the worktree and the out-dir, so the Codex tester's shots path is `<out-dir>/shots`, and
 the driver copies what the card shows into `<shots-root>/.ship-shots/<slug>/`. The
 verdict is `<out-dir>/last.md`. Every
-round is a **fresh run** in a new out-dir, never `astra.sh fix`: a tester that saw the
-bug is no longer independent of the fix. Exit 3 or 4 means the run didn't happen; retry
+round is a **fresh run** in a new out-dir: a tester that saw the bug is no longer
+independent of the fix. Exit 3 or 4 means the run didn't happen; retry
 once. Codex down or signed out (the same exit repeating, `refresh_token_invalidated` in
 `stderr.txt`): fall back to a fresh Opus subagent driving the chrome-devtools MCP
 (`mcp__chrome-devtools__*`, loaded with one ToolSearch call; never the claude-in-chrome
@@ -141,6 +141,9 @@ FEATURE (what a user should now be able to do + the observable success state):
   <intent / acceptance criteria>            (or: see plan/spec file <path>)
 HOW TO EXERCISE IT:
   <route + steps / API call / CLI>
+STORYBOARD (a GATED ship's locked design, else 'none'):
+  <storyboard path#frame-ids>, and ~/.claude/skills/impeccable/reference/craft-floor.md.
+  The built screens should match their frames; a visible gap is a finding.
 IOS (when the change reaches a phone, else 'none'):
   <"iPhone PM" or the booted simulator's name>, <"Safari at <URL>" or the installed app's
   bundle id>. Start with agent-device `open <app> --foreground`; close the session when done.
@@ -185,7 +188,8 @@ wall. Park with a `needs input:` so Pete walks that part himself.
 
 ## 3. Regression sweep — you run the codified checks; fix red directly
 
-Run the repo's `tsc` / lint / unit / existing e2e as a regression sweep — and **run what the
+Run it before the first round and after every fix round. In ship, BUILD's pre-flight is
+the first run, so skip it then unless the tree changed since. Run the repo's `tsc` / lint / unit / existing e2e as a regression sweep — and **run what the
 DEPLOY workflow runs, not just the test gate.** If deploy does a build/typecheck the test job
 skips (`next build`, `flue build`, an app-level tsc that vitest never touches), run it locally
 here: deploy-only failures are the most expensive class because they land *after* merge (a
@@ -206,6 +210,7 @@ not a spec per micro-feature. **Running** the committed spec in the gate is the 
 ## 5. Hand back proof
 
 Return to the caller: `VERDICT`, `EVIDENCE` (the ordered screenshot + caption storyboard),
-`TASTE` notes, and the crystallized spec path (or none). In ship, TEST lays these straight
-into the review card — the storyboard becomes "Proof it works," the taste notes become
-"Verifier flagged." Pete reviews proof, not faith.
+`TASTE` notes, and the crystallized spec path (or none). In ship, a headless pass lays
+these straight into the review card: the storyboard becomes "Proof it works," the taste
+notes become "Verifier flagged." Pete reviews proof, not faith. A hand-off needs no card:
+he watched it, and the thread link is the record.
