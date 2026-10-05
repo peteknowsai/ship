@@ -20,7 +20,7 @@ Start the brief with "READ-ONLY: do not edit, create, or delete source files."
 Temporary checks and screenshots go under a per-run temporary directory. Tell the
 verifier to use it the way Pete would: a browser for web UI, and the agent-device MCP
 for iOS, on Pete's iPhone ("iPhone PM") when it is connected, else a booted simulator
-(Safari for a web app, the installed build for a native one). Never control the Mac's
+(the branch's own native app the contract's `ios:` installed, never the mobile web). Never control the Mac's
 desktop. Shell tools cover API and CLI behavior. The verifier reports; the driver fixes. For skill changes, exercise realistic workflow decisions instead
 of inventing a browser UI. Do not require Claude-specific tools.
 

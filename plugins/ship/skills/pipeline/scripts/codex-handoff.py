@@ -3,7 +3,8 @@
 
   codex-handoff.py start  <worktree> <brief.md> <out-dir> [effort]   first turn drafts the test
                                                     plan, then the thread opens in the Codex app,
-                                                    named "🧪 Test · <repo> · <branch>"
+                                                    named "🧪 Test · <repo> · <branch>", with
+                                                    ship's go queued so testing starts at once
   codex-handoff.py wait   <out-dir>                 block until a turn ends on a VERDICT line
   codex-handoff.py retest <out-dir> <note.md>       a fix round: the note is queued into the same
                                                     thread, which the Codex app runs once it has it open
@@ -11,7 +12,7 @@
 
 `start` runs its own `codex app-server` over stdio for one turn and exits; the thread lives
 on in ~/.codex, and `codex://threads/<id>` opens it in the desktop app, whose own app-server
-resumes it. Pete and Codex revise the plan there, and Codex tests with whatever the app
+resumes it and runs the queued go. Pete steers it there, and Codex tests with whatever the app
 gives it: the browser, computer use, his iPhone. <out-dir> gets thread.json (id, rollout
 path, link) and plan.md; `wait` writes last.md, prints the verdict and exits 0, or 2 when
 the thread is gone. The verdict travels in the thread's rollout, so the tester never has
@@ -35,15 +36,22 @@ RULES = """You are ship's tester, working live with Pete in the Codex app. Ship 
 session) built this change and wrote the brief below; you stand in for the user and prove
 whether it works.
 
-Turn 1: read the brief, check the app is reachable with `curl` in the shell only, and reply
-with a numbered test plan: each flow, what you will see when it passes, and where you run it
-(browser, computer use, iPhone PM or a simulator). Do not open the browser, computer use or a
-device in turn 1: nobody is there to approve it yet. Then stop. Pete revises the plan with
-you; start testing when he says go.
+Turn 1: read the brief and reply with a numbered test plan: each flow, what you will see when
+it passes, and where you run it (browser, computer use, or the iPhone app). Turn 1 runs
+before the thread reaches Pete, with no network and nobody to approve anything, so use
+nothing but reading files: no `curl`, browser, computer use or device. Ship already checked
+the app is up. Then stop. Ship's go arrives as the next message, in the Codex app with Pete
+watching: start testing straight away, and take his steers as they come.
 
 While testing: use the app the way Pete would, and show him what you see. Never edit, create
 or delete a file in the repo and never fix anything: ship fixes. Screenshots go in the shots
 path the brief names.
+
+The phone is the native app only: the one the brief's IOS line names, which ship built from
+this branch and pointed at this branch's server. Never test a web page in the phone's Safari.
+If that app is missing from the phone, or talks to another server, do not build or install
+one: end with `VERDICT: unverifiable` saying the branch app is missing, and ship installs it
+and sends a retest.
 
 When you and Pete agree testing is done, your final message is the report the brief asks for,
 starting with exactly one line `VERDICT: works`, `VERDICT: broken` or `VERDICT: unverifiable`.
@@ -135,6 +143,20 @@ def clear_browser_denials(thread_id, home=os.path.expanduser('~')):
         os.remove(path)
 
 
+def queue(meta, text):
+    """Put a message into the thread and open it: the Codex app runs a queued message as soon as
+    it has the thread loaded, so the run happens there, where Pete watches and can approve."""
+    r = subprocess.run([CODEX, 'queue', '--thread', meta['id'], '--message', text], capture_output=True, text=True)
+    if r.returncode:
+        raise SystemExit(f'codex-handoff: codex queue failed: {r.stderr.strip() or r.stdout.strip()}')
+    if not os.environ.get('HANDOFF_NO_OPEN'):
+        subprocess.run(['open', meta['link']])
+    print(meta['link'])
+
+
+GO = 'Go from ship: run the plan now.'
+
+
 def start(worktree, brief, out, effort='high'):
     os.makedirs(out, exist_ok=True)
     s = Server()
@@ -150,9 +172,7 @@ def start(worktree, brief, out, effort='high'):
     meta = {'id': t['id'], 'rollout': rollout_of(t['id']), 'link': f'codex://threads/{t["id"]}', 'out': out}
     meta['offset'] = os.path.getsize(meta['rollout']) if meta['rollout'] else 0
     json.dump(meta, open(os.path.join(out, 'thread.json'), 'w'), indent=1)
-    if not os.environ.get('HANDOFF_NO_OPEN'):
-        subprocess.run(['open', meta['link']])
-    print(meta['link'])
+    queue(meta, GO)  # Pete wants it to just go (2026-10-05); he steers in the thread
     print(plan)
 
 
@@ -172,18 +192,11 @@ def wait(out, tick=5):
 
 
 def retest(out, note):
-    """Queue the note into the same thread and open it: the Codex app runs a queued message
-    as soon as it has the thread loaded, so Pete watches the retest where he left it."""
+    """Queue the note into the same thread, so Pete watches the retest where he left it."""
     meta = json.load(open(os.path.join(out, 'thread.json')))
     meta['offset'] = os.path.getsize(meta['rollout'])
     json.dump(meta, open(os.path.join(out, 'thread.json'), 'w'), indent=1)
-    text = 'Retest from ship. ' + open(note).read()
-    r = subprocess.run([CODEX, 'queue', '--thread', meta['id'], '--message', text], capture_output=True, text=True)
-    if r.returncode:
-        raise SystemExit(f'codex-handoff: codex queue failed: {r.stderr.strip() or r.stdout.strip()}')
-    if not os.environ.get('HANDOFF_NO_OPEN'):
-        subprocess.run(['open', meta['link']])
-    print(meta['link'])
+    queue(meta, 'Retest from ship. ' + open(note).read())
 
 
 def selftest():
@@ -238,7 +251,8 @@ def selftest():
         clear_browser_denials('t2', tmp)
         check("turn 1's saved browser decline is cleared, and a thread with none is fine",
               not os.path.exists(os.path.join(sessions, 't1.toml')))
-        check('turn 1 is told to stay out of the browser', 'Do not open the browser' in RULES and '`curl`' in RULES)
+        check('turn 1 is told to touch nothing that needs the network', 'no `curl`, browser' in RULES)
+        check('the phone is the native app, never its Safari', 'Never test a web page in the phone' in RULES)
     print(f'codex-handoff self-test: {bad} failed')
     return 1 if bad else 0
 
