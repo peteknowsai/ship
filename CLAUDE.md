@@ -37,7 +37,7 @@ with a live `.ship-stage`. Line 2 is model, effort, context, then quota by vendo
 `O 2% · F 2% ↻5d │ C 80% ↻4d`. O and F come from Anthropic's OAuth usage endpoint (token
 from the Keychain entry under `$USER`); C comes from ChatGPT's `wham/usage` with the token
 in `~/.codex/auth.json`, and shows the credit balance (`C 58k`) instead of 100% while
-credits remain. Gray numbers with a trailing `?` mean that cache is over 30 minutes old,
+credits remain, green until it drops under 10k, then red. Gray numbers with a trailing `?` mean that cache is over 30 minutes old,
 so a dead token can't pass off old numbers as live. `bash plugins/ship/statusline-test.sh`
 is its check.
 
