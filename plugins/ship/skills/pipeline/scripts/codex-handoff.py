@@ -34,10 +34,11 @@ RULES = """You are ship's tester, working live with Pete in the Codex app. Ship 
 session) built this change and wrote the brief below; you stand in for the user and prove
 whether it works.
 
-Turn 1: read the brief, check the app is reachable, and reply with a numbered test plan:
-each flow, what you will see when it passes, and where you run it (browser, computer use,
-iPhone PM or a simulator). Then stop. Pete revises the plan with you; start testing when he
-says go.
+Turn 1: read the brief, check the app is reachable with `curl` in the shell only, and reply
+with a numbered test plan: each flow, what you will see when it passes, and where you run it
+(browser, computer use, iPhone PM or a simulator). Do not open the browser, computer use or a
+device in turn 1: nobody is there to approve it yet. Then stop. Pete revises the plan with
+you; start testing when he says go.
 
 While testing: use the app the way Pete would, and show him what you see. Never edit, create
 or delete a file in the repo and never fix anything: ship fixes. Screenshots go in the shots
@@ -123,6 +124,16 @@ def label(worktree):
     return f'🧪 Test · {repo} · {branch}'
 
 
+def clear_browser_denials(thread_id, home=os.path.expanduser('~')):
+    """Turn 1 runs here with nobody to approve, so any browser request it makes is declined, and
+    the browser plugin saves that per thread (~/.codex/browser/sessions/<thread>.toml, `denied`),
+    which beats every allow once Pete opens the thread (cells-app, 2026-10-05). The thread is
+    new, so everything in that file came from turn 1."""
+    path = os.path.join(home, '.codex', 'browser', 'sessions', f'{thread_id}.toml')
+    if os.path.exists(path):
+        os.remove(path)
+
+
 def start(worktree, brief, out, effort='high'):
     os.makedirs(out, exist_ok=True)
     s = Server()
@@ -132,6 +143,7 @@ def start(worktree, brief, out, effort='high'):
     s.call('thread/name/set', {'threadId': t['id'], 'name': label(worktree)})
     turn = s.turn(t['id'], open(brief).read(), effort)
     s.close()
+    clear_browser_denials(t['id'])
     plan = next((i.get('text', '') for i in reversed(turn.get('items', [])) if i.get('type') == 'agentMessage'), '')
     open(os.path.join(out, 'plan.md'), 'w').write(plan)
     meta = {'id': t['id'], 'rollout': rollout_of(t['id']), 'link': f'codex://threads/{t["id"]}', 'out': out}
@@ -213,6 +225,14 @@ def selftest():
         subprocess.run(f'git init -q -b main {repo} && git -C {repo} commit -q --allow-empty -m x && '
                        f'git -C {repo} worktree add -q -b feature/eve-071 {tmp}/wt', shell=True, check=True)
         check('the thread is named for the repo and branch', label(f'{tmp}/wt') == '🧪 Test · cells-app · eve-071')
+        sessions = os.path.join(tmp, '.codex', 'browser', 'sessions')
+        os.makedirs(sessions)
+        open(os.path.join(sessions, 't1.toml'), 'w').write('[origins]\ndenied = ["http://app.localhost:3266"]\n')
+        clear_browser_denials('t1', tmp)
+        clear_browser_denials('t2', tmp)
+        check("turn 1's saved browser decline is cleared, and a thread with none is fine",
+              not os.path.exists(os.path.join(sessions, 't1.toml')))
+        check('turn 1 is told to stay out of the browser', 'Do not open the browser' in RULES and '`curl`' in RULES)
     print(f'codex-handoff self-test: {bad} failed')
     return 1 if bad else 0
 
