@@ -40,8 +40,8 @@ marker flip is how Pete *sees* ship engage.
 
 The rails are constant: worktree off main, its branch pushed at once with a draft PR
 tracking it → change, pushed at every milestone so the host builds a preview → review →
-**TEST: a Codex tester uses it the way Pete would, in a browser and on his iPhone, and a
-pass lands it** (squash the PR) → the host deploys what main deploys. Nothing ever edits
+**TEST: Codex uses it the way Pete would, in a browser and on his iPhone, with Pete in
+his Codex app when there is something to try, and a pass lands it** (squash the PR) → the host deploys what main deploys. Nothing ever edits
 main directly, however tiny, and nothing lands untested: main is where things go live.
 What scales is the ceremony before TEST, and you size it, not Pete:
 
@@ -126,7 +126,7 @@ runs `gpt-6-astra` unless `ASTRA_MODEL` names another model:
 astra.sh run    <worktree> <brief.md> <out-dir> [effort]   # a coding task, workspace-write
 astra.sh review <worktree> <brief.md> <out-dir> [effort]   # read-only, fresh context
 astra.sh fix    <worktree> <brief.md> <out-dir> [effort]   # findings into the same thread
-astra.sh test   <worktree> <brief.md> <out-dir> [effort]   # TEST's tester: read-only, browser + iOS
+astra.sh test   <worktree> <brief.md> <out-dir> [effort]   # TEST's headless tester: read-only, browser + iOS
 ```
 
 `<out-dir>` sits outside the repo and gets `events.jsonl`, `last.md` and `stderr.txt`.
@@ -197,8 +197,9 @@ harness wakes you when it lands.
    go, spec, build. A storyboard he iterated earns a plan he reads, even with zero
    calls on it, and the plan is one screen. SELF-DIRECTED and EXPRESS render no cards and never
    stop before TEST; a money path stops on any lane, at its gates and again before landing. When a gate
-   fires, it is a **HARD STOP** — present the artifact and wait. TEST is not a gate: on
-   every lane a Codex tester uses the running thing as Pete would, and its pass lands it.
+   fires, it is a **HARD STOP** — present the artifact and wait. On every lane, a
+   change Pete can try stops at TEST for him and Codex in the Codex app; anything else
+   gets the headless tester, and its pass lands it without him.
 
 **Pete's stack:** his global instructions carry the standing stack — Eve · Vercel ·
 Convex · Clerk · Stripe · Next (Cloudflare keeps DNS, R2 and the Workers already running). Never re-ask it. The repo's own `CLAUDE.md` /
@@ -614,10 +615,12 @@ into commits otherwise (incidents: Worktrees). Never build on main.
 
 Three phases after the plan, as Pete sees them: BUILD, TEST, LAND. TEST's first half is
 ship reviewing its own work (gates, a cold correctness read, design QA); its second half
-is a Codex tester using the running thing the way Pete would, in a browser and on his
-iPhone, in his place (Pete, 2026-10-01). The tester reports and never fixes. Its pass
-lands the branch; nothing waits for Pete unless the lane is a money path, he asked to try
-it himself, or the tester could not prove it.
+is Codex using the running thing the way Pete would, in a browser and on his iPhone.
+A change he can try is handed to him in the Codex app, where he and Codex shape the test
+plan and run it together (Pete, 2026-10-05); anything else gets the headless tester in
+his place (2026-10-01). The tester reports and never fixes. Its pass lands the branch;
+after it, nothing waits for Pete unless the lane is a money path, he asked to try it
+himself, or the tester could not prove it.
 
 
 - `stage.sh <root> review`. Sync with main first: `git fetch origin`; absorb upstream in the
@@ -683,10 +686,14 @@ it himself, or the tester could not prove it.
   a failed app build would leave the old app calling what is gone.
 - **TEST — the Codex tester uses it, and a pass lands it.** With green gates and the
   review triaged, push, `stage.sh <root> test`, and invoke `ship:verify` (the full name:
-  bare `verify` resolves to another skill and is refused). verify runs `astra.sh test`:
-  Astra on high, read-only, with the chrome-devtools browser and agent-device, the iOS
-  driver that reaches Pete's iPhone ("iPhone PM") and the Xcode simulators. Desktop
-  control of the Mac is never part of it. The brief names a device whenever the change
+  bare `verify` resolves to another skill and is refused). A change Pete can try is a
+  **hand-off**: verify runs `codex-handoff.py start`, which drafts the test plan in a
+  Codex thread and opens it in his Codex app; write `stage.sh <root> gate:codex` and end
+  the turn with `needs input: test <slug> with Codex — <codex:// link>`, with
+  `codex-handoff.py wait` running in the background so his verdict wakes the session.
+  Anything else runs headless: `astra.sh test`, Astra on high, read-only, with the
+  chrome-devtools browser and agent-device, the iOS driver that reaches Pete's iPhone
+  ("iPhone PM") and the Xcode simulators, and no control of the Mac's desktop. The brief names a device whenever the change
   reaches a phone: a mobile layout, mobile Safari, or a native app (the contract's `ios:`
   builds and installs it first); the phone is the default and a simulator stands in when
   it isn't connected or another ship has it.
@@ -698,7 +705,8 @@ it himself, or the tester could not prove it.
   looks for a way past auth. It uses the branch's preview link when there is one (a
   per-push `preview:`, or an on-demand one ship built), else the localhost, and returns
   `works | broken | unverifiable` + a screenshot storyboard.
-  - **`broken`: the driver fixes, the tester never does.** Fix, re-gate, push, and run a
+  - **`broken`: the driver fixes, the tester never does.** Fix, re-gate, push, then a
+    hand-off gets `codex-handoff.py retest` into the same thread and a headless run gets a
     fresh tester (cap ~3 rounds).
   - **`works`: land now** (LAND), unless the lane waits for Pete (below). No stop, no
     cue.
@@ -894,12 +902,13 @@ browser and landing rules apply. Change Codex behavior there, never here.
 At a gate, three things fire so Pete notices whether he's watching or away:
 
 1. **Status line** — the `gate:N` marker shows `✋ <slug> — storyboard?/go?` in bold amber.
-   TEST's `test` marker is not a gate: it shows `🧪 <slug> — codex testing`. A ship
-   that parks for Pete writes `gate:test`: `✋ <slug> — try it, then merge main?`.
+   TEST's `test` marker is not a gate: it shows `🧪 <slug> — codex testing`. A
+   hand-off writes `gate:codex`: `✋ <slug> — test it with Codex`. A ship that parks for
+   Pete writes `gate:test`: `✋ <slug> — try it, then merge main?`.
 2. **FleetView bucket** — the turn ends with a `needs input:` line → the row jumps to
    *awaiting input*.
 3. **Desktop notification** — the gate Stop-hook fires a Ghostty notification
-   (`<slug> → GATE N`, or `<slug> → try it, then merge main?`). Gates are rare, so this
+   (`<slug> → GATE N`, `<slug> → test it with Codex`, or `<slug> → try it, then merge main?`). Gates are rare, so this
    is never noisy.
 
 ## FleetView narration contract
