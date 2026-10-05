@@ -47,7 +47,8 @@ What scales is the ceremony before TEST, and you size it, not Pete:
 
 - **EXPRESS — a quick tweak or fix.** Whole diff visible before you start, no money
   path. No spec, no plan, no cards, no stops: worktree → change → repo gates
-  (tsc/tests) → self-drive the affected flow → push, links → TEST → land on a pass →
+  (tsc/tests) → pre-flight (the page loads, no console errors) → push, links → TEST →
+  land on a pass →
   `result:` line. A dab of `ponytail` (smallest diff), and `impeccable` for anything
   visual. The first Pete hears of it is the links.
 - **SELF-DIRECTED — real work with no taste question in it.** Write whatever
@@ -88,12 +89,12 @@ fraction of a cent) and ranks the routable tasks:
 | harder half (`opus`) | Opus 5.5 | harness subagent, `model: "opus"`, in the background |
 
 The split is an experiment (Pete, 2026-10-05), and the ledger decides what stays.
-`route.py` holds it in `LADDER`. Codex builds nothing for now: its sandbox made the
-driver rerun the tests on most of its tasks. It still runs TEST's tester.
+`route.py` holds it in `LADDER`. Codex builds nothing: its sandbox made the driver
+rerun the tests on most of its tasks. It runs TEST's tester.
 
 A task headed `(driver)` or `(inline)` is never ranked; the driver writes it. When the
-JSON's `fallback` is set, Jev was unreachable and every task went to Fable: say so on
-the review card and carry on, because the router never blocks a build. The driver may
+JSON's `fallback` is set, Jev was unreachable and every task went to Fable: say so in
+the `result:` line and carry on, because the router never blocks a build. The driver may
 override one pick for a concrete reason, such as a file an Opus lane already holds, and
 logs the override in the ledger's `note`.
 
@@ -112,36 +113,19 @@ route.py log repo=<repo> ship=<slug> task=<n> engine=<engine> \
 
 Run it from the worktree: it fills the task's score and the engine the router picked
 from the saved route, so an override shows as `engine` differing from `routed`. Seconds
-come from the run itself (the task notification's duration, or the astra out-dir's
-first and last event), and a number you don't have is left out, never estimated: a
+come from the run itself (the task notification's duration), and a number you don't have is left out, never estimated: a
 third of the first 81 rows were round-number guesses.
 
 `route.py report` prints the table by engine and difficulty band. Pete reads it after
 the first build on this ladder and moves the cuts.
 
-**Codex runs go through `scripts/astra.sh`**, never a hand-typed `codex exec`. It
-runs `gpt-6-astra` unless `ASTRA_MODEL` names another model:
-
-```bash
-astra.sh run    <worktree> <brief.md> <out-dir> [effort]   # a coding task, workspace-write
-astra.sh review <worktree> <brief.md> <out-dir> [effort]   # read-only, fresh context
-astra.sh fix    <worktree> <brief.md> <out-dir> [effort]   # findings into the same thread
-astra.sh test   <worktree> <brief.md> <out-dir> [effort]   # TEST's headless tester: read-only, browser + iOS
-```
-
-`<out-dir>` sits outside the repo and gets `events.jsonl`, `last.md` and `stderr.txt`.
-**The exit code is the verdict on the run, not on the work**: 0 it finished and said
-something; 3 the watchdog killed it (no `thread.started` in 45 s, or no event for 15
-minutes; `ASTRA_IDLE` raises that for a known-long task); 4 it exited clean with no
-final message, so it did not run and gets a retry; anything else is codex's own
-failure, and `stderr.txt` says why. It is `exec` and not `codex app-server` because
-app-server only pays off when a run has to be steered while it runs (incidents:
-Dispatch).
+**Codex runs only in TEST**, through `ship:verify`: `scripts/codex-handoff.py` for a
+hand-off to Pete, `scripts/astra.sh test` headless. Never a hand-typed `codex exec`.
 
 **The driver writes inline anything under one file and ~50 lines**: config, glue
 between two tasks, a test tweak, a small fix from triage. Mark those tasks `(inline)`
 in the plan so the router skips them. Skill and agent prose and design taste never
-route either. Recon, expert consults, design QA and review fan-outs go
+route either. Recon, expert consults and review fan-outs go
 to Opus 5.5 harness subagents (the Agent tool; TEST's tester is Codex, through `ship:verify`), with the chrome-devtools MCP for
 anything in a browser. Never `claude -p` from inside a session. Nothing runs
 on Sonnet.
@@ -154,7 +138,7 @@ time: serialize, or give each lane its own sub-worktree.
 
 **Browser work runs on the chrome-devtools MCP** (`mcp__chrome-devtools__*`: headless,
 a fresh isolated profile per session, so parallel walks never collide and no window
-opens on Pete's screen): verify walks, design QA, live-product grounding. A subagent
+opens on Pete's screen): the pre-flight check, the fallback tester, live-product grounding. A subagent
 loads those tools with one ToolSearch call before its first step. A surface that needs
 Pete's real login and has no test-auth path in the repo is his: hand it off with
 `needs input:`. A reference product behind his login (muse.ai) is his too: ask for
@@ -163,7 +147,7 @@ when he asks, since they drive his own Chrome. A subagent drives the
 browser against the running app and reports what it saw; a coding worker never does.
 
 **Never idle while a run or a subagent works.** Work the non-tree list meanwhile (the
-review card, the commit message, the ledger lines) so the stage
+review card if this ship gets one, the commit message, the ledger lines) so the stage
 closes minutes after the result lands. Same posture at gates: notify, then keep doing
 non-gated work.
 
@@ -193,9 +177,8 @@ harness wakes you when it lands.
    its words are captions (stage 1). A storyboard that reads as a document has failed.
 2. **Two gates, both his.** GATE 1 = Pete's lock on the storyboard (DISCOVER runs as
    presented rounds, each a hard stop — see stage 1). GATE 2 = his "go" on the HTML
-   plan card (stage 2). Both always fire on the GATED lane: storyboard, lock, plan,
-   go, spec, build. A storyboard he iterated earns a plan he reads, even with zero
-   calls on it, and the plan is one screen. SELF-DIRECTED and EXPRESS render no cards and never
+   plan card (stage 2), and it stops only when the card carries a call: a card with
+   none is shown, not waited on. GATE 1 always fires on the GATED lane. SELF-DIRECTED and EXPRESS render no cards and never
    stop before TEST; a money path stops on any lane, at its gates and again before landing. When a gate
    fires, it is a **HARD STOP** — present the artifact and wait. On every lane, a
    change Pete can try stops at TEST for him and Codex in the Codex app; anything else
@@ -229,8 +212,8 @@ Every key is optional, and the default is what a repo with no contract gets:
   test credentials (Clerk test instances: any address, code 424242), and verify may use
   it. `none` makes an auth-gated walk `unverifiable`.
 - **`backend:`** `shared-dev` (the default): previews and localhost use the app's dev
-  database, ship never rewrites an env file, and it says so on the card when a branch
-  changes a schema. `per-branch`: ship provisions a database preview per branch at
+  database, ship never rewrites an env file, and it says so on the card, or in the `result:` line, when a
+  branch changes a schema. `per-branch`: ship provisions a database preview per branch at
   stage 0 and deprovisions it at teardown (incidents: Backends).
 - **`stack:`** how to run `scripts/stack-check.sh` (in this skill's directory) for the
   repo: the host team and the app projects, plus where each app's Convex dev deployment
@@ -258,24 +241,10 @@ Every key is optional, and the default is what a repo with no contract gets:
 - **`ship: no`** — for repos that shouldn't ship at all (wikis, civic work): decline and
   say why.
 
-One more key, from a repo that could not run ship without it:
-
-- **`design of record: transplant <path>`** — the repo's chrome is a byte-level transplant
-  of another product's renderer, and `<path>` is that product's bundle. Under it,
-  surfaces the reference owns are lifted, never designed, measured or minimised: the
-  contract names which hooks are the reference's and which are the repo's own (cells:
-  `sand-`/`ui-` are Grok's, `cells-` are ours), and ship applies its design machinery
-  only to the repo's own. The clauses marked *transplant* in DISCOVER, PLAN, BUILD and
-  REVIEW below say what changes; the repo's parity check joins the gates. Without the
-  key, nothing below changes.
-
-A repo that publishes releases may also declare a release ritual: it keeps a
-`VERSION` file and a `CHANGELOG.md`, and its contract says to bump them at ship time.
-Then the branch's last commit before merge bumps VERSION scale-aware (patch = fix or
-small addition, minor = new capability, major = breaking) and adds ONE user-facing
-CHANGELOG entry — what the user can now do, never branch narrative (no mid-branch
-version numbers, no review play-by-play). No declaration → no bump, no entry; app
-repos skip this entirely.
+Rare repo shapes have their own rules in `reference/rare-cases.md`: read the section
+before stage 0 when the contract declares `design of record: transplant`, a release
+ritual, or a `land:` other than `pr`, when the ship targets another repo than the
+session's, and before changing how ship runs under Codex Desktop.
 
 ## Decision memory — settled calls survive the session
 
@@ -306,7 +275,7 @@ in the worktree: `$(git …)` substitutions, `cd <dir> && git …`, loops or her
 name git. Use `git -C <path>`, one git command per call, and put anything multi-step
 in a script file under the job's tmp directory. Two runs lost 40 commands to
 split-and-retry. Written for Claude Code; a Codex driver runs `codex/ship.md` instead (see
-"Running under Codex Desktop" below).
+`reference/rare-cases.md`, Running under Codex Desktop).
 
 ### 0 · Worktree (invisible)  → marker: `discover`
 
@@ -356,12 +325,8 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   first deploy's host is the preview: the inherited `.env.local` carries the shared key,
   and the `--preview-name` flag does not override it (incidents: Backends). From here on
   the preview's *name* comes from that file, never from the branch.
-- **Cross-repo case:** `EnterWorktree` only takes for the session's primary repo
-  (incidents: Worktrees). If the target repo's `git rev-parse --git-common-dir` differs
-  from the launch repo's, never call it: work the worktree by absolute path, point
-  the status line at it with `mkdir -p ~/.claude/ship-active && echo <path> >
-  ~/.claude/ship-active/$CLAUDE_CODE_SESSION_ID`, and narrate the fork the moment you
-  create it (`forked feature/<slug> off main @ <path>`).
+- **Cross-repo case** (the target repo's `git rev-parse --git-common-dir` differs from
+  the launch repo's): `reference/rare-cases.md` first.
 - **A new ship always forks a new worktree.** A session that just landed one and gets
   the next never runs `git switch -c` inside the old tree: the old worktree then
   outlives its merge under another branch's name, and cells names its instance after
@@ -415,11 +380,6 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   the repo's PRODUCT.md/DESIGN.md are the visual authority): a new surface or
   replacement look routes through its `shape`/new-work path; a refinement stays on the
   incumbent world. Use `/image-gen` freely for imagery inside a frame.
-  *Transplant:* a surface the reference owns gets none of this. Its design is the
-  reference bundle; its frame in the storyboard is the lifted markup (the i18n id, the
-  chunk and the class strings named in the caption), and the workshop below runs only
-  for the repo's own surfaces. A ship that touches nothing of the repo's own still
-  storyboards — Pete sees where the lifted thing sits in the app — and locks on that.
   **Ground the design in the live product**: a subagent walks the running app /
   deployed URL over the chrome-devtools MCP and reports the real theme/CSS with screenshots;
   design from those, never from in-repo mockups (incidents: Design).
@@ -433,7 +393,7 @@ into commits otherwise (incidents: Worktrees). Never build on main.
      `reference/storyboard.html` (contract below). Each frame is a live HTML mockup of
      one screen or state at the size it ships — the window, not a cropped component:
      the sidebar, the titlebar, the new thing in place — drawn in the product's own
-     stylesheet and tokens. A transplant frame is the lifted markup. Where a direction
+     stylesheet and tokens. Where a direction
      is genuinely open, draw it as two or three frames of the same screen side by side
      (`02-exploration-visual-designs`), never as prose options. The words on the page
      are captions: one line under each frame saying what is new in it, and the two or
@@ -465,13 +425,10 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   on a one-screen board in the `14-research-feature-explainer` shape: TL;DR first,
   the one question that matters, depth collapsed.
 
-### 2 · PLAN — the plan Pete says go on  → marker: `plan`, then `gate:2`
+### 2 · PLAN — the plan Pete says go on  → marker: `plan`, then `gate:2` when it stops
 
 - `stage.sh <root> plan`. Run `ponytail` as the *waste* critic, not a scope critic — it cuts
-  reinvention and gold-plating, never a frame Pete locked. *Transplant:* ponytail's
-  ladder stops above the reference. A wrapper, a class, a token or an element the
-  reference's markup carries is never waste, however empty it looks (the padding
-  lives in it); "shortest working diff" applies to the repo's own code only.
+  reinvention and gold-plating, never a frame Pete locked.
 - **Consult a domain expert again only for a question the plan raises and the
   storyboard didn't settle** — schema shape, index or migration order, an API's real
   constraint, an auth boundary. Same rules as DISCOVER's consult: harness subagent, a
@@ -485,9 +442,11 @@ into commits otherwise (incidents: Worktrees). Never build on main.
 - **Calls on the card are plain language, and only the ones that change what he gets.**
   Each says what he'd see either way. A technical choice where you have a clear pick is
   yours: take it and log it. Never offer to phase the work.
-- **GATE 2 is his go, always, on the GATED lane** (Two principles). `stage.sh <root> gate:2`,
-  fire the gate notification, end the turn with `needs input:` ("go?"). **HARD STOP.**
-  SELF-DIRECTED renders no card and stops for nobody.
+- **GATE 2 is his go when the card carries a call** (Two principles). `stage.sh <root>
+  gate:2`, fire the gate notification, end the turn with `needs input:` ("go?"). **HARD
+  STOP.** A card with no call is not a stop: `open` it, post one line ("plan card: no
+  calls, building"), write no `gate:2` marker, and go straight on as if he had said go. SELF-DIRECTED renders no
+  card and stops for nobody.
 - **His go → spec it out.** Only now does the machine-facing writing happen: invoke
   `superpowers:writing-plans` for ONE execution plan covering the entire
   storyboard — never sliced into phases — saved to the docs home
@@ -553,35 +512,32 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   merges confirm the main worktree's install is still a directory before trusting a red
   gate.
 - **A task's check is the diff and the gates, nothing else.** Read the diff, run
-  tsc/tests/lint, commit. Nobody drives the app or CLI per task — the smoke-walk is
-  once at the end of BUILD and `verify` runs once in REVIEW. A reviewer hand-driving
+  tsc/tests/lint, commit. Nobody drives the app or CLI per task: the pre-flight is once
+  at the end of BUILD, and Codex tests in TEST. A reviewer hand-driving
   the product per task cost 20 minutes a task and found nothing the gates missed.
 - **Standing brief boilerplate** (each line from a burned run, incidents: Dispatch):
   one task per brief, with the plan's complete code pasted in, the exact test commands
   and the files it may touch; "do it, do not propose", because Astra stops and
-  proposes on an open ask (a tight single-purpose brief went 18 of 18 where a loose one
-  did not); test files whose assertions the planned change invalidates are always in
+  proposes on an open ask; test files whose assertions the planned change invalidates are always in
   scope, allowlist or not; the final message is STATUS, TESTS, CONCERNS, and a longer
   report goes in a file inside the worktree; the worker never commits and never
   runs `git reset/checkout/stash`. A
   repo whose rules load by path (`.claude/rules/`, a `scripts/rules-for.py`) gets those
-  rule files named in every brief, because `codex exec` loads none of them and a
-  subagent only sees them if told.
+  rule files named in every brief, because a subagent only sees them if told.
 - **Never add scope to a running worker by message.** New findings wait for its report
   and go out as the next fix round, and the report is checked against every message
   it was sent. Two workers finished before reading items sent mid-run, and both cost a
   redo.
 - **A cut after go is said out loud.** Any plan item dropped, narrowed or swapped after
   Pete's go, including a model or tool that differs from the reference, goes in the
-  next message and on the review card. One run dropped a settings dropdown Pete had
+  next message and the `result:` line. One run dropped a settings dropdown Pete had
   asked for and he found out by asking "this is all done?".
 - **A fix round goes back to the same worker** with the findings as the brief, so the
   context is already paid for: `SendMessage` to the same subagent. A fresh run for the same task starts cold and re-reads
   the tree. Two wrong diffs on one task move it one rung up the ladder, and the ledger
   records `verdict=redone`.
-- **A quiet run never blocks the build.** The harness wakes the driver when
-  `astra.sh` exits or a subagent returns, and the watchdog ends a run that died or went silent, so silence is
-  not a signal to chase. If a lane's work is visibly in the tree and no report has
+- **A quiet run never blocks the build.** The harness wakes the driver when a subagent
+  returns, so silence is not a signal to chase. If a lane's work is visibly in the tree and no report has
   landed, self-serve: review the diff and run the gates yourself. Dead air on the
   *reporting* path has stalled a real ship twice in one run; the work was already done
   both times.
@@ -597,15 +553,12 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   impeccable hook — tells it to read
   `~/.claude/skills/impeccable/reference/craft-floor.md` and honor its checks and bans,
   plus the three model defaults the storyboard contract bans.
-  *Transplant:* a brief that touches a reference surface carries the reference path,
-  the component to lift (grep the bundle for the id, take the class strings and the
-  tree between), the rule lift it, never re-measure it, and the repo's parity check
-  as a gate the worker runs before reporting. No craft floor and no comp for those
-  surfaces; the comp is the bundle.
-- **Before BUILD is done, smoke-walk the whole feature yourself** — boot the app and
-  drive the spec's real user paths (the formal `verify` runs in REVIEW; don't invoke it
-  twice). Two preconditions that have each cost a red deploy (incidents: Backends): a
-  framework with its own production build → run that build too; on `backend: per-branch`,
+- **Before BUILD is done, a light pre-flight, so Codex and Pete never open a broken
+  page.** Run the gates and, for a framework with its own production build, that build;
+  boot the app and load each surface the feature touches once in the chrome-devtools
+  browser: it renders, its first step works, the console is clean. Not a walk-through:
+  Codex has the better computer use, and the real test is Pete's with it (2026-10-05).
+  Also, on `backend: per-branch`,
   the branch touched `convex/` → re-push the preview (`npx convex deploy --preview-name <name-from-
   .env.local> -y`, from the worktree root — the branch name and the shell's leftover cwd
   have each sent a deploy to the wrong place). *You* find the breakage, never Pete.
@@ -614,7 +567,7 @@ into commits otherwise (incidents: Worktrees). Never build on main.
 ### 4 · TEST — ship reviews it, then Codex uses it as Pete would  → marker: `review`, then `test`
 
 Three phases after the plan, as Pete sees them: BUILD, TEST, LAND. TEST's first half is
-ship reviewing its own work (gates, a cold correctness read, design QA); its second half
+ship reviewing its own work (gates, a cold correctness read); its second half
 is Codex using the running thing the way Pete would, in a browser and on his iPhone.
 A change he can try is handed to him in the Codex app, where he and Codex shape the test
 plan and run it together (Pete, 2026-10-05); anything else gets the headless tester in
@@ -639,26 +592,13 @@ himself, or the tester could not prove it.
   clean context, with the spec, and hunts the seams between tasks as hard as the tasks
   themselves — a writer and its reader drifting apart, a helper two tasks each
   invented, a test that only passes on hand-built rows. It touches nothing and returns
-  findings as file:line, the failure scenario, and a severity. Meanwhile the driver
-  runs `ponytail-review` (the over-build sweep). The driver triages every finding
+  findings as file:line, the failure scenario, and a severity. The driver triages every finding
   — adversarial reviewers over-flag by design — fixes what's real, puts judgment calls
-  on the card. The high-value fan-out is here: several verifiers on one diff beats one.
-- **Design QA for visual features** — a background Opus 5.5 subagent first runs
-  impeccable's deterministic detector over the branch's changed UI files
-  (`node ~/.claude/skills/impeccable/scripts/detect.mjs --json <files>` — local, no
-  network), then walks the built surfaces and judges them side-by-side against the
-  storyboard (screenshot each built surface next to its frame rendered at the same
-  size — impeccable's approved-comp critique: hero and sections as their own crops,
-  never one full-page thumbnail) plus the craft-floor checklist (contrast, depth,
-  spacing, type, motion, states, copy, and the bans). The review card shows the
-  frame-vs-built pairs — Pete reviews the storyboard he locked against the thing that
-  got built. Bounded per impeccable's own ceiling: one batched round, one confirm, no
-  open-ended polish loops. Report only — the driver owns every fix; check
-  `git status` the moment the round lands, because nothing enforces read-only at the
-  tool layer (incidents: Dispatch). Driver triages: real gaps fixed before the card,
-  nits land on the card for Pete. *Transplant:* for a reference surface the pair is
-  the reference product beside ours (the repo's own tree audit and its screenshots),
-  never a frame, and a visible difference is a finding whatever the checks say.
+  on the card or in the `result:` line. The high-value fan-out is here: several verifiers on one diff beats one.
+- **Design against the storyboard is Codex's and Pete's to judge**: the tester's brief
+  links the locked storyboard (`STORYBOARD:` line) and the craft floor
+  (`~/.claude/skills/impeccable/reference/craft-floor.md`), and a gap is a finding like
+  any other.
 - **Keep it running, for the tester and for Pete.** Two surfaces: the branch's **preview
   links** (the contract's `preview:`, the real host, database and sign-in), and the
   worktree's **localhost** (the contract's `dev:` command, else the dev script). Pete may
@@ -716,8 +656,10 @@ himself, or the tester could not prove it.
     open) makes the verdict partial, and partial is `unverifiable`, never a footnote on a
     landing. Three ships went to Pete with a known gap and he found it in minutes ("this
     should have been tested before you sent it").
-- **Render the review card** from `reference/review-card.html` (contract below) to the
-  docs home as soon as the tester's verdict is in, and commit it on the branch, with the
+- **Render the review card only when Pete didn't watch the test**: a headless pass,
+  or a ship that parks. A hand-off he tested with Codex gets none; its record is the
+  `result:` line, the PR body, and the Codex thread link in both. Render it from
+  `reference/review-card.html` (contract below) to the docs home as soon as the verdict is in, and commit it on the branch, with the
   proof shots it shows copied beside it, before LAND's step 0: LAND removes the worktree.
   `LANDING_STATUS` says "Tested by Codex · landing on main", or what it waits on. `open`
   main's copy with the `result:`, or the worktree's with the park. It is the record of
@@ -751,26 +693,8 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
   4. `git pull --ff-only` (+ `git branch -D feature/<slug>` if a local branch
      lingers). Dirty main checkout (another session's work) → skip the local ff
      and run any deploy from a throwaway worktree pinned to `origin/main`.
-  - Session living in a worktree ship didn't create (Zero's sibling convention):
-    don't tear down what isn't yours — merge with `-R <owner/repo>` sans
-    `--delete-branch`, `git push origin --delete <branch>`, leave the worktree.
-  - Session *launched* inside its worktree, not entered through `EnterWorktree`: it
-    can't leave. `ExitWorktree` does nothing, and once the directory is gone the harness
-    refuses every shell command, in subagents too. Run step 0, merge from the worktree
-    (`gh pr merge <#> --squash --delete-branch` merges on GitHub and only fails its local
-    checkout of main), do everything else that needs a shell, skip the `rm .ship-stage`
-    below, and finish with `stage.sh <root> landed`. The SessionEnd hook removes a landed
-    worktree when the session closes, and `wt-sweep` (every 10 minutes) catches any the
-    hook missed. Never `wt remove` the folder the session is standing in.
-  - No GitHub remote → `wt merge` (squashes, ff's main, removes the worktree) is the
-    fallback.
-  - **`land: direct`** replaces steps 0–4: from the worktree, `git fetch origin && git
-    rebase origin/main`, re-gate, `git push origin HEAD:main`, confirm main moved, then
-    teardown and `git push origin --delete <branch>`.
-  - **A `land: <command>`** replaces steps 0–4 the same way: sync with main, re-gate, run
-    the contract's command from the worktree, confirm main moved (`git log -1 main`),
-    then teardown from the main checkout as above. No PR is merged; a mirror remote is
-    pushed only if the contract says so.
+  - A worktree ship didn't create, a session launched inside its worktree, a repo with
+    no GitHub remote, or `land:` other than `pr`: `reference/rare-cases.md`, Landing variants.
   - Then `rm -f .ship-stage .ship-route.json` and `rm -f ~/.claude/ship-active/$CLAUDE_CODE_SESSION_ID`,
     **stop the review dev server**, deprovision the per-branch
     backend stage 0 spun up, if any (or skip if previews auto-expire). Verify with
@@ -831,8 +755,7 @@ Render `reference/storyboard.html` — a page that is the app, not a page about 
 - **Where the product's sheet doesn't decide, the model's own defaults are out**: a
   cream or off-white page, an italic accent word in a headline, pill-shaped buttons.
   The craft floor already bans numbered section labels and monospace as costume.
-- **Captions** — one line per frame: what is new in it. A transplant frame's caption
-  names the reference component it lifts.
+- **Captions** — one line per frame: what is new in it.
 - **The questions** — two or three, the ones a designer would bring, each with the
   pick you'd make. Never a recommendation dressed as a question.
 - **For the record** — one collapsed block at the foot: recon, consults, reuse audit,
@@ -850,14 +773,15 @@ Render `reference/go-card.html` filled with the meta only — one screen (a
   build order, five to twelve lines. Not files, not tasks numbered for a machine.
 - **Ponytail's cut-list** — what was dropped, and why.
 - **Pete's 1–3 calls** — each a PM tradeoff *with your recommendation*. Zero calls is
-  fine; the card still stops for his go.
+  fine, and then the card does not stop.
 - **Risk** — one line.
 - **Go** — one line.
 
-It is the *only* thing Pete reads before a build starts. The execution plan is written
+It is the *only* thing Pete reads before a build starts, and his go is needed only
+when it asks him something. The execution plan is written
 after his go and he never reads it.
 
-## The review card (REVIEW artifact)
+## The review card (headless passes and parked ships)
 
 Render `reference/review-card.html` filled with the meta only — PM-framed, one screen; a
 `17-pr-writeup` for a PM, never a file tour. Pete reviews *this*, not the diff:
@@ -886,16 +810,8 @@ A run throws off build-worthy ideas that aren't this round's job. Keep a running
 (no scratch file — you're one continuous run) of the ones you'd *actually build*, each
 with a one-line why-deferred. A candidate is a thing OUTSIDE the spec's scope —
 never a specced surface you chose not to build; this is not a loophole around the scope
-law. Surface them on the review card; the `result:` line names the count. The card is
-the record; don't invent a tracker. Never gate the merge on this.
-
-## Running under Codex Desktop
-
-A Codex driver does not run this file. It runs the packaged Codex skill, built from
-`codex/ship.md` by `scripts/build-codex.py`, which owns every Codex difference: Astra
-drives and builds, no Anthropic model and no `route.py` run, a fresh Astra context
-reviews the plan and the branch, effort is high throughout, and Codex's own worktree,
-browser and landing rules apply. Change Codex behavior there, never here.
+law. Surface them on the review card when there is one, else under the `result:` line,
+which names the count. Don't invent a tracker. Never gate the merge on this.
 
 ## Gate signals — how a parked ship reaches Pete
 

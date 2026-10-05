@@ -140,7 +140,7 @@ opt a repo into `per-branch`.
   the worktree's `.env.local` (`CONVEX_DEPLOYMENT=preview:<name>`) and use that
   everywhere; error loudly if it's absent.
 - **Convex previews hold stage-0 code and drift behind every `convex/` commit.**
-  Re-push before the smoke-walk: `npx convex deploy --preview-name <name> -y`.
+  Re-push before the pre-flight: `npx convex deploy --preview-name <name> -y`.
 - **Absorbing main can bring function skew the gates can't see.** A rebase pulled in a
   new Convex function the branch's preview didn't have; tsc, vitest and `next build` were
   all green and the page hard-crashed on the preview. After any sync whose diff touched
@@ -160,7 +160,7 @@ opt a repo into `per-branch`.
   locally.
 - **tsc + vitest green ≠ deployable.** Frameworks with their own production build
   (`next build`, `flue build`, wrangler/vite bundling) have failed on deploy after green
-  tests. Run the production build in the smoke-walk.
+  tests. Run the production build in the pre-flight.
 - **A dev server booted through a bounded pipe dies mid-verify.** `npm run dev 2>&1 |
   head -50` got SIGPIPE'd the moment `head` exited; the verifier reported "localhost
   refused connection" and a full round was wasted. Detach with output redirected to a
@@ -216,9 +216,9 @@ opt a repo into `per-branch`.
   reviews found real bugs in every run. On the ledger Astra came back clean on 13 of
   29 tasks against Opus's 18 of 26, and 4 of 13 above a Jev score of 2.
 
-Since 2026-09-24 BUILD routes each task by difficulty: Astra through `codex exec` inside
-`scripts/astra.sh` for the easier half, Opus 5.5 and Fable subagents above it
-(Engines). Codex was the only engine from 2026-09-18, through `codex app-server` and a
+From 2026-09-24 to 2026-10-01 BUILD routed each task by difficulty: Astra through `codex
+exec` inside `scripts/astra.sh` for the easier half, Opus 5.5 and Fable subagents above
+it. Codex then left BUILD, and `astra.sh` now only runs TEST's headless tester. Codex was the only engine from 2026-09-18, through `codex app-server` and a
 supervisor from 2026-08-12, and not an engine at all from 2026-09-06. The codex bullets
 below are why the wrapper has each of its guards; every other line is about delegation
 itself and holds for any worker.

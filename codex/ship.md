@@ -15,7 +15,7 @@ nested coding sessions, or user-visible tasks for internal work.
   checks, exercise changed behavior, land. Keep it with the driver unless the actual
   work needs another agent. A new taste, money, or irreversible decision can still gate.
 - `/ship design <idea>`: show a live HTML storyboard, revise it with Pete, and wait
-  for design lock. Then show an HTML plan card and wait for go. Write the execution
+  for design lock. Then show an HTML plan card, and wait for go when it carries a call. Write the execution
   plan after go, then build the whole approved scope. Never downgrade this explicit verb.
 - Bare `/ship <change>` or an implementation request: choose express for a small
   change. Otherwise work self-directed unless a new design or unresolved scope needs
@@ -76,7 +76,7 @@ For `/ship design` or a visual gated change:
 2. Open the storyboard and wait for reactions. Revise until Pete locks the direction.
    Commit each gate artifact before presenting it. Mark `gate:1` at design lock requests.
 3. Use `reference/go-card.html` to show the locked design, what gets built, unresolved
-   choices with recommendations, and material risk. Mark `gate:2` and wait for go.
+   choices with recommendations, and material risk. When the card carries a call, mark `gate:2` and wait for go; with none, show it and build.
 4. After go, write machine-facing execution notes with acceptance criteria, reusable
    components, file ownership, relevant gates, and exact storyboard frame references.
 
