@@ -19,7 +19,7 @@ It's opinionated. Built for a hands-off, PM-style workflow: you stay in your lan
 - `skills/ship` — the pipeline playbook + the storyboard / plan-card / review-card templates + the design record.
 - `skills/verify` — fresh read-only verification against the running app before merge.
 - `hooks/` — the gate desktop-notification hook.
-- `statusline.sh` — the stage-aware status line.
+- `statusline.sh` — the stage-aware status line, with Anthropic and Codex quota.
 - `.codex-plugin/plugin.json` — the Codex Desktop manifest (see below).
 
 ## Requires

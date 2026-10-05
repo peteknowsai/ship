@@ -27,6 +27,20 @@ it groups ship's docs and test tabs by URL. Edits go live when he presses reload
 `chrome://extensions`. `node chrome/ship-tabs/test.mjs` is its check (the live half
 needs Chrome for Testing in `~/.cache/puppeteer`, and opens its window off-screen).
 
+## Status line
+
+`plugins/ship/statusline.sh` is the one copy. Pete's `~/.claude/statusline.sh` is a symlink
+to it in THIS main checkout, so a merge goes live on the next refresh with no deploy step.
+Line 1 is where you are: ship stage, else `📁 repo  main` in the main checkout (amber `⚠`
+when it's off main) or `🌳 repo ⎇ branch` in a linked worktree; `🚢 N` counts worktrees
+with a live `.ship-stage`. Line 2 is model, effort, context, then quota by vendor:
+`O 2% · F 2% ↻5d │ C 80% ↻4d`. O and F come from Anthropic's OAuth usage endpoint (token
+from the Keychain entry under `$USER`); C comes from ChatGPT's `wham/usage` with the token
+in `~/.codex/auth.json`, and shows the credit balance (`C 58k`) instead of 100% while
+credits remain. Gray numbers with a trailing `?` mean that cache is over 30 minutes old,
+so a dead token can't pass off old numbers as live. `bash plugins/ship/statusline-test.sh`
+is its check.
+
 ## Deploying skill changes
 
 Merging to main does NOT update the installed plugin — running and new sessions read
