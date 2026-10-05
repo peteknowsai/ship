@@ -5,8 +5,8 @@
                                                     plan, then the thread opens in the Codex app,
                                                     named "🧪 Test · <repo> · <branch>"
   codex-handoff.py wait   <out-dir>                 block until a turn ends on a VERDICT line
-  codex-handoff.py retest <out-dir> <note.md>       a fix round: the note goes into the same thread,
-                                                    or to the clipboard (exit 3) while the app holds it
+  codex-handoff.py retest <out-dir> <note.md>       a fix round: the note is queued into the same
+                                                    thread, which the Codex app runs once it has it open
   codex-handoff.py --selftest
 
 `start` runs its own `codex app-server` over stdio for one turn and exits; the thread lives
@@ -15,7 +15,8 @@ resumes it. Pete and Codex revise the plan there, and Codex tests with whatever 
 gives it: the browser, computer use, his iPhone. <out-dir> gets thread.json (id, rollout
 path, link) and plan.md; `wait` writes last.md, prints the verdict and exits 0, or 2 when
 the thread is gone. The verdict travels in the thread's rollout, so the tester never has
-to write a file. The daemon's control socket (`app-server proxy`) does not answer bare
+to write a file. A thread takes one writer, and the app holds the thread once Pete opens
+it, so a retest goes through `codex queue`, which the app drains (2026-10-05). The daemon's control socket (`app-server proxy`) does not answer bare
 JSON lines, which is why this starts its own server (2026-10-05).
 """
 import json
@@ -171,25 +172,15 @@ def wait(out, tick=5):
 
 
 def retest(out, note):
+    """Queue the note into the same thread and open it: the Codex app runs a queued message
+    as soon as it has the thread loaded, so Pete watches the retest where he left it."""
     meta = json.load(open(os.path.join(out, 'thread.json')))
     meta['offset'] = os.path.getsize(meta['rollout'])
     json.dump(meta, open(os.path.join(out, 'thread.json'), 'w'), indent=1)
     text = 'Retest from ship. ' + open(note).read()
-    s = Server()
-    try:
-        s.call('thread/resume', {'threadId': meta['id']})
-    except SystemExit as e:
-        if 'active writer' not in str(e):
-            raise
-        # The Codex app holds the thread, and only one writer may: Pete pastes the note.
-        s.close()
-        subprocess.run(['pbcopy'], input=text, text=True)
-        print(f'{meta["link"]} is open in the Codex app: the retest note is on the clipboard to paste there')
-        if not os.environ.get('HANDOFF_NO_OPEN'):
-            subprocess.run(['open', meta['link']])
-        return 3
-    s.turn(meta['id'], text, 'high')
-    s.close()
+    r = subprocess.run([CODEX, 'queue', '--thread', meta['id'], '--message', text], capture_output=True, text=True)
+    if r.returncode:
+        raise SystemExit(f'codex-handoff: codex queue failed: {r.stderr.strip() or r.stdout.strip()}')
     if not os.environ.get('HANDOFF_NO_OPEN'):
         subprocess.run(['open', meta['link']])
     print(meta['link'])
@@ -221,6 +212,21 @@ def selftest():
               not VERDICT.search('I will end with a VERDICT: works line once done'))
         json.dump({'rollout': os.path.join(tmp, 'gone.jsonl')}, open(os.path.join(tmp, 'thread.json'), 'w'))
         check('a missing rollout exits 2', wait(tmp, 0) == 2)
+        global CODEX
+        stub, saved = os.path.join(tmp, 'codex'), CODEX
+        open(stub, 'w').write(f'#!/bin/sh\nprintf "%s\\n" "$@" > {tmp}/args\n')
+        os.chmod(stub, 0o755)
+        open(roll, 'a').write('\n')
+        json.dump({'id': 't9', 'rollout': roll, 'link': 'codex://threads/t9'}, open(os.path.join(tmp, 'thread.json'), 'w'))
+        open(os.path.join(tmp, 'note.md'), 'w').write('fixed the invite button')
+        CODEX, os.environ['HANDOFF_NO_OPEN'] = stub, '1'
+        retest(tmp, os.path.join(tmp, 'note.md'))
+        CODEX = saved
+        args = open(os.path.join(tmp, 'args')).read().split('\n')
+        check('a retest queues the note into the same thread', args[:3] == ['queue', '--thread', 't9'] and
+              args[4] == 'Retest from ship. fixed the invite button')
+        check('and waits from the end of the rollout',
+              json.load(open(os.path.join(tmp, 'thread.json')))['offset'] == os.path.getsize(roll))
         repo = os.path.join(tmp, 'cells-app')
         subprocess.run(f'git init -q -b main {repo} && git -C {repo} commit -q --allow-empty -m x && '
                        f'git -C {repo} worktree add -q -b feature/eve-071 {tmp}/wt', shell=True, check=True)
@@ -246,6 +252,6 @@ if __name__ == '__main__':
     elif a and a[0] == 'wait' and len(a) == 2:
         sys.exit(wait(a[1]))
     elif a and a[0] == 'retest' and len(a) == 3:
-        sys.exit(retest(*a[1:]))
+        retest(*a[1:])
     else:
         sys.exit(__doc__)
