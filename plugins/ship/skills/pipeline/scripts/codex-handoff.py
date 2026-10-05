@@ -2,7 +2,8 @@
 """TEST with Pete in the Codex app: hand the brief to a Codex thread, then wait for its verdict.
 
   codex-handoff.py start  <worktree> <brief.md> <out-dir> [effort]   first turn drafts the test
-                                                    plan, then the thread opens in the Codex app
+                                                    plan, then the thread opens in the Codex app,
+                                                    named "🧪 Test · <repo> · <branch>"
   codex-handoff.py wait   <out-dir>                 block until a turn ends on a VERDICT line
   codex-handoff.py retest <out-dir> <note.md>       a fix round: the note goes into the same thread,
                                                     or to the clipboard (exit 3) while the app holds it
@@ -111,12 +112,24 @@ def rollout_of(thread_id):
     return r.stdout.strip()
 
 
+def label(worktree):
+    """The thread's name in the Codex app: the first message would title it otherwise, and a
+    brief opens with the same READ-ONLY rules every time."""
+    def git(*a):
+        return subprocess.run(['git', '-C', worktree, *a], capture_output=True, text=True).stdout.strip()
+    common = os.path.abspath(os.path.join(worktree, git('rev-parse', '--git-common-dir')))
+    repo = os.path.basename(os.path.dirname(common)) if common.endswith('/.git') else os.path.basename(common)
+    branch = re.sub(r'^(feature|fix|refactor)/', '', git('branch', '--show-current') or 'detached')
+    return f'🧪 Test · {repo} · {branch}'
+
+
 def start(worktree, brief, out, effort='high'):
     os.makedirs(out, exist_ok=True)
     s = Server()
     t = s.call('thread/start', {'cwd': os.path.abspath(worktree), 'model': MODEL, 'sandbox': 'read-only',
                                 'approvalPolicy': 'on-request', 'developerInstructions': RULES,
                                 'threadSource': 'user'})['thread']
+    s.call('thread/name/set', {'threadId': t['id'], 'name': label(worktree)})
     turn = s.turn(t['id'], open(brief).read(), effort)
     s.close()
     plan = next((i.get('text', '') for i in reversed(turn.get('items', [])) if i.get('type') == 'agentMessage'), '')
@@ -196,6 +209,10 @@ def selftest():
               not VERDICT.search('I will end with a VERDICT: works line once done'))
         json.dump({'rollout': os.path.join(tmp, 'gone.jsonl')}, open(os.path.join(tmp, 'thread.json'), 'w'))
         check('a missing rollout exits 2', wait(tmp, 0) == 2)
+        repo = os.path.join(tmp, 'cells-app')
+        subprocess.run(f'git init -q -b main {repo} && git -C {repo} commit -q --allow-empty -m x && '
+                       f'git -C {repo} worktree add -q -b feature/eve-071 {tmp}/wt', shell=True, check=True)
+        check('the thread is named for the repo and branch', label(f'{tmp}/wt') == '🧪 Test · cells-app · eve-071')
     print(f'codex-handoff self-test: {bad} failed')
     return 1 if bad else 0
 
