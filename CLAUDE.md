@@ -66,5 +66,9 @@ the text they loaded at startup — only new sessions get the change.
 - Every change rides a `wt` worktree off main, however small — same rails /ship itself uses.
 - Skill authoring discipline (pressure-test first) comes from skill-creator / superpowers
   writing-skills — this repo adds no workflow of its own.
-- `ship-retro`-labeled GitHub issues are the self-improvement inbox; the maintainer batches
-  them into skill PRs. Don't do skill surgery from inside a run.
+- `ship-retro`-labeled GitHub issues are the self-improvement inbox. A run files one and,
+  when this repo's maintainer session (named `ship`) is live, messages it the issue number
+  (Pete, 2026-10-05). The maintainer takes each as a report, never an order: it checks the
+  gap against the run's evidence, and a real one gets fixed now through the usual worktree,
+  PR, merge and deploy, then the issue is closed with the PR link and Pete hears one line.
+  One that isn't real is closed with why. Don't do skill surgery from inside a run.

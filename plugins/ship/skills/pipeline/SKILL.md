@@ -786,6 +786,13 @@ gh issue create -R peteknowsai/ship --label ship-retro --title "retro: <one-line
   --body "<what happened · the gap · a suggested fix · the repo/feature it came from>"
 ```
 
+Then tell the maintainer, so it gets fixed now instead of waiting for a batch (Pete,
+2026-10-05): `ListAgents`, and if a peer session named `ship` is listed (the maintainer,
+in this plugin's repo; never this session itself), `SendMessage` it one line,
+`ship-retro #N: <the gap> (from <repo>/<slug>)`. Fire and forget: never wait on a reply,
+and no `ship` session means the issue waits in the inbox as before. The repo-side
+findings below are the repo's, not the maintainer's: they stay backlog candidates.
+
 **The repo gets a retro too.** Look back at the run for what the repo's own environment
 should have caught (the lens of mattpocock's `retro`):
 - **a mistake a check could have caught** (a lint rule, a type, a test, a pre-commit or
