@@ -123,7 +123,8 @@ while it reads. Final repository gates run in parallel only if they do not mutat
 run's data, build, or backend.
 
 The reviewer checks the whole branch against the approved scope, especially interfaces
-between workers. It reports actionable findings with file, line, and failure scenario.
+between workers. Before it calls a field unwritten or a function uncalled, it greps the whole repo, packages,
+extensions and scripts included. It reports actionable findings with file, line, and failure scenario.
 The QA run drives actual behavior and returns `works`, `broken`, or `unverifiable`.
 Do not land on a mockup, a worker's claim, or tests that miss the requested
 behavior. The QA run walks the preview link when one was built, else the worktree's dev
