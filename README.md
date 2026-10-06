@@ -24,7 +24,7 @@ It's opinionated. Built for a hands-off, PM-style workflow: you stay in your lan
 
 ## Requires
 
-Declared as plugin `dependencies` (Claude Code will prompt/handle them): **superpowers**, **ponytail**, **worktrunk** (`wt`). Optional but recommended: **impeccable** (the craft floor) and the **image-gen** skill (imagery inside a frame) for the discovery stage — without them, the storyboard is drawn from the product's stylesheet alone, still fine.
+Declared as plugin `dependencies` (Claude Code will prompt/handle them): **superpowers**, **ponytail**, **worktrunk** (`wt`), and **mattpocock-skills** (`pr` for the PR body and its merge-danger call, `diagnosing-bugs` for a finding that comes back, `writing-for-agents` for briefs; install it from Matt's own marketplace, `claude plugin marketplace add mattpocock/skills`, since the official one lags). Optional but recommended: **impeccable** (the craft floor, and its detector in BUILD's pre-flight) and the **image-gen** skill (imagery inside a frame) for the discovery stage — without them, the storyboard is drawn from the product's stylesheet alone, still fine.
 
 ## Your standing stack stays personal
 

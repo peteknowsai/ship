@@ -13,6 +13,7 @@
   "dependencies": [
     "superpowers",
     "ponytail",
-    "worktrunk"
+    "worktrunk",
+    "mattpocock-skills"
   ]
 }

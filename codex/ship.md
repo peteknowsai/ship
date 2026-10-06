@@ -154,7 +154,10 @@ results in the conversation. Do not write a card just because a template exists.
 
 Land on the verifier's `works`, or on Pete's "merge main" where the lane waits for him
 (or on green with `land: auto`). `land: pr`, the
-default: update the tracker PR's body to what shipped, mark it ready, and squash-merge it.
+default: write the tracker PR's body in the `pr` skill's shape (Summary, Evidence, Merge
+Danger), mark it ready, and squash-merge it. A Merge Danger door of one-way (data deleted
+or migrated, money moved, something sent to people, or a revert can't undo it) waits for
+Pete's "merge main" like a money path.
 `land: direct`: rebase on main, re-gate, push `HEAD:main`, delete the remote branch.
 Any other `land:` value is the repo's command, including a local-only repo. Re-sync and
 recheck if the landing target moved. Never commit directly to main.

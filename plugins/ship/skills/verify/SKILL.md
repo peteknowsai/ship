@@ -115,6 +115,8 @@ a device it couldn't drive): fix it, re-gate, push, write what changed and what 
 thread keeps the context Pete built with it, which a fresh run would lose. `retest`
 queues the note with `codex queue` and opens the thread: the Codex app runs it there as
 soon as it has the thread loaded, so the fix round needs nothing from Pete but his eyes.
+A finding that comes back a second time gets `diagnosing-bugs` (call the Skill tool) and a
+loop that goes red on it before the next fix.
 Post one line saying what was fixed and that Codex is retesting. Up to three retests go
 without a word from Pete; a fourth verdict that still isn't `works` stops: `needs input:`
 with what keeps failing and the thread link. If `start` fails (the Codex app
