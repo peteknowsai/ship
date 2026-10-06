@@ -86,8 +86,13 @@ so the thread link is the proof.
 **The hand-off.** From the pipeline skill's directory:
 
 ```bash
-scripts/codex-handoff.py start <worktree> <out-dir>/brief.md <out-dir>
+scripts/codex-handoff.py start <worktree> <out-dir>/brief.md <out-dir> --url <the app's URL>
 ```
+
+`--url` (repeat it for a health URL the contract names) makes `start` and every later
+`retest` check the app answers first; exit 5 means it didn't and nothing went to Codex:
+restart the dev server (the contract's `dev:`) and run it again. Codex never gets a round
+against a dead server (2026-10-05).
 
 It starts a Codex thread in the worktree (Astra on high, read-only, approvals on request)
 whose first turn turns the brief into a numbered test plan, opens the thread in Pete's
@@ -102,13 +107,17 @@ scripts/codex-handoff.py wait <out-dir>
 
 It returns when a turn ends on a `VERDICT:` line, prints the verdict, and writes the
 report to `<out-dir>/last.md`. Pete sets the pace, so re-arm it when its background
-timeout ends; exit 2 means the thread is gone, so start a new one. **broken**: fix,
-re-gate, push, write what changed and what to retest to `<out-dir>/retest.md`, run
+timeout ends; exit 2 means the thread is gone, so start a new one. **The loop runs without
+Pete** (Pete, 2026-10-05): Codex hands back on its own and ship answers on its own. **broken**,
+or **unverifiable** naming something ship can fix (a dead server, a stale or missing build,
+a device it couldn't drive): fix it, re-gate, push, write what changed and what to retest to `<out-dir>/retest.md`, run
 `codex-handoff.py retest <out-dir> <out-dir>/retest.md`, and `wait` again. The same
 thread keeps the context Pete built with it, which a fresh run would lose. `retest`
 queues the note with `codex queue` and opens the thread: the Codex app runs it there as
 soon as it has the thread loaded, so the fix round needs nothing from Pete but his eyes.
-Post one line saying what was fixed and that Codex is retesting. If `start` fails (the Codex app
+Post one line saying what was fixed and that Codex is retesting. Up to three retests go
+without a word from Pete; a fourth verdict that still isn't `works` stops: `needs input:`
+with what keeps failing and the thread link. If `start` fails (the Codex app
 missing, Codex signed out), run the headless tester and say so.
 
 **Local sites never prompt.** The Codex app's browser asks per site, and a site is host plus
@@ -205,8 +214,9 @@ wall. Park with a `needs input:` so Pete walks that part himself.
 
 - **broken** → fix the implementation, then spawn a **fresh** verifier (never reuse the one
   that saw the bug — it's no longer independent of the fix). Cap at ~3 rounds.
-- **still broken after the cap**, or **unverifiable** → stop and hand the verdict + evidence
-  up to the caller for Pete. Never loop forever; never merge unproven.
+- **still broken after the cap**, or **unverifiable** for a reason ship can't fix (a hand-off
+  fixes and retests the ones it can, above) → stop and hand the verdict + evidence up to
+  the caller for Pete. Never loop forever; never merge unproven.
 
 ## 3. Regression sweep — you run the codified checks; fix red directly
 

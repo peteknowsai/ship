@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
 """TEST with Pete in the Codex app: hand the brief to a Codex thread, then wait for its verdict.
 
-  codex-handoff.py start  <worktree> <brief.md> <out-dir> [effort]   first turn drafts the test
+  codex-handoff.py start  <worktree> <brief.md> <out-dir> [effort] [--url <app URL>]...   first turn drafts the test
                                                     plan, then the thread opens in the Codex app,
                                                     named "🧪 Test · <repo> · <branch>", with
                                                     ship's go queued so testing starts at once
   codex-handoff.py wait   <out-dir>                 block until a turn ends on a VERDICT line
-  codex-handoff.py retest <out-dir> <note.md>       a fix round: the note is queued into the same
+  codex-handoff.py retest <out-dir> <note.md>       a fix round, after the same URL check: the note is queued into the same
                                                     thread, which the Codex app runs once it has it open
   codex-handoff.py --selftest
+
+Each --url must answer (any status under 500) before start or retest goes on; one that
+doesn't exits 5 with nothing sent, so restart the dev server and run it again. A round once
+went to Codex with the server's Eve child dead (2026-10-05). start keeps the URLs for retest.
 
 `start` runs its own `codex app-server` over stdio for one turn and exits; the thread lives
 on in ~/.codex, and `codex://threads/<id>` opens it in the desktop app, whose own app-server
@@ -27,6 +31,8 @@ import subprocess
 import sys
 import tempfile
 import time
+import urllib.error
+import urllib.request
 
 MODEL = os.environ.get('ASTRA_MODEL', 'gpt-6-astra')
 CODEX = os.environ.get('ASTRA_CODEX', 'codex')
@@ -54,6 +60,11 @@ mobile web, when the IOS line asks for it, is a simulator's Safari.
 If that app is missing from the phone, or talks to another server, do not build or install
 one: end with `VERDICT: unverifiable` saying the branch app is missing, and ship installs it
 and sends a retest.
+
+If the app stops answering, or something only ship can fix blocks you (a missing or stale
+build, a device you can't drive, a dead server), don't wait or ask Pete what to do: end with
+`VERDICT: unverifiable` naming the blocker, and ship fixes it and sends a retest. Never hold
+the report for Pete's word, and never ask him to say "finish".
 
 When the plan is done, send the report the brief asks for straight away; never ask Pete
 whether to, since he can ask for more after it and ship's retest comes back here. It starts
@@ -146,6 +157,25 @@ def clear_browser_denials(thread_id, home=os.path.expanduser('~')):
         os.remove(path)
 
 
+def up(url):
+    """The app answers: any status under 500 counts, a refused or timed-out connection does not."""
+    try:
+        urllib.request.urlopen(url, timeout=10)
+        return True
+    except urllib.error.HTTPError as e:
+        return e.code < 500
+    except (urllib.error.URLError, OSError):
+        return False
+
+
+def require_up(urls):
+    down = [u for u in urls if not up(u)]
+    if down:
+        print(f'codex-handoff: {", ".join(down)} is not answering; start the dev server and run this again',
+              file=sys.stderr)
+        sys.exit(5)
+
+
 def queue(meta, text):
     """Put a message into the thread and open it: the Codex app runs a queued message as soon as
     it has the thread loaded, so the run happens there, where Pete watches and can approve."""
@@ -160,7 +190,8 @@ def queue(meta, text):
 GO = 'Go from ship: run the plan now.'
 
 
-def start(worktree, brief, out, effort='high'):
+def start(worktree, brief, out, effort='high', urls=()):
+    require_up(urls)
     os.makedirs(out, exist_ok=True)
     s = Server()
     t = s.call('thread/start', {'cwd': os.path.abspath(worktree), 'model': MODEL, 'sandbox': 'read-only',
@@ -172,7 +203,8 @@ def start(worktree, brief, out, effort='high'):
     clear_browser_denials(t['id'])
     plan = next((i.get('text', '') for i in reversed(turn.get('items', [])) if i.get('type') == 'agentMessage'), '')
     open(os.path.join(out, 'plan.md'), 'w').write(plan)
-    meta = {'id': t['id'], 'rollout': rollout_of(t['id']), 'link': f'codex://threads/{t["id"]}', 'out': out}
+    meta = {'id': t['id'], 'rollout': rollout_of(t['id']), 'link': f'codex://threads/{t["id"]}', 'out': out,
+            'urls': list(urls)}
     meta['offset'] = os.path.getsize(meta['rollout']) if meta['rollout'] else 0
     json.dump(meta, open(os.path.join(out, 'thread.json'), 'w'), indent=1)
     queue(meta, GO)  # Pete wants it to just go (2026-10-05); he steers in the thread
@@ -197,6 +229,7 @@ def wait(out, tick=5):
 def retest(out, note):
     """Queue the note into the same thread, so Pete watches the retest where he left it."""
     meta = json.load(open(os.path.join(out, 'thread.json')))
+    require_up(meta.get('urls', []))
     meta['offset'] = os.path.getsize(meta['rollout'])
     json.dump(meta, open(os.path.join(out, 'thread.json'), 'w'), indent=1)
     queue(meta, 'Retest from ship. ' + open(note).read())
@@ -256,7 +289,30 @@ def selftest():
               not os.path.exists(os.path.join(sessions, 't1.toml')))
         check('turn 1 is told to touch nothing that needs the network', 'no `curl`, browser' in RULES)
         check('the phone is the native app, never its Safari', 'Never test a web page in the phone' in RULES)
-        check('the report goes back without asking Pete', 'never ask Pete' in RULES)
+        check('the report goes back without asking Pete', 'never ask Pete' in RULES and 'say "finish"' in RULES)
+        import http.server
+        import threading
+        class Quiet(http.server.SimpleHTTPRequestHandler):
+            def log_message(self, *a):
+                pass
+        srv = http.server.HTTPServer(('127.0.0.1', 0), Quiet)
+        threading.Thread(target=srv.serve_forever, daemon=True).start()
+        live = f'http://127.0.0.1:{srv.server_address[1]}/nope'  # a 404 still means it's up
+        dead = f'http://127.0.0.1:{srv.server_address[1] + 1}/'
+        check('a running server is up, even on a 404, and a closed port is not', up(live) and not up(dead))
+        meta = json.load(open(os.path.join(tmp, 'thread.json')))
+        json.dump({**meta, 'urls': [live, dead]}, open(os.path.join(tmp, 'thread.json'), 'w'))
+        os.remove(os.path.join(tmp, 'args'))
+        CODEX = stub
+        try:
+            retest(tmp, os.path.join(tmp, 'note.md'))
+            code = 0
+        except SystemExit as e:
+            code = e.code
+        CODEX = saved
+        check('a retest to a dead server exits 5 and queues nothing',
+              code == 5 and not os.path.exists(os.path.join(tmp, 'args')))
+        srv.shutdown()
     print(f'codex-handoff self-test: {bad} failed')
     return 1 if bad else 0
 
@@ -265,8 +321,12 @@ if __name__ == '__main__':
     a = sys.argv[1:]
     if a == ['--selftest']:
         sys.exit(selftest())
-    elif a and a[0] == 'start' and len(a) in (4, 5):
-        start(*a[1:])
+    elif a and a[0] == 'start':
+        urls = [a[i + 1] for i, x in enumerate(a[:-1]) if x == '--url']
+        rest = [x for i, x in enumerate(a) if x != '--url' and (i == 0 or a[i - 1] != '--url')]
+        if len(rest) not in (4, 5):
+            sys.exit(__doc__)
+        start(*rest[1:], urls=urls)
     elif a and a[0] == 'wait' and len(a) == 2:
         sys.exit(wait(a[1]))
     elif a and a[0] == 'retest' and len(a) == 3:

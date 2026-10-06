@@ -647,7 +647,8 @@ himself, or the tester could not prove it.
 - **TEST — the Codex tester uses it, and a pass lands it.** With green gates and the
   review triaged, push, `stage.sh <root> test`, and invoke `ship:verify` (the full name:
   bare `verify` resolves to another skill and is refused). A change Pete can try is a
-  **hand-off**: verify runs `codex-handoff.py start`, which drafts the test plan in a
+  **hand-off**: verify runs `codex-handoff.py start --url <app>` (it refuses a server that
+  isn't answering), which drafts the test plan in a
   Codex thread, opens it in his Codex app and starts the test there, no go needed; write `stage.sh <root> gate:codex` and end
   the turn with `needs input: test <slug> with Codex — <codex:// link>`, with
   `codex-handoff.py wait` running in the background so his verdict wakes the session.
@@ -668,7 +669,8 @@ himself, or the tester could not prove it.
   `works | broken | unverifiable` + a screenshot storyboard.
   - **`broken`: the driver fixes, the tester never does.** Fix, re-gate, push, then a
     hand-off gets `codex-handoff.py retest` into the same thread and a headless run gets a
-    fresh tester (cap ~3 rounds).
+    fresh tester (cap ~3 rounds). Pete isn't asked between hand-off rounds: an
+    `unverifiable` from a dead server or a stale build is ship's to fix and retest too.
   - **`works`: land now** (LAND), unless the lane waits for Pete (below). No stop, no
     cue.
   - **`broken` after the cap, or `unverifiable`: park.** End the turn with `needs input:`
