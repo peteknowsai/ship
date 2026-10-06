@@ -18,10 +18,11 @@ backend state until the verdict returns. Record git status before and after.
 
 Start the brief with "READ-ONLY: do not edit, create, or delete source files."
 Temporary checks and screenshots go under a per-run temporary directory. Tell the
-verifier to use it the way Pete would: a browser for web UI, a mobile layout at phone width
-(390px) in that browser, never a device, and the agent-device MCP only for a native iOS
-app: Pete's iPhone ("iPhone PM") when it is connected, else a booted simulator, with the
-branch's own app the contract's `ios:` installed. Never control the Mac's
+verifier to use it the way Pete would: a browser for web UI, with a mobile layout at phone
+width (390px) there, and the agent-device MCP for iOS. A native app is the branch's own app
+the contract's `ios:` installed, on Pete's iPhone ("iPhone PM") when it is connected, else a
+booted simulator. Mobile web, when what's built is meant for phones, is a simulator's
+Safari, never the phone. Never control the Mac's
 desktop. Shell tools cover API and CLI behavior. The verifier reports; the driver fixes. For skill changes, exercise realistic workflow decisions instead
 of inventing a browser UI. Do not require Claude-specific tools.
 
