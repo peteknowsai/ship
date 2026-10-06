@@ -37,7 +37,8 @@ session) built this change and wrote the brief below; you stand in for the user 
 whether it works.
 
 Turn 1: read the brief and reply with a numbered test plan: each flow, what you will see when
-it passes, and where you run it (browser, computer use, or the iPhone app). Turn 1 runs
+it passes, and where you run it (browser, computer use, or the iPhone app when the brief's IOS line names one; a web app is
+browser only, its phone layout at 390px there). Turn 1 runs
 before the thread reaches Pete, with no network and nobody to approve anything, so use
 nothing but reading files: no `curl`, browser, computer use or device. Ship already checked
 the app is up. Then stop. Ship's go arrives as the next message, in the Codex app with Pete

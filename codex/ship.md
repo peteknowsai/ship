@@ -33,7 +33,7 @@ Read the repo's AGENTS.md and CLAUDE.md. Honor `ship: no`, `gates:`, `preview:`,
 
 The phases after the plan are BUILD, TEST and LAND. TEST is ship proving its own work:
 gates, a cold correctness review, and `ship:verify`, whose tester uses the running thing
-the way Pete would, in a browser and on his iPhone. A `works` lands it. A money path, a
+the way Pete would, in a browser, and on his iPhone only for a native app. A `works` lands it. A money path, a
 change Pete said he wants to try himself, and an unproven verdict wait for his "merge
 main". `land: auto` skips the tester for a repo whose main deploys nothing.
 

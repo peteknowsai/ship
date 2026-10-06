@@ -2,7 +2,7 @@
 name: verify
 description: >
   Prove the feature just built actually works — Codex uses the running app the way Pete
-  would, in a browser and on his iPhone or a simulator, and judges it — before anything
+  would, in a browser (and on his iPhone or a simulator only for a native app), and judges it — before anything
   merges. A change Pete can try goes to him in the Codex app, where he and Codex plan and
   run the test together; the rest gets a headless read-only Codex tester. Use in ship's TEST stage (it's invoked there
   automatically) or standalone when a change is ready and you
@@ -56,7 +56,8 @@ concurrent walks on one seeded account still collide on the backend.
 
 **iOS is the native app only, on Pete's own iPhone ("iPhone PM") or an Xcode simulator,
 through agent-device.** Never the mobile web in the phone's Safari: the browser covers web
-pages (Pete, 2026-10-05). The phone is the real thing, so it is the default whenever
+pages, and a mobile layout is checked at phone width (390px) in the browser. A web app's
+brief says `IOS: none` and its test never touches a device or simulator (Pete, 2026-10-05). The phone is the real thing, so it is the default whenever
 `agent-device devices` lists it; otherwise a booted simulator. In a repo whose contract
 has `ios:`, the driver runs it before the tester starts whenever the app can see the
 change (its native code, or the server and APIs it calls): it builds the branch's own app,
@@ -160,7 +161,7 @@ HOW TO EXERCISE IT:
 STORYBOARD (a GATED ship's locked design, else 'none'):
   <storyboard path#frame-ids>, and ~/.claude/skills/impeccable/reference/craft-floor.md.
   The built screens should match their frames; a visible gap is a finding.
-IOS (when the change reaches a phone, else 'none'):
+IOS (when the repo's native app can see the change, else 'none'; a web app is always 'none'):
   The IOS line the contract's `ios:` printed: the device ("iPhone PM" or the booted
   simulator) and the branch app's bundle id. Only that native app, never Safari. Start
   with agent-device `open <bundle> --foreground`; close the session when done.

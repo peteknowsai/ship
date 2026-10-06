@@ -40,7 +40,7 @@ marker flip is how Pete *sees* ship engage.
 
 The rails are constant: worktree off main, its branch pushed at once with a draft PR
 tracking it → change, pushed at every milestone so the host builds a preview → review →
-**TEST: Codex uses it the way Pete would, in a browser and on his iPhone, with Pete in
+**TEST: Codex uses it the way Pete would, in a browser, and on his iPhone only for a native app, with Pete in
 his Codex app when there is something to try, and a pass lands it** (squash the PR) → the host deploys what main deploys. Nothing ever edits
 main directly, however tiny, and nothing lands untested: main is where things go live.
 What scales is the ceremony before TEST, and you size it, not Pete:
@@ -231,7 +231,9 @@ Every key is optional, and the default is what a repo with no contract gets:
 - **`ios:`** for a native iOS app, the command that builds the branch's own app, pointed
   at the branch's server, installs it on a device by name ("iPhone PM" or a simulator),
   and prints its IOS line (device, udid, bundle id). Default: none, and then nothing is
-  tested on a phone: the mobile web is never tested (Pete, 2026-10-05).
+  tested on a phone. A web app is tested in the browser only, however many people will
+  open it on a phone: its mobile layout is checked at phone width (390px) in the browser,
+  never on a device or simulator (Pete, 2026-10-05).
 - **`land:`** how a branch reaches main. `pr` (the default) squash-merges
   the tracker PR. `direct` pushes `HEAD:main` after a rebase and opens no PR. `auto`, for a repo whose main
   deploys nothing, lands on the tester's `works` and never waits for Pete, money paths
@@ -584,7 +586,8 @@ into commits otherwise (incidents: Worktrees). Never build on main.
 
 Three phases after the plan, as Pete sees them: BUILD, TEST, LAND. TEST's first half is
 ship reviewing its own work (gates, a cold correctness read); its second half
-is Codex using the running thing the way Pete would, in a browser and on his iPhone.
+is Codex using the running thing the way Pete would, in a browser, and on his iPhone
+only when the repo has a native app.
 A change he can try is handed to him in the Codex app, where he and Codex shape the test
 plan and run it together (Pete, 2026-10-05); anything else gets the headless tester in
 his place (2026-10-01). The tester reports and never fixes. Its pass lands the branch;
