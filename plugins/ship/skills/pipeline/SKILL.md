@@ -63,8 +63,8 @@ What scales is the ceremony before TEST, and you size it, not Pete:
 **The gate test is never size — it's whether Pete's answer would change what gets
 built** (or the change is risky/irreversible). If his input wouldn't change the outcome,
 don't stop. Every lane lands only on green gates and the Codex tester's `works`. A
-money path, and a change Pete said he wants to try himself, also wait for his "merge
-main" after the pass.
+money path, a one-way door (the PR body's Merge Danger call, TEST below), and a change
+Pete said he wants to try himself also wait for his "merge main" after the pass.
 Mid-flight, promote the moment taste or direction appears (park, write the spec from
 what you've learned, present GATE 1); size alone moves EXPRESS → SELF-DIRECTED, never to
 a gate. Never use an autonomous lane to slip a taste call past Pete.
@@ -131,7 +131,9 @@ anything in a browser. Never `claude -p` from inside a session. Nothing runs
 on Sonnet.
 
 **The driver owns the envelope**, whoever drafts: it writes the brief (exact files,
-signatures, test cases, constraints; a vague brief burns the savings in fix rounds),
+signatures, test cases, constraints; a vague brief burns the savings in fix rounds;
+call the Skill tool with `writing-for-agents` once per run before the first brief, the
+Codex tester's included),
 reviews the returned diff and runs the gates before anything is committed (never trust
 a "tests pass" claim from a worker), and owns git entirely. One writer per tree at a
 time: serialize, or give each lane its own sub-worktree.
@@ -580,6 +582,11 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   boot the app and load each surface the feature touches once in the chrome-devtools
   browser: it renders, its first step works, the console is clean. Not a walk-through:
   Codex has the better computer use, and the real test is Pete's with it (2026-10-05).
+  A change with UI also runs impeccable's detector on the UI files it touched,
+  `~/.claude/skills/impeccable/scripts/impeccable detect --no-advisory <files>` (exit
+  0 clean, 2 findings on stderr, 1 a file it couldn't read): fix each finding, or waive a
+  deliberate one in place with its `impeccable-disable-line <rule> -- <why>` comment.
+  It is free and mechanical, so Codex never spends a round on a craft-floor miss.
   Also, on `backend: per-branch`,
   the branch touched `convex/` → re-push the preview (`npx convex deploy --preview-name <name-from-
   .env.local> -y`, from the worktree root — the branch name and the shell's leftover cwd
@@ -674,8 +681,18 @@ himself, or the tester could not prove it.
     hand-off gets `codex-handoff.py retest` into the same thread and a headless run gets a
     fresh tester (cap ~3 rounds). Pete isn't asked between hand-off rounds: an
     `unverifiable` from a dead server or a stale build is ship's to fix and retest too.
-  - **`works`: land now** (LAND), unless the lane waits for Pete (below). No stop, no
-    cue.
+    **The same finding back a second time means the last fix was a guess**: call the
+    Skill tool with `diagnosing-bugs` and get a loop that goes red on it (a test, a
+    script, a log line) before the next fix, so the next round is the last one
+    (iphone-chat-tail spent three rounds on one scroll jump, 2026-10-05).
+  - **`works`: write the PR body, then land** (LAND), unless the lane waits for Pete
+    (below). No stop, no cue. Call the Skill tool with `pr` and rewrite the tracker PR's
+    body in its shape: Summary (the smallest visual that shows the change), Evidence
+    (before/after: the Codex verdict, its shots or thread link, the test that went
+    green), Merge Danger (door and blast radius). The door is ship's call on every
+    ship: **two-way** (a revert undoes it) lands now; **one-way** (it deletes or
+    migrates data, moves money, sends something to people, or a revert can't undo it)
+    waits for Pete's "merge main" like a money path.
   - **`broken` after the cap, or `unverifiable`: park.** End the turn with `needs input:`
     ("test: <feature> — couldn't prove it works: <reason>") and hand Pete the verdict and
     evidence. A path the tester couldn't reach (a mic, a bot check, a device it couldn't
@@ -690,8 +707,8 @@ himself, or the tester could not prove it.
   `LANDING_STATUS` says "Tested by Codex · landing on main", or what it waits on. `open`
   main's copy with the `result:`, or the worktree's with the park. It is the record of
   what landed and the proof, not a gate.
-- **What still waits for Pete's "merge main" after a pass**: a money path, and a change
-  he said he wants to try himself. `stage.sh <root> gate:test`, post the links (and the
+- **What still waits for Pete's "merge main" after a pass**: a money path, a one-way
+  door, and a change he said he wants to try himself. `stage.sh <root> gate:test`, post the links (and the
   card), and end the turn:
   `needs input: test <slug> — <what to try> · say "merge main"`, then the branch ·
   worktree tail. His word means take this worktree all the way, PR merge, deploy,
@@ -710,8 +727,8 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
 
 - **Land — `land: pr` (the default), from the MAIN CHECKOUT, teardown first** (incidents: Worktrees — both orderings that deviate have stranded ships):
   0. Pre-flight *from the worktree*: `git fetch origin`; if main moved, absorb +
-     re-gate + push; run `stack:` once more; update the tracker PR's body to what actually shipped (the squash
-     commit takes it); `gh pr ready <#>`; confirm `gh pr view <#> --json mergeable`
+     re-gate + push; run `stack:` once more; bring the `pr`-shaped body from TEST up to date with what actually
+     shipped (the squash commit takes it); `gh pr ready <#>`; confirm `gh pr view <#> --json mergeable`
      says `MERGEABLE`.
   1. Return to the main checkout (`ExitWorktree({action:"keep"})`).
   2. `wt remove feature/<slug> -f` — frees the branch for `--delete-branch`.
@@ -768,6 +785,22 @@ surgery, and one run is too narrow for a general fix. If this run surfaced a rea
 gh issue create -R peteknowsai/ship --label ship-retro --title "retro: <one-line gap>" \
   --body "<what happened · the gap · a suggested fix · the repo/feature it came from>"
 ```
+
+**The repo gets a retro too.** Look back at the run for what the repo's own environment
+should have caught (the lens of mattpocock's `retro`):
+- **a mistake a check could have caught** (a lint rule, a type, a test, a pre-commit or
+  CI job; a repo with no guardrail at all is a finding in itself). A mechanical rule gets
+  a check, never a line in a standards doc;
+- **information the run lacked** (a dev server log nobody tailed, a dashboard it couldn't
+  read, a crash that surfaced as "Connecting…");
+- **navigation**: a file or dependency the run took long to find, which a pointer in the
+  repo's `CLAUDE.md` or docs home would have saved;
+- **an expensive tool call** that a script or a narrower command would replace.
+
+Each real one is a backlog candidate (below), listed under the `result:` line with what
+to add and where: the run has landed, so a guardrail or pointer is its own small ship,
+never a commit slipped onto main. A gap the repo already knows about (the same finding in
+an earlier run's list) is not news; say nothing.
 
 **Most runs teach nothing — skip silently.** Never invent a lesson. Don't gate
 `result:` on this.
