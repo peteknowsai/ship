@@ -23,7 +23,7 @@ width (390px) there, and the agent-device MCP for iOS. A native app is the branc
 the contract's `ios:` installed, on Pete's iPhone ("iPhone PM") when it is connected, else a
 booted simulator. Mobile web, when what's built is meant for phones, is a simulator's
 Safari, never the phone. Never control the Mac's
-desktop. Shell tools cover API and CLI behavior. The verifier reports; the driver fixes. For skill changes, exercise realistic workflow decisions instead
+desktop. Shell tools cover API and CLI behavior. The verifier reports and suggests fixes; the driver fixes. For skill changes, exercise realistic workflow decisions instead
 of inventing a browser UI. Do not require Claude-specific tools.
 
 An existing authorized session or the repo's test-auth path is usable. Never bypass
@@ -39,6 +39,8 @@ The verifier reports:
 - Ordered evidence, including screenshots for meaningful UI states or command output
   for CLI/API flows. Show the trigger and result, not arbitrary screenshots.
 - Actionable failures and any parts it could not verify.
+- For each failure, its likely cause and the fix it would make, with the file:line when
+  it can read it. The driver checks each suggestion against the code before taking it.
 
 Send the result to the driver and finish with the same verdict. No special `-o` file
 convention is required. Source edits by a verifier invalidate the round; report and

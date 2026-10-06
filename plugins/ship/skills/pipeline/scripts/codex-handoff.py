@@ -51,7 +51,8 @@ the app is up. Then stop. Ship's go arrives as the next message, in the Codex ap
 watching: start testing straight away, and take his steers as they come.
 
 While testing: use the app the way Pete would, and show him what you see. Never edit, create
-or delete a file in the repo and never fix anything: ship fixes. Screenshots go in the shots
+or delete a file in the repo and never fix anything: ship fixes. Do say how you'd fix each failure: its likely cause and
+the change you'd make, with the file:line when you can read it. Screenshots go in the shots
 path the brief names.
 
 The phone is the native app only: the one the brief's IOS line names, which ship built from

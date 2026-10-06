@@ -601,7 +601,7 @@ is Codex using the running thing the way Pete would, in a browser, and on his iP
 only when the repo has a native app.
 A change he can try is handed to him in the Codex app, where he and Codex shape the test
 plan and run it together (Pete, 2026-10-05); anything else gets the headless tester in
-his place (2026-10-01). The tester reports and never fixes. Its pass lands the branch;
+his place (2026-10-01). The tester reports and suggests fixes; it never makes one. Its pass lands the branch;
 after it, nothing waits for Pete unless the lane is a money path, he asked to try it
 himself, or the tester could not prove it.
 
