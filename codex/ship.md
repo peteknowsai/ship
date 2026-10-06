@@ -32,10 +32,11 @@ Read the repo's AGENTS.md and CLAUDE.md. Honor `ship: no`, `gates:`, `preview:`,
 `design of record: transplant <path>` contract. Inspect current git state first.
 
 The phases after the plan are BUILD, TEST and LAND. TEST is ship proving its own work:
-gates, a cold correctness review, and `ship:verify`, whose tester uses the running thing
-the way Pete would, in a browser, and on his iPhone only for a native app. A `works` lands it. A money path, a
+gates, a cold correctness review, and `ship:verify`: the driver writes a QA script and
+runs it itself on the running thing the way Pete would, in a browser, and on his iPhone
+only for a native app, fixing until it passes. A `works` lands it. A money path, a
 change Pete said he wants to try himself, and an unproven verdict wait for his "merge
-main". `land: auto` skips the tester for a repo whose main deploys nothing.
+main". `land: auto` skips the QA run for a repo whose main deploys nothing.
 
 A new ship gets a new worktree. Reuse only the one this ship started in, never a
 worktree whose branch already landed. For a Codex-managed worktree, create a feature branch if
@@ -117,16 +118,15 @@ Sync with the landing target before final review. If upstream changes a preview
 backend, refresh it before verification. Freeze source and test state during review.
 
 Express changes: run relevant checks and exercise the affected behavior directly.
-For larger work, launch a fresh Astra correctness reviewer and invoke `ship:verify`
-for an independent Astra runtime verifier. They can run concurrently against the same
-frozen build with isolated accounts. The driver runs final repository gates in parallel
-only if those checks do not mutate the verifier's data, build, or backend.
+For larger work, launch a fresh Astra correctness reviewer, and invoke `ship:verify`
+while it reads. Final repository gates run in parallel only if they do not mutate the QA
+run's data, build, or backend.
 
 The reviewer checks the whole branch against the approved scope, especially interfaces
 between workers. It reports actionable findings with file, line, and failure scenario.
-The verifier drives actual behavior and returns `works`, `broken`, or `unverifiable`.
+The QA run drives actual behavior and returns `works`, `broken`, or `unverifiable`.
 Do not land on a mockup, a worker's claim, or tests that miss the requested
-behavior. The verifier walks the preview link when one was built, else the worktree's dev
+behavior. The QA run walks the preview link when one was built, else the worktree's dev
 server.
 
 The walk covers the surface Pete will open, signed in as he will be, with real clicks
@@ -136,11 +136,11 @@ with the gap as a footnote. Any plan item cut or swapped after his go is named i
 the next message. Every wait has a deadline and a never-started check. Only a landing
 ends with `result:`.
 
-Fix real findings. Re-run affected checks and use a fresh verifier if behavior changed.
-Cap repeated verification at three rounds, then report the specific blocker. Preserve
+Fix real findings. Re-run affected checks and the QA steps the fix could touch.
+Cap fix rounds at three, then report the specific blocker. Preserve
 all unrelated edits. Never blindly reset or discard a dirty worktree.
 
-Write `test` to `.ship-stage` when the verifier starts, and land on `works`. Only a lane
+Write `test` to `.ship-stage` when the QA run starts, and land on `works`. Only a lane
 that waits for Pete parks: push, write `gate:test`, post the links and what to try, and end with `needs input: test <slug> —
 say "merge main"`. A change he asks for goes back through build, push, links and
 verify.

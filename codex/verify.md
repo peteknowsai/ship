@@ -1,56 +1,55 @@
 ---
 name: verify
-description: Independently verify a shipped feature by exercising its real UI, API, or CLI. Use during ship review or when asked to prove a change works.
+description: Prove a shipped feature works by writing a QA script and running it yourself against its real UI, API, or CLI, fixing until it passes. Use during ship's TEST or when asked to prove a change works.
 ---
 
 # Verify in Codex
 
-Use a fresh read-only Astra subagent through collaboration, with
-`model: "gpt-6-astra"` and `fork_turns: "none"`. Give it a self-contained brief.
-The driver owns fixes and regression checks. No supervisor or nested coding session.
+The driver tests its own work (Pete, 2026-10-05): it writes a QA script, runs it on the
+running app, fixes what fails and runs it again. The one who sees the bug fixes it, so a
+round is a rerun, not a hand-off. No subagent tester, no nested coding session.
 
-## Prepare the brief
+## Write the QA script
 
-Provide the intended behavior, acceptance criteria, exact app URL or native app,
-backend deployment, test account, and authorized authentication route. Reuse the
-running stack. Isolate accounts when reviews run in parallel. Freeze source and
-backend state until the verdict returns. Record git status before and after.
+Write `<out-dir>/qa.md`, outside the repo, from the spec or plan, else the acceptance
+criteria. Its head names the app URL or native app, the backend deployment, the test
+account and the authorized authentication route (with any invite code or PIN). Then
+numbered steps, each one thing a person does and what they should see. Cover every
+acceptance criterion, the storyboard frames the change built, the edges the spec names,
+and a clean console. Reuse the running stack. Freeze upstream (no merges or rebases)
+until the run ends; its own fixes are the only edits.
 
-Start the brief with "READ-ONLY: do not edit, create, or delete source files."
-Temporary checks and screenshots go under a per-run temporary directory. Tell the
-verifier to use it the way Pete would: a browser for web UI, with a mobile layout at phone
-width (390px) there, and the agent-device MCP for iOS. A native app is the branch's own app
-the contract's `ios:` installed, on Pete's iPhone ("iPhone PM") when it is connected, else a
-booted simulator. Mobile web, when what's built is meant for phones, is a simulator's
-Safari, never the phone. Never control the Mac's
-desktop. Shell tools cover API and CLI behavior. The verifier reports and suggests fixes; the driver fixes. For skill changes, exercise realistic workflow decisions instead
-of inventing a browser UI. Do not require Claude-specific tools.
+## Run it
+
+Use it the way Pete would: a browser for web UI, with a mobile layout at phone width
+(390px) there, and agent-device for iOS. A native app is the branch's own app the
+contract's `ios:` installed, on Pete's iPhone ("iPhone PM") when it is connected (pass
+`--device "iPhone PM"`; without it agent-device picks a simulator), else a booted
+simulator. Mobile web, when what's built is meant for phones, is a simulator's Safari,
+never the phone. Never control the Mac's desktop. Real clicks, taps and keys; a script
+reads state, never fires events. Shell tools cover API and CLI behavior. On the phone,
+scroll a feed with `agent-device gesture pan` from mid-screen, seed long text from the
+Mac rather than typing it, and read the app's prints with `xcrun devicectl device process
+launch --console`.
 
 An existing authorized session or the repo's test-auth path is usable. Never bypass
 auth or manufacture credentials. Unreachable real behavior is `unverifiable`.
 Mockups and storyboards never substitute for runtime evidence.
 
+## Fix and rerun
+
+A failing step: look first (console, network, device log, a trace), fix the cause, run
+the affected regression and production build checks, then rerun the failed steps and
+every step the fix could touch. The same step failing twice gets a loop that goes red on
+it before the next fix. Cap at three fix rounds. A remaining failure or an unreachable
+core step blocks a success claim and landing.
+
 ## Return evidence
 
-The verifier reports:
-
 - Verdict: `works`, `broken`, or `unverifiable`.
-- Expected behavior and what it actually observed.
-- Ordered evidence, including screenshots for meaningful UI states or command output
-  for CLI/API flows. Show the trigger and result, not arbitrary screenshots.
-- Actionable failures and any parts it could not verify.
-- For each failure, its likely cause and the fix it would make, with the file:line when
-  it can read it. The driver checks each suggestion against the code before taking it.
-
-Send the result to the driver and finish with the same verdict. No special `-o` file
-convention is required. Source edits by a verifier invalidate the round; report and
-preserve them for the driver to inspect. Never discard unrelated work.
-
-## Fix and recheck
-
-The driver fixes failures, runs affected regression and production build checks,
-and requests a fresh verifier when behavior changes. Cap at three rounds. A remaining
-failure or unverifiable core flow blocks a success claim and landing.
+- Ordered evidence: screenshots for meaningful UI states, command output for CLI/API
+  flows. Show the trigger and result, not arbitrary screenshots.
+- Expected and observed for every step that didn't pass, and any part it could not reach.
 
 Keep useful regression coverage for core journeys using the repo's existing test
 setup. Don't add a framework or a permanent test for every manual verification step.
