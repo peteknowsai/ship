@@ -771,27 +771,34 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
   never offer to, unless the contract's `release:` names it: then Pete's release word runs
   it. Where main is production, landing is the release and ship watches it through.
 - Run RETRO, then end with a `result:` line: what shipped, one sentence, with the live
-  links (or the lane's) — plus `· ship-retro #N filed` and/or `· K backlog candidates`
+  links (or the lane's) — plus `· retro sent` and/or `· K backlog candidates`
   when applicable. Only a landing earns `result:`; a ship parked at TEST ends its turns
   with `needs input:`.
 
-### 6 · RETRO — autonomous; only if the run taught something  → no marker
+### 6 · RETRO — how this run used ship, sent to the maintainer  → no marker
 
-The *running* agent never edits the skill — you're shipping a feature, not doing skill
-surgery, and one run is too narrow for a general fix. If this run surfaced a real gap
-(Pete corrected the pipeline, a stage misfired), file it for the maintainer:
+The *running* agent never edits the skill: you're shipping a feature, and the fix belongs
+to the maintainer, the session named `ship` in this plugin's repo, which fixes it now
+(Pete, 2026-10-05; no GitHub issues). Look back at this run, from the transcript, not
+memory, at how you used ship, through mattpocock's `retro` lens turned on ship itself:
+- **steering**: a ship rule that was unclear, contradicted another, didn't change what
+  you did, or that you broke and why; and every time Pete had to correct the pipeline or
+  step in where ship should have carried on;
+- **automated checks**: a mistake one of ship's scripts (`stage.sh`, `codex-handoff.py`,
+  `route.py`, the pre-flight) could have caught, or a check that misfired;
+- **information access**: something ship never handed you or the Codex tester (a URL, a
+  log, a credential path, a device state) that cost a round;
+- **navigation**: a rule you had to hunt for, or found too late;
+- **tool economy**: a step ship made expensive (a slow wait, a rerun, a long poll) that a
+  script or a narrower command would replace.
 
-```
-gh issue create -R peteknowsai/ship --label ship-retro --title "retro: <one-line gap>" \
-  --body "<what happened · the gap · a suggested fix · the repo/feature it came from>"
-```
-
-Then tell the maintainer, so it gets fixed now instead of waiting for a batch (Pete,
-2026-10-05): `ListAgents`, and if a peer session named `ship` is listed (the maintainer,
-in this plugin's repo; never this session itself), `SendMessage` it one line,
-`ship-retro #N: <the gap> (from <repo>/<slug>)`. Fire and forget: never wait on a reply,
-and no `ship` session means the issue waits in the inbox as before. The repo-side
-findings below are the repo's, not the maintainer's: they stay backlog candidates.
+Then `ListAgents` and `SendMessage` the peer named `ship` (never this session itself):
+`ship retro from <repo>/<slug>:` and each finding as one line with what happened, the
+gap, and the fix you'd make, the evidence (a file:line, a turn, the Codex thread link)
+named so the maintainer can check it. A clean run sends `ship retro from <repo>/<slug>:
+clean`. Fire and forget: never wait on a reply. No `ship` session live: write the same
+text to `~/.claude/ship-retro/<date>-<repo>-<slug>.md`, which the maintainer reads when
+it starts. Never invent a lesson; a finding needs its evidence.
 
 **The repo gets a retro too.** Look back at the run for what the repo's own environment
 should have caught (the lens of mattpocock's `retro`):
@@ -809,8 +816,7 @@ to add and where: the run has landed, so a guardrail or pointer is its own small
 never a commit slipped onto main. A gap the repo already knows about (the same finding in
 an earlier run's list) is not news; say nothing.
 
-**Most runs teach nothing — skip silently.** Never invent a lesson. Don't gate
-`result:` on this.
+Don't gate `result:` on any of this.
 
 ## The storyboard contract (GATE 1 artifact)
 
