@@ -715,7 +715,9 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
     **stop the review dev server**, remove the branch app `ios:` installed, by the udid and
     bundle on its IOS line (`xcrun devicectl device uninstall app --device <udid>
     <bundle>`, or `xcrun simctl uninstall <udid> <bundle>`; only that bundle, never the
-    real app; a phone that isn't connected gets one line saying so), deprovision the per-branch
+    real app; a phone that isn't connected gets one line saying so), unless the line says
+    `keep=yes`: a test app every branch installs over keeps the permissions Pete granted it,
+    and removing it brings the prompts back, deprovision the per-branch
     backend stage 0 spun up, if any (or skip if previews auto-expire). Verify with
     `git worktree list` — zero ship-created worktrees must remain; a leftover means
     teardown failed (usually a merge run inside the worktree) — recover before

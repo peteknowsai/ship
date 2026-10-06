@@ -64,7 +64,7 @@ pointed at the branch's server, installs it, and prints the IOS line the brief c
 Without `ios:`, the brief says `IOS: none`. The tester never builds or installs: a
 missing app or one talking to another server comes back `unverifiable`, and the driver
 runs `ios:` and retests. Landing removes that branch app from the device again (the
-pipeline skill's Land). One tester on the phone at a time: a second ship that finds
+pipeline skill's Land), unless its IOS line says `keep=yes`. One tester on the phone at a time: a second ship that finds
 it busy tests on a simulator. The headless tester never controls the Mac's desktop; in a
 hand-off Pete is watching, and Codex may use the app's computer use when the plan says so.
 
