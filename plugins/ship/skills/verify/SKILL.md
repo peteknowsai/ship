@@ -84,6 +84,11 @@ what he says mid-run changes the run.
   390px layout and dark mode; `handle_dialog` answers a native prompt. Check the console and
   failed requests as you go. A print flow: headless `window.print()` stalls the browser, so
   judge the printout with print-media emulation first and click Print last.
+  No chrome-devtools tools in the session (ToolSearch finds none: its `npx` start failed
+  at launch): drive headless Chrome through Playwright (`~/node_modules/playwright`,
+  `channel: "chrome"`) with real locator clicks and keys, never events fired from
+  `evaluate`, read the console through `page.on("console")`, and say in the result which
+  browser ran.
 - **iOS: the agent-device CLI** from the shell (`agent-device help manual-qa` and
   `help debugging` are its guides). `agent-device open <bundle> --device "iPhone PM"
   --foreground` (without `--device` it picks a simulator), then press, fill and scroll with

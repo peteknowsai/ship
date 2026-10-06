@@ -287,8 +287,10 @@ name git, and read-only commands it misparses (a path segment named `source`, a 
 `echo ==`, a `for` loop over `sed`, a heredoc that only writes files). Read and search
 with the Read and Grep tools when the session has them, which it never checks; else use
 `git -C <path>`, one plain command per call, and put anything multi-step in a script
-file under the job's tmp directory. Two runs lost 40 commands to split-and-retry, and
-cells-app/secrets-report lost eight more (2026-10-05). Written for Claude Code; a Codex driver runs `codex/ship.md` instead (see
+file under the job's tmp directory. A command on the main checkout (`cd <main> && git`,
+`git -C <main>`) is refused while the session is in the worktree: run it from a script, or
+after `ExitWorktree` at LAND. Two runs lost 40 commands to split-and-retry, and two more
+lost about ten each (2026-10-05). Written for Claude Code; a Codex driver runs `codex/ship.md` instead (see
 `reference/rare-cases.md`, Running under Codex Desktop).
 
 ### 0 · Worktree (invisible)  → marker: `discover`
@@ -663,7 +665,10 @@ he asks.
   fix first), and look at what landing will change in the backend: a change that
   **removes or renames** a backend function or table lands in two passes, first the app
   stops using it and then it goes, because landing ships the backend before the app and
-  a failed app build would leave the old app calling what is gone.
+  a failed app build would leave the old app calling what is gone. The same goes for any
+  persisted schema an older process still writes, a local database file included: a
+  column change that an old process's positional insert breaks is a one-way door, so it
+  lands additive first or says so in Merge Danger.
 - **TEST — ship runs its QA script, and a pass lands it.** With green gates and the
   review triaged, push, `stage.sh <root> test`, and invoke `ship:verify` (the full name:
   bare `verify` resolves to another skill and is refused). It writes the QA script, runs

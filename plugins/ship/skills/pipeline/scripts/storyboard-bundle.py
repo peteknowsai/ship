@@ -9,8 +9,11 @@ An artifact serves its page plus the files published beside it, at paths with no
 while a repo's storyboard reaches its stylesheets wherever they live (cells-app:
 `../../web/public/grok-shipped.css`). So every href/src that names a real local file, and
 every url() inside a copied stylesheet, is copied into a/ under a unique name and
-rewritten to it. Anything else (a CDN, a data: URI, a string a script builds) is left
-alone. The page loses its doctype, html, head and body tags, because the publish wraps
+rewritten to it. A path a script names or builds (`'assets/mark.svg'`,
+`assets/tiles/${name}.webp`) can't be relinked, so the file it names, or every file in
+the folder its fixed part ends in, is published at that same path beside the page; that
+only reaches files under the storyboard's own folder. Anything else (a CDN, a data: URI) is
+left alone. The page loses its doctype, html, head and body tags, because the publish wraps
 it in its own. The repo's storyboard is never touched: it stays the design of record.
 Pass the JSON's `page` as Artifact's file_path and its `files` as `files`.
 """
@@ -23,6 +26,7 @@ import tempfile
 
 ATTR = re.compile(r'''(\b(?:href|src)=)(["'])([^"'#?]+)([#?][^"']*)?\2''')
 CSS_URL = re.compile(r'''url\(\s*(["']?)([^"')#?]+)([#?][^"')]*)?\1\s*\)''')
+LITERAL = re.compile(r'''["'`]((?:\./)?[\w-][\w.-]*(?:/[\w.${}-]+)+)''')
 SKELETON = re.compile(r'<!doctype[^>]*>|</?html[^>]*>|</?head>|</?body[^>]*>', re.I)
 
 
@@ -67,7 +71,29 @@ def bundle(page, out):
     def attr(m):
         hit = local(m.group(3), base)
         return f'{m.group(1)}{m.group(2)}a/{place(hit)}{m.group(4) or ""}{m.group(2)}' if hit else m.group(0)
-    html = SKELETON.sub('', ATTR.sub(attr, html)).strip() + '\n'
+    html = ATTR.sub(attr, html)
+
+    def keep(path):
+        rel = os.path.relpath(path, base)
+        dest = os.path.join(out, rel)
+        os.makedirs(os.path.dirname(dest), exist_ok=True)
+        shutil.copyfile(path, dest)
+        files[rel] = dest
+    # After the relink, so an attribute's path (now a/...) isn't published twice.
+    for m in LITERAL.finditer(html):
+        ref = m.group(1)
+        built = '${' in ref
+        # ponytail: one folder deep, not recursive; a script that builds nested paths needs more.
+        target = os.path.normpath(os.path.join(base, os.path.dirname(ref.split('${')[0]) if built else ref))
+        if not target.startswith(base + os.sep):
+            continue
+        if not built and os.path.isfile(target):
+            keep(target)
+        elif built and os.path.isdir(target):
+            for f in sorted(os.listdir(target)):
+                if os.path.isfile(os.path.join(target, f)):
+                    keep(os.path.join(target, f))
+    html = SKELETON.sub('', html).strip() + '\n'
     index = os.path.join(out, 'index.html')
     open(index, 'w', encoding='utf-8').write(html)
     return {'page': index, 'files': files}
@@ -89,12 +115,18 @@ def selftest():
         open(f'{tmp}/repo/web/public/fonts/Sans.woff2', 'wb').write(b'w')
         open(f'{tmp}/repo/specs/designs/assets/logo.svg', 'w').write('<svg/>')
         open(f'{tmp}/repo/specs/designs/logo.svg', 'w').write('<svg id="other"/>')
+        os.makedirs(f'{tmp}/repo/specs/designs/assets/tiles')
+        for r_ in ('one', 'two'):
+            open(f'{tmp}/repo/specs/designs/assets/tiles/{r_}.webp', 'wb').write(b'w')
+        open(f'{tmp}/repo/specs/designs/assets/mark.svg', 'w').write('<svg/>')
         open(f'{tmp}/repo/specs/designs/sb.html', 'w').write(
             '<!doctype html>\n<html lang="en"><head><title>Walkie</title>'
             '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=X"></head>\n<body>'
             '<template data-frame="a"><link rel="stylesheet" href="../../web/public/grok.css">'
             '<img src="assets/logo.svg#mark"><img src="logo.svg"><a href="#b">b</a></template>'
-            '<script>f.srcdoc=\'<base href="\' + location.href + \'">\'</script></body></html>')
+            '<script>f.srcdoc=\'<base href="\' + location.href + \'">\';'
+            'img.src=`assets/tiles/${name}.webp`; logo="assets/mark.svg"; up="../../web/public/grok.css"</script>'
+            '</body></html>')
         r = bundle(f'{tmp}/repo/specs/designs/sb.html', f'{tmp}/out')
         page = open(r['page']).read()
         check('a ../ stylesheet is copied beside the page and relinked',
@@ -107,6 +139,11 @@ def selftest():
               'data:image/png' in open(r['files']['a/grok.css']).read())
         check('the skeleton is stripped and the title kept',
               '<!doctype' not in page.lower() and '<body' not in page and page.startswith('<title>Walkie</title>'))
+        check('a path a script builds publishes its folder at the same path',
+              {'assets/tiles/one.webp', 'assets/tiles/two.webp'} <= set(r['files']) and
+              '`assets/tiles/${name}.webp`' in page)
+        check('a path a script names is published at that path', 'assets/mark.svg' in r['files'])
+        check('a script path outside the storyboard folder is not', not any('grok.css' in k and k != 'a/grok.css' for k in r['files']))
         check('every published path is relative, with no ../', all(not k.startswith(('/', '..')) for k in r['files']))
     print(f'storyboard-bundle self-test: {bad} failed')
     return 1 if bad else 0
