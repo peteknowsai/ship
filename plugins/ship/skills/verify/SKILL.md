@@ -54,10 +54,12 @@ user for his hands-on look, or wait for the verdict. The chrome-devtools browser
 headless with a fresh profile per session, so it never fights Pete for a tab — but two
 concurrent walks on one seeded account still collide on the backend.
 
-**iOS is the native app only, on Pete's own iPhone ("iPhone PM") or an Xcode simulator,
-through agent-device.** Never the mobile web in the phone's Safari: the browser covers web
-pages, and a mobile layout is checked at phone width (390px) in the browser. A web app's
-brief says `IOS: none` and its test never touches a device or simulator (Pete, 2026-10-05). The phone is the real thing, so it is the default whenever
+**iOS, through agent-device: a native app on Pete's own iPhone ("iPhone PM") or an Xcode
+simulator, and mobile web only ever in a simulator.** A web app is tested in the browser,
+its mobile layout at phone width (390px) there. When the build is meant for phones (the
+spec or storyboard says mobile web), the brief may add the simulator's Safari at the
+branch URL: a judgment call on what's being built, never a default, and never iPhone PM,
+whose Safari is never used (Pete, 2026-10-05). For a native app the phone is the real thing, so it is the default whenever
 `agent-device devices` lists it; otherwise a booted simulator. In a repo whose contract
 has `ios:`, the driver runs it before the tester starts whenever the app can see the
 change (its native code, or the server and APIs it calls): it builds the branch's own app,
@@ -161,10 +163,12 @@ HOW TO EXERCISE IT:
 STORYBOARD (a GATED ship's locked design, else 'none'):
   <storyboard path#frame-ids>, and ~/.claude/skills/impeccable/reference/craft-floor.md.
   The built screens should match their frames; a visible gap is a finding.
-IOS (when the repo's native app can see the change, else 'none'; a web app is always 'none'):
-  The IOS line the contract's `ios:` printed: the device ("iPhone PM" or the booted
-  simulator) and the branch app's bundle id. Only that native app, never Safari. Start
-  with agent-device `open <bundle> --foreground`; close the session when done.
+IOS (a native app the change reaches, or mobile web the build is meant for, else 'none'):
+  Native: the IOS line the contract's `ios:` printed, the device ("iPhone PM" or the
+  booted simulator) and the branch app's bundle id; only that app, never Safari. Mobile
+  web: the booted simulator's name and "Safari at <URL>", never iPhone PM. Start with
+  agent-device `open <bundle or com.apple.mobilesafari> --foreground`; close the session
+  when done.
 AUTH (if behind login):
   <the repo's test-auth path: a seeded account, or `form` with its test credentials and
   everything a fresh account needs to get in, an invite code or a PIN, or 'none'>. Use ONLY that path. Do NOT mint sessions, set auth cookies, or hit a dev-login

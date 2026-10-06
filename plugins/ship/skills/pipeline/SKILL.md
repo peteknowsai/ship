@@ -230,10 +230,11 @@ Every key is optional, and the default is what a repo with no contract gets:
   Without it, landing is the release wherever main deploys.
 - **`ios:`** for a native iOS app, the command that builds the branch's own app, pointed
   at the branch's server, installs it on a device by name ("iPhone PM" or a simulator),
-  and prints its IOS line (device, udid, bundle id). Default: none, and then nothing is
-  tested on a phone. A web app is tested in the browser only, however many people will
-  open it on a phone: its mobile layout is checked at phone width (390px) in the browser,
-  never on a device or simulator (Pete, 2026-10-05).
+  and prints its IOS line (device, udid, bundle id). Default: none. A web app is tested in
+  the browser, its mobile layout at phone width (390px) there; when what's being built is
+  meant for phones (the spec or storyboard says mobile web), the brief may add Safari in a
+  booted simulator. That is a judgment call on the build, and never iPhone PM, which is
+  for native apps (Pete, 2026-10-05).
 - **`land:`** how a branch reaches main. `pr` (the default) squash-merges
   the tracker PR. `direct` pushes `HEAD:main` after a rebase and opens no PR. `auto`, for a repo whose main
   deploys nothing, lands on the tester's `works` and never waits for Pete, money paths
@@ -655,7 +656,8 @@ himself, or the tester could not prove it.
   ("iPhone PM") and the Xcode simulators, and no control of the Mac's desktop. The brief names a device whenever the native
   app can see the change, its own code or the server it calls, and the contract's `ios:`
   builds and installs the branch's app before the tester starts; the phone is the default and a simulator stands in when
-  it isn't connected or another ship has it.
+  it isn't connected or another ship has it. A mobile-web build may add a simulator's
+  Safari, never the phone (verify's iOS rule).
   The tester covers the surface Pete would open, signed in the way he would be, with real
   clicks, taps and keys, never events dispatched from a script (a right-click menu bug got
   past synthetic events twice). When its report says how it got past sign-in on the

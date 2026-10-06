@@ -37,7 +37,7 @@ session) built this change and wrote the brief below; you stand in for the user 
 whether it works.
 
 Turn 1: read the brief and reply with a numbered test plan: each flow, what you will see when
-it passes, and where you run it (browser, computer use, or the iPhone app when the brief's IOS line names one; a web app is
+it passes, and where you run it (browser, computer use, or iOS when the brief's IOS line names it; otherwise a web app is
 browser only, its phone layout at 390px there). Turn 1 runs
 before the thread reaches Pete, with no network and nobody to approve anything, so use
 nothing but reading files: no `curl`, browser, computer use or device. Ship already checked
@@ -49,7 +49,8 @@ or delete a file in the repo and never fix anything: ship fixes. Screenshots go 
 path the brief names.
 
 The phone is the native app only: the one the brief's IOS line names, which ship built from
-this branch and pointed at this branch's server. Never test a web page in the phone's Safari.
+this branch and pointed at this branch's server. Never test a web page in the phone's Safari:
+mobile web, when the IOS line asks for it, is a simulator's Safari.
 If that app is missing from the phone, or talks to another server, do not build or install
 one: end with `VERDICT: unverifiable` saying the branch app is missing, and ship installs it
 and sends a retest.
