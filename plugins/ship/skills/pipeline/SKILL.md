@@ -25,6 +25,10 @@ process and skips the sizing judgment below. Anything else — bare `/ship <idea
 the auto-trigger — sizes itself. Every verb rides the same rails: stage 0's worktree
 off main via `wt`, never a primary checkout.
 
+**Pasted agent output as the argument** (another agent's report or completion message,
+not an idea): read it as "land what it made, and build the fixes it recommends", say so in
+one line up front, and size that.
+
 **The fork is the verb's FIRST act — before any question, recon agent, or authoring
 step.** The moment a verb lands, resolve the target repo and run stage 0 there. The
 marker flip is how Pete *sees* ship engage.
@@ -92,7 +96,9 @@ The split is an experiment (Pete, 2026-10-05), and the ledger decides what stays
 `route.py` holds it in `LADDER`. Codex builds nothing: its sandbox made the driver
 rerun the tests on most of its tasks. It tests only when Pete asks (TEST).
 
-A task headed `(driver)` or `(inline)` is never ranked; the driver writes it. When the
+A task headed `(driver)` or `(inline)` is never ranked; the driver writes it. An all-inline
+plan still runs `route.py plan`, which ranks nothing and sets the marker, and each task
+still logs with `engine=driver`, which counts it done. When the
 JSON's `fallback` is set, Jev was unreachable and every task went to Fable: say so in
 the `result:` line and carry on, because the router never blocks a build. The driver may
 override one pick for a concrete reason, such as a file an Opus lane already holds, and
@@ -277,9 +283,12 @@ Five runs had him asking "where are we?" mid-flight.
 
 **Shell inside a worktree session.** The harness refuses a command it can't tell stays
 in the worktree: `$(git …)` substitutions, `cd <dir> && git …`, loops or heredocs that
-name git. Use `git -C <path>`, one git command per call, and put anything multi-step
-in a script file under the job's tmp directory. Two runs lost 40 commands to
-split-and-retry. Written for Claude Code; a Codex driver runs `codex/ship.md` instead (see
+name git, and read-only commands it misparses (a path segment named `source`, a zsh
+`echo ==`, a `for` loop over `sed`, a heredoc that only writes files). Read and search
+with the Read and Grep tools when the session has them, which it never checks; else use
+`git -C <path>`, one plain command per call, and put anything multi-step in a script
+file under the job's tmp directory. Two runs lost 40 commands to split-and-retry, and
+cells-app/secrets-report lost eight more (2026-10-05). Written for Claude Code; a Codex driver runs `codex/ship.md` instead (see
 `reference/rare-cases.md`, Running under Codex Desktop).
 
 ### 0 · Worktree (invisible)  → marker: `discover`
@@ -619,7 +628,10 @@ he asks.
   task at a time; the reviewer reads it whole (`git diff <lane-target>...HEAD`) in a
   clean context, with the spec, and hunts the seams between tasks as hard as the tasks
   themselves — a writer and its reader drifting apart, a helper two tasks each
-  invented, a test that only passes on hand-built rows. It touches nothing and returns
+  invented, a test that only passes on hand-built rows. Its brief says: before calling a
+  field unwritten or a function uncalled, grep the whole repo, packages, extensions and
+  scripts included, not only the directories the diff touched (a HIGH that would have
+  parked secrets-report missed the writer in a browser extension). It touches nothing and returns
   findings as file:line, the failure scenario, and a severity. The driver triages every finding
   — adversarial reviewers over-flag by design — fixes what's real, puts judgment calls
   on the card or in the `result:` line. The high-value fan-out is here: several verifiers on one diff beats one.
