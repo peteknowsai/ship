@@ -238,7 +238,7 @@ if [ -n "$ship_stage" ]; then
     gate:2*) printf "$(gate_c)✋ %s — go?$(rst)" "$ship_slug"; is_gate=1; phase="$(stage_bar plan)" ;;
     gate:codex*) printf "$(gate_c)✋ %s — test it with Codex$(rst)" "$ship_slug"; is_gate=1; phase="$(stage_bar test)" ;;
     gate:test*) printf "$(gate_c)✋ %s — try it, then merge main?$(rst)" "$ship_slug"; is_gate=1; phase="$(stage_bar test)" ;;
-    test*)   printf "$(ship_c)🧪 %s — codex testing$(rst)" "$ship_slug"; phase="$(stage_bar test)" ;;
+    test*)   printf "$(ship_c)🧪 %s — testing$(rst)" "$ship_slug"; phase="$(stage_bar test)" ;;
     discover*) printf "$(ship_c)🚢 %s$(rst)" "$ship_slug"; phase="$(stage_bar design)" ;;
     plan*)     printf "$(ship_c)🚢 %s$(rst)" "$ship_slug"; phase="$(stage_bar plan)" ;;
     build*)    printf "$(ship_c)🚢 %s$(rst)" "$ship_slug"; phase="$(stage_bar build)" ;;
