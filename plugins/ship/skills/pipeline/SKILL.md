@@ -380,10 +380,13 @@ into commits otherwise (incidents: Worktrees). Never build on main.
     the spec, and Pete's settled calls (decision memory) and the repo's `CLAUDE.md`
     outrank any agent's opinion. When a consult changes a decision, name it in the
     spec's TL;DR so the reason survives the run.
-- For any visual/UI feature, invoke `impeccable` and follow its Setup (context.mjs —
-  the repo's PRODUCT.md/DESIGN.md are the visual authority): a new surface or
-  replacement look routes through its `shape`/new-work path; a refinement stays on the
-  incumbent world. Use `/image-gen` freely for imagery inside a frame.
+- For any visual/UI feature, invoke `impeccable` and follow its Setup (`<skill
+  dir>/scripts/impeccable context`; the repo's PRODUCT.md/DESIGN.md are the visual
+  authority): a new surface or replacement look routes through its `shape`/new-work
+  path; a refinement stays on the incumbent world. Before new-work, merge `"buildPath":
+  "code"` into the repo's gitignored `.impeccable/config.local.json`: ship builds in code,
+  and the storyboard is the one approval Pete sees, never impeccable's decision page or
+  image comps (impeccable 4.5, 2026-10-05). Use `/image-gen` freely for imagery inside a frame.
   **Ground the design in the live product**: a subagent walks the running app /
   deployed URL over the chrome-devtools MCP and reports the real theme/CSS with screenshots;
   design from those, never from in-repo mockups (incidents: Design).
