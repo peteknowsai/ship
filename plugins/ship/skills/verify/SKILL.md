@@ -18,8 +18,8 @@ You are the **orchestrator + fixer**. Verification splits by who's best at it:
 - **The subjective question — "does the feature do what was intended?"** → a fresh
   **read-only Codex tester** (Astra on high) uses the running app the way Pete would, in a
   browser and on iOS, and judges it. It didn't write the code and comes from another model
-  family (independence), and app-driving is verbose (context-isolation). It reports; it
-  never fixes. A change Pete can try is handed to him in the Codex app (§2, the hand-off);
+  family (independence), and app-driving is verbose (context-isolation). It reports and suggests the
+  fix; it never makes one. A change Pete can try is handed to him in the Codex app (§2, the hand-off);
   anything else runs headless through `astra.sh test`, and its `works` lands the branch
   without Pete.
 - **Objective codified checks** (tsc / lint / unit / existing e2e) → **you** run them as a
@@ -205,6 +205,8 @@ EVIDENCE: ordered list of "<screenshot path> — <plain-language caption>"   (th
 EXPECTED: <criteria>
 OBSERVED: <what actually happened>
 TASTE: <0-3 short "looked off / couldn't confirm" notes, or "none">
+FIX: for each failure or taste note, its likely cause and the fix you'd make, with the
+     file:line when you can read it (read files; never edit them), or "none"
 
 This report is your FINAL MESSAGE — it is what the caller reads;
 finishing without it is an incomplete run.
@@ -214,7 +216,8 @@ finishing without it is an incomplete run.
 walks everything short of the wall, and the verdict is `unverifiable` naming the
 wall. Park with a `needs input:` so Pete walks that part himself.
 
-- **broken** → fix the implementation, then spawn a **fresh** verifier (never reuse the one
+- **broken** → fix the implementation. The tester's `FIX` lines are leads, not orders:
+  check each against the code and fix the root cause, which may sit elsewhere. Then spawn a **fresh** verifier (never reuse the one
   that saw the bug — it's no longer independent of the fix). Cap at ~3 rounds.
 - **still broken after the cap**, or **unverifiable** for a reason ship can't fix (a hand-off
   fixes and retests the ones it can, above) → stop and hand the verdict + evidence up to
@@ -244,7 +247,7 @@ not a spec per micro-feature. **Running** the committed spec in the gate is the 
 ## 5. Hand back proof
 
 Return to the caller: `VERDICT`, `EVIDENCE` (the ordered screenshot + caption storyboard),
-`TASTE` notes, and the crystallized spec path (or none). In ship, a headless pass lays
+`TASTE` notes, `FIX` suggestions, and the crystallized spec path (or none). In ship, a headless pass lays
 these straight into the review card: the storyboard becomes "Proof it works," the taste
 notes become "Verifier flagged." Pete reviews proof, not faith. A hand-off needs no card:
 he watched it, and the thread link is the record.
