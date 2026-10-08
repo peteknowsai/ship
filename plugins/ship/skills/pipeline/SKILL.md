@@ -173,7 +173,7 @@ harness wakes you when it lands.
 
 1. **The meta rule.** Every artifact Pete sees is a condensed HTML page — he reads the
    *meta*, never the full spec or plan. The spec and cards are HTML he opens in the
-   browser, and the storyboard is also a Claude artifact he can share; the execution plan is machine-facing markdown he never reads. HTML artifacts
+   browser; the execution plan is machine-facing markdown he never reads. HTML artifacts
    follow the html-effectiveness patterns (https://thariqs.github.io/html-effectiveness/):
    plain-English TL;DR first, structure as diagrams/side-by-sides instead of prose,
    depth behind collapsibles, anything visual a *live* embed. Pattern picks are named
@@ -421,25 +421,12 @@ into commits otherwise (incidents: Worktrees). Never build on main.
      the nav, which tone?"). Recon, consults and the reuse audit go in one collapsed
      block at the foot, for the record; they never sit above a frame. No TL;DR essay,
      no section per research finding, no fait accompli. `stage.sh <root> gate:1`, commit,
-     **publish it as a Claude artifact** (below), fire the gate notification, `open` the
-     local file, and end the turn with `needs input:` ("storyboard round 1 —
-     reactions? <artifact link>"). **HARD STOP** — every round is one.
-     **Publishing** is how Pete shares a storyboard (Pete, 2026-10-05). Bundle it into the
-     worktree's ignored `.ship-artifact/<slug>/`, because the Artifact tool publishes only
-     from the session's working directories:
-     `scripts/storyboard-bundle.py <storyboard.html> <root>/.ship-artifact/<slug>` prints
-     the page and a `files` map; pass them to the Artifact tool, with `icon: "design"`
-     and a one-sentence `description` on the first publish. Load the `artifact-design`
-     skill once before it: the template already meets its page contract, so don't
-     restyle the frames. Every later round republishes the same page path, which keeps
-     the URL and the sharing Pete set on it; a new session republishes with `url`, read
-     from the tracker PR body, where the link goes the first time. The artifact is
-     private, and only Pete can share it, from its Share menu: say so beside the first
-     link.
+     fire the gate notification, `open` the storyboard, end the turn with `needs input:`
+     ("storyboard round 1 — reactions?"). **HARD STOP** — every round is one. It is a
+     local HTML file in his browser, never a Claude artifact (Pete, 2026-10-08).
   2. **Rounds.** Pete reacts; redraw the frames in place — minutes per round, not a
-     re-spec. A frame he killed is deleted, never greyed out. Re-bundle, republish to the
-     same URL, re-`open`, end the turn with `needs input:` again. A comment left on the
-     artifact is a reaction like any other: read it with `ArtifactComments`. Push back where taste warrants it: a designer with no
+     re-spec. A frame he killed is deleted, never greyed out. Re-`open`, end the turn
+     with `needs input:` again. Push back where taste warrants it: a designer with no
      opinions is a renderer. Loop until he locks it ("this is it", "lock it", "yes").
   3. **Lock = GATE 1.** Commit the storyboard as it stands: it is the design of
      record from here on. Every frame left in it ships; nothing not in it does. Log
@@ -826,18 +813,13 @@ Render `reference/storyboard.html` — a page that is the app, not a page about 
 
 - **Frames** — one per screen or state, live HTML at ship size, in the product's own
   stylesheet: a repo that ships one links it by relative path from the docs home
-  (cells: the three grok sheets under `web/public/`), and the bundler carries it into
-  the artifact; anything else inlines the tokens it uses. Each frame is authored as a
-  `<template>` and mounted into its own iframe by the page's script, so the product's
-  sheet styles the frame and nothing else and `:root` tokens resolve. Directions in
-  play are sibling frames of the same screen.
-- **It works like the app.** Every frame's controls do what the real ones would: a menu
-  opens, a tab switches, a field takes text, with a `<script>` inside the template where
-  the frame needs state. Every primary action leads somewhere: the template's `data-go`
-  maps a selector to the frame its click opens (markup of the repo's own may carry
-  `data-go="<frame-id>"` instead), so "Try it" at the top plays the whole flow from the
-  first frame. A storyboard Pete can't click through is a set of pictures, and he has
-  said he wants the little web app.
+  (cells: the three grok sheets under `web/public/`); anything else inlines the tokens
+  it uses. Each frame is authored as a `<template>` and mounted into its own iframe by
+  the page's script, so the product's sheet styles the frame and nothing else, `:root`
+  tokens resolve, and a hover, an open menu or a tab works where the feature has one,
+  so Pete can poke it. Directions in play are sibling frames of the same screen. Frames
+  are screens, not a wired-up app: no click-through demo between them (Pete,
+  2026-10-08).
 - **Where the product's sheet doesn't decide, the model's own defaults are out**: a
   cream or off-white page, an italic accent word in a headline, pill-shaped buttons.
   The craft floor already bans numbered section labels and monospace as costume.
