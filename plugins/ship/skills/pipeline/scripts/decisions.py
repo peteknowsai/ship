@@ -147,8 +147,8 @@ def relevant(path, idea, n):
     try:
         ranked = sorted(zip(scores(idea, decisions), decisions), key=lambda p: -p[0])
     except Exception as error:  # recall must never block a run
-        print(f'decisions: Jev unavailable ({type(error).__name__}: {error}); showing the newest instead',
-              file=sys.stderr)
+        why = 'TypeSafe is out of credits' if '402' in str(error) else f'{type(error).__name__}: {error}'
+        print(f'decisions: Jev unavailable ({why}); showing the newest instead', file=sys.stderr)
         return recent(path, n)
     return show(e for _, e in ranked[:n])
 

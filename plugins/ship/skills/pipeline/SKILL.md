@@ -99,8 +99,10 @@ rerun the tests on most of its tasks. It tests only when Pete asks (TEST).
 A task headed `(driver)` or `(inline)` is never ranked; the driver writes it. An all-inline
 plan still runs `route.py plan`, which ranks nothing and sets the marker, and each task
 still logs with `engine=driver`, which counts it done. When the
-JSON's `fallback` is set, Jev was unreachable and every task went to Fable: say so in
-the `result:` line and carry on, because the router never blocks a build. The driver may
+JSON's `fallback` is set (stderr says `ROUTER DOWN`), Jev was unreachable and every task
+went to Fable: say so in the `result:` line and carry on, because the router never blocks a
+build. A 402 means TypeSafe is out of credits: tell Pete in one line at once,, since every
+ship routes blind until he tops up. The driver may
 override one pick for a concrete reason, such as a file an Opus lane already holds, and
 logs the override in the ledger's `note`.
 
@@ -139,7 +141,7 @@ on Sonnet.
 
 **The driver owns the envelope**, whoever drafts: it writes the brief (exact files,
 signatures, test cases, constraints; a vague brief burns the savings in fix rounds;
-call the Skill tool with `writing-for-agents` once per run before the first brief),
+call the Skill tool with `mattpocock-skills:writing-for-agents` once per run before the first brief),
 reviews the returned diff and runs the gates before anything is committed (never trust
 a "tests pass" claim from a worker), and owns git entirely. One writer per tree at a
 time: serialize, or give each lane its own sub-worktree.
@@ -277,7 +279,10 @@ it from inside the target repo.
 ## The pipeline — create a todo for each stage
 
 Each stage writes its marker with `scripts/stage.sh <worktree> <stage>` (the status
-line and the FleetView row read `.ship-stage`), and every stage flip posts Pete one
+line and the FleetView row read `.ship-stage`). Call this skill's scripts (`stage.sh`,
+`route.py`, `decisions.py`) by absolute path, the base directory the harness printed when
+this skill loaded plus `/scripts/`, typed out in full, never through a shell variable,
+which the worktree guard refuses; and every stage flip posts Pete one
 line: the goal, the stage, what's next. Post it again after a compaction or a side job.
 Five runs had him asking "where are we?" mid-flight.
 
@@ -488,8 +493,10 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   subagent (`model: "fable"`) reads the storyboard or spec, the execution plan and the
   repo's ship contract, edits nothing, and returns findings as task, problem, fix: a
   missing task, a wrong file, a test that cannot fail, an order that breaks, an
-  `(inline)` task that is not small, a seam two tasks each assume the other owns. The
-  driver triages and edits the plan. Nothing goes back to Pete unless it changes what
+  `(inline)` task that is not small, a seam two tasks each assume the other owns, and a
+  step that copies a secret from somewhere it can't be read back (a Vercel sensitive
+  variable pulls as a placeholder): that step becomes a planned rotation on both sides,
+  and the card says it signs everyone out once. The driver triages and edits the plan. Nothing goes back to Pete unless it changes what
   gets built. Then `route.py plan` (Engines). No task starts before the review lands,
   `(inline)` ones included, unless the plan names it a spike: two runs built early and
   rewrote what the review then flagged.
@@ -673,7 +680,7 @@ he asks.
   **Pete asks for Codex** ("test in codex"): verify's `reference/codex.md` hands it to his
   Codex app or the headless tester instead; write `gate:codex` while his Codex app has it.
   - **`works`: write the PR body, then land** (LAND), unless the lane waits for Pete
-    (below). No stop, no cue. Call the Skill tool with `pr` and rewrite the tracker PR's
+    (below). No stop, no cue. Call the Skill tool with `mattpocock-skills:pr` and rewrite the tracker PR's
     body in its shape: Summary (the smallest visual that shows the change), Evidence
     (before/after: the QA result and its shots, the test that went green), Merge Danger
     (door and blast radius). The door is ship's call on every ship: **two-way** (a revert

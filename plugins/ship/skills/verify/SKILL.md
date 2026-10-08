@@ -85,8 +85,12 @@ what he says mid-run changes the run.
   failed requests as you go. A print flow: headless `window.print()` stalls the browser, so
   judge the printout with print-media emulation first and click Print last.
   No chrome-devtools tools in the session (ToolSearch finds none: its `npx` start failed
-  at launch): drive headless Chrome through Playwright (`~/node_modules/playwright`,
-  `channel: "chrome"`) with real locator clicks and keys, never events fired from
+  at launch): drive headless Chrome through Playwright, imported by its absolute path
+  from a script under the job's tmp directory, since a bare `import "playwright"` there
+  finds nothing: `const { chromium } = await
+  import(process.env.HOME + "/node_modules/playwright/index.mjs"); await chromium.launch({
+  channel: "chrome", headless: true })` (the installed Chrome; the bundled browsers are
+  not downloaded, so never drop `channel`). Use real locator clicks and keys, never events fired from
   `evaluate`, read the console through `page.on("console")`, and say in the result which
   browser ran.
 - **iOS: the agent-device CLI** from the shell (`agent-device help manual-qa` and
@@ -115,7 +119,7 @@ are cheaper evidence where they show the result.
 **A step fails:** you have the app open, so look before you change code — the console, the
 network, the device log, a trace — and fix the cause, then re-run the gates (§3) and rerun
 the failed steps plus every step the fix could touch. The same step failing twice means the
-last fix was a guess: call the Skill tool with `diagnosing-bugs` and get a loop that goes red
+last fix was a guess: call the Skill tool with `mattpocock-skills:diagnosing-bugs` and get a loop that goes red
 on it (a test, a script, a trace) before the next fix. Three fix rounds without a pass:
 stop, and hand the caller what keeps failing with its evidence. A step you can't reach (a
 mic, a bot check, a missing device, an auth wall with no test-auth path) makes the result

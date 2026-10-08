@@ -205,7 +205,8 @@ def plan(path):
         score = '  -  ' if row['score'] is None else f"{row['score']:.2f}"
         print(f"{row['engine']:6} {score}  {row['title'][:80]}", file=sys.stderr)
     if fallback:
-        print(f'route: Jev unavailable, every task on {LADDER[0][0]} ({fallback})', file=sys.stderr)
+        why = 'TypeSafe is out of credits; tell Pete now' if '402' in fallback else fallback
+        print(f'ROUTER DOWN: Jev unavailable, every task on {LADDER[0][0]} ({why})', file=sys.stderr)
     result = {'model': model, 'fallback': fallback, 'tasks': out}
     where = os.path.dirname(os.path.abspath(path))
     saved = route_file(where)
