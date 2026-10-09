@@ -538,7 +538,14 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   `git add -A` commits it and the merge swaps the real install for a link to itself
   (incidents: Worktrees). Commit lanes with the links excluded, and after the last lane
   merges confirm the main worktree's install is still a directory before trusting a red
-  gate.
+  gate. A lane with borrowed installs never runs an install itself (it writes through
+  the link into the parent's install, and removing the lane can take it with it), and
+  its production build may refuse the link (Turbopack does): build with the bundler
+  that accepts it (`next build --webpack`) in the lane, or gate the build after the
+  merge, in the parent.
+- **Merging lanes back:** a generated file that conflicts (Convex's `_generated/`, a
+  codegen'd type) is regenerated after the merge, never hand-merged; an append-only file
+  (a stylesheet, a union of labels) keeps both sides.
 - **A task's check is the diff and the gates, nothing else.** Read the diff, run
   tsc/tests/lint, commit. Nobody drives the app or CLI per task: the pre-flight is once
   at the end of BUILD, and the QA run is TEST's. A reviewer hand-driving
@@ -551,7 +558,9 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   report goes in a file inside the worktree; the worker never commits and never
   runs `git reset/checkout/stash`. A
   repo whose rules load by path (`.claude/rules/`, a `scripts/rules-for.py`) gets those
-  rule files named in every brief, because a subagent only sees them if told.
+  rule files named in every brief, because a subagent only sees them if told. A Convex
+  repo's briefs say `convex codegen` prints "Uploading functions" while it analyzes and
+  deploys nothing, so no worker stops to worry about it.
 - **Never add scope to a running worker by message.** New findings wait for its report
   and go out as the next fix round, and the report is checked against every message
   it was sent. Two workers finished before reading items sent mid-run, and both cost a
@@ -573,7 +582,10 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   driver's, inline, while the dispatched lanes run. Review fans out regardless of
   build size: several verifiers on one diff beats one.
 - `ponytail` posture; `superpowers:verification-before-completion` before claiming any
-  task done — actually run it; `superpowers:systematic-debugging` on a red test.
+  task done — actually run it; `superpowers:systematic-debugging` on a red test. A test
+  that fails three or more times across full runs is a bug, not a flake: root-cause it
+  (shared temp files or ids between parallel suites are the usual cause), never retry it
+  green or raise its timeout. Three workers once called a real race flaky.
 - **UI-writing briefs carry the storyboard frame and the craft floor** — every
   dispatch that writes UI names the frame to match
   (`specs/designs/<storyboard>.html#<frame-id>`; the worker reads the frame's markup
