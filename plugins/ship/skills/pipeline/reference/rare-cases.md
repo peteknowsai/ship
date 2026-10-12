@@ -38,6 +38,23 @@ where they differ.
   then teardown from the main checkout as above. No PR is merged; a mirror remote is
   pushed only if the contract says so.
 
+## The PR's base is a branch another session owns
+
+When the base is an integration branch a live session is building on (`.ship-stage` in
+its worktree, or it said so), land into it the way a teammate would:
+- A schema change the base's dev watcher would reject (rows QA writes with new fields
+  fail its next schema push): cherry-pick the additive schema commit onto their branch
+  first, with their say, before QA writes any rows.
+- Message that session before the squash merge, and have it pull before its watcher
+  pushes again.
+- The review card lands on the base, not main (LAND: the landed base's copy).
+
+## Showing a storyboard on Pete's phone
+
+Only when he asks: serve the docs home's designs folder (and the stylesheet folder its
+frames link) on a LAN port, through a folder of symlinks to just those, never the repo
+root, which would serve `.env.local`. Stop the server at the lock.
+
 ## Release ritual (VERSION + CHANGELOG)
 
 A repo that publishes releases may also declare a release ritual: it keeps a

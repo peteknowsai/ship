@@ -85,7 +85,8 @@ what he says mid-run changes the run.
   failed requests as you go. On a long page, `take_snapshot` with a `filePath` and grep
   the file for the uid you need, rather than reading the whole tree back each time. A form
   that starts paid work (a model, a tier, a run): set its cost fields first and submit with
-  its button, never Enter in a field, which submits with whatever defaults are left. A print flow: headless `window.print()` stalls the browser, so
+  its button, never Enter in a field, which submits with whatever defaults are left. Where
+  Enter in a field does start paid work, that is a failure to report: a real user hits it too. A print flow: headless `window.print()` stalls the browser, so
   judge the printout with print-media emulation first and click Print last.
   No chrome-devtools tools in the session (ToolSearch finds none: its `npx` start failed
   at launch): drive headless Chrome through Playwright, imported by its absolute path

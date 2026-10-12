@@ -303,7 +303,10 @@ name git, and read-only commands it misparses (a path segment named `source`, a 
 `echo ==`, a `for` loop over `sed`, a heredoc that only writes files). Read and search
 with the Read and Grep tools when the session has them, which it never checks; else use
 `git -C <path>`, one plain command per call, and put anything multi-step in a script
-file under the job's tmp directory. A command on the main checkout (`cd <main> && git`,
+file under the job's tmp directory. Any file edit the Edit and Write tools can't make
+goes the same way: Write the script to the job's tmp, then `bash <path>` or `python3
+<path>`. Never an inline heredoc, `sed -i` chain or loop first, not even once: one run
+hit the guard eight times reaching for them. A command on the main checkout (`cd <main> && git`,
 `git -C <main>`) is refused while the session is in the worktree: run it from a script, or
 after `ExitWorktree` at LAND. Two runs lost 40 commands to split-and-retry, and two more
 lost about ten each (2026-10-05). Written for Claude Code; a Codex driver runs `codex/ship.md` instead (see
@@ -621,7 +624,9 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   page.** Run the gates and, for a framework with its own production build, that build;
   boot the app and load each surface the feature touches once in the chrome-devtools
   browser: it renders, its first step works, the console is clean. Not a walk-through:
-  that is TEST's QA run.
+  that is TEST's QA run. A feature that makes model calls also counts the canned or
+  fallback lines in the dev log after those loads: a nonzero count is a defect (a
+  timeout shorter than the model's real turn, a length cap every answer fails), never noise.
   A change with UI also runs impeccable's detector on the UI files it touched,
   `~/.claude/skills/impeccable/scripts/impeccable detect --no-advisory <files>` (exit
   0 clean, 2 findings on stderr, 1 a file it couldn't read): fix each finding, or waive a
@@ -734,7 +739,8 @@ he asks.
   shots it shows copied beside it, before LAND's step 0: LAND removes the worktree. A
   Codex hand-off Pete watched gets none; its record is the `result:` line, the PR body,
   and the thread link. `LANDING_STATUS` says "Tested · landing on main", or what it waits
-  on. `show.sh … review <file> done` main's copy with the `result:` (closing the ship's other tabs),
+  on. `show.sh … review <file> done` the landed base's copy with the `result:` (main's, or
+  for another base `git show origin/<base>:<path>` into the job's tmp, shots too) (closing the ship's other tabs),
   or `show.sh … review` the worktree's with the park. It is the
   record of what landed and the proof, not a gate.
 - **What still waits for Pete's "merge main" after a pass**: a money path, a one-way
