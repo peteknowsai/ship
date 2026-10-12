@@ -97,7 +97,7 @@ The split is an experiment (Pete, 2026-10-05), and the ledger decides what stays
 rerun the tests on most of its tasks. It tests only when Pete asks (TEST).
 
 A task headed `(driver)` or `(inline)` is never ranked; the driver writes it. An all-inline
-plan still runs `route.py plan`, which ranks nothing and sets the marker, and each task
+plan is still written down and still gets Fable's plan review (PLAN), and still runs `route.py plan`, which ranks nothing and sets the marker, and each task
 still logs with `engine=driver`, which counts it done. When the
 JSON's `fallback` is set (stderr says `ROUTER DOWN`), Jev was unreachable and every task
 went to Fable: say so in the `result:` line and carry on, because the router never blocks a
@@ -341,7 +341,11 @@ mid-BUILD whether a run forked at all). Absolute-path driving is the *cross-repo
 fallback only, where `EnterWorktree` can't take. Self-heal: notice mid-pipeline that
 the session cwd isn't the worktree → `EnterWorktree({path})` right then; it works fine
 after the fact. `--no-cd` is load-bearing. A `.config/wt.toml` auto-provisions
-gitignored runtime files. Run `scripts/stage.sh <root> discover`: it writes the marker
+gitignored runtime files. With none, provision the worktree yourself before the first
+gate: the repo's frozen-lockfile install, a real one and never a link (this tree runs the
+dev server and the production build, and Turbopack refuses a linked `node_modules`), and
+a copy of the main checkout's gitignored env files (`.env.local`). Without them the first
+test run dies on module-not-found, which reads as a real red. Run `scripts/stage.sh <root> discover`: it writes the marker
 and adds `.ship-*` to the repo's `info/exclude`, since `git add -A` sweeps the marker
 into commits otherwise (incidents: Worktrees). Never build on main.
 
@@ -386,6 +390,10 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   surface, it also classifies that surface's liveness — current design system?
   reachable from primary nav? touched by recent commits? — because a deprecated page
   serves happily (incidents: Design). The spec names the chosen surface explicitly.
+  It also lists the ships already in flight in this repo (`git worktree list` and each
+  tree's `.ship-stage`) whose surfaces overlap this one; ask those sessions what they are
+  changing (ListAgents, SendMessage) before round 1, because a parallel ship can redefine
+  what the storyboard is about to show.
 - **Bug-shaped requests get an empirical root-cause check** — reproduce the failure or
   read the runtime evidence; never spec a fix from a hypothesis (incidents: Design).
 - **Consult the installed domain experts before you spec.** Recon tells you what the
@@ -752,7 +760,10 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
      re-gate + push; run `stack:` once more; bring the `pr`-shaped body from TEST up to date with what actually
      shipped (the squash commit takes it); `gh pr ready <#>`; confirm `gh pr view <#> --json mergeable`
      says `MERGEABLE`.
-  1. Return to the main checkout (`ExitWorktree({action:"keep"})`).
+  1. Return to the main checkout (`ExitWorktree({action:"keep"})`). If it answers that no
+     EnterWorktree session is active, run 2–4 by absolute path against the main checkout
+     instead (`wt -C <main> remove …`, `gh pr merge <#> -R <owner/repo> …`, `git -C <main>
+     pull --ff-only`).
   2. `wt remove feature/<slug> -f` — frees the branch for `--delete-branch`.
   3. `gh pr merge <#> --squash --delete-branch` — from the main checkout.
   4. `git pull --ff-only` (+ `git branch -D feature/<slug>` if a local branch
@@ -791,6 +802,13 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
   artifact-check the lane; a red shared
   lane you didn't cause is a shared resource — check for an existing fix PR, claim
   with a draft PR first.
+- **A long-running local process that serves main's code (a launchd job, a queue
+  runner) picks up the change only when it restarts.** QA can't drive it before the merge,
+  so TEST proves that path at data level (verify: API, CLI, script). After the merge,
+  restart it once it is idle, never with a job in flight, which the restart would fail, and
+  say so in `result:` rather than "nothing deploys". The contract's `worker:` line names
+  the restart command and the idle check; a repo with such a process and no line gets one
+  in this PR.
 - **A separate promotion is NOT ship's job.** Where a repo promotes from an integration
   lane to production by its own script, that is Pete's human-gated ritual: never run it,
   never offer to, unless the contract's `release:` names it: then Pete's release word runs
