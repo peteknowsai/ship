@@ -82,7 +82,10 @@ what he says mid-run changes the run.
   press keys through its tools; `evaluate_script` reads state, never fires events, because a
   script-fired event passes where a real right-click or drag fails. `emulate` covers the
   390px layout and dark mode; `handle_dialog` answers a native prompt. Check the console and
-  failed requests as you go. A print flow: headless `window.print()` stalls the browser, so
+  failed requests as you go. On a long page, `take_snapshot` with a `filePath` and grep
+  the file for the uid you need, rather than reading the whole tree back each time. A form
+  that starts paid work (a model, a tier, a run): set its cost fields first and submit with
+  its button, never Enter in a field, which submits with whatever defaults are left. A print flow: headless `window.print()` stalls the browser, so
   judge the printout with print-media emulation first and click Print last.
   No chrome-devtools tools in the session (ToolSearch finds none: its `npx` start failed
   at launch): drive headless Chrome through Playwright, imported by its absolute path
@@ -110,7 +113,10 @@ what he says mid-run changes the run.
     in a debug build and never commit them.
   - The simulator is not the phone: three scroll fixes passed in it and failed on iPhone PM.
     A native change is proven on the phone when it is connected.
-- **API, CLI, script:** run the real commands; their output is the evidence.
+- **API, CLI, script:** run the real commands; their output is the evidence. A server-side
+  change no surface reaches before the merge (code a background worker runs): replay the
+  reported case at data level, the changed function against a read-only copy of the real
+  data, before and after, and show both numbers.
 
 Screenshots only at the beats that prove a step (start → action → result), as absolute
 paths under `<shots-root>/.ship-shots/<slug>/`; the agent-device diff and a page snapshot
