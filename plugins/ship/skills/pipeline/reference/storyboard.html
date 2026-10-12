@@ -3,97 +3,118 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Storyboard — {{SLUG}}</title>
+<title>🎨 {{SLUG}} · storyboard r{{ROUND}}</title>
 <!--
   /ship GATE 1 template. Write to specs/designs/YYYY-MM-DD-<slug>.html in the docs home
-  and `open` it. The page IS the mockups: frames of the app at ship size, one caption
-  each, the two or three questions a designer would bring, and everything else folded
-  under "for the record" at the foot. No TL;DR, no research sections, no plan.
+  and show it with `scripts/show.sh <root> <slug> storyboard <file>`. The page is an
+  artboard board, the way a design tool lays out a page: every screen and state is its own
+  artboard at its real size, side by side, scaled together. Not a prototype: no "try it"
+  app up top, no click-through between artboards, no essay sections.
 
-  Authoring a frame:
-    <template data-frame="frame-id" data-title="…" data-w="1180" data-h="760">
+  Laying it out:
+    - A .flow is one row, read left to right in story order (arrows are drawn for you):
+      empty → typing → loading → results → error → done. Draw every state the feature
+      passes through as its own artboard; more, smaller frames beat a few tall ones.
+    - A .flow.options row holds sibling directions for one open call, tagged A / B / C,
+      with no arrows.
+    - Artboards keep true device sizes in data-w / data-h (phone 390×844, desktop
+      1280×800) so a phone sits beside a desktop at the same scale.
+
+  Authoring an artboard:
+    <template data-frame="frame-id" data-w="390" data-h="844">
       <link rel="stylesheet" href="../../web/public/grok-shipped.css">   (the product's own sheet, relative to THIS file)
       …the screen's markup, in the product's own classes and tokens…
     </template>
-  The script below mounts each template into its own iframe (srcdoc), so the product's
-  stylesheet styles the frame and nothing else, :root tokens resolve, and hovers, menus
-  and tabs inside the frame work. A transplant frame is the lifted markup, verbatim.
-  Directions in play: several <template>s with the same data-screen, drawn side by side.
-  Round N: bump data-round on <body>, delete frames Pete killed (never grey them out).
+  The script mounts each template into its own iframe, so the product's sheet styles the
+  frame and nothing else, :root tokens resolve, and a hover, an open menu or a tab inside
+  one frame works. Clicking an artboard's name opens it alone at full size.
+  Round N: set data-round on <body> and the round in <title>, redraw in place, delete
+  frames Pete killed (never grey them out).
 -->
 <style>
-  :root{--cream:#f6f1e7;--card:#fffdf8;--ink:#23262d;--slate:#5a5e6b;--mut:#8a8d99;
-    --line:#e3dccb;--amber:#c8892b;--amber-soft:#f3ead6;}
+  :root{--canvas:#e8e8ea;--ink:#1d1d1f;--mut:#6e6e73;--line:#d2d2d7;--accent:#0a66d8;--gap:56px;--pad:40px}
   *{box-sizing:border-box}
-  body{margin:0;background:var(--cream);color:var(--ink);
-    font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-    -webkit-font-smoothing:antialiased;padding:32px 24px 80px}
-  .wrap{max-width:1240px;margin:0 auto}
-  .kicker{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--amber);font-weight:700}
-  h1{font-family:Georgia,serif;font-size:30px;line-height:1.1;margin:6px 0 2px;font-weight:600}
-  .sub{color:var(--slate);margin:0 0 20px}
-  .sub b{color:var(--ink)}
+  body{margin:0;background:var(--canvas);color:var(--ink);
+    font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+  .bar{position:sticky;top:0;left:0;z-index:2;display:flex;justify-content:space-between;align-items:center;
+    gap:16px;padding:10px var(--pad);background:#fff;border-bottom:1px solid var(--line)}
+  .bar b{font-size:15px}
+  .bar .mut{color:var(--mut);margin-left:8px}
+  .zoom{display:flex;align-items:center;gap:4px;color:var(--mut);font-variant-numeric:tabular-nums}
+  .zoom button{font:inherit;border:1px solid var(--line);background:#fff;border-radius:6px;padding:2px 10px;cursor:pointer}
+  .zoom span{min-width:44px;text-align:center}
 
-  /* one screen; sibling directions sit in a row */
-  .screen{margin:26px 0 8px}
-  .screen h2{font-family:Georgia,serif;font-size:18px;margin:0 0 8px;font-weight:600}
-  .row{display:flex;gap:18px;align-items:flex-start;overflow-x:auto;padding-bottom:6px}
-  figure.frame{margin:0;flex:1 1 0;min-width:0}
-  figure.frame .stage{position:relative;background:#111;border:1px solid var(--line);
-    border-radius:10px;overflow:hidden;box-shadow:0 10px 30px rgba(35,38,45,.12)}
-  figure.frame iframe{display:block;border:0;background:#111;transform-origin:0 0}
-  figcaption .tag{display:inline-block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;
-    background:var(--amber-soft);color:#7a5a18;border:1px solid #e7d6ad;border-radius:6px;padding:0 7px;
-    font-weight:700;margin-right:6px;vertical-align:1px}
-  figcaption{margin:8px 2px 0;color:var(--slate);font-size:14px}
-  figcaption b{color:var(--ink)}
-  figcaption .ref{display:block;color:var(--mut);font-size:12px;font-family:ui-monospace,Menlo,monospace;margin-top:2px}
+  .board{padding:28px var(--pad) 8px;width:max-content;min-width:100%}
+  .flow{margin:0 0 44px}
+  .flow h2{font-size:13px;font-weight:600;color:var(--mut);margin:0 0 12px}
+  .boards{display:flex;gap:var(--gap);align-items:flex-start}
+  figure.ab{margin:0;position:relative;flex:none}
+  .flow:not(.options) figure.ab + figure.ab::before{content:"→";position:absolute;left:calc(var(--gap) / -2 - 8px);
+    top:calc(var(--stage-h, 200px) / 2 + 22px);color:var(--mut);font-size:18px}
+  figure.ab .name{display:block;font-size:12px;color:var(--mut);margin:0 0 6px;cursor:zoom-in;white-space:nowrap}
+  figure.ab .name:hover{color:var(--accent)}
+  .tag{display:inline-block;font-weight:700;color:#fff;background:var(--ink);border-radius:4px;padding:0 6px;margin-right:6px}
+  figure.ab .stage{overflow:hidden;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.08),0 6px 20px rgba(0,0,0,.08)}
+  figure.ab iframe{display:block;border:0;transform-origin:0 0;background:#fff}
+  figure.ab .cap{margin:8px 0 0;font-size:13px;color:var(--ink)}
 
-  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 22px;margin:26px 0 14px}
-  .card h2{font-family:Georgia,serif;margin:0 0 10px;text-transform:uppercase;color:var(--mut);
-    font-weight:700;font-size:12px;letter-spacing:.14em}
-  .q{border-left:3px solid var(--amber);padding:8px 0 8px 14px;margin:10px 0}
+  .notes{padding:0 var(--pad) 64px;max-width:880px}
+  .q{background:#fff;border-radius:10px;padding:12px 16px;margin:0 0 10px}
   .q p{margin:0}
-  .q .pick{display:inline-block;margin-top:4px;font-size:13px;background:var(--amber-soft);color:#7a5a18;
-    border:1px solid #e7d6ad;border-radius:6px;padding:1px 9px;font-weight:600}
-
-  details{margin-top:36px;color:var(--slate);font-size:14px}
-  summary{cursor:pointer;color:var(--mut);font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:700}
-  details ul{padding-left:18px}
-  .foot{color:var(--mut);font-size:13px;margin-top:22px;text-align:center}
-  .foot code{background:#efe9dc;border-radius:5px;padding:1px 6px;font-size:12px;font-family:ui-monospace,Menlo,monospace}
+  .q .pick{display:block;margin-top:4px;color:var(--mut);font-size:13px}
+  .q .pick b{color:var(--ink)}
+  details{margin-top:24px;color:var(--mut);font-size:13px}
+  summary{cursor:pointer}
+  dialog{border:0;padding:0;background:transparent;max-width:none;max-height:none}
+  dialog::backdrop{background:rgba(20,20,22,.72)}
+  dialog .name{color:#fff;font-size:13px;margin:0 0 8px}
+  dialog .box{overflow:hidden;background:#fff;border-radius:6px}
+  dialog iframe{display:block;border:0;transform-origin:0 0}
 </style>
 </head>
 <body data-round="1">
-<div class="wrap">
-  <div class="kicker">║ Storyboard · round <span data-round-no>1</span> ║ &nbsp;·&nbsp; {{SLUG}}</div>
-  <h1>{{FEATURE_TITLE}}</h1>
-  <p class="sub">{{ONE_LINE_WHAT_IT_IS}} &nbsp;·&nbsp; <b>reactions?</b></p>
+<header class="bar">
+  <div><b>{{FEATURE_TITLE}}</b><span class="mut">storyboard · round <span data-round-no>1</span> · {{BRANCH}}</span></div>
+  <div class="zoom"><button data-z="out" title="Zoom out (-)">−</button><button data-z="fit" title="Fit (1)">Fit</button>
+    <span data-z-label>100%</span><button data-z="in" title="Zoom in (+)">+</button><button data-z="full" title="Actual size (0)">1:1</button></div>
+</header>
 
-  <!-- ONE .screen PER SCREEN OR STATE. Frames are mounted from the <template>s below;
-       the figure's data-mount names the template. Sibling directions: several figures
-       in one .row, tagged A / B / C in the caption. A single direction drops the tag. -->
-  <section class="screen">
-    <h2>{{SCREEN_1_NAME}}</h2>
-    <div class="row">
-      <figure class="frame" data-mount="{{FRAME_1_ID}}">
-        <div class="stage"></div>
-        <figcaption><span class="tag">A</span><b>{{FRAME_1_WHAT_IS_NEW}}</b>
-          <span class="ref">{{FRAME_1_REFERENCE_OR_BLANK}}</span></figcaption>
+<main class="board">
+  <!-- ONE .flow PER STORY, artboards in the order a person meets them. Name each
+       artboard for the state it shows; caption it with what is new in it. -->
+  <section class="flow">
+    <h2>{{FLOW_1_NAME}}</h2>
+    <div class="boards">
+      <figure class="ab" data-mount="{{FRAME_1_ID}}">
+        <span class="name">{{FRAME_1_STATE}}</span><div class="stage"></div>
+        <p class="cap">{{FRAME_1_WHAT_IS_NEW}}</p>
       </figure>
-      <figure class="frame" data-mount="{{FRAME_2_ID}}">
-        <div class="stage"></div>
-        <figcaption><span class="tag">B</span><b>{{FRAME_2_WHAT_IS_NEW}}</b></figcaption>
+      <figure class="ab" data-mount="{{FRAME_2_ID}}">
+        <span class="name">{{FRAME_2_STATE}}</span><div class="stage"></div>
+        <p class="cap">{{FRAME_2_WHAT_IS_NEW}}</p>
       </figure>
     </div>
   </section>
 
-  <div class="card">
-    <h2>What I'd ask you</h2>
-    <div class="q"><p>{{QUESTION_1}}</p><span class="pick">I'd pick: {{PICK_1}}</span></div>
-    <div class="q"><p>{{QUESTION_2}}</p><span class="pick">I'd pick: {{PICK_2}}</span></div>
-  </div>
+  <!-- An open call, drawn: sibling directions of one screen, no arrows. Drop when none. -->
+  <section class="flow options">
+    <h2>{{OPEN_CALL}} · pick one</h2>
+    <div class="boards">
+      <figure class="ab" data-mount="{{FRAME_A_ID}}">
+        <span class="name"><span class="tag">A</span>{{FRAME_A_NAME}}</span><div class="stage"></div>
+        <p class="cap">{{FRAME_A_WHAT_IS_DIFFERENT}}</p>
+      </figure>
+      <figure class="ab" data-mount="{{FRAME_B_ID}}">
+        <span class="name"><span class="tag">B</span>{{FRAME_B_NAME}}</span><div class="stage"></div>
+        <p class="cap">{{FRAME_B_WHAT_IS_DIFFERENT}}</p>
+      </figure>
+    </div>
+  </section>
+</main>
 
+<section class="notes">
+  <div class="q"><p>{{QUESTION_1}}</p><span class="pick">I'd pick: <b>{{PICK_1}}</b></span></div>
+  <div class="q"><p>{{QUESTION_2}}</p><span class="pick">I'd pick: <b>{{PICK_2}}</b></span></div>
   <details>
     <summary>For the record</summary>
     <ul>
@@ -103,47 +124,83 @@
       <li>{{EXPERT_CONSULT_IF_ANY}}</li>
     </ul>
   </details>
-  <p class="foot">Lock it and the plan follows. Frames not on this page do not ship. <code>{{BRANCH}}</code></p>
-</div>
+</section>
+<dialog></dialog>
 
-<!-- ============ FRAMES ============ one <template> per frame, mounted above -->
-<template data-frame="{{FRAME_1_ID}}" data-w="1180" data-h="760">
+<!-- ============ ARTBOARDS ============ one <template> per artboard, mounted above -->
+<template data-frame="{{FRAME_1_ID}}" data-w="390" data-h="844">
   <link rel="stylesheet" href="{{PRODUCT_STYLESHEET_RELATIVE_PATH}}">
   <style>html,body{margin:0;height:100%}</style>
   {{FRAME_1_MARKUP}}
 </template>
-<template data-frame="{{FRAME_2_ID}}" data-w="1180" data-h="760">
-  <link rel="stylesheet" href="{{PRODUCT_STYLESHEET_RELATIVE_PATH}}">
-  <style>html,body{margin:0;height:100%}</style>
-  {{FRAME_2_MARKUP}}
-</template>
 
 <script>
-// Mount every <template data-frame> into the figure that names it, scaled to fit.
+// Mount every <template data-frame> into the artboard that names it, all at one zoom.
 (function () {
-  const templates = new Map();
-  for (const t of document.querySelectorAll('template[data-frame]')) templates.set(t.dataset.frame, t);
-  const mounted = [];
-  for (const fig of document.querySelectorAll('figure.frame[data-mount]')) {
-    const t = templates.get(fig.dataset.mount);
-    const stage = fig.querySelector('.stage');
-    if (!t || !stage) continue;
-    const w = Number(t.dataset.w || 1180), h = Number(t.dataset.h || 760);
+  const templates = new Map([...document.querySelectorAll('template[data-frame]')].map((t) => [t.dataset.frame, t]));
+  const base = location.href.split('#')[0];
+  const frame = (t) => {
     const f = document.createElement('iframe');
-    f.width = w; f.height = h; f.title = fig.dataset.mount;
-    f.srcdoc = '<!doctype html><html><head><meta charset="utf-8"><base href="' + location.href + '"></head><body>' + t.innerHTML + '</body></html>';
-    stage.prepend(f);
-    mounted.push({ f, stage, w, h });
+    f.width = Number(t.dataset.w || 1280); f.height = Number(t.dataset.h || 800); f.title = t.dataset.frame;
+    f.srcdoc = '<!doctype html><html><head><meta charset="utf-8"><base href="' + base + '"></head><body>' + t.innerHTML + '</body></html>';
+    return f;
+  };
+  const boards = [];
+  for (const fig of document.querySelectorAll('figure.ab[data-mount]')) {
+    const t = templates.get(fig.dataset.mount);
+    if (!t) continue;
+    const f = frame(t);
+    fig.querySelector('.stage').append(f);
+    boards.push({ fig, f, w: +f.width, h: +f.height });
+    fig.querySelector('.name').addEventListener('click', () => enlarge(t, fig.querySelector('.name').textContent));
   }
-  function fit() {
-    for (const m of mounted) {
-      const s = Math.min(1, m.stage.clientWidth / m.w);
-      m.f.style.transform = 'scale(' + s + ')';
-      m.stage.style.height = Math.round(m.h * s) + 'px';
+
+  // Full size, alone, scaled down only if the screen is smaller. Esc or a click outside closes.
+  const dlg = document.querySelector('dialog');
+  function enlarge(t, name) {
+    const f = frame(t), w = +f.width, h = +f.height, s = Math.min(1, (innerWidth - 80) / w, (innerHeight - 100) / h);
+    f.style.transform = 'scale(' + s + ')';
+    const box = document.createElement('div');
+    box.className = 'box'; box.style.width = w * s + "px"; box.style.height = h * s + "px";
+    box.append(f);
+    const label = document.createElement('p');
+    label.className = 'name'; label.textContent = name;
+    dlg.replaceChildren(label, box); dlg.showModal();
+  }
+  dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
+
+  let z = 1;
+  const zLabel = document.querySelector('[data-z-label]');
+  function zoom(v) {
+    z = Math.max(0.1, Math.min(1, v));
+    for (const b of boards) {
+      b.f.style.transform = 'scale(' + z + ')';
+      const st = b.fig.querySelector('.stage');
+      st.style.width = b.w * z + 'px'; st.style.height = b.h * z + 'px';
+      b.fig.style.width = Math.max(b.w * z, 160) + 'px';
+      b.fig.style.setProperty('--stage-h', b.h * z + 'px');
     }
+    zLabel.textContent = Math.round(z * 100) + '%';
   }
-  fit(); addEventListener('resize', fit);
-  const r = document.body.dataset.round; const el = document.querySelector('[data-round-no]');
+  // Fit = the widest row fills the window, never below 20%; past that the board scrolls.
+  function fit() {
+    const gap = 56, room = innerWidth - 80;
+    let best = 1;
+    for (const row of document.querySelectorAll('.boards')) {
+      const ws = boards.filter((b) => row.contains(b.fig)).map((b) => b.w);
+      if (ws.length) best = Math.min(best, (room - gap * (ws.length - 1)) / ws.reduce((a, b) => a + b, 0));
+    }
+    zoom(Math.max(0.2, best));
+  }
+  const act = { in: () => zoom(z + 0.1), out: () => zoom(z - 0.1), fit, full: () => zoom(1) };
+  document.querySelector('.zoom').addEventListener('click', (e) => act[e.target.dataset.z]?.());
+  addEventListener('keydown', (e) => {
+    const k = { '+': 'in', '=': 'in', '-': 'out', '1': 'fit', '0': 'full' }[e.key];
+    if (k && !e.metaKey && !e.ctrlKey) act[k]();
+  });
+  fit();
+
+  const r = document.body.dataset.round, el = document.querySelector('[data-round-no]');
   if (r && el) el.textContent = r;
 })();
 </script>

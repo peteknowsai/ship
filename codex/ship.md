@@ -71,10 +71,14 @@ and behavior. Do not redesign reference-owned surfaces.
 
 For `/ship design` or a visual gated change:
 
-1. Use `reference/storyboard.html` for live app frames in the product's styling.
-   Show screens and interaction states with short captions. Put supporting research
-   behind a disclosure. Ask only questions whose answers change the design.
-2. Open the storyboard and wait for reactions. Revise until Pete locks the direction.
+1. Use `reference/storyboard.html`: an artboard board, every screen and state its own
+   live frame in the product's styling, side by side in story order, with short
+   captions. Never a click-through prototype. Put supporting research behind a
+   disclosure. Ask only questions whose answers change the design.
+2. Open the storyboard in a background Chrome tab (`open -g -a "Google Chrome" <url>`,
+   with `#ship=<repo>/<slug>/storyboard` on the URL so Pete's ship-tabs extension files it
+   and replaces the previous round's tab) and wait for reactions. Revise in place until
+   Pete locks the direction.
    Commit each gate artifact before presenting it. Mark `gate:1` at design lock requests.
 3. Use `reference/go-card.html` to show the locked design, what gets built, unresolved
    choices with recommendations, and material risk. When the card carries a call, mark `gate:2` and wait for go; with none, show it and build.
