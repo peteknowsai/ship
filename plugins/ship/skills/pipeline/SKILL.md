@@ -156,6 +156,17 @@ screenshots of the states you need, and use the `mcp__claude-in-chrome__*` tools
 when he asks, since they drive his own Chrome. A subagent drives the
 browser against the running app and reports what it saw; a coding worker never does.
 
+**Every page Pete should see goes to his Chrome through `scripts/show.sh`**, never a bare
+`open`: `show.sh <root> <slug> <kind> <file|url> [done]`, kind one of `storyboard`, `plan`,
+`review`, `test` (the worktree's localhost) or `preview`. It opens with `open -g`, so Chrome
+never comes forward and takes the screen while he works, and tags the URL so his ship-tabs
+extension (`chrome/ship-tabs/` in the ship repo) files it in that app's tab group, titles
+it (`🧪 smarter-search · …`), hands him back the tab he was on, and closes the tab it
+replaces: a redrawn storyboard or a restarted server is one tab, never two. `done` on the
+review card that goes with `result:` closes the ship's other tabs. Never connect to his
+Chrome itself (chrome-devtools `--autoConnect`, `--browserUrl`): every connection pops an
+"Allow remote debugging?" dialog on his screen. Every chrome-devtools MCP runs headless.
+
 **Never idle while a run or a subagent works.** Work the non-tree list meanwhile (the
 review card if this ship gets one, the commit message, the ledger lines) so the stage
 closes minutes after the result lands. Same posture at gates: notify, then keep doing
@@ -414,23 +425,28 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   spec is written after his go (stage 2).
   1. **Round 1 — the storyboard.** One file per ship,
      `specs/designs/YYYY-MM-DD-<slug>.html` in the docs home, from
-     `reference/storyboard.html` (contract below). Each frame is a live HTML mockup of
-     one screen or state at the size it ships — the window, not a cropped component:
-     the sidebar, the titlebar, the new thing in place — drawn in the product's own
-     stylesheet and tokens, and working: the storyboard is a little web app Pete can
-     click through, not a set of pictures. Where a direction
-     is genuinely open, draw it as two or three frames of the same screen side by side
-     (`02-exploration-visual-designs`), never as prose options. The words on the page
+     `reference/storyboard.html` (contract below). It is an artboard board, laid out the
+     way a design tool lays out a page: every screen and state is its own artboard at its
+     real device size, side by side in story order, all at one zoom. Draw more, smaller
+     frames: every state the feature passes through (empty, typing, loading, results,
+     error, done, the phone) gets its own artboard, rather than a few tall screens stacked
+     down a long page. Each artboard is live HTML in the product's own stylesheet and
+     tokens, so a hover, an open menu or a tab inside it works, but artboards are never
+     wired to each other: no "try it" prototype at the top, no click-through between
+     frames (Pete, 2026-10-12: "move away from the full interactive app"). Where a direction
+     is genuinely open, draw it as two or three artboards of the same screen in an options
+     row (`02-exploration-visual-designs`), never as prose options. The words on the page
      are captions: one line under each frame saying what is new in it, and the two or
      three questions a designer would actually bring ("went denser on B, unsure about
      the nav, which tone?"). Recon, consults and the reuse audit go in one collapsed
      block at the foot, for the record; they never sit above a frame. No TL;DR essay,
      no section per research finding, no fait accompli. `stage.sh <root> gate:1`, commit,
-     fire the gate notification, `open` the storyboard, end the turn with `needs input:`
+     fire the gate notification, `show.sh <root> <slug> storyboard <file>`, end the turn with `needs input:`
      ("storyboard round 1 — reactions?"). **HARD STOP** — every round is one. It is a
      local HTML file in his browser, never a Claude artifact (Pete, 2026-10-08).
-  2. **Rounds.** Pete reacts; redraw the frames in place — minutes per round, not a
-     re-spec. A frame he killed is deleted, never greyed out. Re-`open`, end the turn
+  2. **Rounds.** Pete reacts; redraw the frames in place, in the same file, and bump the
+     round in its `<title>` and `data-round` — minutes per round, not a
+     re-spec. A frame he killed is deleted, never greyed out. Re-`show.sh` (it replaces the old tab), end the turn
      with `needs input:` again. Push back where taste warrants it: a designer with no
      opinions is a renderer. Loop until he locks it ("this is it", "lock it", "yes").
   3. **Lock = GATE 1.** Commit the storyboard as it stands: it is the design of
@@ -464,13 +480,13 @@ into commits otherwise (incidents: Worktrees). Never build on main.
 - **Render the plan card** from `reference/go-card.html` (contract below): the locked
   storyboard in one glance, then what gets built as a punch list in plain English
   (one line per piece of work, in build order), the cut list, his calls with your
-  recommendation, the risk line, and "go". Commit it, `open` it.
+  recommendation, the risk line, and "go". Commit it, `show.sh … plan` it.
 - **Calls on the card are plain language, and only the ones that change what he gets.**
   Each says what he'd see either way. A technical choice where you have a clear pick is
   yours: take it and log it. Never offer to phase the work.
 - **GATE 2 is his go when the card carries a call** (Two principles). `stage.sh <root>
   gate:2`, fire the gate notification, end the turn with `needs input:` ("go?"). **HARD
-  STOP.** A card with no call is not a stop: `open` it, post one line ("plan card: no
+  STOP.** A card with no call is not a stop: `show.sh … plan` it, post one line ("plan card: no
   calls, building"), write no `gate:2` marker, and go straight on as if he had said go. SELF-DIRECTED renders no
   card and stops for nobody.
 - **His go → spec it out.** Only now does the machine-facing writing happen: invoke
@@ -652,7 +668,7 @@ he asks.
   worktree's **localhost** (the contract's `dev:` command, else the dev script). Pete may
   look whenever he likes; it never holds the ship. Boot the dev server detached, never through a bounded pipe (`nohup <dev>
   > dev.log 2>&1 &`, then curl-probe — a `| head -50` has SIGPIPE'd a server mid-verify)
-  and `open` the URL it printed. A feature behind an auth gate needs its test-auth path
+  and `show.sh <root> <slug> test <url>` the URL it printed (`preview` for a preview link). A feature behind an auth gate needs its test-auth path
   working on both, or it 403s and reads as broken (incidents: Backends). Never run a
   production deploy to let him review, and never tell him to "go look at the live site".
   (Non-UI change → show the demo/test output instead.)
@@ -710,7 +726,8 @@ he asks.
   shots it shows copied beside it, before LAND's step 0: LAND removes the worktree. A
   Codex hand-off Pete watched gets none; its record is the `result:` line, the PR body,
   and the thread link. `LANDING_STATUS` says "Tested · landing on main", or what it waits
-  on. `open` main's copy with the `result:`, or the worktree's with the park. It is the
+  on. `show.sh … review <file> done` main's copy with the `result:` (closing the ship's other tabs),
+  or `show.sh … review` the worktree's with the park. It is the
   record of what landed and the proof, not a gate.
 - **What still waits for Pete's "merge main" after a pass**: a money path, a one-way
   door, and a change he said he wants to try himself. `stage.sh <root> gate:test`, post the links (and the
@@ -828,27 +845,33 @@ Don't gate `result:` on any of this.
 
 ## The storyboard contract (GATE 1 artifact)
 
-Render `reference/storyboard.html` — a page that is the app, not a page about it:
+Render `reference/storyboard.html`, an artboard board: the page is the frames, laid out.
 
-- **Frames** — one per screen or state, live HTML at ship size, in the product's own
-  stylesheet: a repo that ships one links it by relative path from the docs home
-  (cells: the three grok sheets under `web/public/`); anything else inlines the tokens
-  it uses. Each frame is authored as a `<template>` and mounted into its own iframe by
-  the page's script, so the product's sheet styles the frame and nothing else, `:root`
-  tokens resolve, and a hover, an open menu or a tab works where the feature has one,
-  so Pete can poke it. Directions in play are sibling frames of the same screen. Frames
-  are screens, not a wired-up app: no click-through demo between them (Pete,
-  2026-10-08).
+- **Flows** — one row per story, artboards left to right in the order a person meets
+  them, arrows drawn by the template. Every state gets its own artboard, named for the
+  state ("Typing a zip", "No results"); a phone and a desktop of one screen sit in the
+  same board at true relative size (`data-w`/`data-h` are the device's: 390×844,
+  1280×800). The board opens zoomed to fit, and clicking an artboard's name shows it
+  alone at full size.
+- **Artboards** — live HTML at ship size in the product's own stylesheet: a repo that
+  ships one links it by relative path from the docs home (cells: the three grok sheets
+  under `web/public/`); anything else inlines the tokens it uses. Each is authored as a
+  `<template>` and mounted into its own iframe, so the product's sheet styles the frame
+  and nothing else, `:root` tokens resolve, and a hover, an open menu or a tab works
+  where the feature has one. Never wired together, and never a "try it" app above the
+  board (Pete, 2026-10-08 and 2026-10-12).
+- **Options** — a direction in play is an options row of sibling artboards tagged
+  A / B / C, no arrows.
 - **Where the product's sheet doesn't decide, the model's own defaults are out**: a
   cream or off-white page, an italic accent word in a headline, pill-shaped buttons.
   The craft floor already bans numbered section labels and monospace as costume.
-- **Captions** — one line per frame: what is new in it.
+- **Captions** — one line under each artboard: what is new in it.
 - **The questions** — two or three, the ones a designer would bring, each with the
   pick you'd make. Never a recommendation dressed as a question.
 - **For the record** — one collapsed block at the foot: recon, consults, reuse audit,
   surface liveness. Never above a frame.
 
-No TL;DR, no research sections, no scope contract, no plan: the page is the mockups.
+No TL;DR, no research sections, no scope contract, no plan: the page is the artboards.
 
 ## The plan card contract (GATE 2 artifact)
 

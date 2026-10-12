@@ -8,7 +8,7 @@ It's opinionated. Built for a hands-off, PM-style workflow: you stay in your lan
 
 - **Two gates, only two.** Lock the storyboard (after discovery), then "go" on the plan (after planning). Everything else runs without you.
 - **Sized to the ask.** Three lanes, ship picks: **express** (quick fix — no spec/plan, straight through to dev), **self-directed** (writes its own spec + plan, builds, reviews, merges — zero stops), **gated** (the two gates, when your taste is in play). Same worktree → merge → dev rails in all three; gates fire only when your answer would change what gets built.
-- **You read the meta, never the diff.** Every checkpoint auto-opens an HTML page in your browser — a **storyboard** (live mockups of the app, not a document), a one-screen **plan card**, and a **review card** at merge or when a ship parks. Never "go read the PR."
+- **You read the meta, never the diff.** Every checkpoint puts an HTML page in a background Chrome tab, never taking the screen — a **storyboard** (an artboard board of every screen and state, live mockups, not a document), a one-screen **plan card**, and a **review card** at merge or when a ship parks. Never "go read the PR."
 - **Gate notifications.** When a ship parks at a gate, a desktop notification taps you on the shoulder (Ghostty-native, with a macOS fallback) — so you can walk away.
 - **Stage-aware status line.** Which ship, what phase (`designing → planning → building → reviewing`), ships-in-flight, your context + weekly budget, effort level. A bold banner when a ship needs you.
 - **Opus 5.5 drives; each build task goes to the engine its difficulty earns.** `scripts/route.py` asks Jev, TypeSafe's classifier, to score every task in the plan and ranks them: the easier half goes to a Fable 5.1 subagent and the harder half to Opus 5.5. That split is an experiment the ledger will judge. Fable also reviews the plan before BUILD and the whole branch in REVIEW. The driver owns the brief, the diff review, the gates, and git, and logs every task's outcome to a ledger (`route.py report`) so the split can be tuned on data.
@@ -41,16 +41,21 @@ If you want the bundled status line, point your `statusLine` at it (or let the p
 
 ## Tab groups in Chrome
 
-`chrome/ship-tabs/` is a small Chrome extension that sorts ship's pages as they open: the
-storyboard, plan and review cards (any local file under a `specs/`, `docs/` or
-`.ship-shots/` folder) go into a blue **ship docs** group, and anything ship puts up for
-testing (localhost, `*.localhost`, a Vercel branch preview) into a green **ship test**
-group, one of each per window. A tab already in a group stays put, so dragging one out
-sticks. Ship keeps opening pages with plain `open`; nothing in the pipeline changes.
+`chrome/ship-tabs/` is a small Chrome extension that keeps ship's pages tidy. Ship opens
+every page through `pipeline/scripts/show.sh`, which uses `open -g` (Chrome never comes
+forward) and tags the URL `#ship=<repo>/<slug>/<kind>`. The extension files each tagged
+tab in one group per app, named for the repo, one color per repo; titles it with what it
+is (`🎨 smarter-search · storyboard r2`, `🧪 smarter-search · …` on the running app);
+hands you back the tab you were on; and closes the tab a new one replaces, so a redrawn
+storyboard or a restarted dev server is one tab, never two. When a ship lands, its review
+card closes the rest of that ship's tabs. Tabs ship didn't tag are never touched.
 
 Install once: `chrome://extensions`, turn on Developer mode, **Load unpacked**, pick
-`chrome/ship-tabs` in this repo's main checkout. `node chrome/ship-tabs/test.mjs` checks
-the URL rules and then the real grouping in Chrome for Testing.
+`chrome/ship-tabs` in this repo's main checkout, and turn on **Allow access to file URLs**
+on its card so the storyboard and cards get labeled too (their own titles cover it
+otherwise). After a change, press its reload button. `node chrome/ship-tabs/test.mjs`
+checks the tag rules; `--live` also runs the real grouping in Chrome for Testing, launched
+in the background.
 
 ## Codex Desktop
 

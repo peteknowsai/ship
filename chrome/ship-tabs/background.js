@@ -1,26 +1,82 @@
-// Ship tabs: when a tab lands on one of ship's pages, move it into that window's
-// "ship docs" or "ship test" group, making the group the first time. A tab already in a
-// group stays where it is, so dragging one out by hand sticks.
+// Ship tabs: every page ship opens (pipeline/scripts/show.sh tags it) lands in its app's
+// group, titled with what it is, without taking the tab Pete is on. A redo replaces the
+// tab it supersedes, and a ship's `done` page closes the rest of that ship's tabs.
 importScripts('rules.js');
 
-const COLORS = { 'ship docs': 'blue', 'ship test': 'green' };
-let queue = Promise.resolve(); // one at a time, so two tabs opening together make one group
+let queue = Promise.resolve(); // one at a time, so tabs opening together make one group
+const run = (fn) => { queue = queue.then(fn).catch(() => {}); };
+const load = async () => ({ byKey: {}, byTab: {}, active: {}, ...(await chrome.storage.session.get(['byKey', 'byTab', 'active'])) });
 
 async function sort(tabId, href) {
-  const title = shipGroup(href);
-  if (!title) return;
+  const tag = shipTag(href);
+  const s = await load();
+  if (!tag || s.byTab[tabId] === tag.key) return;
   const tab = await chrome.tabs.get(tabId).catch(() => null);
-  if (!tab || tab.groupId !== chrome.tabGroups.TAB_GROUP_ID_NONE || tab.pinned) return;
-  const [group] = await chrome.tabGroups.query({ windowId: tab.windowId, title });
+  if (!tab) return;
+
+  const olds = [];
+  for (const [key, id] of Object.entries(s.byKey)) {
+    if (id === tabId || !(key === tag.key || (tag.done && key.startsWith(`${tag.repo}/${tag.slug}/`)))) continue;
+    const old = await chrome.tabs.get(id).catch(() => null);
+    if (old) olds.push(old);
+    delete s.byKey[key]; delete s.byTab[id];
+  }
+  const replacedActive = olds.some((o) => o.active);
+  s.byKey[tag.key] = tabId; s.byTab[tabId] = tag.key;
+
+  // Opening made it the active tab; hand Pete back the one he was on, unless he was
+  // looking at the page this one replaces.
+  if (tab.active && !replacedActive) {
+    const [before, now] = s.active[tab.windowId] || [];
+    const back = now === tabId ? before : now;
+    if (back) await chrome.tabs.update(back, { active: true }).catch(() => {});
+  }
+  await chrome.storage.session.set(s);
+
+  const [group] = await chrome.tabGroups.query({ windowId: tab.windowId, title: tag.repo });
   if (group) {
-    await chrome.tabs.group({ groupId: group.id, tabIds: tabId });
+    if (tab.groupId !== group.id) await chrome.tabs.group({ groupId: group.id, tabIds: tabId });
   } else {
     const groupId = await chrome.tabs.group({ tabIds: tabId, createProperties: { windowId: tab.windowId } });
-    await chrome.tabGroups.update(groupId, { title, color: COLORS[title] });
+    await chrome.tabGroups.update(groupId, { title: tag.repo, color: groupColor(tag.repo) });
   }
+  // Close what it replaces only now, so a group never empties out and comes back elsewhere.
+  await chrome.tabs.remove(olds.map((o) => o.id)).catch(() => {});
+  await label(tabId, tag);
 }
 
-chrome.tabs.onUpdated.addListener((tabId, change, tab) => {
-  const href = change.url || (change.status === 'complete' && tab.url);
-  if (href) queue = queue.then(() => sort(tabId, href)).catch(() => {});
+// Prefix the page's title ("🧪 smarter-search · …") and keep it there when the app retitles.
+// A local file needs "Allow access to file URLs"; without it the doc's own <title> does it.
+function label(tabId, tag) {
+  return chrome.scripting.executeScript({ target: { tabId }, args: [tabLabel(tag)], func: (p) => {
+    const fix = () => { if (!document.title.startsWith(p)) document.title = p + document.title; };
+    fix();
+    if (!window.__shipLabel) {
+      window.__shipLabel = true;
+      new MutationObserver(fix).observe(document.head || document.documentElement, { subtree: true, childList: true, characterData: true });
+    }
+  } }).catch(() => {});
+}
+
+chrome.tabs.onCreated.addListener((tab) => {
+  if (tab.pendingUrl || tab.url) run(() => sort(tab.id, tab.pendingUrl || tab.url));
 });
+chrome.tabs.onUpdated.addListener((tabId, change, tab) => {
+  if (change.url) run(() => sort(tabId, change.url));
+  if (change.status === 'complete') run(async () => {
+    const { byTab = {} } = await chrome.storage.session.get('byTab');
+    const tag = byTab[tabId] && shipTag(`x:#ship=${byTab[tabId]}`);
+    if (tag) await label(tabId, tag); // a full page load drops the prefix; put it back
+  });
+});
+chrome.tabs.onActivated.addListener(({ tabId, windowId }) => run(async () => {
+  const { active = {} } = await chrome.storage.session.get('active');
+  active[windowId] = [(active[windowId] || [])[1], tabId];
+  await chrome.storage.session.set({ active });
+}));
+chrome.tabs.onRemoved.addListener((tabId) => run(async () => {
+  const s = await load();
+  if (!s.byTab[tabId]) return;
+  delete s.byKey[s.byTab[tabId]]; delete s.byTab[tabId];
+  await chrome.storage.session.set(s);
+}));
