@@ -786,7 +786,7 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
   the host builds it (cells-app: each touched pack's Vercel production build, Convex
   first), watch every such build to READY or ERROR, then load each live URL once (`curl -sS -o
   /dev/null -w '%{http_code}'`, and the page's text): READY with a 404 or the host's "not
-  found" page is a failed deploy, not a live one (eca-finder served NOT_FOUND on every
+  found" page is a failed deploy, not a live one (one app served NOT_FOUND on every
   route from a READY build, 2026-10-05). Report it with the live URLs; ship
   never runs a production deploy or pushes a production database by hand. Where the
   contract names a separate integration lane instead, push merged main to it — its
