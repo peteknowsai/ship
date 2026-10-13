@@ -165,7 +165,10 @@ it (`🧪 smarter-search · …`), hands him back the tab he was on, and closes 
 replaces: a redrawn storyboard or a restarted server is one tab, never two. `done` on the
 review card that goes with `result:` closes the ship's other tabs. Never connect to his
 Chrome itself (chrome-devtools `--autoConnect`, `--browserUrl`): every connection pops an
-"Allow remote debugging?" dialog on his screen. Every chrome-devtools MCP runs headless.
+"Allow remote debugging?" dialog on his screen. Every automated browser is the separate
+chrome-headless-shell build (the chrome-devtools MCP's `--executablePath`, Playwright's
+`executablePath`), never the Google Chrome app run headless: macOS counts a hidden copy
+of the app as Chrome running and hands it Pete's Dock click, so his own Chrome won't open.
 
 **Never idle while a run or a subagent works.** Work the non-tree list meanwhile (the
 review card if this ship gets one, the commit message, the ledger lines) so the stage

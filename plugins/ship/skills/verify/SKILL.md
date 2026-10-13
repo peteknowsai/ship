@@ -93,8 +93,10 @@ what he says mid-run changes the run.
   from a script under the job's tmp directory, since a bare `import "playwright"` there
   finds nothing: `const { chromium } = await
   import(process.env.HOME + "/node_modules/playwright/index.mjs"); await chromium.launch({
-  channel: "chrome", headless: true })` (the installed Chrome; the bundled browsers are
-  not downloaded, so never drop `channel`). Use real locator clicks and keys, never events fired from
+  executablePath: <the chrome-headless-shell binary under
+  ~/.cache/puppeteer/chrome-headless-shell/, newest version> })`. Never `channel: "chrome"`:
+  that starts the Google Chrome app, and a hidden copy of it makes macOS switch Pete's
+  Dock click to that copy instead of opening his Chrome (2026-10-12). Use real locator clicks and keys, never events fired from
   `evaluate`, read the console through `page.on("console")`, and say in the result which
   browser ran.
 - **iOS: the agent-device CLI** from the shell (`agent-device help manual-qa` and
