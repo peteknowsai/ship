@@ -110,7 +110,7 @@ AUTH (if behind login):
 PROTECTION (a preview behind the host's login wall):
   <the bypass value, or 'none'>. Send it as the `x-vercel-protection-bypass` header on
   every request of your page; never sign in to the host yourself.
-BACKEND (repos with `backend: per-branch`):
+BACKEND (repos with `backend: copy` or `per-branch`):
   <the exact deployment the app is serving>. Pin it on EVERY CLI call
   (--preview-name/--deployment). Unpinned calls resolve to a different deployment than the
   app reads, so your seeds land on one backend and the browser on another — that split-brain

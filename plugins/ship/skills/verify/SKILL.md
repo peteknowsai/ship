@@ -79,7 +79,7 @@ down mid-QA (2026-10-14). Never control the Mac's desktop.
 **Write `<out-dir>/qa.md`** (outside the repo) from the spec or plan, else the acceptance
 criteria. Its head names what the run uses: URL, AUTH (the test-auth path, with everything
 a fresh account needs, an invite code or a PIN), IOS (the line `ios:` printed, or none),
-BACKEND (on `backend: per-branch`, the exact deployment, pinned on every CLI call, or seeds
+BACKEND (on `backend: copy` or `per-branch`, the exact deployment, pinned on every CLI call, or seeds
 land on one backend and the app reads another), PROTECTION (the bypass value, or none),
 STORYBOARD (a GATED ship's frames and `~/.claude/skills/impeccable/reference/craft-floor.md`,
 or none). Then numbered steps, each one thing a person does and what they should see:
