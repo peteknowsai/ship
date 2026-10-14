@@ -19,6 +19,8 @@ const CSS = `
 .btn .sub{font-weight:500;color:#c7c7cc}
 .tip{background:#fff;border-radius:8px;padding:8px 11px;font-size:12px;color:#3a3a3f;box-shadow:0 2px 6px rgba(0,0,0,.1),0 8px 20px rgba(0,0,0,.1)}
 .tip b{color:#1d1d1f}
+.tip.css{display:none}
+.share:hover .tip.css,.share:focus-within .tip.css{display:block}
 .spin{width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;animation:s .8s linear infinite}
 @keyframes s{to{transform:rotate(360deg)}}
 .panel{width:340px;background:#fff;border-radius:10px;padding:16px;box-shadow:0 2px 6px rgba(0,0,0,.1),0 16px 40px rgba(0,0,0,.16)}
@@ -61,7 +63,7 @@ const behind = (n) => n <= 1 ? '' : n === 2 ? ' · version 1 kept behind it' : n
 
 // One frame of the storyboard as markup: idle, hover, sharing, copied, shared, panel, error.
 function shareView(s, now = Date.now()) {
-  const share = (sub = '') => `<button class="btn" data-act="share"${s.hover ? ' aria-describedby="tip"' : ''}>${LINK}Share</button>${sub}`;
+  const share = (sub = '') => `<button class="btn" data-act="share"${s.mode === 'error' ? '' : ' aria-describedby="tip"'}>${LINK}Share</button>${sub}`;
   const shared = (open) => `<button class="btn" data-act="toggle" aria-haspopup="dialog" aria-expanded="${open}"><span class="dot"></span>Shared</button>`;
   const acts = (first) => `<div class="acts"><button class="primary" data-act="copy">${first}</button><button data-act="open">Open</button>`;
   switch (s.mode) {
@@ -73,7 +75,9 @@ function shareView(s, now = Date.now()) {
       `<span class="url">${shown(s.url)}</span>${acts('Copy link')}<button class="stop" data-act="stop">Stop sharing</button></div></div>${shared(true)}`;
     case 'error': return `<div class="panel bad" role="dialog" aria-labelledby="h"><h3 id="h">${BAD}Couldn't share</h3><p>${esc(s.error)}</p>` +
       `<div class="acts"><button class="primary" data-act="share">Try again</button></div></div>${share()}`;
-    default: return (s.hover ? '<div class="tip" role="tooltip" id="tip">Publish a link anyone can open · <b>share.peteknowsai.xyz</b></div>' : '') + share();
+    // The tooltip is always in the idle markup and CSS shows it on hover or focus: a JS
+    // re-render on hover swapped the button out mid-click on pages that capture the pointer.
+    default: return `<div class="tip${s.hover ? '' : ' css'}" role="tooltip" id="tip">Publish a link anyone can open · <b>share.peteknowsai.xyz</b></div>` + share();
   }
 }
 
@@ -91,11 +95,17 @@ function mount(cfg) {
   let state = { mode: 'idle' }, last = null; // last: the newest status answer, for the panel
 
   // Redraw the frame; keep keyboard focus inside when it was inside.
+  // Skips identical markup, so a status answer that changes nothing can't swap the button
+  // out from under a click.
+  let drawn = '';
   const render = () => {
+    const html = shareView(state);
+    if (html === drawn) return;
+    drawn = html;
     const inside = !!root.activeElement;
-    box.innerHTML = shareView(state);
+    box.innerHTML = html;
     if (inside) (root.querySelector('.primary') || root.querySelector('.btn'))?.focus({ preventScroll: true });
-    if (!state.hover) said.textContent = SAID[state.mode] || '';
+    said.textContent = SAID[state.mode] || '';
   };
   const set = (s) => { state = s; render(); };
   const send = (cmd) => new Promise((r) => {
@@ -123,12 +133,6 @@ function mount(cfg) {
     copy: async (b) => { const r = await send('copy'); if (!r.ok) return set({ mode: 'error', error: r.error }); const t = b.textContent; b.textContent = 'Copied'; setTimeout(() => { if (b.isConnected) b.textContent = t; }, 1200); },
   };
   box.addEventListener('click', (e) => { const b = e.target.closest('[data-act]'); if (b) act[b.dataset.act](b); });
-  // The tooltip: a mouse over the idle button, or keyboard focus on it. Not a finger.
-  const hover = (on) => { if (state.mode === 'idle' && !!state.hover !== on) set({ mode: 'idle', hover: on }); };
-  box.addEventListener('pointerenter', (e) => e.pointerType === 'mouse' && hover(true));
-  box.addEventListener('pointerleave', () => hover(false));
-  box.addEventListener('focusin', () => hover(true));
-  box.addEventListener('focusout', (e) => !box.contains(e.relatedTarget) && hover(false));
   document.addEventListener('pointerdown', (e) => e.target !== host && close());
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && state.mode !== 'shared' && state.mode !== 'idle') { close(); root.querySelector('.btn')?.focus(); } });
   document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && status());

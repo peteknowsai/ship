@@ -69,10 +69,12 @@ export function footer(meta, n) {
   return `<div style="height:34px"></div><div id="ship-share-foot"><template shadowrootmode="open"><style>${CSS}</style>${body}</template></div>`;
 }
 
-// Put the footer before the page's last </body>, or at the end when there is none.
+// Put the footer before the page's closing </body>, or at the end when there is none. Only
+// a </body> with nothing but </html> and whitespace after it counts: one inside a script's
+// string is not the page's.
 export function inject(html, foot) {
-  const i = html.toLowerCase().lastIndexOf('</body');
-  return i < 0 ? html + foot : html.slice(0, i) + foot + html.slice(i);
+  const m = html.match(/<\/body\s*>(\s*<\/html\s*>)?\s*$/i);
+  return m ? html.slice(0, m.index) + foot + html.slice(m.index) : html + foot;
 }
 
 export default {
@@ -84,9 +86,16 @@ export default {
       const id = api[1];
       if (!ID.test(id)) return json({ error: 'bad id' }, 400);
       if (req.method === 'DELETE') {
-        const keys = (await env.SHARE.list({ prefix: `${id}/` })).objects.map((o) => o.key);
-        if (keys.length) await env.SHARE.delete(keys);
-        return json({ deleted: keys.length });
+        // R2 lists 1000 keys a page; delete page by page until the doc is gone.
+        let deleted = 0, cursor;
+        do {
+          const page = await env.SHARE.list({ prefix: `${id}/`, cursor });
+          const keys = page.objects.map((o) => o.key);
+          if (keys.length) await env.SHARE.delete(keys);
+          deleted += keys.length;
+          cursor = page.truncated ? page.cursor : undefined;
+        } while (cursor);
+        return json({ deleted });
       }
       if (req.method !== 'PUT') return json({ error: 'method' }, 405);
       const name = url.searchParams.get('name') || '';

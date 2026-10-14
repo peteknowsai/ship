@@ -10,6 +10,12 @@ const load = async () => ({ byKey: {}, byTab: {}, active: {}, ...(await chrome.s
 async function sort(tabId, href) {
   const tag = shipTag(href);
   const s = await load();
+  // A tagged tab that moved on to another ship doc is that doc now: forget the old key, or
+  // its label and Share button (which read byTab) would act on the old doc's link.
+  if (tag?.inferred && s.byTab[tabId] && s.byTab[tabId] !== tag.key) {
+    delete s.byKey[s.byTab[tabId]]; delete s.byTab[tabId];
+    await chrome.storage.session.set(s);
+  }
   if (!tag || tag.inferred || s.byTab[tabId] === tag.key) return; // an untagged doc is the sweep's
   const tab = await chrome.tabs.get(tabId).catch(() => null);
   if (!tab) return;

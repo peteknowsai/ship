@@ -27,6 +27,8 @@ which is 3.9: binaries by absolute path, nothing newer than 3.9, and nothing on 
 but the one framed answer.
 """
 import base64
+import contextlib
+import fcntl
 import html
 import http.client
 import http.server
@@ -89,7 +91,24 @@ def local(url, here):
     if not url or url.startswith(('#', '//')) or re.match(r'[a-zA-Z][\w+.-]*:', url):
         return None
     path = os.path.realpath(os.path.join(here, urllib.parse.unquote(re.split('[?#]', url)[0])))
+    # The bundle goes public: only files inside the doc's own repo, and no dotfiles or dot
+    # folders but ship's screenshots, so a stray reference can't publish ~/.ssh or .env.
+    rel = os.path.relpath(path, ROOT[0]).split(os.sep) if ROOT else ['..']
+    if rel[0] == '..' or any(p.startswith('.') and p != '.ship-shots' for p in rel):
+        return None
     return path if os.path.isfile(path) else None
+
+
+ROOT = []  # the repo the page being bundled lives in; set by bundle()
+
+
+def repo_of(path):
+    d = os.path.dirname(path)
+    while d != os.path.dirname(d):
+        if os.path.exists(os.path.join(d, '.git')):
+            return d
+        d = os.path.dirname(d)
+    return os.path.dirname(path)
 
 
 def data_uri(path):
@@ -124,6 +143,10 @@ def script(m, here):
     path = src and local(value(src), here)
     if not path:
         return m.group(0)
+    if {a.group(1).lower() for a in ATTR.finditer(attrs)} & {'defer', 'async'}:
+        # An inline script ignores defer and async, so it would run before the page it
+        # waits for; a data: URL keeps it external and keeps its timing.
+        return f'<script{attrs[:src.start(2)]}"{data_uri(path)}"{attrs[src.end(2):]}></script>'
     js = re.sub(r'</(script)', r'<\\/\1', read(path), flags=re.I)
     return f'<script{attrs[:src.start()].rstrip()}{attrs[src.end():]}>{js}</script>'
 
@@ -135,7 +158,8 @@ def tag(m, here, depth, seen):
     targets = MEDIA.get(name, ()) + (('href',) if name == 'link' else ())
     paths = {a: local(value(found[a]), here) for a in targets if a in found}
     if name == 'link' and paths.get('href') and 'stylesheet' in rel:
-        return f"<style>{inline_css(read(paths['href']), os.path.dirname(paths['href']))}</style>"
+        media = f' media="{html.escape(value(found["media"]))}"' if 'media' in found else ''
+        return f"<style{media}>{inline_css(read(paths['href']), os.path.dirname(paths['href']))}</style>"
     edits = [(found[a].start(2), found[a].end(2), f'"{data_uri(p)}"') for a, p in paths.items()
              if p and (name != 'link' or 'icon' in rel)]
     if 'style' in found:
@@ -155,6 +179,8 @@ def bundle(path, depth=0, seen=()):
     """The page at `path` as one self-contained HTML string."""
     path = os.path.realpath(path)
     here, seen = os.path.dirname(path), seen + (path,)
+    if depth == 0:
+        ROOT[:] = [repo_of(path)]
 
     def part(m):
         if m.group(5):
@@ -193,6 +219,15 @@ def links():
         return {}
 
 
+@contextlib.contextmanager
+def locked():
+    """One read-modify-write of links.json at a time, across the host, the CLI and show.sh."""
+    os.makedirs(home(), exist_ok=True)
+    with open(os.path.join(home(), 'links.lock'), 'w') as f:
+        fcntl.flock(f, fcntl.LOCK_EX)
+        yield
+
+
 def save(data):
     os.makedirs(home(), exist_ok=True)
     fd, tmp = tempfile.mkstemp(dir=home(), suffix='.tmp')
@@ -217,7 +252,8 @@ def token():
 
 def api(method, path, body=None):
     request = urllib.request.Request((os.environ.get('SHIP_SHARE_URL') or SERVER).rstrip('/') + path, body, method=method,
-                                     headers={'authorization': 'Bearer ' + token(),
+                                     # Cloudflare's bot check 403s urllib's own User-Agent.
+                                     headers={'authorization': 'Bearer ' + token(), 'user-agent': 'ship-share/1',
                                               'content-type': 'text/html; charset=utf-8'})
     try:
         with urllib.request.urlopen(request, timeout=30) as response:
@@ -240,10 +276,17 @@ def publish(key, file, copy=True):
     page = bundle(file).encode()
     doc = (links().get(key) or {}).get('id') or ''.join(secrets.choice(ALNUM) for _ in range(6))
     name = name_for(key, file)
+    was = key in links()
     answer = api('PUT', f'/api/{doc}?name={name}', page)
-    data = links()  # reread: the upload took a while
-    data[key] = {'id': doc, 'name': name, **{k: answer.get(k) for k in ('url', 'version', 'versions', 'at')}}
-    save(data)
+    with locked():
+        data = links()  # reread: the upload took a while
+        if was and key not in data:
+            # Pete pressed Stop sharing while this redraw uploaded: the upload must not
+            # bring the page back.
+            api('DELETE', f'/api/{doc}')
+            return shown(None)
+        data[key] = {'id': doc, 'name': name, **{k: answer.get(k) for k in ('url', 'version', 'versions', 'at')}}
+        save(data)
     if copy:
         clip(data[key]['url'])
     return shown(data[key])
@@ -280,9 +323,10 @@ def handle(req):
         if cmd == 'stop':
             if entry:
                 api('DELETE', f"/api/{entry['id']}")
-                data = links()
-                data.pop(key, None)
-                save(data)
+                with locked():
+                    data = links()
+                    data.pop(key, None)
+                    save(data)
             return shown(None)
         raise ShareError(f'The share helper has no "{cmd}" command.')
     except ShareError as error:
@@ -349,6 +393,9 @@ class Fake(http.server.BaseHTTPRequestHandler):
     def handle_api(self):
         self.hits.append((self.command, self.path))
         body = self.rfile.read(int(self.headers.get('content-length') or 0))
+        if (self.headers.get('user-agent') or '').startswith('Python-urllib'):
+            self.reply(403, {'error': 'Cloudflare refuses the default Python agent'})
+            return None, None, None
         if self.headers.get('authorization') != 'Bearer t0k':
             self.reply(401, {'error': 'unauthorized'})
             return None, None, None
@@ -433,6 +480,19 @@ def selftest():
             check('a style attribute gets its url() inlined', f'<div style="background:url({b64})">' in out)
             check('Review Focus 1: a <template> and an inline script pass through byte for byte',
                   template in out and inline in out and comment in out)
+            write(f'{tmp}/secret.png', png)
+            write(f'{doc}/.env/i.png', png)
+            write(f'{doc}/.ship-shots/i.png', png)
+            write(f'{doc}/p2.html', '<link rel="stylesheet" media="print" href="a.css">'
+                                    '<script defer src="s.js"></script>'
+                                    f'<img src="../secret.png"><img src="{tmp}/secret.png">'
+                                    '<img src=".env/i.png"><img src=".ship-shots/i.png">')
+            out2 = bundle(f'{doc}/p2.html')
+            check('a deferred script stays external, as a data URL, so it keeps its timing',
+                  '<script defer src="data:' in out2 and 'var x' not in out2)
+            check("a stylesheet keeps its media", '<style media="print">' in out2)
+            check('nothing outside the repo or under a dot folder is published, but ship screenshots are',
+                  f'<img src="../secret.png"><img src="{tmp}/secret.png"><img src=".env/i.png"><img src="{b64}">' in out2)
             board = os.path.join(here, '..', '..', '..', '..', '..', 'specs', 'designs', '2026-10-14-doc-share.html')
             if os.path.isfile(board):  # only in a checkout; the installed plugin has no specs/
                 with open(board, 'rb') as f:
@@ -509,6 +569,22 @@ def selftest():
             check('stop takes it down and forgets it',
                   stopped.get('shared') is False and key not in links() and saved.get('id') not in Fake.store
                   and len(clipped) == 2)
+            race, real_api = 'ship/race/plan', api
+            publish(race, f'{doc}/page.html', copy=False)
+            race_id = links()[race]['id']
+
+            def stop_mid_upload(method, path, body=None):
+                answer = real_api(method, path, body)
+                if method == 'PUT':  # Pete presses Stop sharing while the redraw uploads
+                    handle({'cmd': 'stop', 'key': race})
+                return answer
+            globals()['api'] = stop_mid_upload
+            try:
+                raced = republish(race, redraw) or {}
+            finally:
+                globals()['api'] = real_api
+            check('Stop pressed during a redraw upload stays stopped',
+                  raced.get('shared') is False and race not in links() and race_id not in Fake.store)
 
             check('a missing file says so',
                   handle({'cmd': 'publish', 'key': key, 'file': f'{doc}/gone.html'}) == {'ok': False, 'error': GONE})

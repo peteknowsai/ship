@@ -11,8 +11,11 @@ const fake = () => {
     },
     async put(k, v) { m.set(k, typeof v === 'string' ? v : new TextDecoder().decode(v)); },
     async delete(keys) { for (const k of [].concat(keys)) m.delete(k); },
-    async list({ prefix }) {
-      return { objects: [...m.keys()].filter((k) => k.startsWith(prefix)).map((key) => ({ key })), truncated: false };
+    // Pages of two, like R2's pages of 1000, so a delete has to follow the cursor.
+    async list({ prefix, cursor }) {
+      const all = [...m.keys()].filter((k) => k.startsWith(prefix) && (!cursor || k > cursor)).sort();
+      const truncated = all.length > 2;
+      return { objects: all.slice(0, 2).map((key) => ({ key })), truncated, cursor: truncated ? all[1] : undefined };
     },
   };
 };
@@ -103,6 +106,8 @@ const F = '<F>';
 assert.equal(inject('<p>no body</p>', F), '<p>no body</p><F>');
 assert.equal(inject('<BODY>a</BODY>', F), '<BODY>a<F></BODY>');
 assert.equal(inject('<body><template><body>x</body></template>y</body>', F), '<body><template><body>x</body></template>y<F></body>');
+assert.equal(inject('<body>a</body>\n</html>\n', F), '<body>a<F></body>\n</html>\n');
+assert.equal(inject('<body><script>const m = "</body>";</script>', F), '<body><script>const m = "</body>";</script><F>');
 
 // 13. root
 assert.equal((await call('GET', '/')).status, 404);

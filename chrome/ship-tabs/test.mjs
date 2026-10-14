@@ -59,7 +59,7 @@ check('Pete\'s own file:// tab gets no button', shipTag('file:///Users/pete/Down
 const url = 'https://share.peteknowsai.xyz/k3x9p2/smarter-search-storyboard';
 const has = (html, ...parts) => parts.every((x) => html.includes(x));
 let v = shareView({ mode: 'idle' });
-check('idle: the Share button with the link icon, no tooltip', has(v, '>Share</button>', '<svg', 'M10 14a4') && !v.includes('Publish a link'));
+check('idle: the Share button with the link icon, its tooltip left to CSS hover', has(v, '>Share</button>', '<svg', 'M10 14a4', 'class="tip css"'));
 check('hover: the tooltip above it', has(shareView({ mode: 'idle', hover: true }), 'Publish a link anyone can open · <b>share.peteknowsai.xyz</b>', 'Share</button>'));
 check('sharing: a spinner and Sharing…', has(shareView({ mode: 'sharing' }), 'class="spin"', 'Sharing…'));
 v = shareView({ mode: 'copied', url });
