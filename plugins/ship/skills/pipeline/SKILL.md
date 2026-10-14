@@ -573,8 +573,8 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   tasks run in plan order inside it, each on its routed engine. The driver merges lanes back in plan order and
   runs the gates once after each merge, then removes that lane: `git -C <worktree>
   worktree remove <lane dir>` and `git -C <worktree> branch -D <branch>-<lane>`, as two
-  calls. If the harness refuses, leave it; `wt-sweep` removes a lane whose changes are
-  all in its parent. Serial is only for tasks that share files.
+  calls. If the harness refuses, leave it; `wt-sweep` removes a lane that has committed and whose
+  changes are all in its parent; a lane with no commits yet is left alone. Serial is only for tasks that share files.
   Three disjoint tasks run serially cost the sum of their times; fanned out, the
   slowest one's.
 - **A lane worktree has no installs, and a borrowed one must be excluded before the

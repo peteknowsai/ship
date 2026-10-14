@@ -102,6 +102,12 @@ and ship edits no env file, because a solo dev rarely has two branches changing 
 at once, and the card says so when one does. The clobbering entry below is the reason to
 opt a repo into `per-branch`.
 
+- **`launchctl bootstrap` right after `bootout` fails with "5: Input/output error"**
+  (2026-10-14): the old job is still tearing down. Under `set -e` it killed an install
+  script before its last plist was written, and an installer's own rollback hit it too and
+  left the app down. Restarting a launchd service: bootout, poll until `launchctl print
+  gui/$UID/<label>` fails, then bootstrap, retrying once on error 5.
+
 - **Main is production, so the build does the production push (2026-09-24, cells-app).**
   A manual "network deploy after merge" step was forgotten or run from the wrong checkout;
   now each pack's Vercel production build pushes its Convex functions (drop check first)
