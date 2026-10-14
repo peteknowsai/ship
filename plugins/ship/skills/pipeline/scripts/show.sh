@@ -13,4 +13,10 @@ url=$4
 case "$url" in *'#'*) sep='&' ;; *) sep='#' ;; esac
 url="$url${sep}ship=$repo/$2/$3${5:+&$5}"
 open -g -a "Google Chrome" "$url"
+# A doc Pete has shared from its Share button follows its redraws: republish it in the
+# background (share.py does nothing for a doc never shared, and never fails this script).
+# Only card kinds: the extension keys any other doc by its path, not repo/slug/kind.
+case "$3" in storyboard|plan|review)
+  [ -f "$4" ] && { /usr/bin/python3 "$(dirname "$0")/share.py" republish "$repo/$2/$3" "$4" >/dev/null 2>&1 & } ;;
+esac
 echo "$url"

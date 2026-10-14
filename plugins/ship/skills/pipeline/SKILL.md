@@ -167,9 +167,12 @@ browser against the running app and reports what it saw; a coding worker never d
 `review`, `test` (the worktree's localhost) or `preview`. It opens with `open -g`, so Chrome
 never comes forward and takes the screen while he works, and tags the URL so his ship-tabs
 extension (`chrome/ship-tabs/` in the ship repo) files it in the window's 📐 docs or
-🧪 test group, titles it (`🧪 eca-finder · smarter-search · …`), hands him back the tab he was on, and closes the tab it
+🧪 test group, titles it (`🧪 cells-app · smarter-search · …`), hands him back the tab he was on, and closes the tab it
 replaces: a redrawn storyboard or a restarted server is one tab, never two. `done` on the
-review card that goes with `result:` closes the ship's other tabs. Never connect to his
+review card that goes with `result:` closes the ship's other tabs. A storyboard, plan or
+review card Pete has shared from its Share button is republished by show.sh on each
+redraw, so the link he sent follows the rounds; sharing a doc is his press, never
+ship's. Never connect to his
 Chrome itself (chrome-devtools `--autoConnect`, `--browserUrl`): every connection pops an
 "Allow remote debugging?" dialog on his screen. Every automated browser is the separate
 chrome-headless-shell build (the chrome-devtools MCP's `--executablePath`, Playwright's

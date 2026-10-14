@@ -36,7 +36,7 @@ function docTag(path) {
 
 const ICONS = { storyboard: '🎨', plan: '📋', review: '✅', test: '🧪', preview: '🌐', shots: '📸', doc: '📄' };
 // What the tab strip and side panel show: the kind, the app and the ship, then the page's
-// own title ("🎨 eca-finder · smarter-search · storyboard r2").
+// own title ("🎨 cells-app · smarter-search · storyboard r2").
 const tabLabel = (t) => `${ICONS[t.kind] || '•'} ${t.repo} · ${t.slug} · `;
 
 // Two groups per window, whatever the app (Pete, 2026-10-14: "fewer groups, the things
@@ -77,4 +77,8 @@ function sweepPlan(tabs, now) {
   return { close: [...close], group, label, activate: activate.filter((id) => !close.has(id)) };
 }
 
-if (typeof module !== 'undefined') module.exports = { shipTag, tabLabel, groupOf, GROUPS, sweepPlan, STALE_MS };
+// Which tabs get the Share button: a ship doc on disk. A running app has no file to
+// bundle, and Pete's own file:// tabs carry no tag, so shipTag already said no.
+const shareable = (t, href) => !!t && /^file:/.test(href) && !['test', 'preview'].includes(t.kind);
+
+if (typeof module !== 'undefined') module.exports = { shipTag, tabLabel, groupOf, GROUPS, sweepPlan, STALE_MS, shareable };

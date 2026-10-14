@@ -10,6 +10,12 @@ const load = async () => ({ byKey: {}, byTab: {}, active: {}, ...(await chrome.s
 async function sort(tabId, href) {
   const tag = shipTag(href);
   const s = await load();
+  // A tagged tab that moved on to another ship doc is that doc now: forget the old key, or
+  // its label and Share button (which read byTab) would act on the old doc's link.
+  if (tag?.inferred && s.byTab[tabId] && s.byTab[tabId] !== tag.key) {
+    delete s.byKey[s.byTab[tabId]]; delete s.byTab[tabId];
+    await chrome.storage.session.set(s);
+  }
   if (!tag || tag.inferred || s.byTab[tabId] === tag.key) return; // an untagged doc is the sweep's
   const tab = await chrome.tabs.get(tabId).catch(() => null);
   if (!tab) return;
@@ -37,7 +43,25 @@ async function sort(tabId, href) {
   // Close what it replaces only now, so a group never empties out and comes back elsewhere.
   await chrome.tabs.remove(olds.map((o) => o.id)).catch(() => {});
   await label(tabId, tag);
+  await offerShare(tabId, tag, href);
 }
+
+// A ship doc on disk gets the Share button (rules.js shareable): the page learns its key
+// and file, then share.js draws the button in a shadow root. Not on the sweep: the button
+// lives until the page reloads, and a reload fires `complete`, so one helper spawn per load.
+async function offerShare(tabId, tag, href) {
+  if (!shareable(tag, href)) return;
+  await chrome.scripting.executeScript({ target: { tabId }, args: [{ key: tag.key, file: decodeURIComponent(new URL(href).pathname) }], func: (s) => { window.__shipShare = s; } }).catch(() => {});
+  await chrome.scripting.executeScript({ target: { tabId }, files: ['share.js'] }).catch(() => {});
+}
+
+// The button's line to share.py: one native host spawn per request, its answer handed
+// back to the page. No host installed → one human sentence, not a dead button.
+chrome.runtime.onMessage.addListener((msg, sender, reply) => {
+  if (!msg.share) return;
+  chrome.runtime.sendNativeMessage('com.pete.ship.share', msg.share).then(reply, () => reply({ ok: false, error: "The share helper isn't installed. Run share.py install." }));
+  return true;
+});
 
 // Every few minutes, at startup and after each ship page opens: group what's loose, close
 // older copies of a page, age out a gone worktree's docs (rules.js, sweepPlan).
@@ -76,8 +100,13 @@ function label(tabId, tag) {
 
 chrome.alarms.get('sweep').then((a) => a || chrome.alarms.create('sweep', { periodInMinutes: 5 })); // re-creating resets the clock
 chrome.alarms.onAlarm.addListener(() => run(sweep));
-chrome.runtime.onStartup.addListener(() => run(sweep));
-chrome.runtime.onInstalled.addListener(() => run(sweep));
+// Docs already open when the extension loads or reloads get their button now, not at
+// their next page load.
+async function offerAll() {
+  for (const t of await chrome.tabs.query({})) await offerShare(t.id, shipTag(t.url || ''), t.url || '');
+}
+chrome.runtime.onStartup.addListener(() => run(async () => { await sweep(); await offerAll(); }));
+chrome.runtime.onInstalled.addListener(() => run(async () => { await sweep(); await offerAll(); }));
 
 chrome.tabs.onCreated.addListener((tab) => {
   if (tab.pendingUrl || tab.url) run(() => sort(tab.id, tab.pendingUrl || tab.url));
@@ -87,7 +116,9 @@ chrome.tabs.onUpdated.addListener((tabId, change, tab) => {
   if (change.status === 'complete') run(async () => {
     const { byTab = {} } = await chrome.storage.session.get('byTab');
     const tag = byTab[tabId] ? shipTag(`x:#ship=${byTab[tabId]}`) : shipTag(tab.url || '');
-    if (tag) await label(tabId, tag); // a full page load drops the prefix; put it back
+    if (!tag) return;
+    await label(tabId, tag); // a full page load drops the prefix and the button; put them back
+    await offerShare(tabId, tag, tab.url || '');
   });
 });
 chrome.tabs.onActivated.addListener(({ tabId, windowId }) => run(async () => {
