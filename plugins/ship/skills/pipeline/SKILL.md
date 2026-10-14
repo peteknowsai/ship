@@ -166,8 +166,8 @@ browser against the running app and reports what it saw; a coding worker never d
 `open`: `show.sh <root> <slug> <kind> <file|url> [done]`, kind one of `storyboard`, `plan`,
 `review`, `test` (the worktree's localhost) or `preview`. It opens with `open -g`, so Chrome
 never comes forward and takes the screen while he works, and tags the URL so his ship-tabs
-extension (`chrome/ship-tabs/` in the ship repo) files it in that app's tab group, titles
-it (`🧪 smarter-search · …`), hands him back the tab he was on, and closes the tab it
+extension (`chrome/ship-tabs/` in the ship repo) files it in the window's 📐 docs or
+🧪 test group, titles it (`🧪 eca-finder · smarter-search · …`), hands him back the tab he was on, and closes the tab it
 replaces: a redrawn storyboard or a restarted server is one tab, never two. `done` on the
 review card that goes with `result:` closes the ship's other tabs. Never connect to his
 Chrome itself (chrome-devtools `--autoConnect`, `--browserUrl`): every connection pops an

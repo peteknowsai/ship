@@ -43,18 +43,22 @@ If you want the bundled status line, point your `statusLine` at it (or let the p
 
 `chrome/ship-tabs/` is a small Chrome extension that keeps ship's pages tidy. Ship opens
 every page through `pipeline/scripts/show.sh`, which uses `open -g` (Chrome never comes
-forward) and tags the URL `#ship=<repo>/<slug>/<kind>`. The extension files each tagged
-tab in one group per app, named for the repo, one color per repo; titles it with what it
-is (`🎨 smarter-search · storyboard r2`, `🧪 smarter-search · …` on the running app);
-hands you back the tab you were on; and closes the tab a new one replaces, so a redrawn
+forward) and tags the URL `#ship=<repo>/<slug>/<kind>`. Each window gets at most two
+groups, whatever the app: blue **📐 docs** (storyboards, plan and review cards, shots, any
+doc) and green **🧪 test** (the running apps, localhost and previews). A page joins at the
+group's end, so the last tab in docs is the newest thing ship showed you. Each tab is
+titled with its kind, app and ship, then the page's own title
+(`🎨 eca-finder · smarter-search · storyboard r2`, `🧪 eca-finder · smarter-search · Find a class`).
+The extension
+hands you back the tab you were on and closes the tab a new one replaces, so a redrawn
 storyboard or a restarted dev server is one tab, never two. When a ship lands, its review
 card closes the rest of that ship's tabs.
 
 A sweep runs at startup and every five minutes. It reads ship docs that arrived untagged
 (an older session's plain `open`, a click in Finder) from their paths: `designs/` is a
 storyboard, `plans/go-card-*` a plan card, `plans/review-*` a review card, anything else
-in a `specs/` or `docs/` home a doc of that repo. It files loose ones into their app's
-group, closes older copies of the same page so only the newest stays, and closes a
+in a `specs/` or `docs/` home a doc of that repo. It files loose ones into docs or test
+(tabs still in an earlier version's per-app groups included), labels them, closes older copies of the same page so only the newest stays, and closes a
 worktree's pages nobody has looked at in three days. Your own tabs, and ship tabs you
 dragged into a group of your choosing, are never moved.
 
@@ -65,8 +69,7 @@ to the front.
 
 Install once: `chrome://extensions`, turn on Developer mode, **Load unpacked**, pick
 `chrome/ship-tabs` in this repo's main checkout, and turn on **Allow access to file URLs**
-on its card so the storyboard and cards get labeled too (their own titles cover it
-otherwise). After a change, press its reload button. `node chrome/ship-tabs/test.mjs`
+in its Details: Chrome lets it label local docs only with that on. After a change, press its reload button. `node chrome/ship-tabs/test.mjs`
 checks the tag rules; `--live` also runs the real grouping in Chrome for Testing, launched
 in the background.
 

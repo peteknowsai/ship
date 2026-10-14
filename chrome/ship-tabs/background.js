@@ -1,5 +1,5 @@
-// Ship tabs: every page ship opens (pipeline/scripts/show.sh tags it) lands in its app's
-// group, titled with what it is, without taking the tab Pete is on. A redo replaces the
+// Ship tabs: every page ship opens (pipeline/scripts/show.sh tags it) lands in the window's
+// docs or test group, titled with what it is, without taking the tab Pete is on. A redo replaces the
 // tab it supersedes, and a ship's `done` page closes the rest of that ship's tabs.
 importScripts('rules.js');
 
@@ -33,7 +33,7 @@ async function sort(tabId, href) {
   }
   await chrome.storage.session.set(s);
 
-  await join(tabId, tab.windowId, tag.repo);
+  await join(tabId, tab.windowId, groupOf(tag));
   // Close what it replaces only now, so a group never empties out and comes back elsewhere.
   await chrome.tabs.remove(olds.map((o) => o.id)).catch(() => {});
   await label(tabId, tag);
@@ -42,25 +42,30 @@ async function sort(tabId, href) {
 // Every few minutes, at startup and after each ship page opens: group what's loose, close
 // older copies of a page, age out a gone worktree's docs (rules.js, sweepPlan).
 async function sweep() {
-  const tabs = await chrome.tabs.query({});
+  const titles = new Map((await chrome.tabGroups.query({})).map((g) => [g.id, g.title]));
+  const tabs = (await chrome.tabs.query({})).map((t) => ({ ...t, groupTitle: titles.get(t.groupId) }));
   const plan = sweepPlan(tabs, Date.now());
-  for (const g of plan.group) await join(g.id, g.windowId, g.repo).catch(() => {});
+  for (const g of plan.group) await join(g.id, g.windowId, g.group).catch(() => {});
+  for (const l of plan.label) await label(l.id, l.tag);
   for (const id of plan.activate) await chrome.tabs.update(id, { active: true }).catch(() => {});
   if (plan.close.length) await chrome.tabs.remove(plan.close).catch(() => {});
 }
 
-async function join(tabId, windowId, repo) {
-  const [group] = await chrome.tabGroups.query({ windowId, title: repo });
+// Joining puts the tab at the group's end, so the newest page is always the last one.
+async function join(tabId, windowId, { title, color }) {
+  const [group] = await chrome.tabGroups.query({ windowId, title });
   if (group) return chrome.tabs.group({ groupId: group.id, tabIds: tabId });
   const groupId = await chrome.tabs.group({ tabIds: tabId, createProperties: { windowId } });
-  await chrome.tabGroups.update(groupId, { title: repo, color: groupColor(repo) });
+  await chrome.tabGroups.update(groupId, { title, color });
 }
 
 // Prefix the page's title ("🧪 smarter-search · …") and keep it there when the app retitles.
-// A local file needs "Allow access to file URLs"; without it the doc's own <title> does it.
+// A local file needs the extension's "Allow access to file URLs" switch on.
 function label(tabId, tag) {
   return chrome.scripting.executeScript({ target: { tabId }, args: [tabLabel(tag)], func: (p) => {
-    const fix = () => { if (!document.title.startsWith(p)) document.title = p + document.title; };
+    // An older label ("🎨 smarter-search · storyboard r1", a template's or an earlier
+    // version's) gives way to the new one, never stacks under it.
+    const fix = () => { if (!document.title.startsWith(p)) document.title = p + document.title.replace(/^(🎨|📋|✅|🧪|🌐|📸|📄|•) [^·]*· /u, ''); };
     fix();
     if (!window.__shipLabel) {
       window.__shipLabel = true;
@@ -81,7 +86,7 @@ chrome.tabs.onUpdated.addListener((tabId, change, tab) => {
   if (change.url) { run(() => sort(tabId, change.url)); run(sweep); }
   if (change.status === 'complete') run(async () => {
     const { byTab = {} } = await chrome.storage.session.get('byTab');
-    const tag = byTab[tabId] && shipTag(`x:#ship=${byTab[tabId]}`);
+    const tag = byTab[tabId] ? shipTag(`x:#ship=${byTab[tabId]}`) : shipTag(tab.url || '');
     if (tag) await label(tabId, tag); // a full page load drops the prefix; put it back
   });
 });

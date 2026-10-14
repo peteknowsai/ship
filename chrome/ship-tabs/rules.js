@@ -35,24 +35,26 @@ function docTag(path) {
 }
 
 const ICONS = { storyboard: '🎨', plan: '📋', review: '✅', test: '🧪', preview: '🌐', shots: '📸', doc: '📄' };
-const tabLabel = (t) => `${ICONS[t.kind] || '•'} ${t.slug} · `;
+// What the tab strip and side panel show: the kind, the app and the ship, then the page's
+// own title ("🎨 eca-finder · smarter-search · storyboard r2").
+const tabLabel = (t) => `${ICONS[t.kind] || '•'} ${t.repo} · ${t.slug} · `;
 
-// One color per repo, so an app's group keeps its color across windows and days.
-const COLORS = ['blue', 'green', 'purple', 'orange', 'cyan', 'pink', 'yellow', 'red'];
-function groupColor(repo) {
-  let h = 0;
-  for (const c of repo) h = (h * 31 + c.charCodeAt(0)) >>> 0;
-  return COLORS[h % COLORS.length];
-}
+// Two groups per window, whatever the app (Pete, 2026-10-14: "fewer groups, the things
+// labeled inside"): docs for everything ship shows him to read, test for the running apps.
+const GROUPS = { docs: { title: '📐 docs', color: 'blue' }, test: { title: '🧪 test', color: 'green' } };
+const groupOf = (t) => GROUPS[t.kind === 'test' || t.kind === 'preview' ? 'test' : 'docs'];
+// Groups earlier versions made (one per repo, or "ship docs"/"ship test"): a tab still in
+// one is loose, not a tab Pete placed.
+const oldGroup = (title, t) => title === t.repo || title === 'ship docs' || title === 'ship test';
 
 const STALE_MS = 3 * 24 * 3600 * 1000; // a worktree lives a day or two; its pages a little longer
 
-// The sweep over every open tab, as a plan the background applies: ship tabs left
-// ungrouped join their app's group, older copies of one page close (the newest tab wins,
+// The sweep over every open tab, as a plan the background applies: loose ship tabs join
+// the docs or test group, older copies of one page close (the newest tab wins,
 // and takes focus if Pete was on a copy it replaced), and a worktree's doc nobody has
 // looked at in three days closes. Tabs in a group Pete chose stay where he put them.
 function sweepPlan(tabs, now) {
-  const close = new Set(), group = [], activate = [], newest = new Map();
+  const close = new Set(), group = [], label = [], activate = [], newest = new Map();
   for (const t of tabs) {
     const tag = shipTag(t.url || '');
     if (!tag || t.pinned) continue;
@@ -68,9 +70,11 @@ function sweepPlan(tabs, now) {
   }
   for (const t of tabs) {
     const tag = shipTag(t.url || '');
-    if (tag && !close.has(t.id) && t.groupId === -1 && !t.pinned) group.push({ id: t.id, windowId: t.windowId, repo: tag.repo });
+    if (!tag || close.has(t.id) || t.pinned) continue;
+    label.push({ id: t.id, tag });
+    if (t.groupId === -1 || oldGroup(t.groupTitle, tag)) group.push({ id: t.id, windowId: t.windowId, group: groupOf(tag) });
   }
-  return { close: [...close], group, activate: activate.filter((id) => !close.has(id)) };
+  return { close: [...close], group, label, activate: activate.filter((id) => !close.has(id)) };
 }
 
-if (typeof module !== 'undefined') module.exports = { shipTag, tabLabel, groupColor, sweepPlan, STALE_MS };
+if (typeof module !== 'undefined') module.exports = { shipTag, tabLabel, groupOf, GROUPS, sweepPlan, STALE_MS };
