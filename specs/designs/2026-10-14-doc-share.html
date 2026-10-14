@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>🎨 doc-share · storyboard r1</title>
+<title>🎨 doc-share · storyboard r2</title>
 <!--
   /ship GATE 1 template. Write to specs/designs/YYYY-MM-DD-<slug>.html in the docs home
   and show it with `scripts/show.sh <root> <slug> storyboard <file>`. The page is an
@@ -72,25 +72,25 @@
   dialog iframe{display:block;border:0;transform-origin:0 0}
 </style>
 </head>
-<body data-round="1">
+<body data-round="2">
 <header class="bar">
   <div><b>Share a ship doc</b><span class="mut">storyboard · round <span data-round-no>1</span> · feature/doc-share</span></div>
   <div class="zoom"><button data-z="out" title="Zoom out (-)">−</button><button data-z="fit" title="Fit (1)">Fit</button>
     <span data-z-label>100%</span><button data-z="in" title="Zoom in (+)">+</button><button data-z="full" title="Actual size (0)">1:1</button></div>
 </header>
 
-<main class="board"><section class="flow"><h2>Sharing a doc, in your Chrome</h2><div class="boards"><figure class="ab" data-mount="hover"><span class="name">A ship doc, Share hovered</span><div class="stage"></div><p class="cap">One small Share button, bottom right, on every ship doc, old ones too. Hover says where the link will live.</p></figure><figure class="ab" data-mount="sharing"><span class="name">Sharing</span><div class="stage"></div><p class="cap">Bundles the page with its styles and images, then uploads. A second or two.</p></figure><figure class="ab" data-mount="copied"><span class="name">Link copied</span><div class="stage"></div><p class="cap">The link is already on your clipboard. Paste it into a text to the client.</p></figure></div></section><section class="flow"><h2>Later: ship redraws it</h2><div class="boards"><figure class="ab" data-mount="redrawn"><span class="name">Redrawn, still shared</span><div class="stage"></div><p class="cap">Ship drew round 3. The link you sent already shows it; nothing to press.</p></figure><figure class="ab" data-mount="open"><span class="name">The shared panel</span><div class="stage"></div><p class="cap">Press Shared to copy the link again, or stop sharing to take the page down.</p></figure><figure class="ab" data-mount="error"><span class="name">Offline</span><div class="stage"></div><p class="cap">When the upload fails, it says why and offers one retry.</p></figure></div></section><section class="flow options"><h2>What the client sees</h2><div class="boards"><figure class="ab" data-mount="client-a"><span class="name">A storyboard, desktop</span><div class="stage"></div><p class="cap">The page exactly as you see it: frames live, zoom works, no Share button.</p></figure><figure class="ab" data-mount="client-phone"><span class="name">A review card, phone</span><div class="stage"></div><p class="cap">Cards read on a phone too.</p></figure></div></section><section class="flow options"><h2>A footer on the client's page</h2><div class="boards"><figure class="ab" data-mount="client-a"><span class="name"><span class="tag">A</span>Footer</span><div class="stage"></div><p class="cap">Who shared it and when it last changed, so they know it's current.</p></figure><figure class="ab" data-mount="client-b"><span class="name"><span class="tag">B</span>No footer</span><div class="stage"></div><p class="cap">Just the page.</p></figure></div></section></main>
+<main class="board"><section class="flow"><h2>Sharing a doc, in your Chrome</h2><div class="boards"><figure class="ab" data-mount="hover"><span class="name">A ship doc, Share hovered</span><div class="stage"></div><p class="cap">One small Share button, bottom right, on every ship doc, old ones too. Hover says where the link will live.</p></figure><figure class="ab" data-mount="sharing"><span class="name">Sharing</span><div class="stage"></div><p class="cap">Bundles the page with its styles and images, then uploads. A second or two.</p></figure><figure class="ab" data-mount="copied"><span class="name">Link copied</span><div class="stage"></div><p class="cap">The link is already on your clipboard. Paste it into a text to the client.</p></figure></div></section><section class="flow"><h2>Later: ship redraws it</h2><div class="boards"><figure class="ab" data-mount="redrawn"><span class="name">Redrawn, still shared</span><div class="stage"></div><p class="cap">Ship drew round 3. The link you sent already shows it; nothing to press.</p></figure><figure class="ab" data-mount="panel-v"><span class="name">The shared panel</span><div class="stage"></div><p class="cap">Press Shared to copy the link again, or stop sharing to take the page and every version down.</p></figure><figure class="ab" data-mount="error"><span class="name">Offline</span><div class="stage"></div><p class="cap">When the upload fails, it says why and offers one retry.</p></figure></div></section><section class="flow options"><h2>What the client sees</h2><div class="boards"><figure class="ab" data-mount="client-a"><span class="name">The newest version</span><div class="stage"></div><p class="cap">The page exactly as you see it, with a footer: who shared it, when it changed, and arrows back through earlier versions.</p></figure><figure class="ab" data-mount="client-old"><span class="name">Flipped back to version 1</span><div class="stage"></div><p class="cap">An older version says so in amber, with one click back to the latest.</p></figure><figure class="ab" data-mount="client-phone"><span class="name">A review card, phone</span><div class="stage"></div><p class="cap">Same footer, shorter.</p></figure></div></section><section class="flow options"><h2>Getting to an earlier version</h2><div class="boards"><figure class="ab" data-mount="client-a"><span class="name"><span class="tag">A</span>Arrows</span><div class="stage"></div><p class="cap">Step back one version at a time, like flipping pages.</p></figure><figure class="ab" data-mount="client-b"><span class="name"><span class="tag">B</span>A list</span><div class="stage"></div><p class="cap">Click the version to see them all with dates, and jump straight to one.</p></figure></div></section></main>
 
 <section class="notes">
-  <div class="q"><p>Should the client's page carry a small footer saying who shared it and when it last changed?</p><span class="pick">I'd pick: <b>A, the footer</b>. When the link updates by itself, the date is how they know they're looking at the newest round.</span></div>
-  <div class="q"><p>When ship redraws a page you've shared, should the link update silently, or ask you first?</p><span class="pick">I'd pick: <b>silently</b>, as you said. The button shows "updated just now" so you can see it happened.</span></div>
-  <div class="q"><p>Is "Stop sharing" worth having from day one?</p><span class="pick">I'd pick: <b>yes</b>. It's one line in the panel, and it's the undo for sharing the wrong page.</span></div>
+  <div class="q"><p>Round 2 adds versions: every redraw keeps the old page, and the footer flips back through them. Arrows or a list?</p><span class="pick">I'd pick: <b>A, arrows</b>. You said flip through, and most docs get a handful of rounds. A list earns its place only past ten or so.</span></div>
+  <div class="q"><p>Settled in round 1: the footer stays, redraws update the link silently, and Stop sharing ships from day one. Stop sharing now takes down every version with the page.</p><span class="pick">If this round looks right, say <b>lock</b> and I'll write the plan.</span></div>
   <details>
     <summary>For the record</summary>
     <ul>
       <li>How it works: the Ship tabs extension draws the button and hands the file to a small script on your Mac (Chrome native messaging, the same way your existing handoff host works). The script reads the page and everything it links from disk, inlines it into one file, and uploads it with a key from your Keychain to a ship-share Worker and R2 bucket on your PKAI Cloudflare account, at share.peteknowsai.xyz.</li>
       <li>One stable id per doc (app, ship and kind), random so links can't be guessed; every page is marked noindex. No expiry, no password (your call).</li>
       <li>Redraws: show.sh republishes a doc that has been shared before, so the link follows each round without the extension.</li>
+      <li>Versions: each publish whose content changed becomes the next version under the same id; an identical republish adds nothing. The plain link always shows the newest, and each version has its own link too.</li>
       <li>Reuse audit: nothing in the ship repo shares or hosts pages today; the board Worker (board.cells.md) is the pattern to copy. peteknowsai.xyz is active on PKAI with nothing at the apex, which stays free for a consulting site.</li>
       <li>Consults: none. No installed expert covers native messaging; the Cloudflare side repeats the board's setup.</li>
     </ul>
@@ -150,6 +150,18 @@ body{font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color
 /* what the client sees */
 .foot{position:fixed;left:0;right:0;bottom:0;height:34px;background:#fff;border-top:1px solid #d2d2d7;display:flex;align-items:center;justify-content:center;font-size:12px;color:#6e6e73}
 .foot b{color:#1d1d1f;font-weight:600}
+.foot.v{justify-content:space-between;padding:0 16px}
+.vers{display:flex;align-items:center;gap:6px;color:#1d1d1f}
+.vers a{display:inline-grid;place-items:center;width:24px;height:22px;border-radius:6px;border:1px solid #d2d2d7;color:#1d1d1f;text-decoration:none;font-size:15px;line-height:1}
+.vers a.off{color:#c7c7cc;border-color:#ececf0}
+.vers .lbl{padding:0 4px}
+.vers .lbl.menu{border-bottom:1px dashed #a1a1a6;cursor:pointer}
+.foot.old{background:#fff8e6;border-top-color:#f0d58c;color:#7a5a00}
+.foot .latest{font-weight:600;color:#2d5bd6;text-decoration:none;margin-left:10px}
+.vmenu{position:fixed;right:12px;bottom:42px;width:270px;background:#fff;border-radius:10px;padding:6px;box-shadow:0 2px 6px rgba(0,0,0,.1),0 16px 40px rgba(0,0,0,.16)}
+.vmenu div{display:flex;justify-content:space-between;padding:8px 10px;border-radius:6px;font-size:13px;color:#1d1d1f}
+.vmenu div span{color:#6e6e73}
+.vmenu div.on{background:#f4f4f6;font-weight:600}
 </style>
 <div class="bar"><div><b>Smarter search</b><span>storyboard · round 2</span></div><div class="zoom"><i></i><i></i><i></i></div></div><div class="canvas"><div class="row-name">Search · phone</div><div class="boards"><div class="ab"><div class="n">Empty</div><div class="s"><i class="h"></i><i></i><i class="w"></i><i></i><i class="w"></i><i class="b"></i></div><div class="cap">Nothing typed yet.</div></div><div class="ab"><div class="n">Typing</div><div class="s"><i class="h"></i><i></i><i class="w"></i><i></i><i class="w"></i><i class="b"></i></div><div class="cap">Suggestions as you type.</div></div><div class="ab"><div class="n">Results</div><div class="s"><i class="h"></i><i></i><i class="w"></i><i></i><i class="w"></i><i class="b"></i></div><div class="cap">Ranked, closest first.</div></div></div></div><div class="share"><button class="btn"><svg viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>Share</button></div></template><template data-frame="hover" data-w="960" data-h="600">
 <style>
@@ -202,6 +214,18 @@ body{font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color
 /* what the client sees */
 .foot{position:fixed;left:0;right:0;bottom:0;height:34px;background:#fff;border-top:1px solid #d2d2d7;display:flex;align-items:center;justify-content:center;font-size:12px;color:#6e6e73}
 .foot b{color:#1d1d1f;font-weight:600}
+.foot.v{justify-content:space-between;padding:0 16px}
+.vers{display:flex;align-items:center;gap:6px;color:#1d1d1f}
+.vers a{display:inline-grid;place-items:center;width:24px;height:22px;border-radius:6px;border:1px solid #d2d2d7;color:#1d1d1f;text-decoration:none;font-size:15px;line-height:1}
+.vers a.off{color:#c7c7cc;border-color:#ececf0}
+.vers .lbl{padding:0 4px}
+.vers .lbl.menu{border-bottom:1px dashed #a1a1a6;cursor:pointer}
+.foot.old{background:#fff8e6;border-top-color:#f0d58c;color:#7a5a00}
+.foot .latest{font-weight:600;color:#2d5bd6;text-decoration:none;margin-left:10px}
+.vmenu{position:fixed;right:12px;bottom:42px;width:270px;background:#fff;border-radius:10px;padding:6px;box-shadow:0 2px 6px rgba(0,0,0,.1),0 16px 40px rgba(0,0,0,.16)}
+.vmenu div{display:flex;justify-content:space-between;padding:8px 10px;border-radius:6px;font-size:13px;color:#1d1d1f}
+.vmenu div span{color:#6e6e73}
+.vmenu div.on{background:#f4f4f6;font-weight:600}
 </style>
 <div class="bar"><div><b>Smarter search</b><span>storyboard · round 2</span></div><div class="zoom"><i></i><i></i><i></i></div></div><div class="canvas"><div class="row-name">Search · phone</div><div class="boards"><div class="ab"><div class="n">Empty</div><div class="s"><i class="h"></i><i></i><i class="w"></i><i></i><i class="w"></i><i class="b"></i></div><div class="cap">Nothing typed yet.</div></div><div class="ab"><div class="n">Typing</div><div class="s"><i class="h"></i><i></i><i class="w"></i><i></i><i class="w"></i><i class="b"></i></div><div class="cap">Suggestions as you type.</div></div><div class="ab"><div class="n">Results</div><div class="s"><i class="h"></i><i></i><i class="w"></i><i></i><i class="w"></i><i class="b"></i></div><div class="cap">Ranked, closest first.</div></div></div></div><div class="share"><div class="tip">Publish a link anyone can open · <b>share.peteknowsai.xyz</b></div><button class="btn hover"><svg viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>Share</button></div></template><template data-frame="sharing" data-w="960" data-h="600">
 <style>
@@ -254,6 +278,18 @@ body{font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color
 /* what the client sees */
 .foot{position:fixed;left:0;right:0;bottom:0;height:34px;background:#fff;border-top:1px solid #d2d2d7;display:flex;align-items:center;justify-content:center;font-size:12px;color:#6e6e73}
 .foot b{color:#1d1d1f;font-weight:600}
+.foot.v{justify-content:space-between;padding:0 16px}
+.vers{display:flex;align-items:center;gap:6px;color:#1d1d1f}
+.vers a{display:inline-grid;place-items:center;width:24px;height:22px;border-radius:6px;border:1px solid #d2d2d7;color:#1d1d1f;text-decoration:none;font-size:15px;line-height:1}
+.vers a.off{color:#c7c7cc;border-color:#ececf0}
+.vers .lbl{padding:0 4px}
+.vers .lbl.menu{border-bottom:1px dashed #a1a1a6;cursor:pointer}
+.foot.old{background:#fff8e6;border-top-color:#f0d58c;color:#7a5a00}
+.foot .latest{font-weight:600;color:#2d5bd6;text-decoration:none;margin-left:10px}
+.vmenu{position:fixed;right:12px;bottom:42px;width:270px;background:#fff;border-radius:10px;padding:6px;box-shadow:0 2px 6px rgba(0,0,0,.1),0 16px 40px rgba(0,0,0,.16)}
+.vmenu div{display:flex;justify-content:space-between;padding:8px 10px;border-radius:6px;font-size:13px;color:#1d1d1f}
+.vmenu div span{color:#6e6e73}
+.vmenu div.on{background:#f4f4f6;font-weight:600}
 </style>
 <div class="bar"><div><b>Smarter search</b><span>storyboard · round 2</span></div><div class="zoom"><i></i><i></i><i></i></div></div><div class="canvas"><div class="row-name">Search · phone</div><div class="boards"><div class="ab"><div class="n">Empty</div><div class="s"><i class="h"></i><i></i><i class="w"></i><i></i><i class="w"></i><i class="b"></i></div><div class="cap">Nothing typed yet.</div></div><div class="ab"><div class="n">Typing</div><div class="s"><i class="h"></i><i></i><i class="w"></i><i></i><i class="w"></i><i class="b"></i></div><div class="cap">Suggestions as you type.</div></div><div class="ab"><div class="n">Results</div><div class="s"><i class="h"></i><i></i><i class="w"></i><i></i><i class="w"></i><i class="b"></i></div><div class="cap">Ranked, closest first.</div></div></div></div><div class="share"><button class="btn"><span class="spin"></span>Sharing…</button></div></template><template data-frame="copied" data-w="960" data-h="600">
 <style>
@@ -306,6 +342,18 @@ body{font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color
 /* what the client sees */
 .foot{position:fixed;left:0;right:0;bottom:0;height:34px;background:#fff;border-top:1px solid #d2d2d7;display:flex;align-items:center;justify-content:center;font-size:12px;color:#6e6e73}
 .foot b{color:#1d1d1f;font-weight:600}
+.foot.v{justify-content:space-between;padding:0 16px}
+.vers{display:flex;align-items:center;gap:6px;color:#1d1d1f}
+.vers a{display:inline-grid;place-items:center;width:24px;height:22px;border-radius:6px;border:1px solid #d2d2d7;color:#1d1d1f;text-decoration:none;font-size:15px;line-height:1}
+.vers a.off{color:#c7c7cc;border-color:#ececf0}
+.vers .lbl{padding:0 4px}
+.vers .lbl.menu{border-bottom:1px dashed #a1a1a6;cursor:pointer}
+.foot.old{background:#fff8e6;border-top-color:#f0d58c;color:#7a5a00}
+.foot .latest{font-weight:600;color:#2d5bd6;text-decoration:none;margin-left:10px}
+.vmenu{position:fixed;right:12px;bottom:42px;width:270px;background:#fff;border-radius:10px;padding:6px;box-shadow:0 2px 6px rgba(0,0,0,.1),0 16px 40px rgba(0,0,0,.16)}
+.vmenu div{display:flex;justify-content:space-between;padding:8px 10px;border-radius:6px;font-size:13px;color:#1d1d1f}
+.vmenu div span{color:#6e6e73}
+.vmenu div.on{background:#f4f4f6;font-weight:600}
 </style>
 <div class="bar"><div><b>Smarter search</b><span>storyboard · round 2</span></div><div class="zoom"><i></i><i></i><i></i></div></div><div class="canvas"><div class="row-name">Search · phone</div><div class="boards"><div class="ab"><div class="n">Empty</div><div class="s"><i class="h"></i><i></i><i class="w"></i><i></i><i class="w"></i><i class="b"></i></div><div class="cap">Nothing typed yet.</div></div><div class="ab"><div class="n">Typing</div><div class="s"><i class="h"></i><i></i><i class="w"></i><i></i><i class="w"></i><i class="b"></i></div><div class="cap">Suggestions as you type.</div></div><div class="ab"><div class="n">Results</div><div class="s"><i class="h"></i><i></i><i class="w"></i><i></i><i class="w"></i><i class="b"></i></div><div class="cap">Ranked, closest first.</div></div></div></div><div class="share"><div class="panel ok"><h3><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16 9.8"/></svg>Link copied</h3><p>Paste it anywhere. It always shows this page's newest version.</p><span class="url">share.peteknowsai.xyz/<em>k3x9p2</em>/smarter-search-storyboard</span><div class="acts"><button class="primary">Copy again</button><button>Open</button></div></div><button class="btn"><span class="dot"></span>Shared</button></div></template><template data-frame="redrawn" data-w="960" data-h="600">
 <style>
@@ -358,8 +406,20 @@ body{font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color
 /* what the client sees */
 .foot{position:fixed;left:0;right:0;bottom:0;height:34px;background:#fff;border-top:1px solid #d2d2d7;display:flex;align-items:center;justify-content:center;font-size:12px;color:#6e6e73}
 .foot b{color:#1d1d1f;font-weight:600}
+.foot.v{justify-content:space-between;padding:0 16px}
+.vers{display:flex;align-items:center;gap:6px;color:#1d1d1f}
+.vers a{display:inline-grid;place-items:center;width:24px;height:22px;border-radius:6px;border:1px solid #d2d2d7;color:#1d1d1f;text-decoration:none;font-size:15px;line-height:1}
+.vers a.off{color:#c7c7cc;border-color:#ececf0}
+.vers .lbl{padding:0 4px}
+.vers .lbl.menu{border-bottom:1px dashed #a1a1a6;cursor:pointer}
+.foot.old{background:#fff8e6;border-top-color:#f0d58c;color:#7a5a00}
+.foot .latest{font-weight:600;color:#2d5bd6;text-decoration:none;margin-left:10px}
+.vmenu{position:fixed;right:12px;bottom:42px;width:270px;background:#fff;border-radius:10px;padding:6px;box-shadow:0 2px 6px rgba(0,0,0,.1),0 16px 40px rgba(0,0,0,.16)}
+.vmenu div{display:flex;justify-content:space-between;padding:8px 10px;border-radius:6px;font-size:13px;color:#1d1d1f}
+.vmenu div span{color:#6e6e73}
+.vmenu div.on{background:#f4f4f6;font-weight:600}
 </style>
-<div class="bar"><div><b>Smarter search</b><span>storyboard · round 3</span></div><div class="zoom"><i></i><i></i><i></i></div></div><div class="canvas"><div class="row-name">Search · phone</div><div class="boards"><div class="ab"><div class="n">Empty</div><div class="s"><i class="h"></i><i></i><i class="w"></i><i></i><i class="w"></i><i class="b"></i></div><div class="cap">Nothing typed yet.</div></div><div class="ab"><div class="n">Typing</div><div class="s"><i class="h"></i><i></i><i class="w"></i><i></i><i class="w"></i><i class="b"></i></div><div class="cap">Suggestions as you type.</div></div><div class="ab"><div class="n">Results</div><div class="s"><i class="h"></i><i></i><i class="w"></i><i></i><i class="w"></i><i class="b"></i></div><div class="cap">Ranked, closest first.</div></div></div></div><div class="share"><button class="btn"><span class="dot"></span>Shared <span class="sub">· updated just now</span></button></div></template><template data-frame="open" data-w="960" data-h="600">
+<div class="bar"><div><b>Smarter search</b><span>storyboard · round 3</span></div><div class="zoom"><i></i><i></i><i></i></div></div><div class="canvas"><div class="row-name">Search · phone</div><div class="boards"><div class="ab"><div class="n">Empty</div><div class="s"><i class="h"></i><i></i><i class="w"></i><i></i><i class="w"></i><i class="b"></i></div><div class="cap">Nothing typed yet.</div></div><div class="ab"><div class="n">Typing</div><div class="s"><i class="h"></i><i></i><i class="w"></i><i></i><i class="w"></i><i class="b"></i></div><div class="cap">Suggestions as you type.</div></div><div class="ab"><div class="n">Results</div><div class="s"><i class="h"></i><i></i><i class="w"></i><i></i><i class="w"></i><i class="b"></i></div><div class="cap">Ranked, closest first.</div></div></div></div><div class="share"><button class="btn"><span class="dot"></span>Shared <span class="sub">· updated just now</span></button></div></template><template data-frame="error" data-w="960" data-h="600">
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
@@ -410,58 +470,18 @@ body{font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color
 /* what the client sees */
 .foot{position:fixed;left:0;right:0;bottom:0;height:34px;background:#fff;border-top:1px solid #d2d2d7;display:flex;align-items:center;justify-content:center;font-size:12px;color:#6e6e73}
 .foot b{color:#1d1d1f;font-weight:600}
-</style>
-<div class="bar"><div><b>Smarter search</b><span>storyboard · round 3</span></div><div class="zoom"><i></i><i></i><i></i></div></div><div class="canvas"><div class="row-name">Search · phone</div><div class="boards"><div class="ab"><div class="n">Empty</div><div class="s"><i class="h"></i><i></i><i class="w"></i><i></i><i class="w"></i><i class="b"></i></div><div class="cap">Nothing typed yet.</div></div><div class="ab"><div class="n">Typing</div><div class="s"><i class="h"></i><i></i><i class="w"></i><i></i><i class="w"></i><i class="b"></i></div><div class="cap">Suggestions as you type.</div></div><div class="ab"><div class="n">Results</div><div class="s"><i class="h"></i><i></i><i class="w"></i><i></i><i class="w"></i><i class="b"></i></div><div class="cap">Ranked, closest first.</div></div></div></div><div class="share"><div class="panel"><h3>Shared</h3><div class="meta">Round 3 is live · updated just now</div><span class="url">share.peteknowsai.xyz/<em>k3x9p2</em>/smarter-search-storyboard</span><div class="acts"><button class="primary">Copy link</button><button>Open</button><button class="stop">Stop sharing</button></div></div><button class="btn"><span class="dot"></span>Shared</button></div></template><template data-frame="error" data-w="960" data-h="600">
-<style>
-*{box-sizing:border-box}
-html,body{margin:0;height:100%}
-body{font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#1d1d1f;-webkit-font-smoothing:antialiased;background:#e8e8ea;overflow:hidden}
-::selection{background:#cfe0fb}
-.bar{height:52px;background:#fff;border-bottom:1px solid #d2d2d7;display:flex;align-items:center;justify-content:space-between;padding:0 28px}
-.bar b{font-size:15px}.bar span{color:#6e6e73;margin-left:8px}
-.zoom{display:flex;gap:4px}.zoom i{display:block;width:30px;height:22px;border:1px solid #d2d2d7;border-radius:6px;background:#fff}
-.canvas{padding:26px 28px}
-.row-name{font-size:12px;font-weight:600;color:#6e6e73;margin:0 0 10px}
-.boards{display:flex;gap:40px}
-.ab .n{font-size:11px;color:#6e6e73;margin-bottom:5px}
-.ab .s{width:150px;height:300px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.08),0 6px 18px rgba(0,0,0,.08);padding:14px}
-.ab .s i{display:block;height:9px;border-radius:3px;background:#ececf0;margin:0 0 9px}
-.ab .s i.h{height:22px;background:#2d5bd6;margin-bottom:14px}
-.ab .s i.w{width:62%}
-.ab .s i.b{height:30px;width:70%;background:#1d1d1f;margin-top:16px}
-.cap{font-size:11px;color:#1d1d1f;margin-top:6px;width:150px}
-
-/* the Share control */
-.share{position:fixed;right:22px;bottom:22px;display:flex;flex-direction:column;align-items:flex-end;gap:10px}
-.btn{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 14px 0 12px;border-radius:8px;background:#1d1d1f;color:#fff;
-  font:600 13px/1 -apple-system,BlinkMacSystemFont,sans-serif;border:0;box-shadow:0 2px 6px rgba(0,0,0,.18),0 10px 24px rgba(0,0,0,.14);cursor:pointer}
-.btn:hover,.btn.hover{background:#3a3a3f}
-.btn:focus-visible{outline:2px solid #2d5bd6;outline-offset:3px}
-.btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.btn .dot{width:8px;height:8px;border-radius:50%;background:#34c759}
-.btn .sub{font-weight:500;color:#c7c7cc}
-.tip{background:#fff;border-radius:8px;padding:8px 11px;font-size:12px;color:#3a3a3f;box-shadow:0 2px 6px rgba(0,0,0,.1),0 8px 20px rgba(0,0,0,.1)}
-.tip b{color:#1d1d1f}
-.spin{width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;animation:s .8s linear infinite}
-@keyframes s{to{transform:rotate(360deg)}}
-.panel{width:340px;background:#fff;border-radius:10px;padding:16px;box-shadow:0 2px 6px rgba(0,0,0,.1),0 16px 40px rgba(0,0,0,.16)}
-.panel h3{margin:0 0 4px;font-size:15px;display:flex;align-items:center;gap:8px}
-.panel h3 svg{width:18px;height:18px;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.ok svg{stroke:#248a3d}.bad svg{stroke:#c9341f}
-.panel p{margin:0 0 12px;color:#55555a;font-size:13px}
-.url{display:block;font:12.5px/1.4 ui-monospace,Menlo,monospace;background:#f4f4f6;border:1px solid #e3e3e8;border-radius:6px;padding:8px 10px;color:#1d1d1f;margin:0 0 12px;word-break:break-all}
-.url em{font-style:normal;color:#6e6e73}
-.acts{display:flex;gap:8px;align-items:center}
-.acts button{font:600 13px/1 -apple-system,sans-serif;height:32px;padding:0 12px;border-radius:7px;border:1px solid #d2d2d7;background:#fff;color:#1d1d1f;cursor:pointer}
-.acts button.primary{background:#1d1d1f;border-color:#1d1d1f;color:#fff}
-.acts button:hover{background:#f4f4f6}.acts button.primary:hover{background:#3a3a3f}
-.acts .stop{margin-left:auto;border:0;background:none;color:#c9341f;padding:0 4px}
-.acts .stop:hover{background:none;text-decoration:underline;text-underline-offset:3px}
-.meta{font-size:12px;color:#6e6e73;margin:-4px 0 12px}
-
-/* what the client sees */
-.foot{position:fixed;left:0;right:0;bottom:0;height:34px;background:#fff;border-top:1px solid #d2d2d7;display:flex;align-items:center;justify-content:center;font-size:12px;color:#6e6e73}
-.foot b{color:#1d1d1f;font-weight:600}
+.foot.v{justify-content:space-between;padding:0 16px}
+.vers{display:flex;align-items:center;gap:6px;color:#1d1d1f}
+.vers a{display:inline-grid;place-items:center;width:24px;height:22px;border-radius:6px;border:1px solid #d2d2d7;color:#1d1d1f;text-decoration:none;font-size:15px;line-height:1}
+.vers a.off{color:#c7c7cc;border-color:#ececf0}
+.vers .lbl{padding:0 4px}
+.vers .lbl.menu{border-bottom:1px dashed #a1a1a6;cursor:pointer}
+.foot.old{background:#fff8e6;border-top-color:#f0d58c;color:#7a5a00}
+.foot .latest{font-weight:600;color:#2d5bd6;text-decoration:none;margin-left:10px}
+.vmenu{position:fixed;right:12px;bottom:42px;width:270px;background:#fff;border-radius:10px;padding:6px;box-shadow:0 2px 6px rgba(0,0,0,.1),0 16px 40px rgba(0,0,0,.16)}
+.vmenu div{display:flex;justify-content:space-between;padding:8px 10px;border-radius:6px;font-size:13px;color:#1d1d1f}
+.vmenu div span{color:#6e6e73}
+.vmenu div.on{background:#f4f4f6;font-weight:600}
 </style>
 <div class="bar"><div><b>Smarter search</b><span>storyboard · round 2</span></div><div class="zoom"><i></i><i></i><i></i></div></div><div class="canvas"><div class="row-name">Search · phone</div><div class="boards"><div class="ab"><div class="n">Empty</div><div class="s"><i class="h"></i><i></i><i class="w"></i><i></i><i class="w"></i><i class="b"></i></div><div class="cap">Nothing typed yet.</div></div><div class="ab"><div class="n">Typing</div><div class="s"><i class="h"></i><i></i><i class="w"></i><i></i><i class="w"></i><i class="b"></i></div><div class="cap">Suggestions as you type.</div></div><div class="ab"><div class="n">Results</div><div class="s"><i class="h"></i><i></i><i class="w"></i><i></i><i class="w"></i><i class="b"></i></div><div class="cap">Ranked, closest first.</div></div></div></div><div class="share"><div class="panel bad"><h3><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5"/><path d="M12 16.4v.1"/></svg>Couldn't share</h3><p>share.peteknowsai.xyz didn't answer. Check your connection, then try again.</p><div class="acts"><button class="primary">Try again</button></div></div><button class="btn"><svg viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>Share</button></div></template><template data-frame="client-a" data-w="960" data-h="600">
 <style>
@@ -514,8 +534,20 @@ body{font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color
 /* what the client sees */
 .foot{position:fixed;left:0;right:0;bottom:0;height:34px;background:#fff;border-top:1px solid #d2d2d7;display:flex;align-items:center;justify-content:center;font-size:12px;color:#6e6e73}
 .foot b{color:#1d1d1f;font-weight:600}
+.foot.v{justify-content:space-between;padding:0 16px}
+.vers{display:flex;align-items:center;gap:6px;color:#1d1d1f}
+.vers a{display:inline-grid;place-items:center;width:24px;height:22px;border-radius:6px;border:1px solid #d2d2d7;color:#1d1d1f;text-decoration:none;font-size:15px;line-height:1}
+.vers a.off{color:#c7c7cc;border-color:#ececf0}
+.vers .lbl{padding:0 4px}
+.vers .lbl.menu{border-bottom:1px dashed #a1a1a6;cursor:pointer}
+.foot.old{background:#fff8e6;border-top-color:#f0d58c;color:#7a5a00}
+.foot .latest{font-weight:600;color:#2d5bd6;text-decoration:none;margin-left:10px}
+.vmenu{position:fixed;right:12px;bottom:42px;width:270px;background:#fff;border-radius:10px;padding:6px;box-shadow:0 2px 6px rgba(0,0,0,.1),0 16px 40px rgba(0,0,0,.16)}
+.vmenu div{display:flex;justify-content:space-between;padding:8px 10px;border-radius:6px;font-size:13px;color:#1d1d1f}
+.vmenu div span{color:#6e6e73}
+.vmenu div.on{background:#f4f4f6;font-weight:600}
 </style>
-<div class="bar"><div><b>Smarter search</b><span>storyboard · round 3</span></div><div class="zoom"><i></i><i></i><i></i></div></div><div class="canvas"><div class="row-name">Search · phone</div><div class="boards"><div class="ab"><div class="n">Empty</div><div class="s"><i class="h"></i><i></i><i class="w"></i><i></i><i class="w"></i><i class="b"></i></div><div class="cap">Nothing typed yet.</div></div><div class="ab"><div class="n">Typing</div><div class="s"><i class="h"></i><i></i><i class="w"></i><i></i><i class="w"></i><i class="b"></i></div><div class="cap">Suggestions as you type.</div></div><div class="ab"><div class="n">Results</div><div class="s"><i class="h"></i><i></i><i class="w"></i><i></i><i class="w"></i><i class="b"></i></div><div class="cap">Ranked, closest first.</div></div></div></div><div class="foot">Shared by&nbsp;<b>Pete McCarthy</b>&nbsp;· updated Oct 14, 2:10 PM</div></template><template data-frame="client-b" data-w="960" data-h="600">
+<div class="bar"><div><b>Smarter search</b><span>storyboard · round 3</span></div><div class="zoom"><i></i><i></i><i></i></div></div><div class="canvas"><div class="row-name">Search · phone</div><div class="boards"><div class="ab"><div class="n">Empty</div><div class="s"><i class="h"></i><i></i><i class="w"></i><i></i><i class="w"></i><i class="b"></i></div><div class="cap">Nothing typed yet.</div></div><div class="ab"><div class="n">Typing</div><div class="s"><i class="h"></i><i></i><i class="w"></i><i></i><i class="w"></i><i class="b"></i></div><div class="cap">Suggestions as you type.</div></div><div class="ab"><div class="n">Results</div><div class="s"><i class="h"></i><i></i><i class="w"></i><i></i><i class="w"></i><i class="b"></i></div><div class="cap">Ranked, closest first.</div></div></div></div><div class="foot v"><span>Shared by&nbsp;<b>Pete McCarthy</b>&nbsp;· updated Oct 14, 2:10 PM</span><span class="vers"><a href="#">‹</a><span class="lbl">Version 3 of 3</span><a class="off">›</a></span></div></template><template data-frame="client-b" data-w="960" data-h="600">
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
@@ -566,8 +598,20 @@ body{font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color
 /* what the client sees */
 .foot{position:fixed;left:0;right:0;bottom:0;height:34px;background:#fff;border-top:1px solid #d2d2d7;display:flex;align-items:center;justify-content:center;font-size:12px;color:#6e6e73}
 .foot b{color:#1d1d1f;font-weight:600}
+.foot.v{justify-content:space-between;padding:0 16px}
+.vers{display:flex;align-items:center;gap:6px;color:#1d1d1f}
+.vers a{display:inline-grid;place-items:center;width:24px;height:22px;border-radius:6px;border:1px solid #d2d2d7;color:#1d1d1f;text-decoration:none;font-size:15px;line-height:1}
+.vers a.off{color:#c7c7cc;border-color:#ececf0}
+.vers .lbl{padding:0 4px}
+.vers .lbl.menu{border-bottom:1px dashed #a1a1a6;cursor:pointer}
+.foot.old{background:#fff8e6;border-top-color:#f0d58c;color:#7a5a00}
+.foot .latest{font-weight:600;color:#2d5bd6;text-decoration:none;margin-left:10px}
+.vmenu{position:fixed;right:12px;bottom:42px;width:270px;background:#fff;border-radius:10px;padding:6px;box-shadow:0 2px 6px rgba(0,0,0,.1),0 16px 40px rgba(0,0,0,.16)}
+.vmenu div{display:flex;justify-content:space-between;padding:8px 10px;border-radius:6px;font-size:13px;color:#1d1d1f}
+.vmenu div span{color:#6e6e73}
+.vmenu div.on{background:#f4f4f6;font-weight:600}
 </style>
-<div class="bar"><div><b>Smarter search</b><span>storyboard · round 3</span></div><div class="zoom"><i></i><i></i><i></i></div></div><div class="canvas"><div class="row-name">Search · phone</div><div class="boards"><div class="ab"><div class="n">Empty</div><div class="s"><i class="h"></i><i></i><i class="w"></i><i></i><i class="w"></i><i class="b"></i></div><div class="cap">Nothing typed yet.</div></div><div class="ab"><div class="n">Typing</div><div class="s"><i class="h"></i><i></i><i class="w"></i><i></i><i class="w"></i><i class="b"></i></div><div class="cap">Suggestions as you type.</div></div><div class="ab"><div class="n">Results</div><div class="s"><i class="h"></i><i></i><i class="w"></i><i></i><i class="w"></i><i class="b"></i></div><div class="cap">Ranked, closest first.</div></div></div></div></template><template data-frame="client-phone" data-w="390" data-h="844">
+<div class="bar"><div><b>Smarter search</b><span>storyboard · round 3</span></div><div class="zoom"><i></i><i></i><i></i></div></div><div class="canvas"><div class="row-name">Search · phone</div><div class="boards"><div class="ab"><div class="n">Empty</div><div class="s"><i class="h"></i><i></i><i class="w"></i><i></i><i class="w"></i><i class="b"></i></div><div class="cap">Nothing typed yet.</div></div><div class="ab"><div class="n">Typing</div><div class="s"><i class="h"></i><i></i><i class="w"></i><i></i><i class="w"></i><i class="b"></i></div><div class="cap">Suggestions as you type.</div></div><div class="ab"><div class="n">Results</div><div class="s"><i class="h"></i><i></i><i class="w"></i><i></i><i class="w"></i><i class="b"></i></div><div class="cap">Ranked, closest first.</div></div></div></div><div class="vmenu"><div class="on">Version 3 · latest<span>Oct 14, 2:10 PM</span></div><div>Version 2<span>Oct 13, 4:45 PM</span></div><div>Version 1<span>Oct 12, 11:20 AM</span></div></div><div class="foot v"><span>Shared by&nbsp;<b>Pete McCarthy</b>&nbsp;· updated Oct 14, 2:10 PM</span><span class="vers"><span class="lbl menu">Version 3 of 3 ▾</span></span></div></template><template data-frame="client-old" data-w="960" data-h="600">
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
@@ -618,8 +662,148 @@ body{font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color
 /* what the client sees */
 .foot{position:fixed;left:0;right:0;bottom:0;height:34px;background:#fff;border-top:1px solid #d2d2d7;display:flex;align-items:center;justify-content:center;font-size:12px;color:#6e6e73}
 .foot b{color:#1d1d1f;font-weight:600}
+.foot.v{justify-content:space-between;padding:0 16px}
+.vers{display:flex;align-items:center;gap:6px;color:#1d1d1f}
+.vers a{display:inline-grid;place-items:center;width:24px;height:22px;border-radius:6px;border:1px solid #d2d2d7;color:#1d1d1f;text-decoration:none;font-size:15px;line-height:1}
+.vers a.off{color:#c7c7cc;border-color:#ececf0}
+.vers .lbl{padding:0 4px}
+.vers .lbl.menu{border-bottom:1px dashed #a1a1a6;cursor:pointer}
+.foot.old{background:#fff8e6;border-top-color:#f0d58c;color:#7a5a00}
+.foot .latest{font-weight:600;color:#2d5bd6;text-decoration:none;margin-left:10px}
+.vmenu{position:fixed;right:12px;bottom:42px;width:270px;background:#fff;border-radius:10px;padding:6px;box-shadow:0 2px 6px rgba(0,0,0,.1),0 16px 40px rgba(0,0,0,.16)}
+.vmenu div{display:flex;justify-content:space-between;padding:8px 10px;border-radius:6px;font-size:13px;color:#1d1d1f}
+.vmenu div span{color:#6e6e73}
+.vmenu div.on{background:#f4f4f6;font-weight:600}
 </style>
-<div style="padding:22px 20px 60px;background:#fff;height:100%"><div style="font-size:12px;color:#248a3d;font-weight:600;margin-bottom:6px">Tested · landed on main</div><div style="font-size:22px;font-weight:700;line-height:1.2;margin-bottom:14px">Activity card</div><div style="display:flex;gap:10px;margin:0 0 12px;font-size:14px"><span style="color:#248a3d">●</span><span>Each activity shows its next class and price</span></div><div style="display:flex;gap:10px;margin:0 0 12px;font-size:14px"><span style="color:#248a3d">●</span><span>Tap a card for the full schedule</span></div><div style="display:flex;gap:10px;margin:0 0 12px;font-size:14px"><span style="color:#248a3d">●</span><span>Works on the phone layout</span></div><div style="height:150px;background:#f4f4f6;border-radius:8px;margin-top:18px"></div></div><div class="foot">Shared by&nbsp;<b>Pete McCarthy</b>&nbsp;· updated Oct 14</div></template>
+<div class="bar"><div><b>Smarter search</b><span>storyboard · round 1</span></div><div class="zoom"><i></i><i></i><i></i></div></div><div class="canvas"><div class="row-name">Search · phone</div><div class="boards"><div class="ab"><div class="n">Empty</div><div class="s"><i class="h"></i><i></i><i class="w"></i><i></i><i class="w"></i><i class="b"></i></div><div class="cap">Nothing typed yet.</div></div><div class="ab"><div class="n">Typing</div><div class="s"><i class="h"></i><i></i><i class="w"></i><i></i><i class="w"></i><i class="b"></i></div><div class="cap">Suggestions as you type.</div></div><div class="ab"><div class="n">Results</div><div class="s"><i class="h"></i><i></i><i class="w"></i><i></i><i class="w"></i><i class="b"></i></div><div class="cap">Ranked, closest first.</div></div></div></div><div class="foot v old"><span>You're looking at <b style="color:#7a5a00">version 1 of 3</b>, from Oct 12<a class="latest" href="#">See the latest →</a></span><span class="vers"><a class="off">‹</a><span class="lbl">Version 1 of 3</span><a href="#">›</a></span></div></template><template data-frame="panel-v" data-w="960" data-h="600">
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#1d1d1f;-webkit-font-smoothing:antialiased;background:#e8e8ea;overflow:hidden}
+::selection{background:#cfe0fb}
+.bar{height:52px;background:#fff;border-bottom:1px solid #d2d2d7;display:flex;align-items:center;justify-content:space-between;padding:0 28px}
+.bar b{font-size:15px}.bar span{color:#6e6e73;margin-left:8px}
+.zoom{display:flex;gap:4px}.zoom i{display:block;width:30px;height:22px;border:1px solid #d2d2d7;border-radius:6px;background:#fff}
+.canvas{padding:26px 28px}
+.row-name{font-size:12px;font-weight:600;color:#6e6e73;margin:0 0 10px}
+.boards{display:flex;gap:40px}
+.ab .n{font-size:11px;color:#6e6e73;margin-bottom:5px}
+.ab .s{width:150px;height:300px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.08),0 6px 18px rgba(0,0,0,.08);padding:14px}
+.ab .s i{display:block;height:9px;border-radius:3px;background:#ececf0;margin:0 0 9px}
+.ab .s i.h{height:22px;background:#2d5bd6;margin-bottom:14px}
+.ab .s i.w{width:62%}
+.ab .s i.b{height:30px;width:70%;background:#1d1d1f;margin-top:16px}
+.cap{font-size:11px;color:#1d1d1f;margin-top:6px;width:150px}
+
+/* the Share control */
+.share{position:fixed;right:22px;bottom:22px;display:flex;flex-direction:column;align-items:flex-end;gap:10px}
+.btn{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 14px 0 12px;border-radius:8px;background:#1d1d1f;color:#fff;
+  font:600 13px/1 -apple-system,BlinkMacSystemFont,sans-serif;border:0;box-shadow:0 2px 6px rgba(0,0,0,.18),0 10px 24px rgba(0,0,0,.14);cursor:pointer}
+.btn:hover,.btn.hover{background:#3a3a3f}
+.btn:focus-visible{outline:2px solid #2d5bd6;outline-offset:3px}
+.btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.btn .dot{width:8px;height:8px;border-radius:50%;background:#34c759}
+.btn .sub{font-weight:500;color:#c7c7cc}
+.tip{background:#fff;border-radius:8px;padding:8px 11px;font-size:12px;color:#3a3a3f;box-shadow:0 2px 6px rgba(0,0,0,.1),0 8px 20px rgba(0,0,0,.1)}
+.tip b{color:#1d1d1f}
+.spin{width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;animation:s .8s linear infinite}
+@keyframes s{to{transform:rotate(360deg)}}
+.panel{width:340px;background:#fff;border-radius:10px;padding:16px;box-shadow:0 2px 6px rgba(0,0,0,.1),0 16px 40px rgba(0,0,0,.16)}
+.panel h3{margin:0 0 4px;font-size:15px;display:flex;align-items:center;gap:8px}
+.panel h3 svg{width:18px;height:18px;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ok svg{stroke:#248a3d}.bad svg{stroke:#c9341f}
+.panel p{margin:0 0 12px;color:#55555a;font-size:13px}
+.url{display:block;font:12.5px/1.4 ui-monospace,Menlo,monospace;background:#f4f4f6;border:1px solid #e3e3e8;border-radius:6px;padding:8px 10px;color:#1d1d1f;margin:0 0 12px;word-break:break-all}
+.url em{font-style:normal;color:#6e6e73}
+.acts{display:flex;gap:8px;align-items:center}
+.acts button{font:600 13px/1 -apple-system,sans-serif;height:32px;padding:0 12px;border-radius:7px;border:1px solid #d2d2d7;background:#fff;color:#1d1d1f;cursor:pointer}
+.acts button.primary{background:#1d1d1f;border-color:#1d1d1f;color:#fff}
+.acts button:hover{background:#f4f4f6}.acts button.primary:hover{background:#3a3a3f}
+.acts .stop{margin-left:auto;border:0;background:none;color:#c9341f;padding:0 4px}
+.acts .stop:hover{background:none;text-decoration:underline;text-underline-offset:3px}
+.meta{font-size:12px;color:#6e6e73;margin:-4px 0 12px}
+
+/* what the client sees */
+.foot{position:fixed;left:0;right:0;bottom:0;height:34px;background:#fff;border-top:1px solid #d2d2d7;display:flex;align-items:center;justify-content:center;font-size:12px;color:#6e6e73}
+.foot b{color:#1d1d1f;font-weight:600}
+.foot.v{justify-content:space-between;padding:0 16px}
+.vers{display:flex;align-items:center;gap:6px;color:#1d1d1f}
+.vers a{display:inline-grid;place-items:center;width:24px;height:22px;border-radius:6px;border:1px solid #d2d2d7;color:#1d1d1f;text-decoration:none;font-size:15px;line-height:1}
+.vers a.off{color:#c7c7cc;border-color:#ececf0}
+.vers .lbl{padding:0 4px}
+.vers .lbl.menu{border-bottom:1px dashed #a1a1a6;cursor:pointer}
+.foot.old{background:#fff8e6;border-top-color:#f0d58c;color:#7a5a00}
+.foot .latest{font-weight:600;color:#2d5bd6;text-decoration:none;margin-left:10px}
+.vmenu{position:fixed;right:12px;bottom:42px;width:270px;background:#fff;border-radius:10px;padding:6px;box-shadow:0 2px 6px rgba(0,0,0,.1),0 16px 40px rgba(0,0,0,.16)}
+.vmenu div{display:flex;justify-content:space-between;padding:8px 10px;border-radius:6px;font-size:13px;color:#1d1d1f}
+.vmenu div span{color:#6e6e73}
+.vmenu div.on{background:#f4f4f6;font-weight:600}
+</style>
+<div class="bar"><div><b>Smarter search</b><span>storyboard · round 3</span></div><div class="zoom"><i></i><i></i><i></i></div></div><div class="canvas"><div class="row-name">Search · phone</div><div class="boards"><div class="ab"><div class="n">Empty</div><div class="s"><i class="h"></i><i></i><i class="w"></i><i></i><i class="w"></i><i class="b"></i></div><div class="cap">Nothing typed yet.</div></div><div class="ab"><div class="n">Typing</div><div class="s"><i class="h"></i><i></i><i class="w"></i><i></i><i class="w"></i><i class="b"></i></div><div class="cap">Suggestions as you type.</div></div><div class="ab"><div class="n">Results</div><div class="s"><i class="h"></i><i></i><i class="w"></i><i></i><i class="w"></i><i class="b"></i></div><div class="cap">Ranked, closest first.</div></div></div></div><div class="share"><div class="panel"><h3>Shared</h3><div class="meta">Version 3 is live · versions 1 and 2 kept behind it</div><span class="url">share.peteknowsai.xyz/<em>k3x9p2</em>/smarter-search-storyboard</span><div class="acts"><button class="primary">Copy link</button><button>Open</button><button class="stop">Stop sharing</button></div></div><button class="btn"><span class="dot"></span>Shared</button></div></template><template data-frame="client-phone" data-w="390" data-h="844">
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#1d1d1f;-webkit-font-smoothing:antialiased;background:#e8e8ea;overflow:hidden}
+::selection{background:#cfe0fb}
+.bar{height:52px;background:#fff;border-bottom:1px solid #d2d2d7;display:flex;align-items:center;justify-content:space-between;padding:0 28px}
+.bar b{font-size:15px}.bar span{color:#6e6e73;margin-left:8px}
+.zoom{display:flex;gap:4px}.zoom i{display:block;width:30px;height:22px;border:1px solid #d2d2d7;border-radius:6px;background:#fff}
+.canvas{padding:26px 28px}
+.row-name{font-size:12px;font-weight:600;color:#6e6e73;margin:0 0 10px}
+.boards{display:flex;gap:40px}
+.ab .n{font-size:11px;color:#6e6e73;margin-bottom:5px}
+.ab .s{width:150px;height:300px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.08),0 6px 18px rgba(0,0,0,.08);padding:14px}
+.ab .s i{display:block;height:9px;border-radius:3px;background:#ececf0;margin:0 0 9px}
+.ab .s i.h{height:22px;background:#2d5bd6;margin-bottom:14px}
+.ab .s i.w{width:62%}
+.ab .s i.b{height:30px;width:70%;background:#1d1d1f;margin-top:16px}
+.cap{font-size:11px;color:#1d1d1f;margin-top:6px;width:150px}
+
+/* the Share control */
+.share{position:fixed;right:22px;bottom:22px;display:flex;flex-direction:column;align-items:flex-end;gap:10px}
+.btn{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 14px 0 12px;border-radius:8px;background:#1d1d1f;color:#fff;
+  font:600 13px/1 -apple-system,BlinkMacSystemFont,sans-serif;border:0;box-shadow:0 2px 6px rgba(0,0,0,.18),0 10px 24px rgba(0,0,0,.14);cursor:pointer}
+.btn:hover,.btn.hover{background:#3a3a3f}
+.btn:focus-visible{outline:2px solid #2d5bd6;outline-offset:3px}
+.btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.btn .dot{width:8px;height:8px;border-radius:50%;background:#34c759}
+.btn .sub{font-weight:500;color:#c7c7cc}
+.tip{background:#fff;border-radius:8px;padding:8px 11px;font-size:12px;color:#3a3a3f;box-shadow:0 2px 6px rgba(0,0,0,.1),0 8px 20px rgba(0,0,0,.1)}
+.tip b{color:#1d1d1f}
+.spin{width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;animation:s .8s linear infinite}
+@keyframes s{to{transform:rotate(360deg)}}
+.panel{width:340px;background:#fff;border-radius:10px;padding:16px;box-shadow:0 2px 6px rgba(0,0,0,.1),0 16px 40px rgba(0,0,0,.16)}
+.panel h3{margin:0 0 4px;font-size:15px;display:flex;align-items:center;gap:8px}
+.panel h3 svg{width:18px;height:18px;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ok svg{stroke:#248a3d}.bad svg{stroke:#c9341f}
+.panel p{margin:0 0 12px;color:#55555a;font-size:13px}
+.url{display:block;font:12.5px/1.4 ui-monospace,Menlo,monospace;background:#f4f4f6;border:1px solid #e3e3e8;border-radius:6px;padding:8px 10px;color:#1d1d1f;margin:0 0 12px;word-break:break-all}
+.url em{font-style:normal;color:#6e6e73}
+.acts{display:flex;gap:8px;align-items:center}
+.acts button{font:600 13px/1 -apple-system,sans-serif;height:32px;padding:0 12px;border-radius:7px;border:1px solid #d2d2d7;background:#fff;color:#1d1d1f;cursor:pointer}
+.acts button.primary{background:#1d1d1f;border-color:#1d1d1f;color:#fff}
+.acts button:hover{background:#f4f4f6}.acts button.primary:hover{background:#3a3a3f}
+.acts .stop{margin-left:auto;border:0;background:none;color:#c9341f;padding:0 4px}
+.acts .stop:hover{background:none;text-decoration:underline;text-underline-offset:3px}
+.meta{font-size:12px;color:#6e6e73;margin:-4px 0 12px}
+
+/* what the client sees */
+.foot{position:fixed;left:0;right:0;bottom:0;height:34px;background:#fff;border-top:1px solid #d2d2d7;display:flex;align-items:center;justify-content:center;font-size:12px;color:#6e6e73}
+.foot b{color:#1d1d1f;font-weight:600}
+.foot.v{justify-content:space-between;padding:0 16px}
+.vers{display:flex;align-items:center;gap:6px;color:#1d1d1f}
+.vers a{display:inline-grid;place-items:center;width:24px;height:22px;border-radius:6px;border:1px solid #d2d2d7;color:#1d1d1f;text-decoration:none;font-size:15px;line-height:1}
+.vers a.off{color:#c7c7cc;border-color:#ececf0}
+.vers .lbl{padding:0 4px}
+.vers .lbl.menu{border-bottom:1px dashed #a1a1a6;cursor:pointer}
+.foot.old{background:#fff8e6;border-top-color:#f0d58c;color:#7a5a00}
+.foot .latest{font-weight:600;color:#2d5bd6;text-decoration:none;margin-left:10px}
+.vmenu{position:fixed;right:12px;bottom:42px;width:270px;background:#fff;border-radius:10px;padding:6px;box-shadow:0 2px 6px rgba(0,0,0,.1),0 16px 40px rgba(0,0,0,.16)}
+.vmenu div{display:flex;justify-content:space-between;padding:8px 10px;border-radius:6px;font-size:13px;color:#1d1d1f}
+.vmenu div span{color:#6e6e73}
+.vmenu div.on{background:#f4f4f6;font-weight:600}
+</style>
+<div style="padding:22px 20px 60px;background:#fff;height:100%"><div style="font-size:12px;color:#248a3d;font-weight:600;margin-bottom:6px">Tested · landed on main</div><div style="font-size:22px;font-weight:700;line-height:1.2;margin-bottom:14px">Activity card</div><div style="display:flex;gap:10px;margin:0 0 12px;font-size:14px"><span style="color:#248a3d">●</span><span>Each activity shows its next class and price</span></div><div style="display:flex;gap:10px;margin:0 0 12px;font-size:14px"><span style="color:#248a3d">●</span><span>Tap a card for the full schedule</span></div><div style="display:flex;gap:10px;margin:0 0 12px;font-size:14px"><span style="color:#248a3d">●</span><span>Works on the phone layout</span></div><div style="height:150px;background:#f4f4f6;border-radius:8px;margin-top:18px"></div></div><div class="foot v"><span>Shared by&nbsp;<b>Pete</b>&nbsp;· Oct 14</span><span class="vers"><a href="#">‹</a><span class="lbl">3 of 3</span><a class="off">›</a></span></div></template>
 
 <script>
 // Mount every <template data-frame> into the artboard that names it, all at one zoom.
