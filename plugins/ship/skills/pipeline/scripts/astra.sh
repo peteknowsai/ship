@@ -69,19 +69,30 @@ dispatch() {
   [ -s "${brief}" ] || { echo "astra: brief ${brief} is missing or empty" >&2; return 2; }
   mkdir -p "${out}"; out=$(cd "${out}" && pwd); worktree=$(cd "${worktree}" && pwd)
   local events="${out}/events.jsonl" last="${out}/last.md"
-  local -a common=(-m "${model}" -c "model_reasoning_effort=${effort}" --json -o "${last}")
+  # `features.apps=false` keeps Pete's ChatGPT connectors out: no config hides them, and
+  # code mode hands all 331 (Gmail, Drive delete, GitHub writes, Slack) to any run that asks.
+  local -a common=(-m "${model}" -c "model_reasoning_effort=${effort}" -c features.apps=false --json -o "${last}")
+  local -a env=()
   # A reader gets a blank config: `-c ….enabled=false` can't reach the servers Codex
   # plugins bring (cua_repl drives the desktop, messages sends texts), and a blank config
   # drops them all, leaving the shell (Sol's own catch on the branch that added it).
   local line
-  if [ "${mode}" = review ]; then common+=(--ignore-user-config); else
+  # Skills load from ~/.agents/skills whatever CODEX_HOME says, so a reader also gets a home
+  # of its own holding only the login (checked on 0.162.1, 2026-10-14). The tester keeps the
+  # real one: its browser comes from npx's cache there.
+  if [ "${mode}" = review ]; then
+    common+=(--ignore-user-config)
+    mkdir -p "${out}/home/.codex"
+    ln -sf "${CODEX_HOME:-$HOME/.codex}/auth.json" "${out}/home/.codex/auth.json"
+    env=(HOME="${out}/home" CODEX_HOME="${out}/home/.codex")
+  else
     while read -r line; do common+=("${line}"); done < <(mcp_off "${TESTER_MCP}")
     while read -r line; do common+=("${line}"); done < <(tester_browser "${worktree}" "${out}")
   fi
   brief=$(cd "$(dirname "${brief}")" && pwd)/$(basename "${brief}")
   rm -f "${last}"
   local started_at; started_at=$(date +%s)
-  : > "${events}"; "${CODEX}" exec -C "${worktree}" -s read-only "${common[@]}" - < "${brief}" >> "${events}" 2> "${out}/stderr.txt" &
+  : > "${events}"; env ${env[@]+"${env[@]}"} "${CODEX}" exec -C "${worktree}" -s read-only "${common[@]}" - < "${brief}" >> "${events}" 2> "${out}/stderr.txt" &
   local pid=$! now seen_start=0
   while kill -0 "${pid}" 2>/dev/null; do
     sleep "${TICK}"; now=$(date +%s)
@@ -123,12 +134,12 @@ selftest() {
   : > "${dir}/empty.md"
   expect 2 "an empty brief"                 test "${dir}/wt" "${dir}/empty.md" "${dir}/o7"
   printf '[mcp_servers.agent-device]\n[mcp_servers.node_repl]\n' > "${dir}/config.toml"
-  stub "echo \"\$*\" > ${dir}/args; ${write_last}; cat >/dev/null; echo '{\"type\":\"thread.started\",\"thread_id\":\"t1\"}'; echo done > \"\$out\""
+  stub "echo \"\$* HOME=\$HOME\" > ${dir}/args; ${write_last}; cat >/dev/null; echo '{\"type\":\"thread.started\",\"thread_id\":\"t1\"}'; echo done > \"\$out\""
   expect 0 "a test run finishes"            test "${dir}/wt" "${dir}/brief.md" "${dir}/o8"
   if grep -q -- '-s read-only' "${dir}/args" && grep -q 'agent-device.default_tools_approval_mode="approve"' "${dir}/args" &&
      grep -q 'node_repl.enabled=false' "${dir}/args" && ! grep -q 'agent-device.enabled=false' "${dir}/args" &&
-     grep -q -- "--headless=true\",\"--workspace=${dir}/wt\",\"--workspace=${dir}/o8\"" "${dir}/args"; then
-    echo "  ok   a test run is read-only, only the tester's servers on and pre-approved, its browser headless and rooted in the worktree and out-dir"
+     grep -q 'features.apps=false' "${dir}/args" && grep -q -- "--headless=true\",\"--workspace=${dir}/wt\",\"--workspace=${dir}/o8\"" "${dir}/args"; then
+    echo "  ok   a test run is read-only, connectors off, only the tester's servers on and pre-approved, its browser headless and rooted in the worktree and out-dir"
   else echo "  FAIL a test run's flags: $(cat "${dir}/args")"; fails=$((fails+1)); fi
   mkdir -p "${dir}/shell/150.0/chrome-headless-shell-mac-arm64" && touch "${dir}/shell/150.0/chrome-headless-shell-mac-arm64/chrome-headless-shell"
   ASTRA_HEADLESS_SHELL_DIR="${dir}/shell" expect 0 "a test run finds the headless shell" test "${dir}/wt" "${dir}/brief.md" "${dir}/o9"
@@ -137,8 +148,10 @@ selftest() {
   else echo "  FAIL the tester's browser: $(cat "${dir}/args")"; fails=$((fails+1)); fi
   expect 0 "a review run finishes"          review "${dir}/wt" "${dir}/brief.md" "${dir}/o10"
   if grep -q -- '-s read-only' "${dir}/args" && grep -q -- '-m gpt-6.1-sol' "${dir}/args" &&
-     grep -q -- '--ignore-user-config' "${dir}/args" && ! grep -q 'mcp_servers' "${dir}/args"; then
-    echo "  ok   a review run is read-only, on Sol, on a blank config so no MCP server or plugin reaches it"
+     grep -q -- '--ignore-user-config' "${dir}/args" && ! grep -q 'mcp_servers' "${dir}/args" &&
+     grep -q 'features.apps=false' "${dir}/args" && grep -q "HOME=${dir}/o10/home\$" "${dir}/args" &&
+     [ -L "${dir}/o10/home/.codex/auth.json" ]; then
+    echo "  ok   a review run is read-only, on Sol, on a blank config and a home of its own, so no MCP server, connector, plugin or skill reaches it"
   else echo "  FAIL a review run's flags: $(cat "${dir}/args")"; fails=$((fails+1)); fi
   rm -rf "${dir}"; echo "astra self-test: $((14 - fails))/14"; [ "${fails}" = 0 ]
 }

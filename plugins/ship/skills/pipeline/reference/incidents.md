@@ -207,6 +207,13 @@ opt a repo into `per-branch`.
 
 ## Dispatch
 
+- **Headless Codex carried all of Pete's ChatGPT connectors** (2026-10-14, codex-cli
+  0.162.1, reported by peggy-data). `--ignore-user-config` and a private CODEX_HOME both
+  still left 331 `mcp__codex_apps__*` tools in reach through code mode (Gmail, Drive
+  delete, GitHub writes, Slack), and Pete's ~/.agents/skills loaded regardless. Only
+  `-c features.apps=false` drops the connectors, and only a private HOME holding just
+  the login drops the skills. astra.sh does both for the reader and the first for the
+  tester. Any new headless `codex exec` needs the same.
 - **The first two days on the ladder, read from nine ship sessions** (2026-09-24 to 26).
   Pete found at TEST what the walk skipped: a right-click menu synthetic events can't
   reproduce, a voice path no walk reached, a localhost broken by a shared sign-in
