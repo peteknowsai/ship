@@ -8,7 +8,12 @@ task done, so the status line reaches BUILD without the driver remembering to sa
 `plan` also saves its picks to .ship-route.json beside the marker, and `log task=<n>`
 fills that task's `score` and `routed` engine from it, so an override shows as
 engine != routed and nobody re-asks Jev or types a score by hand.
-  route.py report                the ledger as a table by engine and difficulty
+  route.py log review=<fable|sol> real=<n> false=<n> only=<n> seconds=<n> ...
+                                 append one REVIEW reader's tally for the ship: findings
+                                 that were real, false alarms, and real ones the other
+                                 reader missed; it never counts as a BUILD task
+  route.py report                the ledger as a table by engine and difficulty, then
+                                 the reviewers'
   route.py --selftest
 
 The ladder ranks the routable tasks by Jev's difficulty score and deals them out in
@@ -255,7 +260,8 @@ def log(pairs):
               '(run log from the ship worktree)', file=sys.stderr)
     with open(ledger_path(), 'a') as ledger:
         ledger.write(json.dumps(row) + '\n')
-    mark_build(os.getcwd(), done=True)
+    if 'review' not in row:
+        mark_build(os.getcwd(), done=True)
     return row
 
 
@@ -275,6 +281,8 @@ def report():
                 pass  # a half-written line from a concurrent ship; the rest still counts
     except FileNotFoundError:
         pass
+    reviews = [r for r in rows if 'review' in r]
+    rows = [r for r in rows if 'review' not in r]
     groups = {}
     for row in rows:
         groups.setdefault((row.get('engine', '?'), band(row.get('score'))), []).append(row)
@@ -288,6 +296,14 @@ def report():
         minutes = mean('seconds')
         minutes = minutes if minutes == '-' else f'{float(minutes) / 60:.1f}'
         lines.append(f"{engine:7} {difficulty:10} {len(group):>5} {rate:>10} {mean('fix_rounds'):>10} {minutes:>8}")
+    if reviews:
+        lines += ['', f"{'reviewer':8} {'ships':>5} {'real':>5} {'false':>5} {'only it':>7} {'minutes':>8}"]
+        for name in sorted({r['review'] for r in reviews}):
+            group = [r for r in reviews if r['review'] == name]
+            total = lambda key: sum(r[key] for r in group if isinstance(r.get(key), int) and not isinstance(r[key], bool))
+            secs = [r['seconds'] for r in group if isinstance(r.get('seconds'), (int, float))]
+            minutes = f'{sum(secs) / len(secs) / 60:.1f}' if secs else '-'
+            lines.append(f"{name:8} {len(group):>5} {total('real'):>5} {total('false'):>5} {total('only'):>7} {minutes:>8}")
     return '\n'.join(lines)
 
 
@@ -340,10 +356,14 @@ def selftest():
         log(['repo=ship', 'task=2', 'engine=fable', 'score=3.4', 'seconds=300', 'fix_rounds=1', 'gates_first_pass=false'])
         open(ledger_path(), 'a').write('{"half a line\n')
         log(['repo=ship', 'task=1', 'engine=astra', 'score=0.8', 'seconds=120', 'fix_rounds=0', 'gates_first_pass=True'])
+        log(['repo=ship', 'review=sol', 'real=2', 'false=3', 'only=1', 'seconds=120'])
+        log(['repo=ship', 'review=sol', 'real=1', 'false=0', 'only=0', 'seconds=60'])
         table = report()
         check('the ledger reports by engine and difficulty, past a broken line',
               'fable   hard 2.5+      1         0%        1.0      5.0' in table and
               'astra   easy <1.5      1       100%' in table)
+        check('reviewers get their own table, outside the BUILD one',
+              'sol          2     3     3       1      1.5' in table and 'sol      unscored' not in table)
         repo = os.path.join(tmp, 'repo')
         subprocess.run(['git', 'init', '-q', repo], check=True)
         stage = os.path.join(repo, '.ship-stage')

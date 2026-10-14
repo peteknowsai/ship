@@ -80,7 +80,12 @@ final say. Every model runs at high effort: the driver, every subagent, and ever
 codex run. Never xhigh or max, and never medium to save time.
 
 **Fable 5.1 is the second opinion in two places**: the plan review at the end of PLAN
-and REVIEW's correctness pass. It also builds a band of BUILD tasks.
+and REVIEW's correctness pass. It also builds a band of BUILD tasks. **GPT-6.1 Sol reads
+the branch beside it at REVIEW**, the one check from outside Claude's family: a reviewer
+of the same family shares the writer's blind spots and goes easy on work shaped like its
+own (Pete, 2026-10-14). It only reports; it never edits, because a cross-family reviewer
+that rewrites breaks working code. Both readers' tallies go to the ledger, which decides
+after about ten ships whether Sol stays, and whether Fable does.
 
 **BUILD routes by difficulty.** Once the execution plan is written and reviewed, run
 `scripts/route.py plan <plan.md>` from this skill's directory. It asks Jev, TypeSafe's
@@ -672,9 +677,19 @@ he asks.
   field unwritten or a function uncalled, grep the whole repo, packages, extensions and
   scripts included, not only the directories the diff touched (a HIGH that would have
   parked secrets-report missed the writer in a browser extension). It touches nothing and returns
-  findings as file:line, the failure scenario, and a severity. The driver triages every finding
-  — adversarial reviewers over-flag by design — fixes what's real, puts judgment calls
-  on the card or in the `result:` line. The high-value fan-out is here: several verifiers on one diff beats one.
+  findings as file:line, the failure scenario, and a severity.
+  **Sol reads the same branch at the same time**: write that brief to a file and run
+  `scripts/astra.sh review <worktree> <brief> <out-dir>` in the background (read-only, no
+  tools but the shell, a few minutes), same brief, its findings in `<out-dir>/last.md`.
+  Neither reader sees the other's findings. Codex out of quota or astra's nonzero exit:
+  say so in the `result:` line and go on with Fable alone, never wait on it.
+  The driver triages every finding from both
+  — adversarial reviewers over-flag by design, and a finding two readers reached on their own
+  is the strongest lead, never proof — checks each against the code, fixes what's real, puts judgment calls
+  on the card or in the `result:` line. Then one ledger row per reader: `route.py log
+  repo=<repo> slug=<slug> review=fable real=<n> false=<n> only=<n> seconds=<n>` and the
+  same with `review=sol`, where `only` counts the real findings the other reader missed.
+  The high-value fan-out is here: several verifiers on one diff beats one.
 - **Design against the storyboard is the QA run's to judge**: the script carries a step
   per frame the change built and the craft floor
   (`~/.claude/skills/impeccable/reference/craft-floor.md`), and a gap is a failure like
