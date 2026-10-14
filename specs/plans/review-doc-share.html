@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>✅ doc-share · review</title>
+<!--
+  /ship REVIEW template. Fill the slots, write to specs/plans/review-<slug>.html,
+  and show it with `scripts/show.sh <root> <slug> review <file>` (`done` with the result). This is what Pete reviews — NOT the raw PR diff. PM-framed:
+  what it DOES, what's already checked, what only he can confirm. The meta, one screen.
+-->
+<style>
+  :root{--page:#f5f5f7;--card:#fff;--ink:#1d1d1f;--slate:#515154;--mut:#86868b;
+    --line:#e3e3e8;--amber:#c8892b;--grn:#3f7d4e;--red:#b4543a;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--page);color:var(--ink);
+    font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    -webkit-font-smoothing:antialiased;padding:40px 20px}
+  .wrap{max-width:700px;margin:0 auto}
+  h1{font-size:36px;line-height:1.05;margin:6px 0 2px;font-weight:600}
+  .sub{color:var(--slate);margin:0 0 22px;font-size:15px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin:14px 0}
+  .card h2{margin:0 0 12px;text-transform:uppercase;color:var(--mut);
+    font-weight:700;font-size:12px;letter-spacing:.14em}
+  ul{margin:0;padding-left:18px} li{margin:7px 0}
+  li b{color:var(--ink)}
+  .shipped li::marker{color:var(--grn)}
+  .eye{border-left:3px solid var(--amber);padding:8px 0 8px 14px;margin:10px 0}
+  .eye .q{font-weight:700;margin:0 0 2px}
+  .eye .d{color:var(--slate);font-size:14px;margin:0}
+  .pill{display:inline-block;background:#e7f0e7;color:#2f6a3e;border:1px solid #cfe3cf;
+    border-radius:20px;padding:2px 11px;font-size:13px;font-weight:600;margin:2px 4px 2px 0}
+  .verdict{text-align:center;font-size:22px;margin:26px 0 4px;font-weight:600}
+  .foot{color:var(--mut);font-size:13px;margin-top:16px;text-align:center}
+  code{background:#ececf0;border-radius:5px;padding:1px 6px;font-size:13px;font-family:ui-monospace,Menlo,monospace}
+  a{color:var(--amber)}
+  .vpill{display:inline-block;background:#e7f0e7;color:#2f6a3e;border:1px solid #cfe3cf;
+    border-radius:6px;padding:2px 9px;font-size:12px;font-weight:700;letter-spacing:.04em;
+    text-transform:uppercase;margin-left:8px;vertical-align:1px}
+  .cand{border-left:3px solid var(--slate);padding:2px 0 2px 14px;margin:10px 0}
+  .cand .t{font-weight:700;margin:0}
+  .cand .w{color:var(--slate);font-size:14px;margin:2px 0 0}
+  .dest{display:inline-block;border-radius:5px;padding:1px 8px;font-size:11px;font-weight:700;
+    letter-spacing:.04em;text-transform:uppercase;margin-left:8px;vertical-align:1px;
+    background:#ececf0;color:var(--slate);border:1px solid var(--line)}
+  .storyboard{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .beat{margin:0}
+  .beat img{width:100%;aspect-ratio:16/10;object-fit:cover;border:1px solid var(--line);
+    border-radius:8px;display:block}
+  .beat figcaption{font-size:12px;color:var(--slate);margin-top:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Review: Share a ship doc</h1>
+  <p class="sub">What shipped, in plain terms. Already landed. Two things only you can check are at the bottom.</p>
+
+  <div class="card shipped">
+    <h2>What you got</h2>
+    <ul><li>A <b>Share</b> button, bottom right, on every ship storyboard, plan card, review card and doc in your Chrome. Press it and the link is on your clipboard.</li><li>The link lives at <code>share.peteknowsai.xyz</code> on your PKAI account, unguessable and hidden from search. The apex stays free.</li><li>When ship redraws a page you shared, the same link shows the new round within seconds. The button says "Shared · updated just now".</li><li>Nick and Bonnie see the page exactly as you do, with a footer saying who shared it and when, and arrows back through every earlier version.</li><li><b>Stop sharing</b> in the Shared panel takes the page and all its versions down.</li></ul>
+  </div>
+
+  <!-- PROOF: the verifier's storyboard. Include for any user-facing feature; for a non-visual
+       change, swap the beats for demo/test output. Repeat the beat block per screenshot. -->
+  <div class="card">
+    <h2>Proof it works <span class="vpill">works</span></h2>
+    <div class="storyboard">
+      <figure class="beat"><img src="file:///Users/pete/.claude/jobs/33c787a1/shots-doc-share/1-hover.png" alt="A ship doc with Share hovered"><figcaption>A ship doc with Share hovered</figcaption></figure><figure class="beat"><img src="file:///Users/pete/.claude/jobs/33c787a1/shots-doc-share/2-copied.png" alt="Pressed: Link copied, link on the clipboard"><figcaption>Pressed: Link copied, link on the clipboard</figcaption></figure><figure class="beat"><img src="file:///Users/pete/.claude/jobs/33c787a1/shots-doc-share/3-redrawn.png" alt="Ship redrew it: Shared · updated just now"><figcaption>Ship redrew it: Shared · updated just now</figcaption></figure><figure class="beat"><img src="file:///Users/pete/.claude/jobs/33c787a1/shots-doc-share/4-panel.png" alt="The panel: version 2 live, Stop sharing"><figcaption>The panel: version 2 live, Stop sharing</figcaption></figure><figure class="beat"><img src="file:///Users/pete/.claude/jobs/33c787a1/shots-doc-share/5-client-latest.png" alt="What the client sees, newest version"><figcaption>What the client sees, newest version</figcaption></figure><figure class="beat"><img src="file:///Users/pete/.claude/jobs/33c787a1/shots-doc-share/6-client-old.png" alt="Arrow back: version 1, in amber"><figcaption>Arrow back: version 1, in amber</figcaption></figure><figure class="beat"><img src="file:///Users/pete/.claude/jobs/33c787a1/shots-doc-share/7-client-phone.png" alt="The client on a phone"><figcaption>The client on a phone</figcaption></figure>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Already checked for you</h2>
+    <span class="pill">share.py selftest, 3.9 and 3.14</span><span class="pill">Worker tests</span><span class="pill">Ship tabs tests</span><span class="pill">all repo gates</span><span class="pill">Fable + Sol read the branch</span><span class="pill">QA 20/20 in headless Chrome for Testing</span><span class="pill">live site smoke test</span>
+    <p style="margin:10px 0 0;font-size:14px;color:var(--slate)">The QA run drove the branch's own extension with a real native host against the live site: share, redraw, flip back, phone, stop, and a page whose CSS tries to restyle the button. It ran headless and put your clipboard back after. Two bugs only the real run could find are fixed: the click got lost on storyboards, and Cloudflare blocked the uploader. Readers found a Stop-sharing race and a way a stray reference could publish a private file; both fixed.</p>
+  </div>
+
+  <!-- FLAGGED: include only if the verifier returned taste notes, else delete this card -->
+  <div class="card">
+    <h2>Flagged</h2>
+    <ul><li>Two uploads of the same page at the same instant can overwrite one version. Needs a redraw and a Share press within a second; left as is.</li><li>The packer skips <code>srcset</code> images and CSS <code>@import</code>. Ship docs don't use them.</li><li>A doc you open by hand whose file name differs from its ship's name gets its own link that redraws won't follow. Ship names files by slug, so it doesn't happen today.</li></ul>
+    <p style="margin:10px 0 0;font-size:14px;color:var(--slate)">Reports, not work: say fix now, backlog or ignore.</p>
+  </div>
+
+  <div class="card">
+    <h2>Only you can confirm</h2>
+    <div class="eye"><p class="q">Reload Ship tabs in chrome://extensions</p><p class="d">It asks for one new permission, native messaging. Your open ship docs get the button right after.</p></div><div class="eye"><p class="q">Share one real doc and open the link on your phone</p><p class="d">The footer and arrows are the part Nick and Bonnie will touch.</p></div>
+  </div>
+
+  <div class="verdict">Landed on main · live at share.peteknowsai.xyz</div>
+  <p class="foot">The diff, if you want it: <a href="https://github.com/peteknowsai/ship/pull/172">PR #172</a> · but you shouldn't need to.</p>
+</div>
+</body>
+</html>
