@@ -374,6 +374,10 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   --fill`; GitHub refuses a PR with no commits). Its body is the one-line why and the
   preview links, refreshed as they change. It is GitHub's record of what is in flight and,
   once squashed, of what shipped; it is never a review step. `land: direct` opens none.
+  A branch that should carry a card key (`cel-52-…`) gets it at the fork. Renaming one
+  later closes its tracker PR (GitHub did, 2026-10-14): open a new PR on the new name and
+  close the old one on purpose, then re-read the dev origin (`dev:`, e.g. `scripts/dev.sh
+  --print-origin`), since a repo that derives its port and host from the branch moves both.
 - **Backend:** `shared-dev` (the default) → build against the app's dev database and touch
   no env file. `per-branch` → provision the branch's database preview now; a worktree
   building against a shared backend it changes clobbers it (incidents: Backends). Rewrite
@@ -557,7 +561,8 @@ into commits otherwise (incidents: Worktrees). Never build on main.
 - `route.py plan` already moved the marker to `build:0:<M>`, and each `route.py log`
   counts one task done, so `(inline)` and `(driver)` tasks log too, with
   `engine=driver`. A run that skipped the router writes `build:0:<M>` itself before the
-  first dispatch; a status line still on `plan` mid-BUILD is the tell. Build all M tasks in one session; commit
+  first dispatch, and still logs each task it built: `route.py log` needs no saved route,
+  so a ship promoted mid-flight logs its tasks as `engine=driver`; a status line still on `plan` mid-BUILD is the tell. Build all M tasks in one session; commit
   each task on the branch as it lands, land only when the whole plan is built.
 - **Push at every milestone, and hand Pete the links.** After a task (or a lane's merge)
   is committed, push the branch. When the repo has a per-push `preview:`, run it once the
