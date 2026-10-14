@@ -27,7 +27,9 @@ Add a repo to the board by extending `REPOS` at the top of the script.
 `chrome/ship-tabs/` is an unpacked Chrome extension Pete loads from this main checkout;
 it files every tab ship opens through `pipeline/scripts/show.sh` (tagged
 `#ship=<repo>/<slug>/<kind>`) into one group per app, labels it, and closes the tab it
-replaces. Edits go live when he presses reload on it in `chrome://extensions`.
+replaces; a five-minute sweep (`sweepPlan` in `rules.js`) also files untagged ship docs by
+their path, closes older copies of a page and ages out a worktree's pages after three days.
+Edits go live when he presses reload on it in `chrome://extensions`.
 `node chrome/ship-tabs/test.mjs` is its check. Its `--live` half launches Chrome for
 Testing with `open -g`; run it only when Pete is away from the screen, since he has had
 test windows fight him for focus. Never connect to his own Chrome over CDP: each
