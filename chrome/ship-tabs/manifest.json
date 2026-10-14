@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Ship tabs",
-  "version": "3.0",
-  "description": "Files every /ship page into its app's tab group, labeled, without taking your tab; closes older copies of a page and a gone worktree's docs.",
+  "version": "4.0",
+  "description": "Files every /ship page into two groups per window, docs and test, each tab labeled with its kind, app and ship; closes older copies and a gone worktree's docs.",
   "permissions": [
     "tabs",
     "tabGroups",

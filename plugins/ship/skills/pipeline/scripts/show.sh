@@ -1,7 +1,7 @@
 #!/bin/bash
 # show.sh <worktree> <slug> <kind> <file|url> [done]: put a ship page in Pete's Chrome
 # without bringing Chrome forward or taking his tab. The #ship=<repo>/<slug>/<kind> tag
-# tells the ship-tabs extension to file it in the repo's group, title it, close the tab it
+# tells the ship-tabs extension to file it in the docs or test group, title it, close the tab it
 # replaces (same slug and kind), and on `done` close the ship's other tabs too.
 # Kinds: storyboard, plan, review, test (the worktree's localhost), preview.
 set -eu

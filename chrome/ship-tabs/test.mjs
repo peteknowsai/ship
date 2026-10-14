@@ -9,7 +9,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const { shipTag, tabLabel, groupColor, sweepPlan, STALE_MS } = createRequire(import.meta.url)('./rules.js');
+const { shipTag, tabLabel, groupOf, GROUPS, sweepPlan, STALE_MS } = createRequire(import.meta.url)('./rules.js');
 let fails = 0;
 const check = (name, ok) => { console.log(`  ${ok ? 'ok  ' : 'FAIL'} ${name}`); if (!ok) fails++; };
 
@@ -18,8 +18,9 @@ check('a tag names the repo, slug and kind', t && t.repo === 'eca-finder' && t.s
 check('a tag after the app\'s own hash still reads', shipTag('http://localhost:3007/#tab=2&ship=app/x/test')?.kind === 'test');
 check('done rides on the tag', shipTag('file:///r/card.html#ship=app/x/review&done').done === true);
 check('an untagged tab is left alone', shipTag('http://localhost:3218/home') === null && shipTag('https://github.com/x#ship') === null);
-check('the label says what the tab is', tabLabel(t) === '🎨 smarter-search · ');
-check('a repo keeps one color', groupColor('eca-finder') === groupColor('eca-finder'));
+check('the label says what the tab is, for which app and ship', tabLabel(t) === '🎨 eca-finder · smarter-search · ');
+check('docs and cards go to docs, running apps to test', groupOf(t) === GROUPS.docs && groupOf(shipTag('http://localhost:1/#ship=a/b/test')) === GROUPS.test &&
+  groupOf(shipTag('https://x-git-b.vercel.app/#ship=a/b/preview')) === GROUPS.test && groupOf(shipTag('file:///p/app/docs/n.html')) === GROUPS.docs);
 
 const wt = 'file:///Users/pete/Projects/.worktrees/app/feature-x';
 const doc = (u) => shipTag(u) || {};
@@ -35,7 +36,10 @@ const now = 1e13, tab = (id, url, more = {}) => ({ id, url, windowId: 1, groupId
 let p = sweepPlan([tab(1, `${wt}/specs/designs/2026-10-08-x.html`, { active: true }), tab(2, `${wt}/specs/designs/2026-10-08-x.html#ship=app/x/storyboard`),
                    tab(3, 'https://github.com/'), tab(4, 'file:///p/app/docs/notes.html', { groupId: 9 })], now);
 check('the sweep closes the older copy of a page and moves Pete to the newer', p.close.join() === '1' && p.activate.join() === '2');
-check('it groups the loose ship tab, never Pete\'s own or one he grouped', p.group.map((g) => g.id).join() === '2' && p.group[0].repo === 'app');
+check('it groups the loose ship tab, never Pete\'s own or one he grouped', p.group.map((g) => g.id).join() === '2' && p.group[0].group === GROUPS.docs);
+check('it labels every ship tab it keeps', p.label.map((l) => l.id).join() === '2,4');
+p = sweepPlan([tab(8, 'file:///p/app/docs/n.html', { groupId: 3, groupTitle: 'app' }), tab(9, 'http://localhost:1/#ship=app/x/test', { groupId: 4, groupTitle: 'ship test' })], now);
+check('tabs in an earlier version\'s groups move to docs and test', p.group.map((g) => `${g.id}:${g.group.title}`).join() === '8:📐 docs,9:🧪 test');
 p = sweepPlan([tab(5, `${wt}/specs/plans/review-x.html`, { lastAccessed: now - STALE_MS - 1 }),
                tab(6, 'file:///p/app/specs/plans/review-y.html', { lastAccessed: now - STALE_MS - 1 }),
                tab(7, `${wt}/docs/a.html`, { lastAccessed: now - STALE_MS - 1, active: true })], now);
@@ -97,21 +101,21 @@ if (!build) {
     let s = await open('about:blank#mine');
     const mine = s.tabs.find((x) => x.url.endsWith('#mine')).id;
     s = await open(`${card}#ship=app/s1/storyboard`);
-    const g = s.groups.find((x) => x.title === 'app');
-    check('a ship page joins its app\'s group', g && s.tabs.some((x) => x.groupId === g.id && x.url.includes('s1/storyboard')));
-    check('the group keeps the repo\'s color', g?.color === groupColor('app'));
+    const g = s.groups.find((x) => x.title === GROUPS.docs.title);
+    check('a ship doc joins the docs group, blue', g?.color === 'blue' && s.tabs.some((x) => x.groupId === g.id && x.url.includes('s1/storyboard')));
     check('Pete keeps the tab he was on', s.tabs.find((x) => x.id === mine)?.active === true);
     s = await open(`${card}#ship=app/s1/storyboard`);
     check('a redo replaces the old tab', s.tabs.filter((x) => x.url.includes('s1/storyboard')).length === 1);
     s = await open(`${site}/#ship=app/s1/test`);
     s = await open(`${site}/#ship=app/s2/test`);
-    check('both ships share the app\'s one group', s.groups.filter((x) => x.title === 'app').length === 1 &&
-      s.tabs.filter((x) => x.groupId === g?.id).length === 3);
-    check('a test tab is titled with its ship', s.tabs.some((x) => x.title === '🧪 s1 · app'));
+    const tg = s.groups.find((x) => x.title === GROUPS.test.title);
+    check('both ships\' apps share the one test group, green', s.groups.filter((x) => x.title === GROUPS.test.title).length === 1 &&
+      tg?.color === 'green' && s.tabs.filter((x) => x.groupId === tg.id).length === 2);
+    check('a test tab is titled with its app and ship', s.tabs.some((x) => x.title === '🧪 app · s1 · app'));
     const s1test = s.tabs.find((x) => x.url.includes('s1/test')).id;
     await send('Runtime.evaluate', { expression: `chrome.tabs.update(${s1test}, { url: '${site}/two' })` }, att.sessionId);
     await sleep(1200); s = await state();
-    check('the title survives a page load', s.tabs.find((x) => x.id === s1test)?.title === '🧪 s1 · app');
+    check('the title survives a page load', s.tabs.find((x) => x.id === s1test)?.title === '🧪 app · s1 · app');
     s = await open(`${card}#ship=app/s1/review&done`);
     check('done closes the ship\'s other tabs, not its review or another ship\'s',
       !s.tabs.some((x) => x.url.includes('s1/storyboard') || x.id === s1test) &&
