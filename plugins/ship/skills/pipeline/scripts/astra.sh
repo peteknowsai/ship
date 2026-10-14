@@ -45,6 +45,7 @@ TESTER_MCP="chrome-devtools agent-device"
 SHELL_DIR=${ASTRA_HEADLESS_SHELL_DIR:-$HOME/.cache/puppeteer/chrome-headless-shell}
 tester_browser() { # <worktree> <out-dir>
   local bin; bin=$(ls -d "${SHELL_DIR}"/*/chrome-headless-shell-*/chrome-headless-shell 2>/dev/null | sort -V | tail -1)
+  [ -n "${bin}" ] || echo "astra: no chrome-headless-shell under ${SHELL_DIR}, so the tester's browser is the Chrome app and can take Pete's Dock click; reinstall: npx @puppeteer/browsers install chrome-headless-shell@stable --path ${SHELL_DIR%/*}" >&2
   printf -- '-c\nmcp_servers.chrome-devtools.args=["chrome-devtools-mcp@latest","--isolated=true","--headless=true","--workspace=%s","--workspace=%s"%s]\n' \
     "$1" "$2" "${bin:+,\"--executablePath=${bin}\"}"
 }
@@ -62,15 +63,21 @@ mcp_off() { # [servers to keep]
 
 dispatch() {
   local mode=$1 worktree=$2 brief=$3 out=$4 effort=${5:-high}
-  local model=${MODEL} keep=${TESTER_MCP}
-  [ "${mode}" = review ] && { model=${REVIEW_MODEL}; keep=""; }
+  local model=${MODEL}
+  [ "${mode}" = review ] && model=${REVIEW_MODEL}
   [ -d "${worktree}" ] || { echo "astra: no worktree at ${worktree}" >&2; return 2; }
   [ -s "${brief}" ] || { echo "astra: brief ${brief} is missing or empty" >&2; return 2; }
   mkdir -p "${out}"; out=$(cd "${out}" && pwd); worktree=$(cd "${worktree}" && pwd)
   local events="${out}/events.jsonl" last="${out}/last.md"
   local -a common=(-m "${model}" -c "model_reasoning_effort=${effort}" --json -o "${last}")
-  local line; while read -r line; do common+=("${line}"); done < <(mcp_off "${keep}")
-  [ "${mode}" = test ] && while read -r line; do common+=("${line}"); done < <(tester_browser "${worktree}" "${out}")
+  # A reader gets a blank config: `-c ….enabled=false` can't reach the servers Codex
+  # plugins bring (cua_repl drives the desktop, messages sends texts), and a blank config
+  # drops them all, leaving the shell (Sol's own catch on the branch that added it).
+  local line
+  if [ "${mode}" = review ]; then common+=(--ignore-user-config); else
+    while read -r line; do common+=("${line}"); done < <(mcp_off "${TESTER_MCP}")
+    while read -r line; do common+=("${line}"); done < <(tester_browser "${worktree}" "${out}")
+  fi
   brief=$(cd "$(dirname "${brief}")" && pwd)/$(basename "${brief}")
   rm -f "${last}"
   local started_at; started_at=$(date +%s)
@@ -130,8 +137,8 @@ selftest() {
   else echo "  FAIL the tester's browser: $(cat "${dir}/args")"; fails=$((fails+1)); fi
   expect 0 "a review run finishes"          review "${dir}/wt" "${dir}/brief.md" "${dir}/o10"
   if grep -q -- '-s read-only' "${dir}/args" && grep -q -- '-m gpt-6.1-sol' "${dir}/args" &&
-     grep -q 'agent-device.enabled=false' "${dir}/args" && ! grep -q 'chrome-devtools-mcp' "${dir}/args"; then
-    echo "  ok   a review run is read-only, on Sol, with every MCP server off and no browser"
+     grep -q -- '--ignore-user-config' "${dir}/args" && ! grep -q 'mcp_servers' "${dir}/args"; then
+    echo "  ok   a review run is read-only, on Sol, on a blank config so no MCP server or plugin reaches it"
   else echo "  FAIL a review run's flags: $(cat "${dir}/args")"; fails=$((fails+1)); fi
   rm -rf "${dir}"; echo "astra self-test: $((14 - fails))/14"; [ "${fails}" = 0 ]
 }
