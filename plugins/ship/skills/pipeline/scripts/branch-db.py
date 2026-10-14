@@ -94,6 +94,24 @@ def npx(args, cwd, input=None, env=None):
     return r.stdout + r.stderr
 
 
+def create_cmd(ref):
+    return ["npx", "convex", "deployment", "create", ref, "--type", "dev", "--expiration", EXPIRY]
+
+
+def export(src, snap, app, tries=40, wait=15):
+    """Dev allows one snapshot export at a time, so a second worktree copying waits its turn."""
+    for _ in range(tries):
+        r = subprocess.run(["npx", "convex", "export", "--include-file-storage", "--deployment", src,
+                            "--path", snap], cwd=app, capture_output=True, text=True, env=clean_env())
+        out = r.stdout + r.stderr
+        if os.path.getsize(snap) if os.path.exists(snap) else 0:
+            return
+        if "already requested or in progress" not in out:
+            raise SystemExit(f"branch-db: npx convex export failed: {out[-800:]}")
+        time.sleep(wait)
+    raise SystemExit(f"branch-db: dev's export stayed busy for {tries * wait // 60} minutes")
+
+
 def up(worktree, app_rel="."):
     worktree = os.path.abspath(worktree)
     app = os.path.join(worktree, app_rel)
@@ -108,12 +126,11 @@ def up(worktree, app_rel="."):
         print(f"branch-db: {why}")
         return 0 if why.startswith("already") else 1
     ref = f"dev/{slug(branch)}"
-    create = ["npx", "convex", "deployment", "create", ref, "--type", "dev", "--expiration", EXPIRY]
-    r = subprocess.run(create, cwd=app, capture_output=True, text=True, env=clean_env())
+    r = subprocess.run(create_cmd(ref), cwd=app, capture_output=True, text=True, env=clean_env())
     if r.returncode and "exist" in (r.stdout + r.stderr).lower():
         # A failed earlier run left this reference behind until it expires.
         ref = f"{ref}-{time.strftime('%H%M%S')}"
-        r = subprocess.run(create[:3] + [ref] + create[4:], cwd=app, capture_output=True, text=True, env=clean_env())
+        r = subprocess.run(create_cmd(ref), cwd=app, capture_output=True, text=True, env=clean_env())
     out = r.stdout + r.stderr
     if r.returncode:
         sys.exit(f"branch-db: npx convex deployment create failed: {out[-800:]}")
@@ -134,7 +151,7 @@ def up(worktree, app_rel="."):
     env_before, had_gitignore = open(app_env).read(), os.path.exists(gitignore)
     try:
         snap = os.path.join(tmp, "dev.zip")
-        npx(["export", "--include-file-storage", "--deployment", src, "--path", snap], app)
+        export(src, snap, app)
         # The process env beats .env.local, so the push goes to the copy.
         npx(["dev", "--once", "--typecheck", "disable", "--codegen", "disable"], app,
             env=clean_env(CONVEX_DEPLOYMENT=f"dev:{new}"))
@@ -187,6 +204,8 @@ def selftest():
         os.environ["CONVEX_DEPLOY_KEY"] = "prod:x|y"
         assert "CONVEX_DEPLOY_KEY" not in clean_env() and clean_env(A="1")["A"] == "1"
         del os.environ["CONVEX_DEPLOY_KEY"]
+        cmd = create_cmd("dev/x-1")
+        assert cmd[3:5] == ["create", "dev/x-1"] and cmd.count("dev/x-1") == 1, cmd
         print("branch-db selftest: ok")
     finally:
         shutil.rmtree(t)

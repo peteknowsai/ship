@@ -105,7 +105,9 @@ ruled out: it dies with `convex dev`, Stripe, Clerk and the phone can't reach it
 Node actions run on the Mac. Measured on homebody: about 95 seconds, 5,790 documents and
 98 MB of stored files. The CLI can't delete a deployment, so the expiry is the cleanup.
 `convex env set` reads stdin; `--from-file <(...)` sees an empty file. `convex import`
-needs a folder with a package.json even with `--deployment`. The clobbering entry below is
+needs a folder with a package.json even with `--deployment`. A deployment runs one snapshot
+export at a time ("already requested or in progress"), so two worktrees copying dev at
+once queue; `branch-db.py` waits its turn. The clobbering entry below is
 why `shared-dev` is now an opt-out.
 
 - **`launchctl bootstrap` right after `bootout` fails with "5: Input/output error"**
