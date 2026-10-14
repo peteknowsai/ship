@@ -295,7 +295,8 @@ it from inside the target repo.
   say so explicitly.
 - **When a gate (or Pete mid-run) resolves a durable call** — design direction, scope
   cut, architecture or tool choice — log it:
-  `decisions.py log '{"decision":"…","rationale":"…","source":"user"}'`. A reversal is
+  `decisions.py log '{"decision":"…","rationale":"…","source":"user"}'`, or `log --file <json>`
+  from inside a worktree, where the guard refuses quoted JSON. A reversal is
   `decisions.py supersede <id> '<json>'`, with the id `recent` prints. Turn-level edits
   and phrasing tweaks are never logged — a noisy store is worse than none.
 
@@ -312,7 +313,8 @@ Five runs had him asking "where are we?" mid-flight.
 **Shell inside a worktree session.** The harness refuses a command it can't tell stays
 in the worktree: `$(git …)` substitutions, `cd <dir> && git …`, loops or heredocs that
 name git, and read-only commands it misparses (a path segment named `source`, a zsh
-`echo ==`, a `for` loop over `sed`, a heredoc that only writes files). Read and search
+`echo ==`, a `for` loop over `sed`, a heredoc that only writes files, a docker `--format '{{…}}'`
+string, a `$VAR` argument even to a binary that isn't git). Read and search
 with the Read and Grep tools when the session has them, which it never checks; else use
 `git -C <path>`, one plain command per call, and put anything multi-step in a script
 file under the job's tmp directory. Any file edit the Edit and Write tools can't make
@@ -389,7 +391,9 @@ into commits otherwise (incidents: Worktrees). Never build on main.
 - **Opportunistic tidy:** glance at `git worktree list` and `wt remove <branch> -f`
   any worktree that provably landed (a merged PR whose `headRefOid` matches its HEAD, or,
   with no PR, a HEAD inside `origin/main` by `git merge-base --is-ancestor`; clean tree —
-  incidents: Worktrees). Never touch one with uncommitted work.
+  incidents: Worktrees). Never touch one with uncommitted work, one a live session holds
+  (wt's 💬), or one under two hours old: a worktree or lane born a minute ago sits inside
+  main or its parent exactly like a landed one, and a sweep took a lane mid-task.
 
 ### 1 · DISCOVER — Pete's taste, up front  → marker: `discover`, then `gate:1`
 
@@ -408,7 +412,9 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   It also lists the ships already in flight in this repo (`git worktree list` and each
   tree's `.ship-stage`) whose surfaces overlap this one; ask those sessions what they are
   changing (ListAgents, SendMessage) before round 1, because a parallel ship can redefine
-  what the storyboard is about to show.
+  what the storyboard is about to show. Any count it reports comes from an API total
+  (`gh api search/issues` `total_count`), never from the length of a `--limit` list: a
+  capped list put 18 merges on a storyboard that should have said 62.
 - **Bug-shaped requests get an empirical root-cause check** — reproduce the failure or
   read the runtime evidence; never spec a fix from a hypothesis (incidents: Design).
 - **Consult the installed domain experts before you spec.** Recon tells you what the
@@ -532,7 +538,10 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   subagent (`model: "fable"`) reads the storyboard or spec, the execution plan and the
   repo's ship contract, edits nothing, and returns findings as task, problem, fix: a
   missing task, a wrong file, a test that cannot fail, an order that breaks, an
-  `(inline)` task that is not small, a seam two tasks each assume the other owns, and a
+  `(inline)` task that is not small, a seam two tasks each assume the other owns, a
+  screen that waits on someone else with no way back to it (trace how the user returns
+  once the other side acts; one plan's payoff screen was unreachable without re-walking
+  the intro), and a
   step that copies a secret from somewhere it can't be read back (a Vercel sensitive
   variable pulls as a placeholder): that step becomes a planned rotation on both sides,
   and the card says it signs everyone out once. The driver triages and edits the plan. Nothing goes back to Pete unless it changes what
@@ -597,7 +606,10 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   report goes in a file inside the worktree; the worker never commits and never
   runs `git reset/checkout/stash`. A
   repo whose rules load by path (`.claude/rules/`, a `scripts/rules-for.py`) gets those
-  rule files named in every brief, because a subagent only sees them if told. A Convex
+  rule files named in every brief, because a subagent only sees them if told. A lane
+  never gets a copy of the env files: the Convex plugin's Stop hook pushes the tree's
+  uncommitted `convex/` to the dev deployment whenever its `.env.local` names
+  `CONVEX_DEPLOYMENT`, so one copied in ships a half-edit to everyone. A Convex
   repo's briefs say `convex codegen` prints "Uploading functions" while it analyzes and
   deploys nothing, so no worker stops to worry about it.
 - **Never add scope to a running worker by message.** New findings wait for its report

@@ -43,6 +43,11 @@ sessions, set auth cookies, hit a dev-login endpoint, bypass auth, or stand up i
 repo plumbing. If authed surfaces are unreachable and the repo offers no test-auth path, the
 result is `unverifiable` naming the wall, and Pete walks it — never fake a pass.
 
+**Start the test target from the final tree.** A target that copies or freezes the
+branch's files when it starts (a run that snapshots its tools at prepare, a container
+built once) tests whatever was there then: start it after the last fix, and one at a time
+where the host is small (two starts at once ran an 8 GB Docker VM out of memory).
+
 **The seeded account is the QA run's alone while it walks.** Never invite Pete to poke at
 the app on the same seeded user mid-run — his concurrent clicks read as bugs. Seed a second
 user for his hands-on look, or wait for the result.
@@ -86,7 +91,11 @@ what he says mid-run changes the run.
   the file for the uid you need, rather than reading the whole tree back each time. A form
   that starts paid work (a model, a tier, a run): set its cost fields first and submit with
   its button, never Enter in a field, which submits with whatever defaults are left. Where
-  Enter in a field does start paid work, that is a failure to report: a real user hits it too. A print flow: headless `window.print()` stalls the browser, so
+  Enter in a field does start paid work, that is a failure to report: a real user hits it too. A React controlled input can ignore `fill` (the value snaps back): click it and
+  `type_text`. The tool's clicks are slower than a person's, so a control with a short
+  settle timer (picks counted after ~2s) can read three picks as three separate ones: judge
+  its result, not each click. Keep the QA script, its shots and the dev log under the job's
+  tmp directory (else the worktree), never `/tmp`: a restart mid-QA wiped one. A print flow: headless `window.print()` stalls the browser, so
   judge the printout with print-media emulation first and click Print last.
   No chrome-devtools tools in the session (ToolSearch finds none: its `npx` start failed
   at launch): drive headless Chrome through Playwright, imported by its absolute path

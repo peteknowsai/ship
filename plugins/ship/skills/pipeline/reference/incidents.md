@@ -179,6 +179,9 @@ opt a repo into `per-branch`.
 
 ## Design & review
 
+- **Safari won't load local CSS into a storyboard's srcdoc frames over file://**
+  (2026-10-13). When Pete wants a storyboard in Safari, serve its folder over http
+  (`python3 -m http.server`) and open that; Chrome is fine with file://.
 - **A plan once specced a fresh `events` table the repo already had** — three tasks got
   rewritten mid-build. The reuse audit (grep the whole repo for every core noun,
   data layer included) exists because of this.
@@ -208,7 +211,7 @@ opt a repo into `per-branch`.
 ## Dispatch
 
 - **Headless Codex carried all of Pete's ChatGPT connectors** (2026-10-14, codex-cli
-  0.162.1, reported by peggy-data). `--ignore-user-config` and a private CODEX_HOME both
+  0.162.1, reported by another of Pete's sessions). `--ignore-user-config` and a private CODEX_HOME both
   still left 331 `mcp__codex_apps__*` tools in reach through code mode (Gmail, Drive
   delete, GitHub writes, Slack), and Pete's ~/.agents/skills loaded regardless. Only
   `-c features.apps=false` drops the connectors, and only a private HOME holding just
