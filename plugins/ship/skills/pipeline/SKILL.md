@@ -644,7 +644,10 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   task done — actually run it; `superpowers:systematic-debugging` on a red test. A test
   that fails three or more times across full runs is a bug, not a flake: root-cause it
   (shared temp files or ids between parallel suites are the usual cause), never retry it
-  green or raise its timeout. Three workers once called a real race flaky. One that
+  green. Three workers once called a real race flaky and buried it under a longer timeout.
+  A timeout goes up only for a test that is slow by design: it passes every time alone, its
+  time is its own work (frames, a big fixture) rather than a wait on something shared, and
+  the commit says the numbers ("~1 s alone, past 5 s under the full suite"). One that
   won't reproduce across a few full runs ends as "no repro", with what was tried and any
   real fault found nearby, never as a guessed fix.
 - **UI-writing briefs carry the storyboard frame and the craft floor** — every
