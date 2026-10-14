@@ -317,7 +317,7 @@ Five runs had him asking "where are we?" mid-flight.
 in the worktree: `$(git …)` substitutions, `cd <dir> && git …`, loops or heredocs that
 name git, and read-only commands it misparses (a path segment named `source`, a zsh
 `echo ==`, a `for` loop over `sed`, a heredoc that only writes files, a docker `--format '{{…}}'`
-string, a `$VAR` argument even to a binary that isn't git). Read and search
+string, a `python3 -` heredoc whose text says "git", a `$VAR` argument even to a binary that isn't git). Read and search
 with the Read and Grep tools when the session has them, which it never checks; else use
 `git -C <path>`, one plain command per call, and put anything multi-step in a script
 file under the job's tmp directory. Any file edit the Edit and Write tools can't make
@@ -644,7 +644,9 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   task done — actually run it; `superpowers:systematic-debugging` on a red test. A test
   that fails three or more times across full runs is a bug, not a flake: root-cause it
   (shared temp files or ids between parallel suites are the usual cause), never retry it
-  green or raise its timeout. Three workers once called a real race flaky.
+  green or raise its timeout. Three workers once called a real race flaky. One that
+  won't reproduce across a few full runs ends as "no repro", with what was tried and any
+  real fault found nearby, never as a guessed fix.
 - **UI-writing briefs carry the storyboard frame and the craft floor** — every
   dispatch that writes UI names the frame to match
   (`specs/designs/<storyboard>.html#<frame-id>`; the worker reads the frame's markup
@@ -810,7 +812,8 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
 
 - **Land — `land: pr` (the default), from the MAIN CHECKOUT, teardown first** (incidents: Worktrees — both orderings that deviate have stranded ships):
   0. Pre-flight *from the worktree*: `git fetch origin`; if main moved, absorb +
-     re-gate + push, with the worktree's dev server stopped and any simulator shut first,
+     re-gate + push (`git restore next-env.d.ts` first: `next dev` rewrites it and the
+     rebase refuses the dirty file), with the worktree's dev server stopped and any simulator shut first,
      since a loaded box turns a full suite's slow tests into timeouts that read as real red; run `stack:` once more; bring the `pr`-shaped body from TEST up to date with what actually
      shipped (the squash commit takes it); `gh pr ready <#>`; confirm `gh pr view <#> --json mergeable`
      says `MERGEABLE`.
