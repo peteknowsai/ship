@@ -96,11 +96,17 @@ These are facts, not process — the process lives in SKILL.md.
 
 ## Backends & deploys
 
-Most entries below are about `backend: per-branch`, a database preview per branch. The
-default since 2026-09-24 is `shared-dev`: previews and localhost use the app's dev database
-and ship edits no env file, because a solo dev rarely has two branches changing one schema
-at once, and the card says so when one does. The clobbering entry below is the reason to
-opt a repo into `per-branch`.
+Most entries below are about `backend: per-branch`, a database preview per branch. Since
+2026-10-14 a Convex repo defaults to `copy`: `branch-db.py` makes the worktree its own dev
+deployment with `convex deployment create dev/<branch> --expiration`, the way Convex's
+docs recommend for agent worktrees, and copies dev into it. Pete's worktrees stepped on each
+other on one shared dev database, and test data piled up there. A local deployment was
+ruled out: it dies with `convex dev`, Stripe, Clerk and the phone can't reach it, and its
+Node actions run on the Mac. Measured on homebody: about 95 seconds, 5,790 documents and
+98 MB of stored files. The CLI can't delete a deployment, so the expiry is the cleanup.
+`convex env set` reads stdin; `--from-file <(...)` sees an empty file. `convex import`
+needs a folder with a package.json even with `--deployment`. The clobbering entry below is
+why `shared-dev` is now an opt-out.
 
 - **`launchctl bootstrap` right after `bootout` fails with "5: Input/output error"**
   (2026-10-14): the old job is still tearing down. Under `set -e` it killed an install

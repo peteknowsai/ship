@@ -246,8 +246,13 @@ Every key is optional, and the default is what a repo with no contract gets:
   and a secret verify may use. `form <how>` means the app's own sign-in form works with
   test credentials (Clerk test instances: any address, code 424242), and verify may use
   it. `none` makes an auth-gated walk `unverifiable`.
-- **`backend:`** `shared-dev` (the default): previews and localhost use the app's dev
-  database, ship never rewrites an env file, and it says so on the card, or in the `result:` line, when a
+- **`backend:`** `copy [<app-dir>]` (the default where the repo has a `convex.json`): stage 0
+  gives the worktree its own Convex dev deployment, a copy of dev's functions, settings,
+  data and stored files, with `scripts/branch-db.py` (app-dir: the folder holding
+  `convex.json`, default the root; cells-app names the pack it runs). The worktree tests and
+  breaks its copy, and landing puts it back on the shared database. `shared-dev` (the
+  default otherwise): previews and localhost use the app's dev database, ship never
+  rewrites an env file, and it says so on the card, or in the `result:` line, when a
   branch changes a schema. `per-branch`: ship provisions a database preview per branch at
   stage 0 and deprovisions it at teardown (incidents: Backends).
 - **`stack:`** how to run `scripts/stack-check.sh` (in this skill's directory) for the
@@ -378,8 +383,18 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   later closes its tracker PR (GitHub did, 2026-10-14): open a new PR on the new name and
   close the old one on purpose, then re-read the dev origin (`dev:`, e.g. `scripts/dev.sh
   --print-origin`), since a repo that derives its port and host from the branch moves both.
-- **Backend:** `shared-dev` (the default) → build against the app's dev database and touch
-  no env file. `per-branch` → provision the branch's database preview now; a worktree
+- **Backend:** `copy` → right after the fork, start `branch-db.py up <worktree> [<app-dir>]`
+  in the background, once per app the branch runs, and let it finish before the first
+  convex command or dev server: until it does, the worktree's `.env.local` is main's and
+  points at shared dev. It takes about 1.5 minutes and prints the copy's name; that name is
+  the BACKEND a verify brief pins. From then on the worktree's `convex dev`, and the Convex
+  plugin's Stop hook, push to the copy, which is what they should do. Stripe and Clerk
+  webhooks still go to shared dev, so a webhook flow is tested there or said to be untested.
+  The copy expires 7 days after it was made, which is the cleanup; a branch older than
+  that restores its env files from main (`wt step copy-ignored` where the repo uses it) and
+  runs `up` again. `up` refuses when a deploy key sits in the app's env files, since the CLI
+  then ignores `--deployment`, and repoints the worktree only once the copy is whole. `shared-dev` → build against
+  the app's dev database and touch no env file. `per-branch` → provision the branch's database preview now; a worktree
   building against a shared backend it changes clobbers it (incidents: Backends). Rewrite
   the worktree's env file to the preview before the first backend command and confirm the
   first deploy's host is the preview: the inherited `.env.local` carries the shared key,
@@ -616,8 +631,8 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   repo whose rules load by path (`.claude/rules/`, a `scripts/rules-for.py`) gets those
   rule files named in every brief, because a subagent only sees them if told. A lane
   never gets a copy of the env files: the Convex plugin's Stop hook pushes the tree's
-  uncommitted `convex/` to the dev deployment whenever its `.env.local` names
-  `CONVEX_DEPLOYMENT`, so one copied in ships a half-edit to everyone. A Convex
+  uncommitted `convex/` to whatever deployment its `.env.local` names, so one copied in
+  ships a half-edit to the copy the driver is testing, or on `shared-dev` to everyone. A Convex
   repo's briefs say `convex codegen` prints "Uploading functions" while it analyzes and
   deploys nothing, so no worker stops to worry about it.
 - **Never add scope to a running worker by message.** New findings wait for its report
@@ -838,7 +853,7 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
     real app; a phone that isn't connected gets one line saying so), unless the line says
     `keep=yes`: a test app every branch installs over keeps the permissions Pete granted it,
     and removing it brings the prompts back, deprovision the per-branch
-    backend stage 0 spun up, if any (or skip if previews auto-expire). Verify with
+    backend stage 0 spun up, if any (skip it for previews and `copy`, which expire). Verify with
     `git worktree list` — zero ship-created worktrees must remain; a leftover means
     teardown failed (usually a merge run inside the worktree) — recover before
     declaring done.
