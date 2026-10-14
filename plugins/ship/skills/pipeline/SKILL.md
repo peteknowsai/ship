@@ -644,6 +644,11 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   0 clean, 2 findings on stderr, 1 a file it couldn't read): fix each finding, or waive a
   deliberate one in place with its `impeccable-disable-line <rule> -- <why>` comment.
   It is free and mechanical, so the QA run never spends a round on a craft-floor miss.
+  Every web surface the feature touches also runs `scripts/icon-check.py <url>...` (same
+  exit codes): it needs a browser icon and a 180px PNG Home Screen icon, since Pete opens
+  apps by name from his phone and the launcher shows their icons (Pete, 2026-10-14). When one is
+  missing, make it before landing in the app's own colors, the mark through impeccable and
+  pixels through /image-gen (Next: `app/icon.svg` and `app/apple-icon.png`).
   Also, on `backend: per-branch`,
   the branch touched `convex/` → re-push the preview (`npx convex deploy --preview-name <name-from-
   .env.local> -y`, from the worktree root — the branch name and the shell's leftover cwd
