@@ -117,6 +117,10 @@ what he says mid-run changes the run.
   --foreground` (without `--device` it picks a simulator), then press, fill and scroll with
   `--settle` and judge from the diff it prints; `close` when done. What the phone taught
   (cells-app, 2026-10-05):
+  - One XCTest runner drives a device at a time. `open` failing twice with "BUILD
+    INTERRUPTED" means another session holds it: `pgrep -fl 'xcodebuild.*AgentDeviceRunner'`
+    shows the device id and the owner pid in the xctestrun name. Ask that session
+    (ListAgents) or test in a simulator, and say which in the result (2026-10-14).
   - Read the app's own prints with `xcrun devicectl device process launch --console
     --terminate-existing --device <udid> <bundle>`, and write debug traces to stderr: a
     `print()` block-buffers off a terminal, so its lines arrive late or never.

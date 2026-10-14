@@ -802,7 +802,8 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
 
 - **Land — `land: pr` (the default), from the MAIN CHECKOUT, teardown first** (incidents: Worktrees — both orderings that deviate have stranded ships):
   0. Pre-flight *from the worktree*: `git fetch origin`; if main moved, absorb +
-     re-gate + push; run `stack:` once more; bring the `pr`-shaped body from TEST up to date with what actually
+     re-gate + push, with the worktree's dev server stopped and any simulator shut first,
+     since a loaded box turns a full suite's slow tests into timeouts that read as real red; run `stack:` once more; bring the `pr`-shaped body from TEST up to date with what actually
      shipped (the squash commit takes it); `gh pr ready <#>`; confirm `gh pr view <#> --json mergeable`
      says `MERGEABLE`.
   1. Return to the main checkout (`ExitWorktree({action:"keep"})`). If it answers that no
