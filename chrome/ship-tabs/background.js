@@ -10,7 +10,7 @@ const load = async () => ({ byKey: {}, byTab: {}, active: {}, ...(await chrome.s
 async function sort(tabId, href) {
   const tag = shipTag(href);
   const s = await load();
-  if (!tag || s.byTab[tabId] === tag.key) return;
+  if (!tag || tag.inferred || s.byTab[tabId] === tag.key) return; // an untagged doc is the sweep's
   const tab = await chrome.tabs.get(tabId).catch(() => null);
   if (!tab) return;
 
@@ -33,16 +33,27 @@ async function sort(tabId, href) {
   }
   await chrome.storage.session.set(s);
 
-  const [group] = await chrome.tabGroups.query({ windowId: tab.windowId, title: tag.repo });
-  if (group) {
-    if (tab.groupId !== group.id) await chrome.tabs.group({ groupId: group.id, tabIds: tabId });
-  } else {
-    const groupId = await chrome.tabs.group({ tabIds: tabId, createProperties: { windowId: tab.windowId } });
-    await chrome.tabGroups.update(groupId, { title: tag.repo, color: groupColor(tag.repo) });
-  }
+  await join(tabId, tab.windowId, tag.repo);
   // Close what it replaces only now, so a group never empties out and comes back elsewhere.
   await chrome.tabs.remove(olds.map((o) => o.id)).catch(() => {});
   await label(tabId, tag);
+}
+
+// Every few minutes, at startup and after each ship page opens: group what's loose, close
+// older copies of a page, age out a gone worktree's docs (rules.js, sweepPlan).
+async function sweep() {
+  const tabs = await chrome.tabs.query({});
+  const plan = sweepPlan(tabs, Date.now());
+  for (const g of plan.group) await join(g.id, g.windowId, g.repo).catch(() => {});
+  for (const id of plan.activate) await chrome.tabs.update(id, { active: true }).catch(() => {});
+  if (plan.close.length) await chrome.tabs.remove(plan.close).catch(() => {});
+}
+
+async function join(tabId, windowId, repo) {
+  const [group] = await chrome.tabGroups.query({ windowId, title: repo });
+  if (group) return chrome.tabs.group({ groupId: group.id, tabIds: tabId });
+  const groupId = await chrome.tabs.group({ tabIds: tabId, createProperties: { windowId } });
+  await chrome.tabGroups.update(groupId, { title: repo, color: groupColor(repo) });
 }
 
 // Prefix the page's title ("🧪 smarter-search · …") and keep it there when the app retitles.
@@ -58,11 +69,16 @@ function label(tabId, tag) {
   } }).catch(() => {});
 }
 
+chrome.alarms.get('sweep').then((a) => a || chrome.alarms.create('sweep', { periodInMinutes: 5 })); // re-creating resets the clock
+chrome.alarms.onAlarm.addListener(() => run(sweep));
+chrome.runtime.onStartup.addListener(() => run(sweep));
+chrome.runtime.onInstalled.addListener(() => run(sweep));
+
 chrome.tabs.onCreated.addListener((tab) => {
   if (tab.pendingUrl || tab.url) run(() => sort(tab.id, tab.pendingUrl || tab.url));
 });
 chrome.tabs.onUpdated.addListener((tabId, change, tab) => {
-  if (change.url) run(() => sort(tabId, change.url));
+  if (change.url) { run(() => sort(tabId, change.url)); run(sweep); }
   if (change.status === 'complete') run(async () => {
     const { byTab = {} } = await chrome.storage.session.get('byTab');
     const tag = byTab[tabId] && shipTag(`x:#ship=${byTab[tabId]}`);

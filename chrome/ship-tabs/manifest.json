@@ -1,13 +1,14 @@
 {
   "manifest_version": 3,
   "name": "Ship tabs",
-  "version": "2.0",
-  "description": "Files every page /ship opens into its app's tab group, labeled, without taking your tab; a redo replaces the old tab.",
+  "version": "3.0",
+  "description": "Files every /ship page into its app's tab group, labeled, without taking your tab; closes older copies of a page and a gone worktree's docs.",
   "permissions": [
     "tabs",
     "tabGroups",
     "storage",
-    "scripting"
+    "scripting",
+    "alarms"
   ],
   "background": {
     "service_worker": "background.js"

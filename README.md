@@ -48,7 +48,20 @@ tab in one group per app, named for the repo, one color per repo; titles it with
 is (`🎨 smarter-search · storyboard r2`, `🧪 smarter-search · …` on the running app);
 hands you back the tab you were on; and closes the tab a new one replaces, so a redrawn
 storyboard or a restarted dev server is one tab, never two. When a ship lands, its review
-card closes the rest of that ship's tabs. Tabs ship didn't tag are never touched.
+card closes the rest of that ship's tabs.
+
+A sweep runs at startup and every five minutes. It reads ship docs that arrived untagged
+(an older session's plain `open`, a click in Finder) from their paths: `designs/` is a
+storyboard, `plans/go-card-*` a plan card, `plans/review-*` a review card, anything else
+in a `specs/` or `docs/` home a doc of that repo. It files loose ones into their app's
+group, closes older copies of the same page so only the newest stays, and closes a
+worktree's pages nobody has looked at in three days. Your own tabs, and ship tabs you
+dragged into a group of your choosing, are never moved.
+
+Pete's `~/.claude/hooks/quiet-open.sh` (a PreToolUse hook on Bash) catches any session's
+plain `open <page>` and makes it `open -g -a "Google Chrome"`, tagging a localhost URL with
+the checkout's repo and branch, so even sessions that predate show.sh never pull Chrome
+to the front.
 
 Install once: `chrome://extensions`, turn on Developer mode, **Load unpacked**, pick
 `chrome/ship-tabs` in this repo's main checkout, and turn on **Allow access to file URLs**

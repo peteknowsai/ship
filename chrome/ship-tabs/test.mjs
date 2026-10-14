@@ -9,7 +9,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const { shipTag, tabLabel, groupColor } = createRequire(import.meta.url)('./rules.js');
+const { shipTag, tabLabel, groupColor, sweepPlan, STALE_MS } = createRequire(import.meta.url)('./rules.js');
 let fails = 0;
 const check = (name, ok) => { console.log(`  ${ok ? 'ok  ' : 'FAIL'} ${name}`); if (!ok) fails++; };
 
@@ -20,6 +20,26 @@ check('done rides on the tag', shipTag('file:///r/card.html#ship=app/x/review&do
 check('an untagged tab is left alone', shipTag('http://localhost:3218/home') === null && shipTag('https://github.com/x#ship') === null);
 check('the label says what the tab is', tabLabel(t) === '🎨 smarter-search · ');
 check('a repo keeps one color', groupColor('eca-finder') === groupColor('eca-finder'));
+
+const wt = 'file:///Users/pete/Projects/.worktrees/app/feature-x';
+const doc = (u) => shipTag(u) || {};
+check('an untagged storyboard in a worktree reads as that ship\'s storyboard',
+  doc(`${wt}/specs/designs/2026-10-08-x.html`).key === 'app/x/storyboard');
+check('plan and review cards read from their names', doc('file:///p/app/specs/plans/go-card-x.html').key === 'app/x/plan' &&
+  doc('file:///p/app/specs/plans/review-x.html').key === 'app/x/review');
+check('any other docs-home page joins its repo, keyed by its own path', doc('file:///p/app/docs/notes.html').repo === 'app' &&
+  doc('file:///p/app/docs/notes.html').key === '/p/app/docs/notes.html');
+check('a stray file is still left alone', shipTag('file:///Users/pete/Downloads/a.html') === null);
+
+const now = 1e13, tab = (id, url, more = {}) => ({ id, url, windowId: 1, groupId: -1, active: false, pinned: false, lastAccessed: now, ...more });
+let p = sweepPlan([tab(1, `${wt}/specs/designs/2026-10-08-x.html`, { active: true }), tab(2, `${wt}/specs/designs/2026-10-08-x.html#ship=app/x/storyboard`),
+                   tab(3, 'https://github.com/'), tab(4, 'file:///p/app/docs/notes.html', { groupId: 9 })], now);
+check('the sweep closes the older copy of a page and moves Pete to the newer', p.close.join() === '1' && p.activate.join() === '2');
+check('it groups the loose ship tab, never Pete\'s own or one he grouped', p.group.map((g) => g.id).join() === '2' && p.group[0].repo === 'app');
+p = sweepPlan([tab(5, `${wt}/specs/plans/review-x.html`, { lastAccessed: now - STALE_MS - 1 }),
+               tab(6, 'file:///p/app/specs/plans/review-y.html', { lastAccessed: now - STALE_MS - 1 }),
+               tab(7, `${wt}/docs/a.html`, { lastAccessed: now - STALE_MS - 1, active: true })], now);
+check('a worktree page untouched for three days closes; main\'s docs and the tab Pete is on stay', p.close.join() === '5');
 
 // The live part needs a Chrome for Testing build (branded Chrome ignores --load-extension).
 const cache = join(homedir(), '.cache/puppeteer/chrome');
