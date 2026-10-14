@@ -1,0 +1,12 @@
+name = "ship-share"
+main = "worker.mjs"
+compatibility_date = "2026-07-01"
+account_id = "5a6fef07a998d84ec047ef43d0543342"
+
+routes = [
+  { pattern = "share.peteknowsai.xyz", custom_domain = true }
+]
+
+[[r2_buckets]]
+binding = "SHARE"
+bucket_name = "ship-share"
