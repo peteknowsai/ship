@@ -85,7 +85,10 @@ the branch beside it at REVIEW**, the one check from outside Claude's family: a 
 of the same family shares the writer's blind spots and goes easy on work shaped like its
 own (Pete, 2026-10-14). It only reports; it never edits, because a cross-family reviewer
 that rewrites breaks working code. Both readers' tallies go to the ledger, which decides
-after about ten ships whether Sol stays, and whether Fable does.
+after about ten ships whether Sol stays, and whether Fable does. Every review brief, plan
+or branch, says a claim about how a dependency behaves at runtime is checked in its
+installed code (`node_modules/<pkg>/dist`), not its docs: a plan review once took Eve's
+docs on queued messages at their word, and the runtime did otherwise (2026-10-14).
 
 **BUILD routes by difficulty.** Once the execution plan is written and reviewed, run
 `scripts/route.py plan <plan.md>` from this skill's directory. It asks Jev, TypeSafe's

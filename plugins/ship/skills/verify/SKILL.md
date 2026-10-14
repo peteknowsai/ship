@@ -28,7 +28,9 @@ concluding "looks right" is exactly the failure this skill exists to prevent.
 
 The running app is **already up** — in ship's TEST the target is the branch's preview link
 when ship built one (the host, database and sign-in Pete will test), else the worktree's dev
-server, booted for you; standalone, boot it first and note the URL. Reuse that stack, never
+server, booted for you; standalone, boot it first and note the URL. Ready means the URL answers:
+poll it with curl up to a deadline and watch the dev log for errors, never a process grep,
+since a dev server can build for minutes before it listens. Reuse that stack, never
 boot a second. A preview behind the host's login wall (Vercel protection) is reached with its
 automation bypass: send the `x-vercel-protection-bypass` value as an extra header on the
 page (and `x-vercel-set-bypass-cookie: true` on the first load), never through Pete's
@@ -68,7 +70,9 @@ simulator. In a repo whose contract has `ios:`, run it whenever the app can see 
 at the branch's server, installs it, and prints the IOS line. Without `ios:` there is no
 device step. Landing removes that branch app from the device again (the pipeline skill's
 Land), unless its IOS line says `keep=yes`. One ship on the phone at a time: a second ship
-that finds it held tests on a simulator. Never control the Mac's desktop.
+that finds it held tests on a simulator of its own, `xcrun simctl clone <base> ship-<slug>`
+then boot it, and `simctl delete` it at LAND. A shared booted one is another ship's to shut
+down mid-QA (2026-10-14). Never control the Mac's desktop.
 
 ## 2. Write the QA script → run it → fix → rerun (≤ 3 fix rounds)
 
