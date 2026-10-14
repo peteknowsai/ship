@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>📋 doc-share · plan</title>
+<!--
+  /ship GATE 2 template — the plan Pete says go on. Fill the slots, write to
+  specs/plans/go-card-<slug>.html, and `scripts/show.sh <root> <slug> plan <file>` it. One screen: the locked storyboard in
+  a glance, the punch list in plain English, the cut list, his calls, risk, go. If a
+  section is empty (e.g. no calls), drop the whole card rather than showing it empty.
+  The execution plan is written AFTER his go and he never reads it.
+-->
+<style>
+  :root{--page:#f5f5f7;--card:#fff;--ink:#1d1d1f;--slate:#515154;--mut:#86868b;
+    --line:#e3e3e8;--amber:#c8892b;--grn:#3f7d4e;--red:#b4543a;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--page);color:var(--ink);
+    font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    -webkit-font-smoothing:antialiased;padding:40px 20px}
+  .wrap{max-width:680px;margin:0 auto}
+  h1{font-size:34px;line-height:1.1;margin:6px 0 2px;font-weight:600}
+  .sub{color:var(--slate);margin:0 0 22px;font-size:15px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin:14px 0}
+  .card h2{margin:0 0 10px;text-transform:uppercase;color:var(--mut);
+    font-weight:700;font-size:12px;letter-spacing:.14em}
+  .scope{font-size:18px;line-height:1.4;margin:0}
+  .scope b{color:var(--amber)}
+  ul{margin:6px 0 0;padding-left:18px} li{margin:5px 0}
+  .cut li{color:var(--slate)} .cut s{color:var(--mut)}
+  .call{border-left:3px solid var(--amber);padding:10px 0 10px 14px;margin:12px 0}
+  .call .q{font-weight:700;font-size:15px;margin:0 0 3px}
+  .call .opts{color:var(--slate);font-size:14px;margin:0 0 5px}
+  .rec{display:inline-block;font-size:13px;background:#f3ead6;color:#7a5a18;
+    border:1px solid #e7d6ad;border-radius:6px;padding:2px 9px;font-weight:600}
+  .risk{font-weight:600;font-size:14px}
+  .thumb{width:100%;border-radius:8px;border:1px solid var(--line);margin-top:6px}
+  .board{position:relative;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--page)}
+  .board iframe{display:block;border:0;width:1240px;height:1400px;transform:scale(.5);transform-origin:0 0;pointer-events:none}
+  .board a.open{position:absolute;right:10px;bottom:10px;font-size:13px;background:var(--card);
+    border:1px solid var(--line);border-radius:6px;padding:3px 10px;color:var(--ink);text-decoration:none}
+  ol.punch{margin:6px 0 0;padding-left:22px} ol.punch li{margin:6px 0}
+  .go{text-align:center;font-size:20px;margin:24px 0 6px;font-weight:600}
+  .foot{color:var(--mut);font-size:13px;margin-top:18px;text-align:center}
+  code{background:#ececf0;border-radius:5px;padding:1px 6px;font-size:13px;font-family:ui-monospace,Menlo,monospace}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>The plan</h1>
+  <p class="sub">The storyboard you locked, and what gets built from it. No calls, so it builds.</p>
+
+  <div class="card">
+    <h2>What gets built</h2>
+    <p class="scope">Press <b>Share</b> on any ship doc, paste the link to Nick or Bonnie, and it follows every redraw with the old rounds a click back.</p>
+    <!-- five to twelve lines, plain English, build order; never files or task numbers -->
+    <ol class="punch"><li>A <b>ship-share</b> site at <code>share.peteknowsai.xyz</code> on your PKAI Cloudflare account: it stores every version of a shared page, serves the newest at the plain link, and draws the footer with the arrows.</li><li>A storage bucket and a secret key for it: the key lives in your Keychain and on the site, nowhere else.</li><li>A small share script on your Mac that packs a page with its styles, images and frames into one file, uploads it, and copies the link to your clipboard.</li><li>The bridge that lets the Ship tabs extension call that script, the same way your Tyler handoff works.</li><li>The Share button, its Sharing, Link copied, Shared and Couldn't share states, and Stop sharing, drawn by the extension on every ship doc.</li><li>show.sh re-uploads a doc you've shared each time ship redraws it, so the link follows the rounds.</li><li>Tests for the packer, the site and the button, then a real share, redraw, flip back and stop, run end to end before it lands.</li><li>Docs in the ship repo's CLAUDE.md, and a line in the pipeline skill so every ship knows redraws republish.</li></ol>
+  </div>
+
+  <!-- STORYBOARD: the locked page, half scale, in one glance. Non-visual ship: delete
+       this card. The iframe's height is the storyboard's; set .board's height to half. -->
+  <div class="card">
+    <h2>The storyboard</h2>
+    <div class="board" style="height:700px">
+      <iframe src="../designs/2026-10-14-doc-share.html" title="locked storyboard"></iframe>
+      <a class="open" href="../designs/2026-10-14-doc-share.html">open it</a>
+    </div>
+  </div>
+
+  <div class="card cut">
+    <h2>Ponytail cut</h2>
+    <ul><li><s>Passwords, expiry, view counts</s>: you said frictionless.</li><li><s>A list of versions</s>: arrows won round 2.</li><li><s>Sharing localhost or preview tabs</s>: the button is for docs; a running app isn't a file to pack.</li><li><s>A confirm on Stop sharing</s>: it already sits behind the panel.</li></ul>
+  </div>
+
+  <div class="card"><h2>Your call</h2><p style="margin:0">No calls: the storyboard settled everything, and you already approved the site, bucket and bridge. Building now.</p></div>
+
+  <div class="card">
+    <h2>Risk</h2>
+    <p class="risk" style="color:#c8892b">Medium: it puts pages on the public internet.</p>
+    <p style="margin:4px 0 0;font-size:14px;color:var(--slate)">Anyone holding a link can read that page, and only that page: ids are random and every page tells search engines to stay out. Stop sharing is the undo. The upload key never leaves your Keychain and the site.</p>
+  </div>
+
+  <div class="go">building now</div>
+  <p class="foot">Storyboard: <code>specs/designs/2026-10-14-doc-share.html</code> · the execution plan is written after go</p>
+</div>
+</body>
+</html>
