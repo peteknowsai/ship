@@ -80,13 +80,12 @@ final say. Every model runs at high effort: the driver, every subagent, and ever
 codex run. Never xhigh or max, and never medium to save time.
 
 **Fable 5.1 is the second opinion in two places**: the plan review at the end of PLAN
-and REVIEW's correctness pass. It also builds a band of BUILD tasks. **GPT-6.1 Sol and GPT-6
-Astra read the branch beside it at REVIEW**, the checks from outside Claude's family: a reviewer
+and REVIEW's correctness pass. It also builds a band of BUILD tasks. **GPT-6.1 Sol reads
+the branch beside it at REVIEW**, the one check from outside Claude's family: a reviewer
 of the same family shares the writer's blind spots and goes easy on work shaped like its
-own (Pete, 2026-10-14). They only report; they never edit, because a cross-family reviewer
-that rewrites breaks working code. Every reader's tally goes to the ledger, which decides
-after about ten ships which readers stay: Sol is a fifth of Astra's price, and Astra is
-the stronger, slower one (Pete, 2026-10-14: try both).
+own (Pete, 2026-10-14). It only reports; it never edits, because a cross-family reviewer
+that rewrites breaks working code. Both readers' tallies go to the ledger, which decides
+after about ten ships whether Sol stays, and whether Fable does.
 
 **BUILD routes by difficulty.** Once the execution plan is written and reviewed, run
 `scripts/route.py plan <plan.md>` from this skill's directory. It asks Jev, TypeSafe's
@@ -133,7 +132,7 @@ third of the first 81 rows were round-number guesses.
 `route.py report` prints the table by engine and difficulty band. Pete reads it after
 the first build on this ladder and moves the cuts.
 
-**Codex runs in two places only**: Sol's and Astra's reads of the branch at every REVIEW
+**Codex runs in two places only**: Sol's read of the branch at every REVIEW
 (`scripts/astra.sh review`, unasked), and testing when Pete asks for it ("test in codex"),
 through `ship:verify`'s `reference/codex.md`: `scripts/codex-handoff.py` for a hand-off to
 his Codex app, `scripts/astra.sh test` headless. Never a hand-typed `codex exec`.
@@ -680,21 +679,17 @@ he asks.
   scripts included, not only the directories the diff touched (a HIGH that would have
   parked secrets-report missed the writer in a browser extension). It touches nothing and returns
   findings as file:line, the failure scenario, and a severity.
-  **Sol and Astra read the same branch at the same time**: write that brief to a file and
-  run `scripts/astra.sh review <worktree> <brief> <sol-out-dir>` and `scripts/astra.sh
-  review <worktree> <brief> <astra-out-dir> high gpt-6-astra` in the background
-  (read-only, no tools but the shell; Sol a few minutes, Astra longer), same brief, each
-  one's findings in its `<out-dir>/last.md`. No reader sees another's findings. Astra still
-  reading once the rest of REVIEW is done: give it 15 more minutes, then go on without it,
-  say so in the `result:` line, and log no `review=astra` row for the ship. Codex out of quota or astra's nonzero exit:
+  **Sol reads the same branch at the same time**: write that brief to a file and run
+  `scripts/astra.sh review <worktree> <brief> <out-dir>` in the background (read-only, no
+  tools but the shell, a few minutes), same brief, its findings in `<out-dir>/last.md`.
+  Neither reader sees the other's findings. Codex out of quota or astra's nonzero exit:
   say so in the `result:` line and go on with Fable alone, never wait on it.
   The driver triages every finding from both
   — adversarial reviewers over-flag by design, and a finding two readers reached on their own
   is the strongest lead, never proof — checks each against the code, fixes what's real, puts judgment calls
   on the card or in the `result:` line. Then one ledger row per reader: `route.py log
   repo=<repo> ship=<slug> review=fable real=<n> false=<n> only=<n> seconds=<n>` and the
-  same with `review=sol` and `review=astra`, where `only` counts the real findings no other
-  reader found.
+  same with `review=sol`, where `only` counts the real findings the other reader missed.
   The high-value fan-out is here: several verifiers on one diff beats one.
 - **Design against the storyboard is the QA run's to judge**: the script carries a step
   per frame the change built and the craft floor
