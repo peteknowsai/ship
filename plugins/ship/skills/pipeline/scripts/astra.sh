@@ -4,11 +4,9 @@
 #   astra.sh test   <worktree> <brief.md> <out-dir> [effort]   TEST's headless tester on
 #                                                             Astra: read-only, drives the
 #                                                             app in a browser and on iOS
-#   astra.sh review <worktree> <brief.md> <out-dir> [effort] [model]
-#                                                             REVIEW's cross-family reader,
-#                                                             Sol unless a model is named
-#                                                             (gpt-6-astra): read-only, no
-#                                                             tools but the shell, findings only
+#   astra.sh review <worktree> <brief.md> <out-dir> [effort]   REVIEW's cross-family reader
+#                                                             on Sol: read-only, no tools
+#                                                             but the shell, findings only
 #   astra.sh --selftest
 #
 # Codex left BUILD on 2026-10-01, and the run/fix modes went with it (2026-10-05). Review
@@ -66,7 +64,7 @@ mcp_off() { # [servers to keep]
 dispatch() {
   local mode=$1 worktree=$2 brief=$3 out=$4 effort=${5:-high}
   local model=${MODEL}
-  [ "${mode}" = review ] && model=${6:-${REVIEW_MODEL}}
+  [ "${mode}" = review ] && model=${REVIEW_MODEL}
   [ -d "${worktree}" ] || { echo "astra: no worktree at ${worktree}" >&2; return 2; }
   [ -s "${brief}" ] || { echo "astra: brief ${brief} is missing or empty" >&2; return 2; }
   mkdir -p "${out}"; out=$(cd "${out}" && pwd); worktree=$(cd "${worktree}" && pwd)
@@ -142,11 +140,7 @@ selftest() {
      grep -q -- '--ignore-user-config' "${dir}/args" && ! grep -q 'mcp_servers' "${dir}/args"; then
     echo "  ok   a review run is read-only, on Sol, on a blank config so no MCP server or plugin reaches it"
   else echo "  FAIL a review run's flags: $(cat "${dir}/args")"; fails=$((fails+1)); fi
-  expect 0 "a review run on a named model"  review "${dir}/wt" "${dir}/brief.md" "${dir}/o11" high gpt-6-astra
-  if grep -q -- '-m gpt-6-astra' "${dir}/args" && grep -q -- '--ignore-user-config' "${dir}/args"; then
-    echo "  ok   a named reader runs on its own model, on the same blank config"
-  else echo "  FAIL a named reader's flags: $(cat "${dir}/args")"; fails=$((fails+1)); fi
-  rm -rf "${dir}"; echo "astra self-test: $((16 - fails))/16"; [ "${fails}" = 0 ]
+  rm -rf "${dir}"; echo "astra self-test: $((14 - fails))/14"; [ "${fails}" = 0 ]
 }
 
 case "${1:-}" in
