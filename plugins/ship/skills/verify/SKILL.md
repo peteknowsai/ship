@@ -57,7 +57,11 @@ simulator, and mobile web only ever in a simulator.** A web app is tested in the
 its mobile layout at phone width (390px) there. When the build is meant for phones (the
 spec or storyboard says mobile web), the script may add the simulator's Safari at the
 branch URL: a judgment call on what's being built, never a default, and never iPhone PM,
-whose Safari is never used (Pete, 2026-10-05). For a native app the phone is the real
+whose Safari is never used (Pete, 2026-10-05), unless Pete asks for it or the feature lives
+on the network the phone is on (a VPN or tailnet name a simulator can't join). Then drive
+iPhone PM's Safari by coordinates: `press` the address field, `fill` the URL, `press` the
+keyboard's Go key. `open <url>` doesn't navigate the open tab and `keyboard return` times
+out on the device (2026-10-14). For a native app the phone is the real
 thing, so it is the default whenever `agent-device devices` lists it; otherwise a booted
 simulator. In a repo whose contract has `ios:`, run it whenever the app can see the change
 (its native code, or the server and APIs it calls): it builds the branch's own app, pointed
