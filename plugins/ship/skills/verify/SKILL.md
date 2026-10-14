@@ -125,6 +125,10 @@ what he says mid-run changes the run.
     INTERRUPTED" means another session holds it: `pgrep -fl 'xcodebuild.*AgentDeviceRunner'`
     shows the device id and the owner pid in the xctestrun name. Ask that session
     (ListAgents) or test in a simulator, and say which in the result (2026-10-14).
+  - A phone another ship just released can still answer `DEVICE_IN_USE` for that ship's
+    session handle: reuse it with `--session <that id>`, never close it, since it is theirs.
+  - Never `press` a ref you didn't just read back from a snapshot. An empty or stale one
+    stops the script: on Pete's own phone a misfired tap lands somewhere real.
   - Read the app's own prints with `xcrun devicectl device process launch --console
     --terminate-existing --device <udid> <bundle>`, and write debug traces to stderr: a
     `print()` block-buffers off a terminal, so its lines arrive late or never.
