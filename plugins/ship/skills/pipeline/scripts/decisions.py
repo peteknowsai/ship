@@ -5,11 +5,14 @@
   decisions.py recent [N]                    the N newest active decisions (default 5)
   decisions.py log '<json>'                  record one: {"decision","rationale","source"}
   decisions.py supersede <id> '<json>'       record a reversal; the old one stops showing
+  ... --file <path>                          either one, the JSON read from a file, which keeps
+                                             quotes out of a shell the worktree guard refuses
   decisions.py --selftest
 
 Run from inside the repo. Each repo has one append-only event log,
 ~/.claude/ship-decisions/<owner>-<repo>.jsonl (SHIP_DECISIONS overrides the directory),
-named from the origin remote, else from the main checkout's folder. The format is the
+named from the origin remote, else from the main checkout's folder; a repo that gains a
+remote keeps the folder-named log, merged in on first use and left as <folder>.jsonl.merged (a run lost its log, 2026-10-13). The format is the
 one gstack's decision store used, so its history migrated as is.
 
 `relevant` asks Jev (route.py's key and endpoint) to score every active decision
@@ -30,17 +33,22 @@ import uuid
 def store():
     def run(*args):
         return subprocess.run(args, capture_output=True, text=True).stdout.strip()
-    url = run('git', 'remote', 'get-url', 'origin')
-    match = re.search(r'[:/]([^/:]+)/([^/]+?)(?:\.git)?/?$', url)
-    if match:
-        slug = f'{match.group(1)}-{match.group(2)}'
-    else:
-        common = run('git', 'rev-parse', '--path-format=absolute', '--git-common-dir')
-        slug = os.path.basename(os.path.dirname(common)) if common else os.path.basename(os.getcwd())
-    slug = re.sub(r'[^A-Za-z0-9._-]', '-', slug.replace('.', '-'))
     root = os.environ.get('SHIP_DECISIONS') or os.path.expanduser('~/.claude/ship-decisions')
     os.makedirs(root, exist_ok=True)
-    return os.path.join(root, f'{slug}.jsonl')
+    at = lambda slug: os.path.join(root, re.sub(r'[^A-Za-z0-9._-]', '-', slug.replace('.', '-')) + '.jsonl')
+    common = run('git', 'rev-parse', '--path-format=absolute', '--git-common-dir')
+    folder = at(os.path.basename(os.path.dirname(common)) if common else os.path.basename(os.getcwd()))
+    match = re.search(r'[:/]([^/:]+)/([^/]+?)(?:\.git)?/?$', run('git', 'remote', 'get-url', 'origin'))
+    if not match:
+        return folder
+    path = at(f'{match.group(1)}-{match.group(2)}')
+    if os.path.exists(folder):
+        seen = {e.get('id') for e in events(path)}
+        for e in events(folder):
+            if e.get('id') not in seen:
+                append(path, e)
+        os.rename(folder, folder + '.merged')
+    return path
 
 
 def events(path):
@@ -201,12 +209,35 @@ def selftest():
         json.dump({'answers': {'d0': 1}}, open(reply, 'w'))
         check('a bad reply falls back to the newest', relevant(many, 'pick a voice', 1).startswith('- sidebar'))
         del os.environ['DECISIONS_RESPONSE']
+
+        repo, here = os.path.join(tmp, 'app'), os.getcwd()
+        os.environ['SHIP_DECISIONS'] = os.path.join(tmp, 'store')
+        subprocess.run(['git', 'init', '-q', repo])
+        os.chdir(repo)
+        try:
+            append(store(), decide('{"decision":"before the remote","rationale":"r"}'))
+            subprocess.run(['git', 'remote', 'add', 'origin', 'git@github.com:acme/app.git'])
+            append(os.path.join(tmp, 'store', 'acme-app.jsonl'), decide('{"decision":"after","rationale":"r"}'))
+            shown = recent(store(), 5)
+            check('a repo that gains a remote merges its old log in, once', store().endswith('acme-app.jsonl')
+                  and '- before the remote' in shown and '- after' in shown and shown.count('before the remote') == 1
+                  and os.path.exists(os.path.join(tmp, 'store', 'app.jsonl.merged')))
+        finally:
+            os.chdir(here)
+            del os.environ['SHIP_DECISIONS']
+        check('--file reads the JSON from a file', payload(['log', '--file', reply]) == ['log', open(reply).read()])
     print(f'decisions self-test: {fails} failed')
     return fails == 0
 
 
+def payload(args):
+    if len(args) >= 2 and args[-2] == '--file':
+        return args[:-2] + [open(args[-1]).read()]
+    return args
+
+
 if __name__ == '__main__':
-    args = sys.argv[1:]
+    args = payload(sys.argv[1:])
     if args == ['--selftest']:
         sys.exit(0 if selftest() else 1)
     if args and args[0] == 'relevant' and len(args) in (2, 3):
