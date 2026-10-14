@@ -48,7 +48,7 @@ groups, whatever the app: blue **📐 docs** (storyboards, plan and review cards
 doc) and green **🧪 test** (the running apps, localhost and previews). A page joins at the
 group's end, so the last tab in docs is the newest thing ship showed you. Each tab is
 titled with its kind, app and ship, then the page's own title
-(`🎨 eca-finder · smarter-search · storyboard r2`, `🧪 eca-finder · smarter-search · Find a class`).
+(`🎨 cells-app · smarter-search · storyboard r2`, `🧪 cells-app · smarter-search · Find a class`).
 The extension
 hands you back the tab you were on and closes the tab a new one replaces, so a redrawn
 storyboard or a restarted dev server is one tab, never two. When a ship lands, its review
