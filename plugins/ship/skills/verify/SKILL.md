@@ -102,8 +102,11 @@ what he says mid-run changes the run.
   Enter in a field does start paid work, that is a failure to report: a real user hits it too. A React controlled input can ignore `fill` (the value snaps back): click it and
   `type_text`. The tool's clicks are slower than a person's, so a control with a short
   settle timer (picks counted after ~2s) can read three picks as three separate ones: judge
-  its result, not each click. Keep the QA script, its shots and the dev log under the job's
-  tmp directory (else the worktree), never `/tmp`: a restart mid-QA wiped one. A print flow: headless `window.print()` stalls the browser, so
+  its result, not each click. Keep the QA script and the dev log under the job's tmp
+  directory (else the worktree), never `/tmp`: a restart mid-QA wiped one. Screenshots and
+  `take_snapshot` files go under `<shots-root>/.ship-shots/<slug>/` (below), because the
+  chrome-devtools MCP refuses a path outside the session's workspace roots, the job's tmp
+  included. A print flow: headless `window.print()` stalls the browser, so
   judge the printout with print-media emulation first and click Print last.
   No chrome-devtools tools in the session (ToolSearch finds none: its `npx` start failed
   at launch): drive headless Chrome through Playwright, imported by its absolute path
