@@ -218,7 +218,7 @@ opt a repo into `per-branch`.
 
 From 2026-09-24 to 2026-10-01 BUILD routed each task by difficulty: Astra through `codex
 exec` inside `scripts/astra.sh` for the easier half, Opus 5.5 and Fable subagents above
-it. Codex then left BUILD, and `astra.sh` now only runs TEST's headless tester. Codex was the only engine from 2026-09-18, through `codex app-server` and a
+it. Codex then left BUILD, and `astra.sh` ran only TEST's headless tester until Sol came back as REVIEW's reader (2026-10-14). Codex was the only engine from 2026-09-18, through `codex app-server` and a
 supervisor from 2026-08-12, and not an engine at all from 2026-09-06. The codex bullets
 below are why the wrapper has each of its guards; every other line is about delegation
 itself and holds for any worker.

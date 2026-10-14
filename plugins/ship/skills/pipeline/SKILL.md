@@ -132,9 +132,10 @@ third of the first 81 rows were round-number guesses.
 `route.py report` prints the table by engine and difficulty band. Pete reads it after
 the first build on this ladder and moves the cuts.
 
-**Codex runs only when Pete asks it to test** ("test in codex"), through `ship:verify`'s
-`reference/codex.md`: `scripts/codex-handoff.py` for a hand-off to his Codex app,
-`scripts/astra.sh test` headless. Never a hand-typed `codex exec`.
+**Codex runs in two places only**: Sol's read of the branch at every REVIEW
+(`scripts/astra.sh review`, unasked), and testing when Pete asks for it ("test in codex"),
+through `ship:verify`'s `reference/codex.md`: `scripts/codex-handoff.py` for a hand-off to
+his Codex app, `scripts/astra.sh test` headless. Never a hand-typed `codex exec`.
 
 **The driver writes inline anything under one file and ~50 lines**: config, glue
 between two tasks, a test tweak, a small fix from triage. Mark those tasks `(inline)`
@@ -687,7 +688,7 @@ he asks.
   — adversarial reviewers over-flag by design, and a finding two readers reached on their own
   is the strongest lead, never proof — checks each against the code, fixes what's real, puts judgment calls
   on the card or in the `result:` line. Then one ledger row per reader: `route.py log
-  repo=<repo> slug=<slug> review=fable real=<n> false=<n> only=<n> seconds=<n>` and the
+  repo=<repo> ship=<slug> review=fable real=<n> false=<n> only=<n> seconds=<n>` and the
   same with `review=sol`, where `only` counts the real findings the other reader missed.
   The high-value fan-out is here: several verifiers on one diff beats one.
 - **Design against the storyboard is the QA run's to judge**: the script carries a step

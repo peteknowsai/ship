@@ -105,7 +105,7 @@ selftest() {
   mkdir -p "${dir}/wt"; echo "do the thing" > "${dir}/brief.md"
   stub() { printf '#!/usr/bin/env bash\n%s\n' "$1" > "${dir}/codex"; chmod +x "${dir}/codex"; }
   expect() { local want=$1 name=$2; shift 2
-    ASTRA_CODEX="${dir}/codex" ASTRA_TICK=1 ASTRA_STARTUP=2 ASTRA_IDLE=3 CODEX_HOME="${dir}" "${self}" "$@" >/dev/null 2>&1; local got=$?
+    ASTRA_REVIEW_MODEL=gpt-6.1-sol ASTRA_CODEX="${dir}/codex" ASTRA_TICK=1 ASTRA_STARTUP=2 ASTRA_IDLE=3 CODEX_HOME="${dir}" "${self}" "$@" >/dev/null 2>&1; local got=$?
     if [ "${got}" = "${want}" ]; then echo "  ok   ${name}"; else echo "  FAIL ${name}: exit ${got}, wanted ${want}"; fails=$((fails+1)); return 1; fi; }
   local write_last='while [ $# -gt 0 ]; do [ "$1" = -o ] && out=$2; shift; done'
   stub "${write_last}; cat >/dev/null; echo '{\"type\":\"thread.started\",\"thread_id\":\"t1\"}'; echo done > \"\$out\""
