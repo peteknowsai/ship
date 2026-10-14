@@ -216,7 +216,10 @@ opt a repo into `per-branch`.
   delete, GitHub writes, Slack), and Pete's ~/.agents/skills loaded regardless. Only
   `-c features.apps=false` drops the connectors, and only a private HOME holding just
   the login drops the skills. astra.sh does both for the reader and the first for the
-  tester. Any new headless `codex exec` needs the same.
+  tester. Any new headless `codex exec` needs the same. An MCP server inherits that
+  private HOME, so one that finds files through it (a browser in ~/.cache/puppeteer) breaks:
+  hand the real one back in `mcp_servers.<name>.env.HOME`. That is also how the tester
+  could take a private HOME, if its skills ever cost enough to matter.
 - **The first two days on the ladder, read from nine ship sessions** (2026-09-24 to 26).
   Pete found at TEST what the walk skipped: a right-click menu synthetic events can't
   reproduce, a voice path no walk reached, a localhost broken by a shared sign-in
