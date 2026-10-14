@@ -3,7 +3,7 @@
 The Claude Code plugin behind `/ship` (marketplace `peteknowsai/ship`). Skills live in
 `plugins/ship/skills/` (`pipeline` is /ship itself, plus `verify`). Ship's `codex exec`
 wrapper is `plugins/ship/skills/pipeline/scripts/astra.sh` (TEST's headless tester on
-Astra, REVIEW's cross-family reader on Sol), and `astra.sh --selftest` is its check;
+Astra, REVIEW's cross-family readers on Sol and Astra), and `astra.sh --selftest` is its check;
 `route.py --selftest` checks the router that picks each task's engine,
 `codex-handoff.py --selftest` the TEST hand-off to Pete's Codex app, and
 `decisions.py --selftest` the per-repo decision log. The bare

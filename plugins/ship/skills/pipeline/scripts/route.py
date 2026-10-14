@@ -8,7 +8,7 @@ task done, so the status line reaches BUILD without the driver remembering to sa
 `plan` also saves its picks to .ship-route.json beside the marker, and `log task=<n>`
 fills that task's `score` and `routed` engine from it, so an override shows as
 engine != routed and nobody re-asks Jev or types a score by hand.
-  route.py log review=<fable|sol> real=<n> false=<n> only=<n> seconds=<n> ...
+  route.py log review=<fable|sol|astra> real=<n> false=<n> only=<n> seconds=<n> ...
                                  append one REVIEW reader's tally for the ship: findings
                                  that were real, false alarms, and real ones the other
                                  reader missed; it never counts as a BUILD task
