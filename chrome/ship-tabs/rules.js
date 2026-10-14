@@ -36,7 +36,7 @@ function docTag(path) {
 
 const ICONS = { storyboard: '🎨', plan: '📋', review: '✅', test: '🧪', preview: '🌐', shots: '📸', doc: '📄' };
 // What the tab strip and side panel show: the kind, the app and the ship, then the page's
-// own title ("🎨 eca-finder · smarter-search · storyboard r2").
+// own title ("🎨 cells-app · smarter-search · storyboard r2").
 const tabLabel = (t) => `${ICONS[t.kind] || '•'} ${t.repo} · ${t.slug} · `;
 
 // Two groups per window, whatever the app (Pete, 2026-10-14: "fewer groups, the things

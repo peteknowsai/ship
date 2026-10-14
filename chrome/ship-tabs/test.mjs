@@ -15,12 +15,12 @@ const { shareView, relTime } = require('./share.js');
 let fails = 0;
 const check = (name, ok) => { console.log(`  ${ok ? 'ok  ' : 'FAIL'} ${name}`); if (!ok) fails++; };
 
-const t = shipTag('file:///w/specs/designs/x.html#ship=eca-finder/smarter-search/storyboard');
-check('a tag names the repo, slug and kind', t && t.repo === 'eca-finder' && t.slug === 'smarter-search' && t.kind === 'storyboard' && !t.done);
+const t = shipTag('file:///w/specs/designs/x.html#ship=cells-app/smarter-search/storyboard');
+check('a tag names the repo, slug and kind', t && t.repo === 'cells-app' && t.slug === 'smarter-search' && t.kind === 'storyboard' && !t.done);
 check('a tag after the app\'s own hash still reads', shipTag('http://localhost:3007/#tab=2&ship=app/x/test')?.kind === 'test');
 check('done rides on the tag', shipTag('file:///r/card.html#ship=app/x/review&done').done === true);
 check('an untagged tab is left alone', shipTag('http://localhost:3218/home') === null && shipTag('https://github.com/x#ship') === null);
-check('the label says what the tab is, for which app and ship', tabLabel(t) === '🎨 eca-finder · smarter-search · ');
+check('the label says what the tab is, for which app and ship', tabLabel(t) === '🎨 cells-app · smarter-search · ');
 check('docs and cards go to docs, running apps to test', groupOf(t) === GROUPS.docs && groupOf(shipTag('http://localhost:1/#ship=a/b/test')) === GROUPS.test &&
   groupOf(shipTag('https://x-git-b.vercel.app/#ship=a/b/preview')) === GROUPS.test && groupOf(shipTag('file:///p/app/docs/n.html')) === GROUPS.docs);
 

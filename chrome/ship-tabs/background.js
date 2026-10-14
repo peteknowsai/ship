@@ -94,8 +94,13 @@ function label(tabId, tag) {
 
 chrome.alarms.get('sweep').then((a) => a || chrome.alarms.create('sweep', { periodInMinutes: 5 })); // re-creating resets the clock
 chrome.alarms.onAlarm.addListener(() => run(sweep));
-chrome.runtime.onStartup.addListener(() => run(sweep));
-chrome.runtime.onInstalled.addListener(() => run(sweep));
+// Docs already open when the extension loads or reloads get their button now, not at
+// their next page load.
+async function offerAll() {
+  for (const t of await chrome.tabs.query({})) await offerShare(t.id, shipTag(t.url || ''), t.url || '');
+}
+chrome.runtime.onStartup.addListener(() => run(async () => { await sweep(); await offerAll(); }));
+chrome.runtime.onInstalled.addListener(() => run(async () => { await sweep(); await offerAll(); }));
 
 chrome.tabs.onCreated.addListener((tab) => {
   if (tab.pendingUrl || tab.url) run(() => sort(tab.id, tab.pendingUrl || tab.url));
