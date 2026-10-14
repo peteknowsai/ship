@@ -6,7 +6,8 @@ wrapper is `plugins/ship/skills/pipeline/scripts/astra.sh` (TEST's headless test
 Astra, REVIEW's cross-family reader on Sol), and `astra.sh --selftest` is its check;
 `route.py --selftest` checks the router that picks each task's engine,
 `codex-handoff.py --selftest` the TEST hand-off to Pete's Codex app, and
-`decisions.py --selftest` the per-repo decision log. The bare
+`decisions.py --selftest` the per-repo decision log, and `icon-check.py --selftest` the
+pre-flight's check that every page has a browser icon and a Home Screen icon. The bare
 `/ship` slash command is a *personal* command at `~/.claude/commands/ship.md` (a thin
 dispatcher to `ship:pipeline`) — plugin commands are always namespaced `plugin:command`,
 so a command in this repo would surface as the awkward `/ship:ship`. Don't add one back.
@@ -36,6 +37,9 @@ Testing with `open -g`; run it only when Pete is away from the screen, since he 
 test windows fight him for focus. Never connect to his own Chrome over CDP: each
 connection pops an "Allow remote debugging?" dialog. It also draws the Share button on
 every ship doc (`share.js`, below); that needs its `nativeMessaging` permission.
+Its host permissions cover localhost, `*.vercel.app` previews and `https://*.mac.cells.md`,
+where apps live on Pete's tailnet (`homebody/` on his phone); a tab on a host it can't
+script still groups but goes unlabeled.
 
 ## ship-share — share.peteknowsai.xyz
 
