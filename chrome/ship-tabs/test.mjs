@@ -9,7 +9,9 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const { shipTag, tabLabel, groupOf, GROUPS, sweepPlan, STALE_MS } = createRequire(import.meta.url)('./rules.js');
+const require = createRequire(import.meta.url);
+const { shipTag, tabLabel, groupOf, GROUPS, sweepPlan, STALE_MS, shareable } = require('./rules.js');
+const { shareView, relTime } = require('./share.js');
 let fails = 0;
 const check = (name, ok) => { console.log(`  ${ok ? 'ok  ' : 'FAIL'} ${name}`); if (!ok) fails++; };
 
@@ -44,6 +46,38 @@ p = sweepPlan([tab(5, `${wt}/specs/plans/review-x.html`, { lastAccessed: now - S
                tab(6, 'file:///p/app/specs/plans/review-y.html', { lastAccessed: now - STALE_MS - 1 }),
                tab(7, `${wt}/docs/a.html`, { lastAccessed: now - STALE_MS - 1, active: true })], now);
 check('a worktree page untouched for three days closes; main\'s docs and the tab Pete is on stay', p.close.join() === '5');
+
+// The Share button: which tabs get one, and what it draws in each state.
+const sh = (u) => shareable(shipTag(u), u);
+check('a ship doc on disk can be shared: storyboard, plan, review, doc and shots',
+  sh(`${wt}/specs/designs/2026-10-08-x.html`) && sh('file:///p/app/specs/plans/go-card-x.html#ship=app/x/plan') &&
+  sh('file:///p/app/specs/plans/review-x.html') && sh('file:///p/app/docs/notes.html') && sh('file:///p/app/.ship-shots/x/1.html'));
+check('a running app is not, nor any http page', !sh('http://localhost:1/#ship=a/b/test') && !sh('https://x.vercel.app/#ship=a/b/preview') &&
+  !sh('http://localhost:1/#ship=a/b/storyboard'));
+check('Pete\'s own file:// tab gets no button', shipTag('file:///Users/pete/Downloads/x.html') === null && !sh('file:///Users/pete/Downloads/x.html') && !shareable(null, 'file:///x'));
+
+const url = 'https://share.peteknowsai.xyz/k3x9p2/smarter-search-storyboard';
+const has = (html, ...parts) => parts.every((x) => html.includes(x));
+let v = shareView({ mode: 'idle' });
+check('idle: the Share button with the link icon, no tooltip', has(v, '>Share</button>', '<svg', 'M10 14a4') && !v.includes('Publish a link'));
+check('hover: the tooltip above it', has(shareView({ mode: 'idle', hover: true }), 'Publish a link anyone can open · <b>share.peteknowsai.xyz</b>', 'Share</button>'));
+check('sharing: a spinner and Sharing…', has(shareView({ mode: 'sharing' }), 'class="spin"', 'Sharing…'));
+v = shareView({ mode: 'copied', url });
+check('copied: the panel with the link, Copy again and Open, the button reads Shared',
+  has(v, 'Link copied', 'Paste it anywhere. It always shows this page\'s newest version.', 'share.peteknowsai.xyz/<em>k3x9p2</em>/smarter-search-storyboard', '>Copy again</button>', '>Open</button>', 'Shared</button>'));
+const at = (ms) => new Date(now - ms).toISOString();
+check('shared: Shared · updated just now right after a redraw', has(shareView({ mode: 'shared', at: at(10e3) }, now), 'Shared', '· updated just now'));
+check('shared: three hours on, just Shared', !shareView({ mode: 'shared', at: at(3 * 3600e3) }, now).includes('updated'));
+const panel = (version, versions) => shareView({ mode: 'panel', version, versions, url });
+check('panel: version 3 live, 1 and 2 behind, Copy link, Open, Stop sharing',
+  has(panel(3, 3), 'Version 3 is live · versions 1 and 2 kept behind it', '>Copy link</button>', '>Open</button>', '>Stop sharing</button>', 'k3x9p2'));
+check('panel: one, two and five versions read right', has(panel(1, 1), 'Version 1 is live<') && has(panel(2, 2), 'Version 2 is live · version 1 kept behind it') &&
+  has(panel(5, 5), 'Version 5 is live · versions 1 to 4 kept behind it'));
+v = shareView({ mode: 'error', error: 'X didn\'t answer.' });
+check('error: Couldn\'t share, the reason, Try again, the button back to Share', has(v, 'Couldn\'t share', 'X didn\'t answer.', '>Try again</button>', '>Share</button>'));
+check('relTime: just now, minutes, then nothing', relTime(at(30e3), now) === 'just now' && relTime(at(5 * 60e3), now) === '5 min ago' && relTime(at(60 * 60e3), now) === '');
+v = shareView({ mode: 'copied', url: 'https://x/<b>/y' }) + shareView({ mode: 'error', error: '<b>' });
+check('every string from state is escaped', has(v, '&lt;b&gt;') && !v.includes('<b>'));
 
 // The live part needs a Chrome for Testing build (branded Chrome ignores --load-extension).
 const cache = join(homedir(), '.cache/puppeteer/chrome');

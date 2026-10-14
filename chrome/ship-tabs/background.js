@@ -37,7 +37,25 @@ async function sort(tabId, href) {
   // Close what it replaces only now, so a group never empties out and comes back elsewhere.
   await chrome.tabs.remove(olds.map((o) => o.id)).catch(() => {});
   await label(tabId, tag);
+  await offerShare(tabId, tag, href);
 }
+
+// A ship doc on disk gets the Share button (rules.js shareable): the page learns its key
+// and file, then share.js draws the button in a shadow root. Not on the sweep: the button
+// lives until the page reloads, and a reload fires `complete`, so one helper spawn per load.
+async function offerShare(tabId, tag, href) {
+  if (!shareable(tag, href)) return;
+  await chrome.scripting.executeScript({ target: { tabId }, args: [{ key: tag.key, file: decodeURIComponent(new URL(href).pathname) }], func: (s) => { window.__shipShare = s; } }).catch(() => {});
+  await chrome.scripting.executeScript({ target: { tabId }, files: ['share.js'] }).catch(() => {});
+}
+
+// The button's line to share.py: one native host spawn per request, its answer handed
+// back to the page. No host installed → one human sentence, not a dead button.
+chrome.runtime.onMessage.addListener((msg, sender, reply) => {
+  if (!msg.share) return;
+  chrome.runtime.sendNativeMessage('com.pete.ship.share', msg.share).then(reply, () => reply({ ok: false, error: "The share helper isn't installed. Run share.py install." }));
+  return true;
+});
 
 // Every few minutes, at startup and after each ship page opens: group what's loose, close
 // older copies of a page, age out a gone worktree's docs (rules.js, sweepPlan).
@@ -87,7 +105,9 @@ chrome.tabs.onUpdated.addListener((tabId, change, tab) => {
   if (change.status === 'complete') run(async () => {
     const { byTab = {} } = await chrome.storage.session.get('byTab');
     const tag = byTab[tabId] ? shipTag(`x:#ship=${byTab[tabId]}`) : shipTag(tab.url || '');
-    if (tag) await label(tabId, tag); // a full page load drops the prefix; put it back
+    if (!tag) return;
+    await label(tabId, tag); // a full page load drops the prefix and the button; put them back
+    await offerShare(tabId, tag, tab.url || '');
   });
 });
 chrome.tabs.onActivated.addListener(({ tabId, windowId }) => run(async () => {
