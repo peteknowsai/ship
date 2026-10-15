@@ -358,7 +358,9 @@ wt switch --create feature/<slug> --base origin/<base> --no-cd --format=json -y
 (`origin/<base>`, the base branch resolved above, because a stale local copy has cost a
 rebase and reinstall), then enter
 the path from the JSON. A second ship in the same session calls
-`ExitWorktree({action:"keep"})` before `EnterWorktree` on the new path. In the session's primary repo, `EnterWorktree({path})`
+`ExitWorktree({action:"keep"})` before `EnterWorktree` on the new path; if the cwd isn't
+inside the repo at all (a teardown by absolute path leaves it in `~` or a removed folder),
+`cd <main checkout>` first, since `EnterWorktree` refuses from there. In the session's primary repo, `EnterWorktree({path})`
 is required: the status line and FleetView read the session's cwd,
 so a run that keeps working by absolute path while parked on main is invisible to Pete
 even though `.ship-stage` is being written faithfully in the worktree (he has had to ask
@@ -681,8 +683,11 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   plus the three model defaults the storyboard contract bans.
 - **Before BUILD is done, a light pre-flight, so the QA run never opens a broken
   page.** Run the gates and, for a framework with its own production build, that build;
-  boot the app and load each surface the feature touches once in the chrome-devtools
-  browser: it renders, its first step works, the console is clean. Not a walk-through:
+  boot the app, confirm the server on its port is this worktree's (`lsof -iTCP:<port>
+  -sTCP:LISTEN -Fp` for the pid, then `lsof -p <pid> -d cwd -Fn`: brief-and-home's
+  hashed port was already held by another checkout's server, its own died on EADDRINUSE
+  in a log nobody read, and the first smoke walked the wrong app), and load each surface
+  the feature touches once in the chrome-devtools browser: it renders, its first step works, the console is clean. Not a walk-through:
   that is TEST's QA run. A feature that makes model calls also counts the canned or
   fallback lines in the dev log after those loads: a nonzero count is a defect (a
   timeout shorter than the model's real turn, a length cap every answer fails), never noise.
@@ -850,7 +855,8 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
   1. Return to the main checkout (`ExitWorktree({action:"keep"})`). If it answers that no
      EnterWorktree session is active, run 2–4 by absolute path against the main checkout
      instead (`wt -C <main> remove …`, `gh pr merge <#> -R <owner/repo> …`, `git -C <main>
-     pull --ff-only`).
+     pull --ff-only`), then `cd <main checkout>` so the next ship's `EnterWorktree` can
+     take.
   2. `wt remove feature/<slug> -f` — frees the branch for `--delete-branch`.
   3. `gh pr merge <#> --squash --delete-branch` — from the main checkout.
   4. `git pull --ff-only` (+ `git branch -D feature/<slug>` if a local branch
