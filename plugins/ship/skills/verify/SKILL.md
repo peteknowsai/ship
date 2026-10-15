@@ -183,7 +183,9 @@ TASTE: <0-3 short "looked off / couldn't confirm" notes, or "none">
 ## 3. Regression sweep — you run the codified checks; fix red directly
 
 Run it before the first QA run and after every fix round, once its last edit is in: a
-sweep started before then reports on code that's gone. In ship, BUILD's pre-flight is
+sweep started before then reports on code that's gone. Stop the worktree's dev server
+before a production build (`next build` and `next dev` both write `.next`) and restart it
+after. In ship, BUILD's pre-flight is
 the first run, so skip it then unless the tree changed since. Run the repo's `tsc` / lint / unit / existing e2e as a regression sweep — and **run what the
 DEPLOY workflow runs, not just the test gate.** If deploy does a build/typecheck the test job
 skips (`next build`, `flue build`, an app-level tsc that vitest never touches), run it locally
