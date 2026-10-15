@@ -88,18 +88,28 @@ def route_file(start):
     return marker and os.path.join(os.path.dirname(marker), '.ship-route.json')
 
 
-def mark_build(start, done=None, total=None):
-    """build:0:<total> when routing ends, or one more task done. Outside a ship, nothing."""
+def mark_build(start, task=None, total=None):
+    """build:0:<total> when routing ends, then build:<distinct tasks logged>:<total>, so a
+    task logged twice (a fix round) counts once and task=4,10 counts two. Outside a ship,
+    nothing."""
     path = stage_marker(start)
     if not path:
         return
     current = re.match(r'build:(\d+):(\d+)', open(path).read().strip())
     if total is not None and not current:  # a re-route mid-build keeps the count
         open(path, 'w').write(f'build:0:{total}')
-    elif done and current:
-        n, m = int(current.group(1)), int(current.group(2))
-        open(path, 'w').write(f'build:{min(n + 1, m)}:{m}')
-        if n + 1 == m:  # the muse-tools ship sat on build:32:32 through review, test and land
+    elif task is not None and current:
+        m = int(current.group(2))
+        done_file = os.path.join(os.path.dirname(path), '.ship-done')
+        seen = set(open(done_file).read().split()) if os.path.isfile(done_file) else set()
+        before = len(seen)
+        seen.update(t.strip() for t in str(task).split(',') if t.strip())
+        if len(seen) == before:
+            return
+        open(done_file, 'w').write('\n'.join(sorted(seen)) + '\n')
+        n = min(len(seen), m)
+        open(path, 'w').write(f'build:{n}:{m}')
+        if n == m:  # the muse-tools ship sat on build:32:32 through review, test and land
             print(f'all {m} tasks logged: BUILD is done, so the next command is '
                   f'stage.sh {os.path.dirname(path)} review', file=sys.stderr)
 
@@ -248,6 +258,10 @@ def log(pairs):
         if not sep:
             raise SystemExit(f'route log: "{pair}" is not key=value')
         row[key] = coerce(value)
+    if 'review' in row and isinstance(row.get('only'), int) and isinstance(row.get('real'), int) \
+            and row['only'] > row['real']:
+        raise SystemExit(f"route log: only={row['only']} is more than real={row['real']}; "
+                         "count each reader's findings the other missed, from both lists")
     saved = route_file(os.getcwd())
     picked = None
     if saved and os.path.isfile(saved) and 'task' in row:
@@ -263,8 +277,8 @@ def log(pairs):
               '(run log from the ship worktree)', file=sys.stderr)
     with open(ledger_path(), 'a') as ledger:
         ledger.write(json.dumps(row) + '\n')
-    if 'review' not in row:
-        mark_build(os.getcwd(), done=True)
+    if 'review' not in row and 'task' in row:
+        mark_build(os.getcwd(), task=row['task'])
     return row
 
 
@@ -387,10 +401,24 @@ def selftest():
             row = log(['task=2', 'engine=opus'])
             moved = log(['task=1', 'engine=opus'])
             missing = log(['task=42', 'engine=astra'])
+            log(['task=2', 'engine=opus', 'note=fix round'])
             plan(shipped)
         finally:
             os.chdir(here)
-        check('logged tasks count done, and a re-route keeps the count', open(stage).read() == 'build:3:9')
+        check('distinct logged tasks count done, a re-log counts once, a re-route keeps the count',
+              open(stage).read() == 'build:3:9')
+        os.chdir(repo)
+        try:
+            log(['task=5,6', 'engine=opus'])
+            try:
+                log(['review=fable', 'real=5', 'only=7'])
+                bad = False
+            except SystemExit:
+                bad = True
+        finally:
+            os.chdir(here)
+        check('a combined task=5,6 counts two', open(stage).read() == 'build:5:9')
+        check('a review row with only above real is refused', bad)
         check('log fills the score and the routed engine from the saved picks',
               row.get('score') == 3.4 and row.get('routed') == 'opus' and row['engine'] == 'opus')
         check('an override shows as engine differing from routed, and an unknown task logs unfilled',

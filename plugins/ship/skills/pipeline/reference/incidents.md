@@ -6,6 +6,11 @@ These are facts, not process — the process lives in SKILL.md.
 
 ## Worktrees & git
 
+- **Eve's dev registry outlives its server** (2026-10-15). After a dev restart,
+  `agents/<agent>/.eve/next-dev-server.json` still named the old eve dev port, and
+  `withEve` reused it because the dying process still answered its 1 s probe. Delete
+  that file before restarting a dev server in an Eve app.
+
 - **Fifteen worktrees sat in cells-app after their ships landed** (2026-09-27). A
   session launched inside its worktree can't remove it, the sweep waited 12 hours and
   skipped any tree with a live session, and build lanes never counted as landed because
