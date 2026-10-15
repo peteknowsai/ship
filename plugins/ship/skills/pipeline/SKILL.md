@@ -570,7 +570,9 @@ into commits otherwise (incidents: Worktrees). Never build on main.
 - **Fable reviews the plan before BUILD, on every lane that has one.** A fresh
   subagent (`model: "fable"`) reads the storyboard or spec, the execution plan and the
   repo's ship contract, edits nothing, and returns findings as task, problem, fix: a
-  missing task, a wrong file, a test that cannot fail, an order that breaks, an
+  frame or requirement the spec names that no task covers (it maps each one to its task
+  and lists the orphans: one plan built a spec's intro and none of the screens its frames
+  asked for, and Pete caught it mid-build), a missing task, a wrong file, a test that cannot fail, an order that breaks, an
   `(inline)` task that is not small, a seam two tasks each assume the other owns, a
   screen that waits on someone else with no way back to it (trace how the user returns
   once the other side acts; one plan's payoff screen was unreachable without re-walking
