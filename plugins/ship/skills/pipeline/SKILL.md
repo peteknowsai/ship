@@ -524,6 +524,11 @@ into commits otherwise (incidents: Worktrees). Never build on main.
 
 - `stage.sh <root> plan`. Run `ponytail` as the *waste* critic, not a scope critic — it cuts
   reinvention and gold-plating, never a frame Pete locked.
+- **A task that hooks into a dependency's runtime** (a framework's workflow or sandbox, a
+  bundler's transform, the shape a model must answer in) is followed in the plan by a
+  driver live check: run the real thing once in the worktree. CEL-80's check after its
+  Task 8 found two bugs no unit test or build could. Lanes carry no `.env.local`, so live
+  checks are always the driver's, never a lane's.
 - **Consult a domain expert again only for a question the plan raises and the
   storyboard didn't settle** — schema shape, index or migration order, an API's real
   constraint, an auth boundary. Same rules as DISCOVER's consult: harness subagent, a
