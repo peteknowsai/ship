@@ -154,8 +154,11 @@ paths under `<shots-root>/.ship-shots/<slug>/`; the agent-device diff and a page
 are cheaper evidence where they show the result.
 
 **A step fails:** you have the app open, so look before you change code — the console, the
-network, the device log, a trace — and fix the cause, then re-run the gates (§3) and rerun
-the failed steps plus every step the fix could touch. The same step failing twice means the
+network, the device log, a trace — and fix the cause where it lives, not on the surface
+that showed it: when one view gets state wrong, find every other view that reads the same
+state and walk them all in the rerun (CEL-56 fixed a stale flag in a chat header, then QA
+found it again in the bot panel). Re-run the gates (§3) and rerun the failed steps plus
+every step the fix could touch. The same step failing twice means the
 last fix was a guess: call the Skill tool with `mattpocock-skills:diagnosing-bugs` and get a loop that goes red
 on it (a test, a script, a trace) before the next fix. Three fix rounds without a pass:
 stop, and hand the caller what keeps failing with its evidence. A step you can't reach (a
@@ -174,7 +177,8 @@ TASTE: <0-3 short "looked off / couldn't confirm" notes, or "none">
 
 ## 3. Regression sweep — you run the codified checks; fix red directly
 
-Run it before the first QA run and after every fix round. In ship, BUILD's pre-flight is
+Run it before the first QA run and after every fix round, once its last edit is in: a
+sweep started before then reports on code that's gone. In ship, BUILD's pre-flight is
 the first run, so skip it then unless the tree changed since. Run the repo's `tsc` / lint / unit / existing e2e as a regression sweep — and **run what the
 DEPLOY workflow runs, not just the test gate.** If deploy does a build/typecheck the test job
 skips (`next build`, `flue build`, an app-level tsc that vitest never touches), run it locally
