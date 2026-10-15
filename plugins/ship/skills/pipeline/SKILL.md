@@ -828,12 +828,12 @@ he asks.
 - Changes Pete asks for while parked go through `superpowers:receiving-code-review` —
   verify the ask against the code, do the work, loop the changed flow back through the
   QA run. A change he asks for after landing is a new EXPRESS ship.
-### 5 · LAND — on the QA pass, or Pete's "merge main"  → marker removed
+### 5 · LAND — on the QA pass, or Pete's "merge main"  → marker: `land`, then removed
 
 Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
 
 - **Land — `land: pr` (the default), from the MAIN CHECKOUT, teardown first** (incidents: Worktrees — both orderings that deviate have stranded ships):
-  0. Pre-flight *from the worktree*: `git fetch origin`; if main moved, absorb +
+  0. Pre-flight *from the worktree*: `stage.sh <root> land`, then `git fetch origin`; if main moved, absorb +
      re-gate + push (`git restore next-env.d.ts` first: `next dev` rewrites it and the
      rebase refuses the dirty file), with the worktree's dev server stopped and any simulator shut first,
      since a loaded box turns a full suite's slow tests into timeouts that read as real red; run `stack:` once more; bring the `pr`-shaped body from TEST up to date with what actually
