@@ -243,7 +243,7 @@ if [ -n "$ship_stage" ]; then
     plan*)     printf "$(ship_c)🚢 %s$(rst)" "$ship_slug"; phase="$(stage_bar plan)" ;;
     build*)    printf "$(ship_c)🚢 %s$(rst)" "$ship_slug"; phase="$(stage_bar build)" ;;
     landed*) printf "$(ship_c)✅ %s — landed; goes when this session ends$(rst)" "$ship_slug"; phase="$(stage_bar land)" ;;
-    land*)   printf "$(ship_c)🚢 %s — landing$(rst)" "$ship_slug"; phase="$(stage_bar land)" ;;
+    land*)   printf "$(ship_c)🚢 %s$(rst)" "$ship_slug"; phase="$(stage_bar land)" ;;
     review*)   printf "$(ship_c)🚢 %s$(rst)" "$ship_slug"; phase="$(stage_bar test)" ;;
     *)         printf "$(ship_c)🚢 %s$(rst)" "$ship_slug" ;;
   esac
