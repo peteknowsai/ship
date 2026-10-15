@@ -351,6 +351,10 @@ and open the tracker PR against main. Its own rebase later finds those commits a
 there. A PR based on the other branch strands at landing whenever that branch
 hasn't landed first (incidents: Worktrees).
 
+Check free disk first (`df -h ~`): under 10 GB, tell Pete in one line before forking.
+A fork copies the repo's ignored files, and a full disk once failed `stage.sh` and
+`decisions.py` with ENOSPC in the middle of a LAND.
+
 ```
 git fetch origin
 wt switch --create feature/<slug> --base origin/<base> --no-cd --format=json -y
@@ -688,7 +692,10 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   plus the three model defaults the storyboard contract bans.
 - **Before BUILD is done, a light pre-flight, so the QA run never opens a broken
   page.** Run the gates and, for a framework with its own production build, that build;
-  boot the app, confirm the server on its port is this worktree's (`lsof -iTCP:<port>
+  compare the key names in the worktree's env files with the main checkout's (and
+  `.env.example`): a key main gained after the fork is missing here, and an agent that
+  can't start reads as a product bug and costs a QA round. Then boot the app, confirm the
+  server on its port is this worktree's (`lsof -iTCP:<port>
   -sTCP:LISTEN -Fp` for the pid, then `lsof -p <pid> -d cwd -Fn`: brief-and-home's
   hashed port was already held by another checkout's server, its own died on EADDRINUSE
   in a log nobody read, and the first smoke walked the wrong app), and load each surface
