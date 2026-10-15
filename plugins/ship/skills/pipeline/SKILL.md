@@ -712,7 +712,10 @@ he asks.
 
 
 - `stage.sh <root> review`. Sync with main first: `git fetch origin`; absorb upstream in the
-  worktree (rebase, or merge if unsafe), re-run the gates, then dispatch review — and
+  worktree (rebase, or merge if unsafe), re-run the gates (on `backend: copy`, when the
+  absorb brought Convex changes, push them to the copy with `npx convex dev --once` in
+  each app-dir: nothing else does, and muse-core-loops' QA hit a function main had added
+  that its copy lacked), then dispatch review — and
   re-sync right before landing if main moved again (incidents: Worktrees). On
   `backend: per-branch`, if the absorbed commits touched `convex/`, re-deploy the preview before any further
   verification — function skew is invisible to tsc, vitest and the production build,
