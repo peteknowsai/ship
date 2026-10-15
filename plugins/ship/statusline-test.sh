@@ -30,7 +30,7 @@ expect "handed to Pete in Codex"   "thing — test it with Codex" "$(line1 s0 "$
 echo 'gate:test' > "$T/target.thing/.ship-stage"
 expect "parked for Pete's test"    "thing — try it, then merge main?" "$(line1 s0 "$T/target.thing")"
 echo 'land' > "$T/target.thing/.ship-stage"
-expect "ship landing"              "thing — landing" "$(line1 s0 "$T/target.thing")"
+expect "ship landing lights land"  "test · land" "$(line1 s0 "$T/target.thing")"
 echo 'build:2:5' > "$T/target.thing/.ship-stage"
 expect "ships in flight counted"   "🚢 1" "$(line1 s0 "$T/target")"
 echo "$T/target.thing" > "$HOME/.claude/ship-active/s1"
