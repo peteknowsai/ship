@@ -89,6 +89,11 @@ its frame is a failure), the edges the spec names, and a clean console. Post one
 before running, `QA: <n> steps on <surface> — <qa.md path>`, so Pete can watch and steer;
 what he says mid-run changes the run.
 
+**Seed, then read it back.** Before the walk, read each seeded record back through the
+same backend and stage the app's server uses, and print which one. Two cells-app runs
+seeded main's stage from a worktree because the script read `.env.local` before setting
+its origin, and the walk lost a round to "No alert by that id".
+
 **Run it** the way a person would, with real clicks, taps and keys:
 - **Browser: the chrome-devtools MCP** (`mcp__chrome-devtools__*`, loaded with one
   ToolSearch call; headless, a fresh profile, never Pete's Chrome). Click, hover, fill and
