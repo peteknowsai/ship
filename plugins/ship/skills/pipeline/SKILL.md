@@ -566,7 +566,11 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   the intro), and a
   step that copies a secret from somewhere it can't be read back (a Vercel sensitive
   variable pulls as a placeholder): that step becomes a planned rotation on both sides,
-  and the card says it signs everyone out once. The driver triages and edits the plan. Nothing goes back to Pete unless it changes what
+  and the card says it signs everyone out once. For every third-party API the plan
+  calls, it checks paging, resuming from a saved cursor after a pause, what a deleted or
+  cancelled item looks like, and items the API expands (recurring events): one plan
+  review passed four such bugs that only branch review caught (muse-7-notifier,
+  2026-10-14). The driver triages and edits the plan. Nothing goes back to Pete unless it changes what
   gets built. Then `route.py plan` (Engines). No task starts before the review lands,
   `(inline)` ones included, unless the plan names it a spike: two runs built early and
   rewrote what the review then flagged.
