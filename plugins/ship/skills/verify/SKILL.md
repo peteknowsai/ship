@@ -85,7 +85,10 @@ STORYBOARD (a GATED ship's frames and `~/.claude/skills/impeccable/reference/cra
 or none). Then numbered steps, each one thing a person does and what they should see:
 "4. Scroll up slowly past the first page of history → the message you were reading stays
 put". Cover every acceptance criterion, every frame the change built (a visible gap from
-its frame is a failure), the edges the spec names, and a clean console. Post one line
+its frame is a failure), the edges the spec names, and a clean console. Start at least
+one walk the way a person most naturally would, from nothing, not from seeded state: the
+walkie-visit QA only walked showings at a seeded home, and Pete's first try, a showing at
+a new address, hit a path nobody had built. Post one line
 before running, `QA: <n> steps on <surface> — <qa.md path>`, so Pete can watch and steer;
 what he says mid-run changes the run.
 
