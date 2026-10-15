@@ -152,10 +152,13 @@ def up(worktree, app_rel="."):
     try:
         snap = os.path.join(tmp, "dev.zip")
         export(src, snap, app)
+        # Data first, onto the empty copy, so it keeps dev's table numbers; a table the
+        # branch adds then numbers after them. Pushing first collided once main had a
+        # table dev lacked: both claimed one number and the import refused.
+        npx(["import", "--replace-all", "-y", "--deployment", new, snap], app)
         # The process env beats .env.local, so the push goes to the copy.
         npx(["dev", "--once", "--typecheck", "disable", "--codegen", "disable"], app,
             env=clean_env(CONVEX_DEPLOYMENT=f"dev:{new}"))
-        npx(["import", "--replace-all", "-y", "--deployment", new, snap], app)
     except BaseException:
         open(app_env, "w").write(env_before)
         raise
