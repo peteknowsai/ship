@@ -99,6 +99,9 @@ def mark_build(start, done=None, total=None):
     elif done and current:
         n, m = int(current.group(1)), int(current.group(2))
         open(path, 'w').write(f'build:{min(n + 1, m)}:{m}')
+        if n + 1 == m:  # the muse-tools ship sat on build:32:32 through review, test and land
+            print(f'all {m} tasks logged: BUILD is done, so the next command is '
+                  f'stage.sh {os.path.dirname(path)} review', file=sys.stderr)
 
 
 def parse_tasks(text):
