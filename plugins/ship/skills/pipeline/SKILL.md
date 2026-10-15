@@ -570,7 +570,10 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   calls, it checks paging, resuming from a saved cursor after a pause, what a deleted or
   cancelled item looks like, and items the API expands (recurring events): one plan
   review passed four such bugs that only branch review caught (muse-7-notifier,
-  2026-10-14). The driver triages and edits the plan. Nothing goes back to Pete unless it changes what
+  2026-10-14). A task that reads what another part of the app produces, a loop's brief or
+  a tool's payload, quotes a real sample of it, never the storyboard's mock: one plan
+  parsed a "Price" heading from a mock when the live brief says "Budget", and only QA
+  caught it (market-loops, 2026-10-15). The driver triages and edits the plan. Nothing goes back to Pete unless it changes what
   gets built. Then `route.py plan` (Engines). No task starts before the review lands,
   `(inline)` ones included, unless the plan names it a spike: two runs built early and
   rewrote what the review then flagged.
@@ -735,7 +738,9 @@ he asks.
   parked secrets-report missed the writer in a browser extension). It touches nothing and returns
   findings as file:line, the failure scenario, and a severity.
   **Sol reads the same branch at the same time**: write that brief to a file and run
-  `scripts/astra.sh review <worktree> <brief> <out-dir>` in the background (read-only, no
+  `scripts/astra.sh review <worktree> <brief> <out-dir>` in the background, exactly that
+  with no redirect, since it logs to `<out-dir>` itself and the worktree guard refuses
+  `> log 2>&1` (read-only, no
   tools but the shell, a few minutes), same brief, its findings in `<out-dir>/last.md`.
   Neither reader sees the other's findings. Codex out of quota or astra's nonzero exit:
   say so in the `result:` line and go on with Fable alone, never wait on it.
