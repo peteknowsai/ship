@@ -71,7 +71,9 @@ at the branch's server, installs it, and prints the IOS line. Without `ios:` the
 device step. Landing removes that branch app from the device again (the pipeline skill's
 Land), unless its IOS line says `keep=yes`. One ship on the phone at a time: a second ship
 that finds it held tests on a simulator of its own, `xcrun simctl clone <base> ship-<slug>`
-then boot it, and `simctl delete` it at LAND. A shared booted one is another ship's to shut
+then boot it, pass it to the repo's `ios:` command by UDID (cells-app: `IOS_SIM=<udid>`;
+without it the install lands on whichever simulator is booted, maybe another ship's), and
+`simctl delete` it at LAND. A shared booted one is another ship's to shut
 down mid-QA (2026-10-14). Never control the Mac's desktop.
 
 ## 2. Write the QA script → run it → fix → rerun (≤ 3 fix rounds)
@@ -115,7 +117,11 @@ its origin, and the walk lost a round to "No alert by that id".
   `take_snapshot` files go under `<shots-root>/.ship-shots/<slug>/` (below), because the
   chrome-devtools MCP refuses a path outside the session's workspace roots, the job's tmp
   included. A print flow: headless `window.print()` stalls the browser, so
-  judge the printout with print-media emulation first and click Print last.
+  judge the printout with print-media emulation first and click Print last. A copy flow:
+  headless Chrome refuses `navigator.clipboard.writeText`, so every Copy button reads
+  "Failed to copy". That is the environment, not the app: before the real click, swap
+  `writeText` for a recorder with `evaluate_script`, then click, and check the recorded
+  text and the success toast.
   No chrome-devtools tools in the session (ToolSearch finds none: its `npx` start failed
   at launch): drive headless Chrome through Playwright, imported by its absolute path
   from a script under the job's tmp directory, since a bare `import "playwright"` there
@@ -165,7 +171,8 @@ are cheaper evidence where they show the result.
 network, the device log, a trace — and fix the cause where it lives, not on the surface
 that showed it: when one view gets state wrong, find every other view that reads the same
 state and walk them all in the rerun (CEL-56 fixed a stale flag in a chat header, then QA
-found it again in the bot panel). Re-run the gates (§3) and rerun the failed steps plus
+found it again in the bot panel). Re-run the gates (§3), push a fix under `convex/` to the BACKEND (`npx convex dev --once`),
+and rerun the failed steps plus
 every step the fix could touch. The same step failing twice means the
 last fix was a guess: call the Skill tool with `mattpocock-skills:diagnosing-bugs` and get a loop that goes red
 on it (a test, a script, a trace) before the next fix. Three fix rounds without a pass:
