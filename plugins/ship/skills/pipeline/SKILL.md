@@ -311,11 +311,15 @@ Every key is optional, and the default is what a repo with no contract gets:
   production and the command it runs (cells-app: "release" runs `npm run release`). Ship
   runs it only on that word, never as part of landing, and watches what `live:` names.
   Without it, landing is the release wherever main deploys.
-- **`smoke:`** the repo's automated smoke against what landing just put live, run by LAND
-  once the deploy watch says live. It is the one check that sees ships together: each branch
-  was tested alone, and two that land an hour apart are never walked side by side. Under
-  `release:` it runs after the release instead (cells-app's `npm run release` already runs
-  `smoke --prod`). Default: none, and LAND's one load of each live URL is the whole check.
+- **`smoke:`** the repo's automated end-to-end smoke, in two halves. `branch <cmd>` runs
+  against the worktree's own server once, in BUILD's pre-flight, and again only if the tree
+  changed before landing (LAND's step 0); never per milestone push or per task, because a
+  smoke can cost real model calls (cells-app's: about 12 bot turns, ~$0.13). `main <cmd>`
+  runs once per landing, after the deploy watch, against what landing put live, or main's
+  own server where main deploys nothing (cells-app: `local-pack.sh --restart` smokes main on
+  localhost). It is the one check that sees ships together: each branch was tested alone,
+  and two that land an hour apart are never walked side by side. Default: none, and LAND's
+  one load of each live URL is the whole check.
 - **`ios:`** for a native iOS app, the command that builds the branch's own app, pointed
   at the branch's server, installs it on a device by name ("iPhone PM" or a simulator),
   and prints its IOS line (device, udid, bundle id). Default: none. A web app is tested in
@@ -778,7 +782,8 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   -sTCP:LISTEN -Fp` for the pid, then `lsof -p <pid> -d cwd -Fn`: brief-and-home's
   hashed port was already held by another checkout's server, its own died on EADDRINUSE
   in a log nobody read, and the first smoke walked the wrong app), and load each surface
-  the feature touches once in the chrome-devtools browser: it renders, its first step works, the console is clean. Not a walk-through:
+  the feature touches once in the chrome-devtools browser: it renders, its first step works, the console is clean. Then the contract's
+  `smoke: branch`, once. Not a walk-through:
   that is TEST's QA run. A feature that makes model calls also counts the canned or
   fallback lines in the dev log after those loads: a nonzero count is a defect (a
   timeout shorter than the model's real turn, a length cap every answer fails), never noise.
@@ -951,7 +956,7 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
 - **Land — `land: pr` (the default), from the MAIN CHECKOUT, teardown first** (incidents: Worktrees — both orderings that deviate have stranded ships):
   0. Pre-flight *from the worktree*: `stage.sh <root> land`, then `git fetch origin`; if main moved, absorb +
      re-gate by overlap (REVIEW) + push; and if the tree changed since its last full sweep
-     (TEST's fix rounds run scoped), run the full gates once here either way (`git restore next-env.d.ts` first: `next dev` rewrites it and the
+     (TEST's fix rounds run scoped), run the full gates and `smoke: branch` once here either way (`git restore next-env.d.ts` first: `next dev` rewrites it and the
      rebase refuses the dirty file), with the worktree's dev server stopped and any simulator shut first,
      since a loaded box turns a full suite's slow tests into timeouts that read as real red; run `stack:` once more; bring the `pr`-shaped body from TEST up to date with what actually
      shipped (the squash commit takes it); `gh pr ready <#>`; confirm `gh pr view <#> --json mergeable`
@@ -995,7 +1000,7 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
   about 3 minutes says so and looks at the host's ignore step (a 25-minute wait was on
   a build Vercel never started), and nothing waits on a build the lane never makes;
   watch the deploy to conclusion (red = unfinished work, fix-forward on a new express branch); then
-  run the contract's `smoke:` against it, and treat its red the same way, telling Pete in one
+  run the contract's `smoke: main` once, no reruns, and treat its red the same way, telling Pete in one
   line what broke and which ships landed since the last green; watch
   the run for YOUR commit — `gh run list --commit <full sha>` (get it with
   `git -C <root> rev-parse <sha>` in its own call), full SHA only, a short one matches nothing and the watch times out silently — and
