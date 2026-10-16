@@ -73,7 +73,9 @@ Land), unless its IOS line says `keep=yes`. One ship on the phone at a time: a s
 that finds it held tests on a simulator of its own, `xcrun simctl clone <base> ship-<slug>`
 then boot it, pass it to the repo's `ios:` command by UDID (cells-app: `IOS_SIM=<udid>`;
 without it the install lands on whichever simulator is booted, maybe another ship's), and
-`simctl delete` it at LAND. A shared booted one is another ship's to shut
+`simctl delete` it at LAND. The `ios:` build restarts the branch's server, so it runs
+before or after a smoke or e2e, never beside one: a showing-followups smoke went 6/12 red
+on ECONNRESET while it ran, and 12/12 on the rerun. A shared booted one is another ship's to shut
 down mid-QA (2026-10-14). Never control the Mac's desktop.
 
 ## 2. Write the QA script → run it → fix → rerun (≤ 3 fix rounds)
@@ -171,7 +173,10 @@ are cheaper evidence where they show the result.
 network, the device log, a trace — and fix the cause where it lives, not on the surface
 that showed it: when one view gets state wrong, find every other view that reads the same
 state and walk them all in the rerun (CEL-56 fixed a stale flag in a chat header, then QA
-found it again in the bot panel). Re-run the gates (§3), push a fix under `convex/` to the BACKEND (`npx convex dev --once`),
+found it again in the bot panel). A chat with a bot: the old thread keeps what the bot
+believed before the fix ("I can't move it"), so rerun in a fresh conversation, and check
+each sent message shows in the thread before waiting on a reply. One typed while the chat
+reads "Connecting..." can vanish, which is a finding, not a retype. Re-run the gates (§3), push a fix under `convex/` to the BACKEND (`npx convex dev --once`),
 and rerun the failed steps plus
 every step the fix could touch. The same step failing twice means the
 last fix was a guess: call the Skill tool with `mattpocock-skills:diagnosing-bugs` and get a loop that goes red
