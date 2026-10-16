@@ -464,8 +464,13 @@ into commits otherwise (incidents: Worktrees). Never build on main.
 ### 1 · DISCOVER — Pete's taste, up front  → marker: `discover`, then `gate:1`
 
 - **Resurface decision memory first** (see Decision memory) — settled calls constrain
-  the brainstorm; don't re-litigate them inside it.
-- Invoke `superpowers:brainstorming`. PM-framed, one question at a time.
+  the grilling; don't re-litigate them inside it.
+- **Grill before you draw.** Call the Skill tool with `mattpocock-skills:grilling`: each
+  round asks every question the next step can't be decided without, numbered, each with
+  your recommended answer and worded so "yes" takes it. Recon answers the facts; only the
+  decisions go to Pete, and each round is a `needs input:` stop. Stop grilling when the
+  storyboard can be drawn, not when every branch is settled: what a frame can ask, the
+  frame asks. An idea that arrives fully specified goes straight to the storyboard.
 - **Recon runs on a subagent, synthesis stays with the driver.** Codebase
   evidence-gathering dispatches as a read-only Opus subagent (report findings, edit
   nothing).
@@ -1122,8 +1127,9 @@ The dashboard reflects the session — make it a ship board:
 ## What this skill deliberately does NOT do — including two standing skill overrides
 
 **This pipeline overrides the superpowers defaults on its autonomous lanes** (a
-deliberate ruling, not an oversight): `superpowers:brainstorming` runs only in DISCOVER
-(GATED / `design`) — EXPRESS and SELF-DIRECTED skip it; and there is no strict TDD by
+deliberate ruling, not an oversight): grilling runs only in DISCOVER (GATED / `design`),
+EXPRESS and SELF-DIRECTED skip it, and `superpowers:brainstorming` never runs, since its
+one-question turns, sizing and visual companion repeat ship's own; and there is no strict TDD by
 default — tests are a build deliverable, the pre-merge gate is the backstop, and
 test-first (`superpowers:test-driven-development`) is reserved for money paths.
 
