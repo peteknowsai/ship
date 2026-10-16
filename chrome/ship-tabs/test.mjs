@@ -32,7 +32,16 @@ check('plan and review cards read from their names', doc('file:///p/app/specs/pl
   doc('file:///p/app/specs/plans/review-x.html').key === 'app/x/review');
 check('any other docs-home page joins its repo, keyed by its own path', doc('file:///p/app/docs/notes.html').repo === 'app' &&
   doc('file:///p/app/docs/notes.html').key === '/p/app/docs/notes.html');
-check('a stray file is still left alone', shipTag('file:///Users/pete/Downloads/a.html') === null);
+check('a stray file is still left alone', shipTag('file:///Users/pete/Downloads/a.html') === null &&
+  shipTag('file:///Users/pete/Desktop/a.html') === null && shipTag('file:///Users/pete/Projects/re/out/data.json') === null);
+check('a page an agent left under ~/Projects joins docs under its repo', doc('file:///Users/pete/Projects/re/out/loops-compare.html').repo === 're' &&
+  doc('file:///Users/pete/Projects/Peggy/repos/eca-finder/out/x.html').repo === 'eca-finder' &&
+  doc('file:///Users/pete/Projects/.worktrees/app/fix-y/out/2026-10-16-z.html').slug === 'z' &&
+  groupOf(shipTag('file:///Users/pete/Projects/re/out/a.html')) === GROUPS.docs);
+check('a scratchpad or job page joins docs', doc('file:///private/tmp/claude-501/-Users-pete-Projects-x/abc/scratchpad/sb/s.html').kind === 'doc' &&
+  doc('file:///Users/pete/.claude/jobs/33c787a1/tmp/grok-report.html').repo === 'claude');
+check('a claude.ai Artifact joins docs, one tab per artifact', groupOf(shipTag('https://claude.ai/code/artifact/0b5e-91?x=1#y')) === GROUPS.docs &&
+  doc('https://claude.ai/artifact/abc123#z').key === 'https://claude.ai/artifact/abc123' && shipTag('https://claude.ai/new') === null);
 
 const now = 1e13, tab = (id, url, more = {}) => ({ id, url, windowId: 1, groupId: -1, active: false, pinned: false, lastAccessed: now, ...more });
 let p = sweepPlan([tab(1, `${wt}/specs/designs/2026-10-08-x.html`, { active: true }), tab(2, `${wt}/specs/designs/2026-10-08-x.html#ship=app/x/storyboard`),
