@@ -96,6 +96,12 @@ a new address, hit a path nobody had built. Post one line
 before running, `QA: <n> steps on <surface> — <qa.md path>`, so Pete can watch and steer;
 what he says mid-run changes the run.
 
+**Time the hot path.** A change to a query or endpoint a page waits on gets timed at data
+level on production-sized data, main's code against the branch's, and a slowdown toward
+the backend's limit is a failure (Convex stops a function at 1 s of execution). Loading
+one row per section took a catalog search from 2.1 s to 7 s past the gates and both
+reviewers; only this timing caught it.
+
 **Seed, then read it back.** Before the walk, read each seeded record back through the
 same backend and stage the app's server uses, and print which one. Two cells-app runs
 seeded main's stage from a worktree because the script read `.env.local` before setting
@@ -208,7 +214,10 @@ after. In ship, BUILD's pre-flight is
 the first run, so skip it then unless the tree changed since. Run the repo's `tsc` / lint / unit / existing e2e as a regression sweep — and **run what the
 DEPLOY workflow runs, not just the test gate.** If deploy does a build/typecheck the test job
 skips (`next build`, `flue build`, an app-level tsc that vitest never touches), run it locally
-here: deploy-only failures are the most expensive class because they land *after* merge (a
+here. The host also builds from less than your tree: an ignore file (`.vercelignore`) drops
+paths, so a local build passes an import the host never receives (a runner that imported
+`scripts/` built locally and failed on the preview). A diff that adds an import into an
+ignored path gets a preview build. Deploy-only failures are the most expensive class because they land *after* merge (a
 TS7023 invisible to vitest once sailed through to a red dev deploy). Triage failures
 (real-bug vs stale-test); **never weaken an assertion to go green.**
 
