@@ -89,6 +89,11 @@ after about ten ships whether Sol stays, and whether Fable does. Every review br
 or branch, says a claim about how a dependency behaves at runtime is checked in its
 installed code (`node_modules/<pkg>/dist`), not its docs: a plan review once took Eve's
 docs on queued messages at their word, and the runtime did otherwise (2026-10-14).
+**Fable out** (`route.py quota` shows its pool empty, or a review gets a 429 "Fable limit"):
+GPT-6 Astra reads in its place, at the plan review and REVIEW, through `ASTRA_REVIEW_MODEL=gpt-6-astra
+astra.sh review`, with Sol beside it as usual (Pete, 2026-10-15). Its ledger row stays
+`fable` with a note naming Astra. Check the pool every ship: Fable is back at its weekly
+reset, and a run on 2026-10-16 still used Astra with 91% of Fable's week unspent.
 
 **BUILD routes by difficulty.** Once the execution plan is written and reviewed, run
 `scripts/route.py plan <plan.md>` from this skill's directory. It asks SubQ Snap, Subquadratic's
