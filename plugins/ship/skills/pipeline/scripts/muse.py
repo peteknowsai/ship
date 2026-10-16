@@ -12,8 +12,11 @@ and a final `usage/read`, rewrites ~/.claude/muse-usage-cache.json (or SHIP_QUOT
 quota.py reads for the `muse` pool.
 
 <out-dir> gets events.jsonl (every frame), last.md (the last agentMessage), stderr.txt and
-home/, the serve's HOME: only auth.json and settings.json linked from the real ~/.config/muse,
-so Pete's personal skills never load and never reach Meta. A confidential repo is refused
+home/, the serve's HOME: a shadow of the real home, every entry linked back except the skill
+folders (SKIP_HOME), so the login (macOS Keychain), Xcode, npm and Playwright caches all work in
+the model's shell while Pete's personal skills never load and never reach Meta. `serve` has no
+setting for this: its `--no-foreign-personal-context` skips only ~/.claude and ~/.codex skills,
+and it has no shell-environment policy (2026-10-16). A confidential repo is refused
 before serve starts: Contributor mode trains on what it sees.
 
 Exit 0: completed with a final message. 1: the turn failed, or a request got a JSON-RPC error.
@@ -171,6 +174,21 @@ class Serve:
             self.handle(m)
 
 
+# Where personal skills load from: Muse's own ~/.agents/skills, and the other agents' folders.
+SKIP_HOME = {'.agents', '.claude', '.codex'}
+
+
+def shadow_home(real, home):
+    """Link every entry of the real home into `home`, except SKIP_HOME. The login token is in the
+    Keychain, found through HOME, so a bare private home answers "not logged in" (live, 2026-10-16)."""
+    os.makedirs(home, exist_ok=True)
+    for name in os.listdir(real):
+        dst = os.path.join(home, name)
+        if name in SKIP_HOME or os.path.lexists(dst):
+            continue
+        os.symlink(os.path.join(real, name), dst)
+
+
 def build(worktree, brief, out, model):
     if not os.path.isdir(worktree):
         raise Exit(2, f'no worktree at {worktree}')
@@ -180,14 +198,7 @@ def build(worktree, brief, out, model):
         raise Exit(2, f'{worktree} is confidential: Muse trains on what it sees. Route it to Codex.')
     real = os.path.expanduser('~')  # before the child's HOME moves
     worktree, out = os.path.abspath(worktree), os.path.abspath(out)
-    conf = os.path.join(out, 'home', '.config', 'muse')
-    os.makedirs(conf, exist_ok=True)
-    for name in ('auth.json', 'settings.json'):
-        src, dst = os.path.join(real, '.config', 'muse', name), os.path.join(conf, name)
-        if os.path.lexists(dst):
-            os.remove(dst)
-        if os.path.exists(src):
-            os.symlink(src, dst)
+    shadow_home(real, os.path.join(out, 'home'))
     last = os.path.join(out, 'last.md')
     if os.path.exists(last):
         os.remove(last)
@@ -282,6 +293,8 @@ def selftest():
         os.chmod(stub, 0o755)
         os.makedirs(os.path.join(real, '.config', 'muse'))
         open(os.path.join(real, '.config', 'muse', 'auth.json'), 'w').write('{"fake": true}')
+        for skills in ('.agents/skills', '.claude/skills', '.codex/skills', 'Library/Keychains', '.npm'):
+            os.makedirs(os.path.join(real, skills))
         os.makedirs(os.path.join(tmp, 'secret', 'wt'))
         os.makedirs(wt)
         open(os.path.join(tmp, 'brief.md'), 'w').write('do the thing')
@@ -319,13 +332,15 @@ def selftest():
               sum(1 for _ in open(os.path.join(out, 'events.jsonl'))) == 8)
         home = os.path.join(out, 'home')
         auth = os.path.join(home, '.config', 'muse', 'auth.json')
+        linked = sorted(os.listdir(home))
         check('serve argv carries the flags, the model and no session log',
               seen and seen['argv'][:6] == ['serve', *FLAGS] and
               seen['argv'][6:] == ['--model', 'muse-spark-1.3', '--no-session-log'])
-        check('HOME is the isolated home, auth.json links to the real one, no auto-update, cwd the worktree',
-              seen and seen['home'] == home and os.path.islink(auth) and
-              os.readlink(auth) == os.path.join(real, '.config', 'muse', 'auth.json') and
-              seen['no_update'] == '1' and seen['cwd'] == wt)
+        check('HOME is a shadow home: the real entries linked, the skill folders left out',
+              seen and seen['home'] == home and linked == ['.config', '.npm', 'Library'] and
+              all(os.path.islink(os.path.join(home, n)) for n in linked) and
+              os.path.realpath(auth) == os.path.join(real, '.config', 'muse', 'auth.json'))
+        check('no auto-update, and cwd is the worktree', seen and seen['no_update'] == '1' and seen['cwd'] == wt)
         check('the serve is gone after a clean exit', seen and gone(seen))
 
         r, out, _ = run('quota', 'o2')
