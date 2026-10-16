@@ -12,16 +12,22 @@
   app up top, no click-through between artboards, no essay sections.
 
   Laying it out:
+    - The rows tell the whole flow: the screen the person comes from, every step of the
+      new part, the screen they land on. A screen that doesn't change is drawn as it is
+      with data-same, which greys its code.
     - A .flow is one row, read left to right in story order (arrows are drawn for you):
       empty → typing → loading → results → error → done. Draw every state the feature
       passes through as its own artboard; more, smaller frames beat a few tall ones.
-    - A .flow.options row holds sibling directions for one open call, tagged A / B / C,
-      with no arrows.
+    - A .flow.options row holds sibling directions for one open call, no arrows.
+    - Every artboard's data-mount is its code: row letter, then place (A1, A2, B1…;
+      options rows get a letter too). The script draws it as the tag and the #A3 anchor.
+      Codes are kept for good: never reuse a killed frame's code; a new frame takes its
+      row's next number. Pete answers by code, so A3 must mean one frame forever.
     - Artboards keep true device sizes in data-w / data-h (phone 390×844, desktop
       1280×800) so a phone sits beside a desktop at the same scale.
 
   Authoring an artboard:
-    <template data-frame="frame-id" data-w="390" data-h="844">
+    <template data-frame="A1" data-w="390" data-h="844">
       <link rel="stylesheet" href="../../web/public/grok-shipped.css">   (the product's own sheet, relative to THIS file)
       …the screen's markup, in the product's own classes and tokens…
     </template>
@@ -29,7 +35,9 @@
   frame and nothing else, :root tokens resolve, and a hover, an open menu or a tab inside
   one frame works. Clicking an artboard's name opens it alone at full size.
   Round N: set data-round on <body> and the round in <title>, redraw in place, delete
-  frames Pete killed (never grey them out).
+  frames Pete killed (never grey them out). Questions are grilling's: every open one,
+  Q1, Q2…, each naming its frames, with your pick worded so "yes" takes it. Answered ones
+  go; new ones continue the numbers.
 -->
 <style>
   :root{--canvas:#e8e8ea;--ink:#1d1d1f;--mut:#6e6e73;--line:#d2d2d7;--accent:#0a66d8;--gap:56px;--pad:40px}
@@ -53,7 +61,9 @@
     top:calc(var(--stage-h, 200px) / 2 + 22px);color:var(--mut);font-size:18px}
   figure.ab .name{display:block;font-size:12px;color:var(--mut);margin:0 0 6px;cursor:zoom-in;white-space:nowrap}
   figure.ab .name:hover{color:var(--accent)}
-  .tag{display:inline-block;font-weight:700;color:#fff;background:var(--ink);border-radius:4px;padding:0 6px;margin-right:6px}
+  .tag{display:inline-block;font-weight:700;color:#fff;background:var(--ink);border-radius:4px;padding:0 6px;margin-right:6px;font-variant-numeric:tabular-nums}
+  [data-same] .tag{background:var(--mut)}
+  figure.ab:target .stage{outline:3px solid var(--accent);outline-offset:4px}
   figure.ab .stage{overflow:hidden;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.08),0 6px 20px rgba(0,0,0,.08)}
   figure.ab iframe{display:block;border:0;transform-origin:0 0;background:#fff}
   figure.ab .cap{margin:8px 0 0;font-size:13px;color:var(--ink)}
@@ -61,6 +71,7 @@
   .notes{padding:0 var(--pad) 64px;max-width:880px}
   .q{background:#fff;border-radius:10px;padding:12px 16px;margin:0 0 10px}
   .q p{margin:0}
+  .q .on{color:var(--mut);font-size:13px}
   .q .pick{display:block;margin-top:4px;color:var(--mut);font-size:13px}
   .q .pick b{color:var(--ink)}
   details{margin-top:24px;color:var(--mut);font-size:13px}
@@ -80,41 +91,47 @@
 </header>
 
 <main class="board">
-  <!-- ONE .flow PER STORY, artboards in the order a person meets them. Name each
-       artboard for the state it shows; caption it with what is new in it. -->
+  <!-- ONE .flow PER STORY, artboards in the order a person meets them, from the screen
+       they come from to the one they land on. Name each artboard for the state it shows;
+       caption it with what is new in it. data-mount is the frame's code. -->
   <section class="flow">
-    <h2>{{FLOW_1_NAME}}</h2>
+    <h2>A · {{FLOW_1_NAME}}</h2>
     <div class="boards">
-      <figure class="ab" data-mount="{{FRAME_1_ID}}">
-        <span class="name">{{FRAME_1_STATE}}</span><div class="stage"></div>
-        <p class="cap">{{FRAME_1_WHAT_IS_NEW}}</p>
+      <figure class="ab" data-mount="A1" data-same>
+        <span class="name">{{WHERE_THEY_COME_FROM}}</span><div class="stage"></div>
+        <p class="cap">Unchanged. {{HOW_THEY_GET_IN}}</p>
       </figure>
-      <figure class="ab" data-mount="{{FRAME_2_ID}}">
+      <figure class="ab" data-mount="A2">
         <span class="name">{{FRAME_2_STATE}}</span><div class="stage"></div>
         <p class="cap">{{FRAME_2_WHAT_IS_NEW}}</p>
+      </figure>
+      <figure class="ab" data-mount="A3">
+        <span class="name">{{FRAME_3_STATE}}</span><div class="stage"></div>
+        <p class="cap">{{FRAME_3_WHAT_IS_NEW}}</p>
       </figure>
     </div>
   </section>
 
   <!-- An open call, drawn: sibling directions of one screen, no arrows. Drop when none. -->
   <section class="flow options">
-    <h2>{{OPEN_CALL}} · pick one</h2>
+    <h2>B · {{OPEN_CALL}} · pick one</h2>
     <div class="boards">
-      <figure class="ab" data-mount="{{FRAME_A_ID}}">
-        <span class="name"><span class="tag">A</span>{{FRAME_A_NAME}}</span><div class="stage"></div>
-        <p class="cap">{{FRAME_A_WHAT_IS_DIFFERENT}}</p>
+      <figure class="ab" data-mount="B1">
+        <span class="name">{{OPTION_1_NAME}}</span><div class="stage"></div>
+        <p class="cap">{{OPTION_1_WHAT_IS_DIFFERENT}}</p>
       </figure>
-      <figure class="ab" data-mount="{{FRAME_B_ID}}">
-        <span class="name"><span class="tag">B</span>{{FRAME_B_NAME}}</span><div class="stage"></div>
-        <p class="cap">{{FRAME_B_WHAT_IS_DIFFERENT}}</p>
+      <figure class="ab" data-mount="B2">
+        <span class="name">{{OPTION_2_NAME}}</span><div class="stage"></div>
+        <p class="cap">{{OPTION_2_WHAT_IS_DIFFERENT}}</p>
       </figure>
     </div>
   </section>
 </main>
 
 <section class="notes">
-  <div class="q"><p>{{QUESTION_1}}</p><span class="pick">I'd pick: <b>{{PICK_1}}</b></span></div>
-  <div class="q"><p>{{QUESTION_2}}</p><span class="pick">I'd pick: <b>{{PICK_2}}</b></span></div>
+  <!-- Every question open this round. "yes" takes every pick; Pete answers the rest by number. -->
+  <div class="q"><p><span class="tag">Q1</span>{{QUESTION_1}} <span class="on">· B1, B2</span></p><span class="pick">I'd pick: <b>{{PICK_1}}</b></span></div>
+  <div class="q"><p><span class="tag">Q2</span>{{QUESTION_2}} <span class="on">· A3</span></p><span class="pick">I'd pick: <b>{{PICK_2}}</b></span></div>
   <details>
     <summary>For the record</summary>
     <ul>
@@ -128,7 +145,7 @@
 <dialog></dialog>
 
 <!-- ============ ARTBOARDS ============ one <template> per artboard, mounted above -->
-<template data-frame="{{FRAME_1_ID}}" data-w="390" data-h="844">
+<template data-frame="A1" data-w="390" data-h="844">
   <link rel="stylesheet" href="{{PRODUCT_STYLESHEET_RELATIVE_PATH}}">
   <style>html,body{margin:0;height:100%}</style>
   {{FRAME_1_MARKUP}}
@@ -147,7 +164,11 @@
   };
   const boards = [];
   for (const fig of document.querySelectorAll('figure.ab[data-mount]')) {
-    const t = templates.get(fig.dataset.mount);
+    // The code is the frame's tag and anchor, so "A3" in chat, in the plan and on the page is one name.
+    const code = fig.dataset.mount, tag = document.createElement('span');
+    tag.className = 'tag'; tag.textContent = code;
+    fig.id = code; fig.querySelector('.name').prepend(tag);
+    const t = templates.get(code);
     if (!t) continue;
     const f = frame(t);
     fig.querySelector('.stage').append(f);
@@ -199,6 +220,9 @@
     if (k && !e.metaKey && !e.ctrlKey) act[k]();
   });
   fit();
+  // A link to one frame (storyboard.html#A3) lands on it; the ids only exist once mounted.
+  const hit = /^#[A-Z]\d+$/.test(location.hash) && document.getElementById(location.hash.slice(1));
+  if (hit) hit.scrollIntoView({ block: 'center', inline: 'center' });
 
   const r = document.body.dataset.round, el = document.querySelector('[data-round-no]');
   if (r && el) el.textContent = r;
