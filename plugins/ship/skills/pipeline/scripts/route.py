@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """Pick each BUILD task's engine from its difficulty, and keep the ledger that judges the pick.
 
-  route.py plan <plan.md>        rank the plan's tasks with Jev; JSON on stdout, a table on stderr
+  route.py plan <plan.md>        rank the plan's tasks with the decision model; JSON on stdout, a table on stderr
   route.py log key=value ...     append one task's outcome to the ledger
 Inside a ship, `plan` moves the stage marker to build:0:<tasks> and each `log` counts one
 task done, so the status line reaches BUILD without the driver remembering to say so.
 `plan` also saves its picks to .ship-route.json beside the marker, and `log task=<n>`
 fills that task's `score` and `routed` engine from it, so an override shows as
-engine != routed and nobody re-asks Jev or types a score by hand.
+engine != routed and nobody re-asks the router or types a score by hand.
   route.py log review=<fable|sol> real=<n> false=<n> only=<n> seconds=<n> ...
                                  append one REVIEW reader's tally for the ship: findings
                                  that were real, false alarms, and real ones the other
@@ -16,12 +16,13 @@ engine != routed and nobody re-asks Jev or types a score by hand.
                                  the reviewers'
   route.py --selftest
 
-The ladder ranks the routable tasks by Jev's difficulty score and deals them out in
+The ladder ranks the routable tasks by their difficulty score and deals them out in
 LADDER's order, easiest first. A task whose heading says (driver) or (inline) stays with
-the driver and is not ranked. Jev unreachable or no key: every task goes to the first
-rung and `fallback` says why, because a router must never stop a build.
+the driver and is not ranked. Scores come from SubQ Snap (Pete, 2026-10-16), else Jev when
+SubQ has no key or fails. Neither answering: every task goes to the first rung and
+`fallback` says why, because a router must never stop a build.
 
-The key comes from TYPESAFE_API_KEY, else the macOS keychain (service "typesafe").
+Keys: SUBQ_API_KEY else keychain service "subq"; TYPESAFE_API_KEY else keychain "typesafe".
 The ledger is ~/.claude/ship-ledger.jsonl, or SHIP_LEDGER.
 """
 import json
@@ -31,9 +32,17 @@ import subprocess
 import sys
 import tempfile
 import time
+import urllib.error
 import urllib.request
 
-JEV_URL = 'https://api.typesafe.ai/v1/systemone'
+# Decision models, asked in order: the same /v1/systemone shape, so one call fits both.
+# SubQ answers at most 16 questions a request; Jev reads 64k tokens, SubQ 384k.
+DECIDERS = [
+    {'name': 'SubQ', 'url': 'https://api.subq.ai/v1/systemone', 'model': 'subq-snap-preview',
+     'env': 'SUBQ_API_KEY', 'keychain': 'subq', 'questions': 16},
+    {'name': 'Jev', 'url': 'https://api.typesafe.ai/v1/systemone', 'model': 'jev-latest',
+     'env': 'TYPESAFE_API_KEY', 'keychain': 'typesafe', 'questions': 1000},
+]
 LEVELS = [
     'Transcription: the task text already contains the code to write; one file, no decisions left for the worker.',
     'Contained change: one or two files, following a pattern the repo already has; the tests named in the task prove it.',
@@ -51,7 +60,7 @@ LEVELS = [
 # of Sol's tasks, as it had on Astra's; before that, Astra 33%, Fable 42%, Opus 25%.
 LADDER = [('fable', 0.5), ('opus', 0.5)]
 QUESTION = 'How hard is this coding task for an AI coding agent to complete correctly on the first attempt?'
-# Jev takes 64k tokens per request, and pasted code runs near 3 characters a token. Each
+# Jev, the smaller window, takes 64k tokens per request, and pasted code runs near 3 characters a token. Each
 # task's question repeats the rubric (~800 characters), so a request packs tasks until
 # text plus questions reach this, and a big plan takes several requests. The scores sit
 # on one fixed rubric, so tasks from different requests still rank against each other.
@@ -135,57 +144,80 @@ def parse_tasks(text):
     return tasks
 
 
-def api_key():
-    key = os.environ.get('TYPESAFE_API_KEY')
+def api_key(decider):
+    key = os.environ.get(decider['env'])
     if key is not None or os.environ.get('ROUTE_NO_KEYCHAIN'):
         return key or None
     try:
-        return subprocess.check_output(['security', 'find-generic-password', '-s', 'typesafe', '-w'],
+        return subprocess.check_output(['security', 'find-generic-password', '-s', decider['keychain'], '-w'],
                                        text=True, stderr=subprocess.DEVNULL).strip() or None
     except (OSError, subprocess.CalledProcessError):
         return None
 
 
-def batches(routable):
+def batches(items, cost, most):
+    """Split items so each request stays under REQUEST_CHARS and `most` questions."""
     batch, size = [], 0
-    for t in routable:
-        cost = min(len(t['title']) + len(t['body']) + 1, TASK_CHARS) + QUESTION_CHARS
-        if batch and size + cost > REQUEST_CHARS:
+    for item in items:
+        if batch and (size + cost(item) > REQUEST_CHARS or len(batch) == most):
             yield batch
             batch, size = [], 0
-        batch.append(t)
-        size += cost
+        batch.append(item)
+        size += cost(item)
     if batch:
         yield batch
 
 
-def ask_jev(routable):
+def decide(items, build, cost=lambda item: QUESTION_CHARS):
+    """Ask the first decision model that answers about every item; build(batch) gives one
+    request's (state, questions). Returns (answers by question name, model). Raises when
+    none answers."""
+    failures = []
+    for decider in DECIDERS:
+        key = api_key(decider)
+        if not key:
+            failures.append(f"{decider['name']}: no key (env {decider['env']} or keychain \"{decider['keychain']}\")")
+            continue
+        try:
+            answers, model = {}, None
+            for batch in batches(items, cost, decider['questions']):
+                state, questions = build(batch)
+                body = json.dumps({'model': decider['model'], 'state': state, 'questions': questions}).encode()
+                request = urllib.request.Request(decider['url'], body, {'Authorization': f'Bearer {key}',
+                                                                        'Content-Type': 'application/json'})
+                with urllib.request.urlopen(request, timeout=30) as response:
+                    reply = json.load(response)
+                answers.update(reply['answers'])
+                model = model or reply.get('model') or decider['model']
+            return answers, model
+        except Exception as error:
+            why = 'out of credits; tell Pete now' if '402' in str(error) else f'{type(error).__name__}: {error}'
+            failures.append(f"{decider['name']}: {why}")
+            print(f"route: {decider['name']} failed ({why})", file=sys.stderr)
+    raise RuntimeError('; '.join(failures))
+
+
+def ask_scores(routable):
     """Scores by task number, and the model that gave them. Raises on any failure."""
     if os.environ.get('ROUTE_RESPONSE'):  # the self-test's canned reply
-        replies = [json.load(open(os.environ['ROUTE_RESPONSE']))]
+        reply = json.load(open(os.environ['ROUTE_RESPONSE']))
+        answers, model = reply['answers'], reply.get('model')
     else:
-        key = api_key()
-        if not key:
-            raise RuntimeError('no TypeSafe key (TYPESAFE_API_KEY or keychain service "typesafe")')
-        replies = []
-        for batch in batches(routable):
+        def build(batch):
             state = {'tasks': {f"t{t['n']}": (t['title'] + '\n' + t['body'])[:TASK_CHARS] for t in batch}}
             questions = {f"t{t['n']}": {'type': 'score', 'criteria': LEVELS,
                                         'instructions': {'task': f"`tasks.t{t['n']}`", 'question': QUESTION}}
                          for t in batch}
-            body = json.dumps({'model': 'jev-latest', 'state': state, 'questions': questions}).encode()
-            request = urllib.request.Request(JEV_URL, body, {'Authorization': f'Bearer {key}',
-                                                             'Content-Type': 'application/json'})
-            with urllib.request.urlopen(request, timeout=30) as response:
-                replies.append(json.load(response))
-    answers = {k: v for reply in replies for k, v in reply['answers'].items()}
+            return state, questions
+        answers, model = decide(routable, build,
+                                lambda t: min(len(t['title']) + len(t['body']) + 1, TASK_CHARS) + QUESTION_CHARS)
     scores = {}
     for t in routable:
         answer = answers[f"t{t['n']}"]
         if not isinstance(answer.get('score'), (int, float)) or isinstance(answer['score'], bool):
             raise ValueError(f"t{t['n']}: no numeric score in {answer!r}"[:200])
         scores[t['n']] = answer
-    return scores, replies[0].get('model')
+    return scores, model
 
 
 def assign(routable, scores):
@@ -209,7 +241,7 @@ def plan(path):
     fallback, model, scores, engines = None, None, {}, {}
     if routable:
         try:
-            scores, model = ask_jev(routable)
+            scores, model = ask_scores(routable)
             engines = assign(routable, scores)
         except Exception as error:  # a router must never stop a build
             fallback = f'{type(error).__name__}: {error}'
@@ -223,8 +255,8 @@ def plan(path):
         score = '  -  ' if row['score'] is None else f"{row['score']:.2f}"
         print(f"{row['engine']:6} {score}  {row['title'][:80]}", file=sys.stderr)
     if fallback:
-        why = 'TypeSafe is out of credits; tell Pete now' if '402' in fallback else fallback
-        print(f'ROUTER DOWN: Jev unavailable, every task on {LADDER[0][0]} ({why})', file=sys.stderr)
+        print(f'ROUTER DOWN: no decision model answered, every task on {LADDER[0][0]} ({fallback})',
+              file=sys.stderr)
     result = {'model': model, 'fallback': fallback, 'tasks': out}
     where = os.path.dirname(os.path.abspath(path))
     saved = route_file(where)
@@ -366,7 +398,40 @@ def selftest():
         open(one, 'w').write('### Task 1: t\n\nx\n')
         check('a lone task goes to the top rung', [t['engine'] for t in plan(one)['tasks']] == ['opus'])
         del os.environ['ROUTE_RESPONSE']
-        os.environ.update(TYPESAFE_API_KEY='', ROUTE_NO_KEYCHAIN='1')
+        sizes, urls = [], []
+
+        class Reply:
+            def __init__(self, body):
+                self.body = body
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_):
+                return False
+
+            def read(self):
+                return self.body
+
+        def fake(request, timeout):
+            urls.append(request.full_url)
+            if 'subq' in request.full_url:
+                raise urllib.error.HTTPError(request.full_url, 402, 'Payment Required', {}, None)
+            asked = json.loads(request.data)['questions']
+            sizes.append(len(asked))
+            return Reply(json.dumps({'model': 'jev-test', 'answers': {k: {'score': 1} for k in asked}}).encode())
+        real = urllib.request.urlopen
+        urllib.request.urlopen = fake
+        os.environ.update(SUBQ_API_KEY='k', TYPESAFE_API_KEY='k', ROUTE_NO_KEYCHAIN='1')
+        try:
+            answers, model = decide(list(range(40)), lambda b: ({}, {f'q{i}': {} for i in b}))
+            subq_sizes = [n for n in batches(list(range(40)), lambda i: 1, DECIDERS[0]['questions'])]
+        finally:
+            urllib.request.urlopen = real
+        check('SubQ asks at most 16 questions a request', [len(b) for b in subq_sizes] == [16, 16, 8])
+        check('a SubQ 402 falls through to Jev, which answers everything',
+              'subq' in urls[0] and model == 'jev-test' and len(answers) == 40 and sizes == [40])
+        os.environ.update(SUBQ_API_KEY='', TYPESAFE_API_KEY='', ROUTE_NO_KEYCHAIN='1')
         result = plan(plan_md)
         check('no key falls back to the first rung', result['fallback'] and
               {t['engine'] for t in result['tasks'] if t['n'] != 3} == {'fable'})

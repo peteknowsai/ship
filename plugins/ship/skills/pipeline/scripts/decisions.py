@@ -15,7 +15,7 @@ named from the origin remote, else from the main checkout's folder; a repo that 
 remote keeps the folder-named log, merged in on first use and left as <folder>.jsonl.merged (a run lost its log, 2026-10-13). The format is the
 one gstack's decision store used, so its history migrated as is.
 
-`relevant` asks Jev (route.py's key and endpoint) to score every active decision
+`relevant` asks route.py's decision model (SubQ, else Jev) to score every active decision
 against the idea in one request, because the newest five hide the old call that
 settles the thing being changed. Any failure falls back to `recent`, so recall never
 blocks a run.
@@ -112,33 +112,24 @@ RELEVANCE = [
     'Same area, but does not settle anything the idea needs',
     'Settles a choice the idea will face, or rules out an approach to it',
 ]
-BATCH = 150  # decisions per Jev request, well under its 64k-token limit
 
 
 def scores(idea, decisions):
-    """Jev's relevance score for each decision, in order. Raises on any failure."""
+    """The decision model's relevance score for each decision, in order. Raises on any failure."""
     if os.environ.get('DECISIONS_RESPONSE'):  # the self-test's canned reply
         answers = json.load(open(os.environ['DECISIONS_RESPONSE']))['answers']
     else:
-        import urllib.request
         import route
-        key = route.api_key()
-        if not key:
-            raise RuntimeError('no TypeSafe key')
-        answers = {}
-        for start in range(0, len(decisions), BATCH):
-            chunk = {f'd{i}': decisions[i]['decision'][:2000]
-                     for i in range(start, min(start + BATCH, len(decisions)))}
+
+        def build(batch):
+            chunk = {f'd{i}': decisions[i]['decision'][:2000] for i in batch}
             questions = {k: {'type': 'score', 'criteria': RELEVANCE, 'instructions': {
                 'decision': f'`decisions.{k}`', 'idea': '`idea`',
                 'question': 'Does this settled decision constrain or answer something the new idea will have to decide?'}}
                 for k in chunk}
-            body = json.dumps({'model': 'jev-latest', 'state': {'idea': idea, 'decisions': chunk},
-                               'questions': questions}).encode()
-            request = urllib.request.Request(route.JEV_URL, body, {'Authorization': f'Bearer {key}',
-                                                                   'Content-Type': 'application/json'})
-            with urllib.request.urlopen(request, timeout=30) as response:
-                answers.update(json.load(response)['answers'])
+            return {'idea': idea, 'decisions': chunk}, questions
+        answers, _ = route.decide(list(range(len(decisions))), build,
+                                  lambda i: min(len(decisions[i]['decision']), 2000) + route.QUESTION_CHARS)
     out = []
     for i in range(len(decisions)):
         score = answers[f'd{i}']['score']
@@ -155,8 +146,7 @@ def relevant(path, idea, n):
     try:
         ranked = sorted(zip(scores(idea, decisions), decisions), key=lambda p: -p[0])
     except Exception as error:  # recall must never block a run
-        why = 'TypeSafe is out of credits' if '402' in str(error) else f'{type(error).__name__}: {error}'
-        print(f'decisions: Jev unavailable ({why}); showing the newest instead', file=sys.stderr)
+        print(f'decisions: no decision model answered ({error}); showing the newest instead', file=sys.stderr)
         return recent(path, n)
     return show(e for _, e in ranked[:n])
 

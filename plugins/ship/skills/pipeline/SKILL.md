@@ -91,9 +91,9 @@ installed code (`node_modules/<pkg>/dist`), not its docs: a plan review once too
 docs on queued messages at their word, and the runtime did otherwise (2026-10-14).
 
 **BUILD routes by difficulty.** Once the execution plan is written and reviewed, run
-`scripts/route.py plan <plan.md>` from this skill's directory. It asks Jev, TypeSafe's
-classifier, to score every task's difficulty in one request (well under a second, a
-fraction of a cent) and ranks the routable tasks:
+`scripts/route.py plan <plan.md>` from this skill's directory. It asks SubQ Snap, Subquadratic's
+decision model, to score every task's difficulty (about a second, a fraction of a cent;
+Jev, TypeSafe's, answers when SubQ has no key or fails; Pete, 2026-10-16) and ranks the routable tasks:
 
 | Rank among the plan's routable tasks | Engine | How it runs |
 |---|---|---|
@@ -107,9 +107,9 @@ rerun the tests on most of its tasks. It tests only when Pete asks (TEST).
 A task headed `(driver)` or `(inline)` is never ranked; the driver writes it. An all-inline
 plan is still written down and still gets Fable's plan review (PLAN), and still runs `route.py plan`, which ranks nothing and sets the marker, and each task
 still logs with `engine=driver`, which counts it done. When the
-JSON's `fallback` is set (stderr says `ROUTER DOWN`), Jev was unreachable and every task
+JSON's `fallback` is set (stderr says `ROUTER DOWN`), no decision model answered and every task
 went to Fable: say so in the `result:` line and carry on, because the router never blocks a
-build. A 402 means TypeSafe is out of credits: tell Pete in one line at once,, since every
+build. A 402 means that model is out of credits (stderr names it): tell Pete in one line at once, since every
 ship routes blind until he tops up. The driver may
 override one pick for a concrete reason, such as a file an Opus lane already holds, and
 logs the override in the ledger's `note`.
@@ -297,8 +297,8 @@ it from inside the target repo.
 
 - **DISCOVER start, and PLAN start on SELF-DIRECTED:** run
   `decisions.py relevant "<the idea in one sentence>"`. It returns the six decisions
-  that bear on the idea, whatever their age (Jev scores every active one; if Jev is
-  down it prints the newest instead and says so). Treat them as settled calls with
+  that bear on the idea, whatever their age (the decision model scores every active one; if none
+  answers it prints the newest instead and says so). Treat them as settled calls with
   their rationale. Don't re-ask Pete a settled question; reversing one is allowed, but
   say so explicitly.
 - **When a gate (or Pete mid-run) resolves a durable call** — design direction, scope
