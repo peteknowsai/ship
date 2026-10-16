@@ -191,7 +191,9 @@ to Opus 5.5 harness subagents (the Agent tool), with the chrome-devtools MCP for
 anything in a browser. Never `claude -p` from inside a session. Nothing runs
 on Sonnet.
 
-**The driver owns the envelope**, whoever drafts: it writes the brief (exact files,
+**The driver owns the envelope**, whoever drafts: it writes the brief (exact files, the wiring points among them: where the new piece is
+registered, exported, routed or called from, which workers otherwise leave to the driver,
+as on 6 of 9 tasks in one ship;
 signatures, test cases, constraints; a vague brief burns the savings in fix rounds;
 call the Skill tool with `mattpocock-skills:writing-for-agents` once per run before the first brief),
 reviews the returned diff and runs the gates before anything is committed (never trust
@@ -462,7 +464,15 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   that restores its env files from main (`wt step copy-ignored` where the repo uses it) and
   runs `up` again. `up` refuses when a deploy key sits in the app's env files, since the CLI
   then ignores `--deployment`, and repoints the worktree only once the copy is whole. `shared-dev` → build against
-  the app's dev database and touch no env file. `per-branch` → provision the branch's database preview now; a worktree
+  the app's dev database and touch no env file. Another live worktree whose branch changes
+  `convex/` turns that database into a fight: the Convex plugin's Stop hook pushes each
+  tree's whole `convex/` at every turn end, so each push drops the functions the other
+  added (a catalog ship's survived only because the other branch's data failed
+  validation). Check at the fork (`git worktree list`, then `git diff --name-only
+  origin/main...HEAD -- convex/` in each live one). When one does, tell its session and
+  plan one merged push up front: from a throwaway `git worktree add --detach` holding both
+  branches' `convex/`, until the first lands; then merge main and push alone. A repo that
+  keeps hitting this belongs on `backend: copy`. `per-branch` → provision the branch's database preview now; a worktree
   building against a shared backend it changes clobbers it (incidents: Backends). Rewrite
   the worktree's env file to the preview before the first backend command and confirm the
   first deploy's host is the preview: the inherited `.env.local` carries the shared key,
