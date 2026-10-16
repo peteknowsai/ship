@@ -42,7 +42,7 @@ import time
 import urllib.error
 import urllib.request
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # decisions.py imports this file the same way
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # quota.py is a sibling, whoever imports us
 import quota  # noqa: E402
 
 # Decision models, asked in order: the same /v1/systemone shape, so one call fits both.
@@ -306,6 +306,27 @@ def pick(tiers, pools, confidential):
     return engines, landed, notes
 
 
+def read_quota(where):
+    """(pools, confidential, notes) from quota.py, never raising: a broken quota reader
+    counts every pool as unknown and the repo as confidential, and says so."""
+    notes = []
+    try:
+        pools = quota.pools()
+        confidential = quota.confidential(where)  # also checks the main checkout of the repo holding `where`
+        if getattr(quota, 'list_missing', lambda: False)():
+            notes.append('no confidential list at ~/.config/ship/confidential-paths: Muse is off until it exists '
+                         '(an empty file means none)')
+    except Exception as error:
+        why = f'{type(error).__name__}: {error}'[:200]
+        pools = {name: {'used': 50, 'unused': 50, 'rate': 14.29, 'empty': False, 'resets_at': None, 'known': False,
+                        'note': f'quota.py failed: {why}', **({'session': None, 'opus_blocked': False}
+                                                               if name == 'anthropic' else {})}
+                 for name in ('anthropic', 'fable', 'openai', 'muse')}
+        confidential = True
+        notes.append(f'quota.py failed ({why}): every pool counted 50% used, Muse engines left out')
+    return pools, confidential, notes
+
+
 def plan(path):
     try:
         tasks = parse_tasks(open(path).read())
@@ -315,13 +336,13 @@ def plan(path):
         raise SystemExit(f'route: no "### Task" headings in {path}')
     where = os.path.dirname(os.path.abspath(path))
     routable = [t for t in tasks if not t['driver']]
-    pools = quota.pools()
-    fallback, model, scores, engines, tiers, notes = None, None, {}, {}, {}, []
+    pools, confidential, notes = read_quota(where)
+    fallback, model, scores, engines, tiers = None, None, {}, {}, {}
     if routable:
         try:
             scores, model = ask_scores(routable)
-            # confidential() also checks the main checkout of the repo holding `where`
-            engines, tiers, notes = pick(assign(routable, scores), pools, quota.confidential(where))
+            engines, tiers, picked = pick(assign(routable, scores), pools, confidential)
+            notes += picked
         except Exception as error:  # a router must never stop a build
             fallback = f'{type(error).__name__}: {error}'
             scores = {}
@@ -464,9 +485,11 @@ def selftest():
     with tempfile.TemporaryDirectory() as tmp:
         T, DAY = 1_800_000_000, quota.DAY
         caches = {k: os.path.join(tmp, f'{k}.json') for k in ('anthropic', 'codex', 'muse')}
+        no_list, empty_list = os.path.join(tmp, 'no-list'), os.path.join(tmp, 'empty-list')
+        open(empty_list, 'w').close()  # an empty list: nothing is confidential
         os.environ.update(SHIP_QUOTA_NOW=str(T), SHIP_QUOTA_ANTHROPIC=caches['anthropic'],
                           SHIP_QUOTA_CODEX=caches['codex'], SHIP_QUOTA_MUSE=caches['muse'],
-                          SHIP_CONFIDENTIAL_PATHS=os.path.join(tmp, 'no-list'))
+                          SHIP_CONFIDENTIAL_PATHS=empty_list)
 
         def write_caches(weekly=10, session=10, fable=10, codex=40, codex_days=1, muse=20, muse_days=4):
             """Spare rates: anthropic 15, fable 7.5, openai 60, muse 20 by default."""
@@ -561,6 +584,26 @@ def selftest():
               result['quota']['muse']['used'] == 50 and not result['fallback']
               and any('muse quota unknown' in n for n in result['quota_notes']))
         write_caches()
+        os.environ['SHIP_CONFIDENTIAL_PATHS'] = no_list
+        result = plan(plan_md)
+        os.environ['SHIP_CONFIDENTIAL_PATHS'] = empty_list
+        check('no confidential list at all keeps Muse off and says so',
+              not any(t['pool'] == 'muse' for t in result['tasks'])
+              and any('no confidential list' in n for n in result['quota_notes']))
+        real_pools = quota.pools
+
+        def broken():
+            raise RuntimeError('boom')
+        quota.pools = broken
+        try:
+            result = plan(plan_md)
+        finally:
+            quota.pools = real_pools
+        check('a quota.py that raises never stops the build: pools unknown, Muse off, noted',
+              not result['fallback'] and not any(t['pool'] == 'muse' for t in result['tasks'])
+              and {t['engine'] for t in result['tasks'] if t['tier'] in ('easy', 'middle')} == {'sol', 'astra'}
+              and all(not p['known'] for p in result['quota'].values())
+              and any('quota.py failed (RuntimeError: boom)' in n for n in result['quota_notes']))
         for name, answers in [('bare numbers', {f't{n}': 1 for n in scores}),
                               ('string scores', {f't{n}': {'score': str(s)} for n, s in scores.items()})]:
             json.dump({'answers': answers}, open(reply, 'w'))
