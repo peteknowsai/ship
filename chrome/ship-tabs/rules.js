@@ -1,7 +1,8 @@
 // What a ship tab is. Pages ship opens through pipeline/scripts/show.sh carry a
 // `#ship=<repo>/<slug>/<kind>[&done]` tag; a ship doc opened any other way (an older
-// session's bare `open`, a click in Finder) is read from its path instead. Anything else
-// (Pete's own tabs) gets null and is left alone.
+// session's bare `open`, a click in Finder) is read from its path instead, and so is a
+// page any agent writes for Pete, and a claude.ai Artifact. Anything else (Pete's own
+// tabs) gets null and is left alone.
 function shipTag(href) {
   let url;
   try { url = new URL(href); } catch { return null; }
@@ -10,7 +11,21 @@ function shipTag(href) {
     const [repo, slug, kind] = m.slice(1).map(decodeURIComponent);
     return { repo, slug, kind, key: `${repo}/${slug}/${kind}`, done: /[#&]done\b/.test(url.hash) };
   }
+  const art = url.hostname === 'claude.ai' && url.pathname.match(/\/artifact\/([\w-]+)/);
+  if (art) return { repo: 'claude', slug: art[1].slice(0, 8), kind: 'artifact', key: url.origin + url.pathname, done: false, inferred: true };
   return url.protocol === 'file:' ? docTag(decodeURIComponent(url.pathname)) : null;
+}
+
+// Where agents outside ship leave pages for Pete (Pete, 2026-10-16: they missed the docs
+// group): anywhere under ~/Projects, a Claude scratchpad or a background job's tmp.
+// Downloads, the Desktop and the rest of disk stay his.
+function agentPage(path) {
+  if (!/\.html?$/.test(path)) return null;
+  const proj = path.match(/^\/Users\/[^/]+\/Projects\/(?:\.worktrees\/)?([^/]+)\/(?:repos\/([^/]+)\/)?/);
+  const claude = /^(\/private)?\/tmp\/claude-\d+\//.test(path) || /^\/Users\/[^/]+\/\.claude\/jobs\//.test(path);
+  if (!proj && !claude) return null;
+  const slug = path.split('/').pop().replace(/\.html?$/, '').replace(/^\d{4}-\d{2}-\d{2}-/, '');
+  return { repo: proj ? proj[2] || proj[1] : 'claude', slug, kind: 'doc', key: path, done: false, inferred: true };
 }
 
 // specs/designs/YYYY-MM-DD-<slug>.html is a storyboard, specs/plans/go-card-<slug>.html a
@@ -19,7 +34,7 @@ function shipTag(href) {
 // docs home. Redrawn rounds of one card share a key, so only the newest stays open.
 function docTag(path) {
   const home = path.match(/^(.*)\/(specs|docs)\/(.+)$/) || path.match(/^(.*)\/(\.ship-shots)\/(.+)$/);
-  if (!home) return null;
+  if (!home) return agentPage(path);
   const [, root, , rest] = home;
   const tree = root.match(/\/\.worktrees\/([^/]+)\/([^/]+)$/);
   const repo = tree ? tree[1] : root.split('/').pop();
@@ -34,7 +49,7 @@ function docTag(path) {
   return { repo, slug, kind, key: card ? `${repo}/${slug}/${kind}` : path, done: false, inferred: true };
 }
 
-const ICONS = { storyboard: '🎨', plan: '📋', review: '✅', test: '🧪', preview: '🌐', shots: '📸', doc: '📄' };
+const ICONS = { storyboard: '🎨', plan: '📋', review: '✅', test: '🧪', preview: '🌐', shots: '📸', doc: '📄', artifact: '🧩' };
 // What the tab strip and side panel show: the kind, the app and the ship, then the page's
 // own title ("🎨 cells-app · smarter-search · storyboard r2").
 const tabLabel = (t) => `${ICONS[t.kind] || '•'} ${t.repo} · ${t.slug} · `;
