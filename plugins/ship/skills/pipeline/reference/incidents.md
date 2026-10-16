@@ -229,6 +229,14 @@ why `shared-dev` is now an opt-out.
 
 ## Dispatch
 
+- **Codex builds with its sandbox off, in a blank home with the real one in its shell** (2026-10-16).
+  In October Codex's sandbox blocked vitest's writes, Xcode and typecheck, and the driver reran the tests on
+  most of its tasks, so Codex left BUILD. It came back with `-s danger-full-access`. The private HOME that keeps
+  Pete's skills, MCP servers and connectors out would also hide npm, Xcode and Playwright caches from the
+  model's tests, so `astra.sh build` sets `shell_environment_policy.inherit="all"` and
+  `shell_environment_policy.set.HOME` to the real home. Live check: Astra and Sol each built a one-line task
+  in about 20 s, saw `/Users/pete` and ran a self-test. Muse gets the same shape through `muse.py`, whose
+  `serve` session has no `--no-foreign-personal-context`, so a private HOME drops Pete's skills there too.
 - **Headless Codex carried all of Pete's ChatGPT connectors** (2026-10-14, codex-cli
   0.162.1, reported by another of Pete's sessions). `--ignore-user-config` and a private CODEX_HOME both
   still left 331 `mcp__codex_apps__*` tools in reach through code mode (Gmail, Drive

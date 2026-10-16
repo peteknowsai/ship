@@ -6,7 +6,9 @@ wrapper is `plugins/ship/skills/pipeline/scripts/astra.sh` (TEST's headless test
 Astra, REVIEW's cross-family reader on Sol), and `astra.sh --selftest` is its check;
 `route.py --selftest` checks the router that picks each task's engine,
 `codex-handoff.py --selftest` the TEST hand-off to Pete's Codex app, and
-`decisions.py --selftest` the per-repo decision log, `branch-db.py --selftest` the copy of
+`decisions.py --selftest` the per-repo decision log, `quota.py --selftest` the four usage pools the
+router deals BUILD tasks by, `muse.py --selftest` the Muse Code builder (Muse's twin of astra.sh's
+`build` mode), `branch-db.py --selftest` the copy of
 the Convex dev database each worktree gets, and `icon-check.py --selftest` the
 pre-flight's check that every page has a browser icon and a Home Screen icon. The bare
 `/ship` slash command is a *personal* command at `~/.claude/commands/ship.md` (a thin
