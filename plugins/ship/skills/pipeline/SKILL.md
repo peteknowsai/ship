@@ -106,7 +106,7 @@ harness made for it, and the work goes where spare quota is):
 | engine | model | runs as (in the background) | pool |
 |---|---|---|---|
 | `opus` | Opus 5.5 | harness subagent, `model: "opus"` | `anthropic` |
-| `fable` | Fable 5.1 | harness subagent, `model: "fable"` | `fable`, its own weekly limit, counted double |
+| `fable` | Fable 5.1 | harness subagent, `model: "fable"` | `fable`, its own weekly limit, which drains about twice as fast |
 | `astra` | GPT-6 Astra | `scripts/astra.sh build <wt> <brief> <out> gpt-6-astra` | `openai` |
 | `sol` | GPT-6.1 Sol | `scripts/astra.sh build <wt> <brief> <out> gpt-6.1-sol` | `openai` |
 | `wonder` | Muse Wonder Full | `scripts/muse.py build <wt> <brief> <out> muse-wonder-full-1.0` | `muse` |
@@ -118,18 +118,23 @@ rate** is its budget left per day until reset, so a pool with plenty left that r
 the most work: OpenAI on a quiet weekend, Muse late in its week. Before dealing, the router applies:
 - **Confidential repos never reach Muse**, whose Contributor mode trains on what it reads. The
   list is local, `~/.config/ship/confidential-paths`, never in this repo, and matches a repo's
-  main checkout as well as its worktree. There, middle is all `astra` and easy all `sol`.
+  main checkout as well as its worktree. There, middle is all `astra` and easy all `sol`. With
+  no list file at all, Muse is off everywhere until one exists (an empty file means none).
 - **The driver's Opus comes first**: no `opus` build while the Anthropic week is at 70% or its
   5-hour session at 85%; those go to `fable`. An empty Fable pool sends its share to `opus`.
-- **An empty pool** (95% used, or Codex's `limit_reached`) drops out of middle and easy; a tier
+- **An empty pool** (95% used, Codex's `limit_reached`, or Muse's 5-hour window at 95%) drops
+  out of middle and easy; a tier
   left with no engine moves up one. Unknown quota counts as half used and is noted, never a stop.
 
 A non-Claude engine gets the same brief file a subagent would, run as a background Bash call
 of its wrapper: the driver reads `<out>/last.md` (STATUS, TESTS, CONCERNS), reviews the diff and
-runs the gates exactly as for a subagent. Each wrapper keeps the model away from Pete's skills,
-MCP servers and connectors (a home of its own), runs with its sandbox off inside the worktree
-(Codex's sandbox blocked tests and made the driver rerun most of its tasks in October), and lets
-the model's shell see the real home so tests find their caches. Muse runs only through
+runs the gates exactly as for a subagent. The `<out>` folder lives outside the worktree, in the
+job's tmp (`muse.py` refuses one inside it). Each wrapper keeps the model away from Pete's skills,
+MCP servers and connectors and runs with its sandbox off inside the worktree (Codex's sandbox
+blocked tests and made the driver rerun most of its tasks in October). Codex gets a blank home
+with the real one put back in its shell; Muse gets a shadow home, every real entry linked in but
+the skill folders, because its login lives in the Keychain. Either way tests find their caches,
+though under Muse `$HOME` reads as the shadow path. Muse runs only through
 `muse.py`, Codex only through `astra.sh`; never a hand-typed `muse exec` or `codex exec`.
 A builder that fails (a nonzero wrapper exit, a quota error, or two wrong diffs) reruns one
 tier up, on the engine `route.py quota` shows with the most spare outside the pool that just
