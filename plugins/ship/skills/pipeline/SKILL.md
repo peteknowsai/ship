@@ -669,6 +669,13 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   and `(driver)` tasks the driver writes itself. The driver owns the brief, the diff
   review, the gates, the ledger line, and git. One writer per tree at a time, which
   is why fan-out means sub-worktrees, below.
+- **Check the plan's files against work in flight, before the first dispatch.** `gh pr
+  list --state open --json number,headRefName,files` and `git log origin/main --since=1.day
+  --name-only`: a plan file another PR or a fresh main commit also touches gets read first.
+  If it already makes the same change, drop the task and absorb it once it lands; if it is
+  mid-flight, ask its session (ListAgents, SendMessage). showing-followups rebuilt "each
+  branch gets its own Simulator" while cells-app #206 had it in review, and the rebase
+  conflicted.
 - **Fan out by file overlap, before the first dispatch.** The plan names each task's
   files. Group tasks that share a file; every group is a lane. Each lane past the
   first gets its own sub-worktree off the branch (`git worktree add <dir> -b
