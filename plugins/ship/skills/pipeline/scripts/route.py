@@ -8,10 +8,14 @@ task done, so the status line reaches BUILD without the driver remembering to sa
 `plan` also saves its picks to .ship-route.json beside the marker, and `log task=<n>`
 fills that task's `score` and `routed` engine from it, so an override shows as
 engine != routed and nobody re-asks the router or types a score by hand.
-  route.py log review=<fable|sol> real=<n> false=<n> only=<n> seconds=<n> ...
+  route.py log review=<opus|sol|...> real=<n> false=<n> only=<n> owned=<n> seconds=<n> ...
                                  append one REVIEW reader's tally for the ship: findings
-                                 that were real, false alarms, and real ones the other
-                                 reader missed; it never counts as a BUILD task
+                                 that were real, false alarms, real ones the other reader
+                                 missed, and real ones in the tasks it owned; it never
+                                 counts as a BUILD task
+  route.py owners <slug>         which branch reader owns which of the ship's tasks: Sol
+                                 the ones a Claude model wrote, Opus the ones GPT wrote,
+                                 both the ones Muse wrote, by the ledger's last engine per task
   route.py report                the ledger as a table by engine and difficulty, by
                                  pool, then the reviewers'
   route.py quota                 the four pools, one line each (quota.py --table)
@@ -399,6 +403,9 @@ def log(pairs):
             and row['only'] > row['real']:
         raise SystemExit(f"route log: only={row['only']} is more than real={row['real']}; "
                          "count each reader's findings the other missed, from both lists")
+    if 'review' in row and isinstance(row.get('owned'), int) and isinstance(row.get('real'), int) \
+            and row['owned'] > row['real']:
+        raise SystemExit(f"route log: owned={row['owned']} is more than real={row['real']}")
     saved = route_file(os.getcwd())
     picked = None
     if saved and os.path.isfile(saved) and 'task' in row:
@@ -419,6 +426,32 @@ def log(pairs):
     if 'review' not in row and 'task' in row:
         mark_build(os.getcwd(), task=row['task'])
     return row
+
+
+READERS = {'anthropic': ['sol'], 'fable': ['sol'], 'openai': ['opus'], 'muse': ['opus', 'sol']}
+
+
+def owners(slug):
+    """Each branch reader's tasks: the other lab's work, Muse's to both (Pete, 2026-10-16)."""
+    last = {}
+    try:
+        for line in open(ledger_path()):
+            try:
+                row = json.loads(line)
+            except ValueError:
+                continue
+            if row.get('ship') == slug and 'task' in row and 'review' not in row and 'engine' in row:
+                for n in str(row['task']).split(','):
+                    last[n.strip()] = row['engine']
+    except FileNotFoundError:
+        pass
+    owned = {}
+    for n, engine in last.items():
+        pool = 'anthropic' if engine == 'driver' else POOL.get(engine)
+        for reader in READERS.get(pool, ['opus', 'sol']):  # an unknown engine gets both
+            owned.setdefault(reader, []).append((n, engine))
+    key = lambda t: (0, int(t[0])) if t[0].isdigit() else (1, t[0])
+    return {r: sorted(ts, key=key) for r, ts in sorted(owned.items())}
 
 
 def band(score):
@@ -463,13 +496,14 @@ def report():
         for name, group in sorted(by_pool.items()):
             lines.append(f"{name:9} {len(group):>5} {first_pass(group):>10} {mean(group, 'fix_rounds'):>10}")
     if reviews:
-        lines += ['', f"{'reviewer':8} {'ships':>5} {'real':>5} {'false':>5} {'only it':>7} {'minutes':>8}"]
+        lines += ['', f"{'reviewer':8} {'ships':>5} {'real':>5} {'false':>5} {'only it':>7} {'owned':>5} {'minutes':>8}"]
         for name in sorted({r['review'] for r in reviews}):
             group = [r for r in reviews if r['review'] == name]
             total = lambda key: sum(r[key] for r in group if isinstance(r.get(key), int) and not isinstance(r[key], bool))
             secs = [r['seconds'] for r in group if isinstance(r.get('seconds'), (int, float))]
             minutes = f'{sum(secs) / len(secs) / 60:.1f}' if secs else '-'
-            lines.append(f"{name:8} {len(group):>5} {total('real'):>5} {total('false'):>5} {total('only'):>7} {minutes:>8}")
+            lines.append(f"{name:8} {len(group):>5} {total('real'):>5} {total('false'):>5} {total('only'):>7} "
+                         f"{total('owned'):>5} {minutes:>8}")
     return '\n'.join(lines)
 
 
@@ -667,7 +701,7 @@ def selftest():
         old = log(['repo=ship', 'task=7', 'engine=sonnet', 'score=1.0'])
         check('log engine=sol fills pool=openai; an engine outside the map logs no pool',
               sol['pool'] == 'openai' and 'pool' not in old)
-        log(['repo=ship', 'review=sol', 'real=2', 'false=3', 'only=1', 'seconds=120'])
+        log(['repo=ship', 'review=sol', 'real=2', 'false=3', 'only=1', 'owned=1', 'seconds=120'])
         log(['repo=ship', 'review=sol', 'real=1', 'false=0', 'only=0', 'seconds=60'])
         table = report()
         check('the ledger reports by engine and difficulty, past a broken line',
@@ -677,7 +711,7 @@ def selftest():
               'openai        2       100%        1.0' in table and 'fable         1         0%        1.0' in table
               and '-             1' in table)
         check('reviewers get their own table, outside the BUILD one',
-              'sol          2     3     3       1      1.5' in table and 'sol      unscored' not in table)
+              'sol          2     3     3       1     1      1.5' in table and 'sol      unscored' not in table)
         repo = os.path.join(tmp, 'repo')
         subprocess.run(['git', 'init', '-q', repo], check=True)
         stage = os.path.join(repo, '.ship-stage')
@@ -716,6 +750,20 @@ def selftest():
             os.chdir(here)
         check('a combined task=5,6 counts two', open(stage).read() == 'build:5:9')
         check('a review row with only above real is refused', bad)
+        for pairs in (['ship=xl', 'task=1', 'engine=opus'], ['ship=xl', 'task=2', 'engine=astra'],
+                    ['ship=xl', 'task=3', 'engine=driver'], ['ship=xl', 'task=4,5', 'engine=spark'],
+                    ['ship=xl', 'task=2', 'engine=fable', 'verdict=redone'], ['ship=other', 'task=9', 'engine=sol'],
+                    ['ship=xl', 'task=6', 'engine=sol'], ['ship=xl', 'review=sol', 'real=1']):
+            log(pairs)
+        got = {r: [n for n, _ in ts] for r, ts in owners('xl').items()}
+        check('owners: Sol gets Claude-written tasks, Opus GPT-written, both Muse, last engine wins',
+              got == {'opus': ['4', '5', '6'], 'sol': ['1', '2', '3', '4', '5']})
+        try:
+            log(['review=opus', 'real=1', 'owned=2'])
+            bad = False
+        except SystemExit:
+            bad = True
+        check('a review row with owned above real is refused', bad)
         check('log fills the score and the routed engine from the saved picks',
               row.get('score') == 3.4 and row.get('routed') == 'opus' and row['engine'] == 'opus')
         check('an override shows as engine differing from routed, and an unknown task logs unfilled',
@@ -738,6 +786,9 @@ if __name__ == '__main__':
         print(json.dumps(plan(args[1]), indent=1))
     elif args and args[0] == 'log':
         log(args[1:])
+    elif len(args) == 2 and args[0] == 'owners':
+        for reader, tasks in owners(args[1]).items():
+            print(f"{reader:5} " + ', '.join(f'{n} ({e})' for n, e in tasks))
     elif args == ['report']:
         print(report())
     elif args == ['quota']:

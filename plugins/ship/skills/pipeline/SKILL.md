@@ -79,20 +79,20 @@ a gate. Never use an autonomous lane to slip a taste call past Pete.
 final say. Every model runs at high effort: the driver, every subagent, and every
 codex run. Never xhigh or max, and never medium to save time.
 
-**Fable 5.1 is the second opinion in two places**: the plan review at the end of PLAN
-and REVIEW's correctness pass. It also builds a band of BUILD tasks. **GPT-6.1 Sol reads
-the branch beside it at REVIEW**, the one check from outside Claude's family: a reviewer
-of the same family shares the writer's blind spots and goes easy on work shaped like its
-own (Pete, 2026-10-14). It only reports; it never edits, because a cross-family reviewer
-that rewrites breaks working code. Both readers' tallies go to the ledger, which decides
-after about ten ships whether Sol stays, and whether Fable does. Every review brief, plan
-or branch, says a claim about how a dependency behaves at runtime is checked in its
+**Fable 5.1 reviews the plan** at the end of PLAN, before anything is built. It also builds
+a band of BUILD tasks. **The branch gets two readers from different labs at REVIEW, Opus
+5.5 and GPT-6.1 Sol**, because a reader shares the blind spots of code its own lab wrote and
+goes easy on it (Pete, 2026-10-14, 2026-10-16). Both read the whole branch, since bugs hide
+where tasks meet, and each **owns** the tasks the other lab wrote: Sol owns what Opus,
+Fable or the driver wrote, Opus owns what Astra or Sol wrote, and both own Muse's.
+`route.py owners <slug>` lists them from the ledger. Readers only report; they never edit,
+because a reader that rewrites breaks working code. Their tallies go to the ledger. Every
+review brief, plan or branch, says a claim about how a dependency behaves at runtime is checked in its
 installed code (`node_modules/<pkg>/dist`), not its docs: a plan review once took Eve's
 docs on queued messages at their word, and the runtime did otherwise (2026-10-14).
-**Fable out** (`route.py quota` shows its pool empty, or a review gets a 429 "Fable limit"):
-GPT-6 Astra reads in its place, at the plan review and REVIEW, through `ASTRA_REVIEW_MODEL=gpt-6-astra
-astra.sh review`, with Sol beside it as usual (Pete, 2026-10-15). Its ledger row stays
-`fable` with a note naming Astra. Check the pool every ship: Fable is back at its weekly
+**Fable out** (`route.py quota` shows its pool empty, or the plan review gets a 429 "Fable
+limit"): GPT-6 Astra reviews the plan in its place, through `ASTRA_REVIEW_MODEL=gpt-6-astra
+astra.sh review` (Pete, 2026-10-15). Check the pool every ship: Fable is back at its weekly
 reset, and a run on 2026-10-16 still used Astra with 91% of Fable's week unspent.
 
 **BUILD routes by difficulty.** Once the execution plan is written and reviewed, run
@@ -819,9 +819,10 @@ he asks.
 - **Freeze upstream while the QA run walks** — no merges or rebases until its result
   lands (incidents: Worktrees). Absorb upstream *before* a run, never during; the run's
   own fixes are the only edits.
-- **Correctness review: a fresh Fable subagent (`model: "fable"`), launched first** so
-  it works while the rest of REVIEW proceeds. When Fable built some tasks, it still
-  reviews: it reads the whole branch cold, which no single task's writer did. The branch was drafted one
+- **Correctness review: a fresh Opus subagent (`model: "opus"`), launched first** so
+  it works while the rest of REVIEW proceeds. Its brief names the tasks it owns
+  (`route.py owners <slug>`, Engines) and says to clear each one task by task, then read the
+  whole branch for the rest. The branch was drafted one
   task at a time; the reviewer reads it whole (`git diff <lane-target>...HEAD`) in a
   clean context, with the spec, and hunts the seams between tasks as hard as the tasks
   themselves — a writer and its reader drifting apart, a helper two tasks each
@@ -834,15 +835,17 @@ he asks.
   `scripts/astra.sh review <worktree> <brief> <out-dir>` in the background, exactly that
   with no redirect, since it logs to `<out-dir>` itself and the worktree guard refuses
   `> log 2>&1` (read-only, no
-  tools but the shell, a few minutes), same brief, its findings in `<out-dir>/last.md`.
-  Neither reader sees the other's findings. Codex out of quota or astra's nonzero exit:
-  say so in the `result:` line and go on with Fable alone, never wait on it.
+  tools but the shell, a few minutes), same brief with Sol's own tasks named, its findings
+  in `<out-dir>/last.md`. Neither reader sees the other's findings. Codex out of quota or
+  astra's nonzero exit: Opus reads alone and owns every task; say so in the `result:` line,
+  never wait on it.
   The driver triages every finding from both
   — adversarial reviewers over-flag by design, and a finding two readers reached on their own
   is the strongest lead, never proof — checks each against the code, fixes what's real, puts judgment calls
   on the card or in the `result:` line. Then one ledger row per reader: `route.py log
-  repo=<repo> ship=<slug> review=fable real=<n> false=<n> only=<n> seconds=<n>` and the
-  same with `review=sol`, where `only` counts the real findings the other reader missed.
+  repo=<repo> ship=<slug> review=opus real=<n> false=<n> only=<n> owned=<n> seconds=<n>` and
+  the same with `review=sol`, where `only` counts the real findings the other reader missed
+  and `owned` the real ones in tasks that reader owned.
   The high-value fan-out is here: several verifiers on one diff beats one.
 - **Design against the storyboard is the QA run's to judge**: the script carries a step
   per frame the change built and the craft floor
