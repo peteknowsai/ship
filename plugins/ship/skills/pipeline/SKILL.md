@@ -465,12 +465,13 @@ into commits otherwise (incidents: Worktrees). Never build on main.
 
 - **Resurface decision memory first** (see Decision memory) — settled calls constrain
   the grilling; don't re-litigate them inside it.
-- **Grill before you draw.** Call the Skill tool with `mattpocock-skills:grilling`: each
-  round asks every question the next step can't be decided without, numbered, each with
-  your recommended answer and worded so "yes" takes it. Recon answers the facts; only the
-  decisions go to Pete, and each round is a `needs input:` stop. Stop grilling when the
-  storyboard can be drawn, not when every branch is settled: what a frame can ask, the
-  frame asks. An idea that arrives fully specified goes straight to the storyboard.
+- **Grill on the storyboard, never in chat.** Call the Skill tool with
+  `mattpocock-skills:grilling` for how to ask: each round asks every question that's open
+  now, numbered Q1, Q2…, each with your recommended answer and worded so "yes" takes it,
+  and recon answers the facts. The questions live under the frames, each naming the
+  frames it's about; the chat carries only the `needs input:` line (Pete, 2026-10-16: "I
+  like my storyboards"). Nothing is asked before round 1: where an answer would change
+  what to draw, draw your recommendation and ask under it.
 - **Recon runs on a subagent, synthesis stays with the driver.** Codebase
   evidence-gathering dispatches as a read-only Opus subagent (report findings, edit
   nothing).
@@ -527,7 +528,11 @@ into commits otherwise (incidents: Worktrees). Never build on main.
      `specs/designs/YYYY-MM-DD-<slug>.html` in the docs home, from
      `reference/storyboard.html` (contract below). It is an artboard board, laid out the
      way a design tool lays out a page: every screen and state is its own artboard at its
-     real device size, side by side in story order, all at one zoom. Draw more, smaller
+     real device size, side by side in story order, all at one zoom. **It tells the whole
+     flow, not the screen that changes**: it starts where the person comes from, runs
+     through every step of the new part and ends where they land, existing screens drawn
+     as they are and marked unchanged. **Every frame has a code** (A1, A2… per row, below)
+     so Pete can answer "A3 too busy" and you know the frame. Draw more, smaller
      frames: every state the feature passes through (empty, typing, loading, results,
      error, done, the phone) gets its own artboard, rather than a few tall screens stacked
      down a long page. Each artboard is live HTML in the product's own stylesheet and
@@ -536,17 +541,19 @@ into commits otherwise (incidents: Worktrees). Never build on main.
      frames (Pete, 2026-10-12: "move away from the full interactive app"). Where a direction
      is genuinely open, draw it as two or three artboards of the same screen in an options
      row (`02-exploration-visual-designs`), never as prose options. The words on the page
-     are captions: one line under each frame saying what is new in it, and the two or
-     three questions a designer would actually bring ("went denser on B, unsure about
-     the nav, which tone?"). Recon, consults and the reuse audit go in one collapsed
+     are captions, one line under each frame saying what is new in it, and the round's
+     questions under the board. Recon, consults and the reuse audit go in one collapsed
      block at the foot, for the record; they never sit above a frame. No TL;DR essay,
      no section per research finding, no fait accompli. `stage.sh <root> gate:1`, commit,
      fire the gate notification, `show.sh <root> <slug> storyboard <file>`, end the turn with `needs input:`
      ("storyboard round 1 — reactions?"). **HARD STOP** — every round is one. It is a
      local HTML file in his browser, never a Claude artifact (Pete, 2026-10-08).
-  2. **Rounds.** Pete reacts; redraw the frames in place, in the same file, and bump the
+  2. **Rounds.** Pete reacts, by code where he can; "yes" takes every pick on the page.
+     Redraw the frames in place, in the same file, and bump the
      round in its `<title>` and `data-round` — minutes per round, not a
-     re-spec. A frame he killed is deleted, never greyed out. Re-`show.sh` (it replaces the old tab), end the turn
+     re-spec. A frame he killed is deleted, never greyed out, and its code is never
+     reused: A3 means the same frame in round 5 as in round 1. A new frame takes its row's
+     next number. Answered questions leave the page; new ones continue the Q numbers. Re-`show.sh` (it replaces the old tab), end the turn
      with `needs input:` again. Push back where taste warrants it: a designer with no
      opinions is a renderer. Loop until he locks it ("this is it", "lock it", "yes").
   3. **Lock = GATE 1.** Commit the storyboard as it stands: it is the design of
@@ -599,7 +606,7 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   storyboard — never sliced into phases — saved to the docs home
   (`specs/plans/YYYY-MM-DD-<slug>.md`). It carries everything a frame can't: copy as
   data, routes, behaviour, states, a11y, test cases, and for each UI task the frame it
-  must match (`<storyboard>.html#<frame-id>`, never a prose description of the frame).
+  must match (`<storyboard>.html#A3`, its code, never a prose description of the frame).
   Pete never reads it. A change he asks for after go is an express round, not a
   re-plan. Each task names its files, the signatures it adds or changes, and its
   test cases — brief-grade, so the BUILD brief is a paste plus deviations. Every
@@ -730,7 +737,7 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   real fault found nearby, never as a guessed fix.
 - **UI-writing briefs carry the storyboard frame and the craft floor** — every
   dispatch that writes UI names the frame to match
-  (`specs/designs/<storyboard>.html#<frame-id>`; the worker reads the frame's markup
+  (`specs/designs/<storyboard>.html#A3`, its code; the worker reads the frame's markup
   and CSS, which is why a frame beats a PNG), and — since a subagent does not get the
   impeccable hook — tells it to read
   `~/.claude/skills/impeccable/reference/craft-floor.md` and honor its checks and bans,
@@ -1019,7 +1026,10 @@ Don't gate `result:` on any of this.
 Render `reference/storyboard.html`, an artboard board: the page is the frames, laid out.
 
 - **Flows** — one row per story, artboards left to right in the order a person meets
-  them, arrows drawn by the template. Every state gets its own artboard, named for the
+  them, arrows drawn by the template. Together the rows tell the whole flow: the screen
+  the person comes from, every step of the new part, the screen they land on. A screen
+  that doesn't change is drawn as it is, with `data-same`, so its code goes grey. Every
+  state gets its own artboard, named for the
   state ("Typing a zip", "No results"); a phone and a desktop of one screen sit in the
   same board at true relative size (`data-w`/`data-h` are the device's: 390×844,
   1280×800). The board opens zoomed to fit, and clicking an artboard's name shows it
@@ -1031,14 +1041,23 @@ Render `reference/storyboard.html`, an artboard board: the page is the frames, l
   and nothing else, `:root` tokens resolve, and a hover, an open menu or a tab works
   where the feature has one. Never wired together, and never a "try it" app above the
   board (Pete, 2026-10-08 and 2026-10-12).
-- **Options** — a direction in play is an options row of sibling artboards tagged
-  A / B / C, no arrows.
+- **Codes** — every artboard's `data-mount` is its code: the row's letter (A, B, C… in
+  page order, an options row included) and its place in the row (A1, A2…). The template
+  draws the code as the frame's tag and its anchor (`#A3`), so the plan and briefs cite
+  the same name Pete uses. Codes are kept for good: a killed frame's code is never
+  reused, and a frame added mid-row takes the row's next number, not its position. These
+  are the board's labels around the frames, never inside one: the craft floor's ban on
+  numbered section labels is about the product's own screens.
+- **Options** — a direction in play is an options row of sibling artboards with codes of
+  their own (D1 / D2 / D3), no arrows.
 - **Where the product's sheet doesn't decide, the model's own defaults are out**: a
   cream or off-white page, an italic accent word in a headline, pill-shaped buttons.
   The craft floor already bans numbered section labels and monospace as costume.
 - **Captions** — one line under each artboard: what is new in it.
-- **The questions** — two or three, the ones a designer would bring, each with the
-  pick you'd make. Never a recommendation dressed as a question.
+- **The questions** — the round's grilling (DISCOVER): every question open now, Q1,
+  Q2…, each naming its frames and carrying the pick you'd make, worded so "yes" takes
+  it. The ones a designer would bring, never a recommendation dressed as a question.
+  They live on the page; chat never repeats them.
 - **For the record** — one collapsed block at the foot: recon, consults, reuse audit,
   surface liveness. Never above a frame.
 
