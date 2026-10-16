@@ -311,6 +311,11 @@ Every key is optional, and the default is what a repo with no contract gets:
   production and the command it runs (cells-app: "release" runs `npm run release`). Ship
   runs it only on that word, never as part of landing, and watches what `live:` names.
   Without it, landing is the release wherever main deploys.
+- **`smoke:`** the repo's automated smoke against what landing just put live, run by LAND
+  once the deploy watch says live. It is the one check that sees ships together: each branch
+  was tested alone, and two that land an hour apart are never walked side by side. Under
+  `release:` it runs after the release instead (cells-app's `npm run release` already runs
+  `smoke --prod`). Default: none, and LAND's one load of each live URL is the whole check.
 - **`ios:`** for a native iOS app, the command that builds the branch's own app, pointed
   at the branch's server, installs it on a device by name ("iPhone PM" or a simulator),
   and prints its IOS line (device, udid, bundle id). Default: none. A web app is tested in
@@ -807,8 +812,8 @@ he asks.
 
 - `stage.sh <root> review`. Sync with main first: `git fetch origin`; absorb upstream in the
   worktree (rebase, or merge if unsafe), rerun the repo's install when the absorb changed
-  a lockfile or the workspace list (main's new packages otherwise fail typecheck), re-run
-  the gates (on `backend: copy`, when the
+  a lockfile or the workspace list (main's new packages otherwise fail typecheck), re-gate
+  by **overlap** (on `backend: copy`, when the
   absorb brought Convex changes, push them to the copy with `npx convex dev --once` in
   each app-dir: nothing else does, and muse-core-loops' QA hit a function main had added
   that its copy lacked), then dispatch review — and
@@ -816,6 +821,13 @@ he asks.
   `backend: per-branch`, if the absorbed commits touched `convex/`, re-deploy the preview before any further
   verification — function skew is invisible to tsc, vitest and the production build,
   and has hard-crashed a page after a green rebase (incidents: Backends).
+- **Re-gate by overlap after an absorb.** Before absorbing, compare what main brought with
+  what the branch changed: `comm -12 <(git diff --name-only HEAD...origin/main | sort)
+  <(git diff --name-only origin/main...HEAD | sort)`. Full gates when that prints a file, or
+  main brought a lockfile, the workspace list, a schema or anything under `convex/`.
+  Otherwise the typecheck alone: main's commits passed their own gates and touch nothing
+  this branch does, and the typecheck catches an API they changed under it. A repo's
+  contract that says to run the gates after every rebase still wins.
 - **Freeze upstream while the QA run walks** — no merges or rebases until its result
   lands (incidents: Worktrees). Absorb upstream *before* a run, never during; the run's
   own fixes are the only edits.
@@ -938,7 +950,8 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
 
 - **Land — `land: pr` (the default), from the MAIN CHECKOUT, teardown first** (incidents: Worktrees — both orderings that deviate have stranded ships):
   0. Pre-flight *from the worktree*: `stage.sh <root> land`, then `git fetch origin`; if main moved, absorb +
-     re-gate + push (`git restore next-env.d.ts` first: `next dev` rewrites it and the
+     re-gate by overlap (REVIEW) + push; and if the tree changed since its last full sweep
+     (TEST's fix rounds run scoped), run the full gates once here either way (`git restore next-env.d.ts` first: `next dev` rewrites it and the
      rebase refuses the dirty file), with the worktree's dev server stopped and any simulator shut first,
      since a loaded box turns a full suite's slow tests into timeouts that read as real red; run `stack:` once more; bring the `pr`-shaped body from TEST up to date with what actually
      shipped (the squash commit takes it); `gh pr ready <#>`; confirm `gh pr view <#> --json mergeable`
@@ -981,7 +994,9 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
   and a never-started check, so a watch that sees no deployment for the SHA within
   about 3 minutes says so and looks at the host's ignore step (a 25-minute wait was on
   a build Vercel never started), and nothing waits on a build the lane never makes;
-  watch the deploy to conclusion (red = unfinished work, fix-forward on a new express branch); watch
+  watch the deploy to conclusion (red = unfinished work, fix-forward on a new express branch); then
+  run the contract's `smoke:` against it, and treat its red the same way, telling Pete in one
+  line what broke and which ships landed since the last green; watch
   the run for YOUR commit — `gh run list --commit <full sha>` (get it with
   `git -C <root> rev-parse <sha>` in its own call), full SHA only, a short one matches nothing and the watch times out silently — and
   artifact-check the lane; a red shared

@@ -176,7 +176,7 @@ state and walk them all in the rerun (CEL-56 fixed a stale flag in a chat header
 found it again in the bot panel). A chat with a bot: the old thread keeps what the bot
 believed before the fix ("I can't move it"), so rerun in a fresh conversation, and check
 each sent message shows in the thread before waiting on a reply. One typed while the chat
-reads "Connecting..." can vanish, which is a finding, not a retype. Re-run the gates (§3), push a fix under `convex/` to the BACKEND (`npx convex dev --once`),
+reads "Connecting..." can vanish, which is a finding, not a retype. Re-run the gates scoped (§3), push a fix under `convex/` to the BACKEND (`npx convex dev --once`),
 and rerun the failed steps plus
 every step the fix could touch. The same step failing twice means the
 last fix was a guess: call the Skill tool with `mattpocock-skills:diagnosing-bugs` and get a loop that goes red
@@ -197,8 +197,12 @@ TASTE: <0-3 short "looked off / couldn't confirm" notes, or "none">
 
 ## 3. Regression sweep — you run the codified checks; fix red directly
 
-Run it before the first QA run and after every fix round, once its last edit is in: a
-sweep started before then reports on code that's gone. Stop the worktree's dev server
+Run it in full before the first QA run, and again once after the last fix round, once its
+last edit is in: a sweep started before then reports on code that's gone. Between rounds,
+run it **scoped** to what the fix touched: the typecheck, plus the tests that cover the
+changed files (`vitest related <files> --run`, `jest --findRelatedTests <files>`, or a
+narrower scope the repo's contract names). In ship, the final full run can wait for
+LAND's step 0, which runs it when the tree changed since the last one. Stop the worktree's dev server
 before a production build (`next build` and `next dev` both write `.next`) and restart it
 after. In ship, BUILD's pre-flight is
 the first run, so skip it then unless the tree changed since. Run the repo's `tsc` / lint / unit / existing e2e as a regression sweep — and **run what the
