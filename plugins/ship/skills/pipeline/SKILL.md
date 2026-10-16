@@ -93,16 +93,52 @@ docs on queued messages at their word, and the runtime did otherwise (2026-10-14
 **BUILD routes by difficulty.** Once the execution plan is written and reviewed, run
 `scripts/route.py plan <plan.md>` from this skill's directory. It asks SubQ Snap, Subquadratic's
 decision model, to score every task's difficulty (about a second, a fraction of a cent;
-Jev, TypeSafe's, answers when SubQ has no key or fails; Pete, 2026-10-16) and ranks the routable tasks:
+Jev, TypeSafe's, answers when SubQ has no key or fails; Pete, 2026-10-16), cuts the routable tasks
+into thirds by rank, and picks an engine in each (Pete, 2026-10-16: each model builds in the
+harness made for it, and the work goes where spare quota is):
 
-| Rank among the plan's routable tasks | Engine | How it runs |
+| Tier | Engines | Pick |
 |---|---|---|
-| easier half (`fable`) | Fable 5.1 | harness subagent, `model: "fable"`, in the background |
-| harder half (`opus`) | Opus 5.5 | harness subagent, `model: "opus"`, in the background |
+| hard, top third (always the hardest task) | `opus`, `fable` | the hardest 3/4 to Opus, the rest to Fable |
+| middle third | `astra`, `wonder` | dealt by each pool's spare rate |
+| easy, bottom third | `sol`, `spark` | dealt by each pool's spare rate |
 
-The split is an experiment (Pete, 2026-10-05), and the ledger decides what stays.
-`route.py` holds it in `LADDER`. Codex builds nothing: its sandbox made the driver
-rerun the tests on most of its tasks. It tests only when Pete asks (TEST).
+| engine | model | runs as (in the background) | pool |
+|---|---|---|---|
+| `opus` | Opus 5.5 | harness subagent, `model: "opus"` | `anthropic` |
+| `fable` | Fable 5.1 | harness subagent, `model: "fable"` | `fable`, its own weekly limit, which drains about twice as fast |
+| `astra` | GPT-6 Astra | `scripts/astra.sh build <wt> <brief> <out> gpt-6-astra` | `openai` |
+| `sol` | GPT-6.1 Sol | `scripts/astra.sh build <wt> <brief> <out> gpt-6.1-sol` | `openai` |
+| `wonder` | Muse Wonder Full | `scripts/muse.py build <wt> <brief> <out> muse-wonder-full-1.0` | `muse` |
+| `spark` | Muse Spark 1.3 | `scripts/muse.py build <wt> <brief> <out> muse-spark-1.3` | `muse` |
+
+`scripts/quota.py` reads the four pools (the status line's Anthropic and Codex caches, and the
+Muse usage `muse.py` records after every turn); `route.py quota` prints them. A pool's **spare
+rate** is its budget left per day until reset, so a pool with plenty left that resets soon gets
+the most work: OpenAI on a quiet weekend, Muse late in its week. Before dealing, the router applies:
+- **Confidential repos never reach Muse**, whose Contributor mode trains on what it reads. The
+  list is local, `~/.config/ship/confidential-paths`, never in this repo, and matches a repo's
+  main checkout as well as its worktree. There, middle is all `astra` and easy all `sol`. With
+  no list file at all, Muse is off everywhere until one exists (an empty file means none).
+- **The driver's Opus comes first**: no `opus` build while the Anthropic week is at 70% or its
+  5-hour session at 85%; those go to `fable`. An empty Fable pool sends its share to `opus`.
+- **An empty pool** (95% used, Codex's `limit_reached`, or Muse's 5-hour window at 95%) drops
+  out of middle and easy; a tier
+  left with no engine moves up one. Unknown quota counts as half used and is noted, never a stop.
+
+A non-Claude engine gets the same brief file a subagent would, run as a background Bash call
+of its wrapper: the driver reads `<out>/last.md` (STATUS, TESTS, CONCERNS), reviews the diff and
+runs the gates exactly as for a subagent. The `<out>` folder lives outside the worktree, in the
+job's tmp (`muse.py` refuses one inside it). Each wrapper keeps the model away from Pete's skills,
+MCP servers and connectors and runs with its sandbox off inside the worktree (Codex's sandbox
+blocked tests and made the driver rerun most of its tasks in October). Codex gets a blank home
+with the real one put back in its shell; Muse gets a shadow home, every real entry linked in but
+the skill folders, because its login lives in the Keychain. Either way tests find their caches,
+though under Muse `$HOME` reads as the shadow path. Muse runs only through
+`muse.py`, Codex only through `astra.sh`; never a hand-typed `muse exec` or `codex exec`.
+A builder that fails (a nonzero wrapper exit, a quota error, or two wrong diffs) reruns one
+tier up, on the engine `route.py quota` shows with the most spare outside the pool that just
+failed; hard moves `fable` → `opus`. The ledger records it as `verdict=redone`.
 
 A task headed `(driver)` or `(inline)` is never ranked; the driver writes it. An all-inline
 plan is still written down and still gets Fable's plan review (PLAN), and still runs `route.py plan`, which ranks nothing and sets the marker, and each task
@@ -132,11 +168,13 @@ from the saved route, so an override shows as `engine` differing from `routed`. 
 come from the run itself (the task notification's duration), and a number you don't have is left out, never estimated: a
 third of the first 81 rows were round-number guesses.
 
-`route.py report` prints the table by engine and difficulty band. Pete reads it after
-the first build on this ladder and moves the cuts.
+`log` fills the task's `pool` from its engine, and a wrapper's "done in Ns" line is its
+`seconds`. `route.py report` prints the table by engine and difficulty band, then by pool.
+Pete reads it after a few ships on this split and moves the tiers.
 
-**Codex runs in two places only**: Sol's read of the branch at every REVIEW
-(`scripts/astra.sh review`, unasked), and testing when Pete asks for it ("test in codex"),
+**Codex runs in three places**: BUILD's `astra` and `sol` tasks (`scripts/astra.sh build`),
+Sol's read of the branch at every REVIEW (`scripts/astra.sh review`, unasked), and testing
+when Pete asks for it ("test in codex"),
 through `ship:verify`'s `reference/codex.md`: `scripts/codex-handoff.py` for a hand-off to
 his Codex app, `scripts/astra.sh test` headless. Never a hand-typed `codex exec`.
 
@@ -664,9 +702,9 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   next message and the `result:` line. One run dropped a settings dropdown Pete had
   asked for and he found out by asking "this is all done?".
 - **A fix round goes back to the same worker** with the findings as the brief, so the
-  context is already paid for: `SendMessage` to the same subagent. A fresh run for the same task starts cold and re-reads
-  the tree. Two wrong diffs on one task move it one rung up the ladder, and the ledger
-  records `verdict=redone`.
+  context is already paid for: `SendMessage` to the same subagent. A wrapper run can't be
+  resumed, so its fix round is a fresh run with the findings added to the brief. Two wrong
+  diffs on one task move it one tier up (Engines), and the ledger records `verdict=redone`.
 - **A quiet run never blocks the build.** The harness wakes the driver when a subagent
   returns, so silence is not a signal to chase. If a lane's work is visibly in the tree and no report has
   landed, self-serve: review the diff and run the gates yourself. Dead air on the

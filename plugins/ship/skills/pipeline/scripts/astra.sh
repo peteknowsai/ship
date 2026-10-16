@@ -1,16 +1,22 @@
 #!/usr/bin/env bash
-# `codex exec` with the three guards bare exec lacks, for the two jobs Codex still does.
+# `codex exec` with the three guards bare exec lacks, for the three jobs Codex does.
 #
-#   astra.sh test   <worktree> <brief.md> <out-dir> [effort]   TEST's headless tester on
-#                                                             Astra: read-only, drives the
-#                                                             app in a browser and on iOS
-#   astra.sh review <worktree> <brief.md> <out-dir> [effort]   REVIEW's cross-family reader
-#                                                             on Sol: read-only, no tools
-#                                                             but the shell, findings only
+#   astra.sh test   <worktree> <brief.md> <out-dir> [effort]          TEST's headless tester
+#                                                                    on Astra: read-only, drives
+#                                                                    the app in a browser, on iOS
+#   astra.sh review <worktree> <brief.md> <out-dir> [effort]          REVIEW's cross-family
+#                                                                    reader on Sol: read-only,
+#                                                                    only the shell, findings
+#   astra.sh build  <worktree> <brief.md> <out-dir> <model> [effort]  BUILD's Codex builder on
+#                                                                    the model the router picked:
+#                                                                    sandbox off, a home of its own
 #   astra.sh --selftest
 #
 # Codex left BUILD on 2026-10-01, and the run/fix modes went with it (2026-10-05). Review
-# came back on Sol (2026-10-14): every other check ship runs is Claude reading Claude.
+# came back on Sol (2026-10-14): every other check ship runs is Claude reading Claude. BUILD
+# came back on 2026-10-16 (Pete): the router hands Codex its share of tasks. A build runs
+# with the sandbox off (`-s danger-full-access`): Codex's sandbox blocked vitest's writes,
+# Xcode and typecheck, and made the driver rerun the tests on most Codex tasks in October.
 #
 # <out-dir> gets events.jsonl (liveness), last.md (the final message) and stderr.txt.
 # Exit 0: finished and said something. 3: killed by the watchdog (never started, or went
@@ -62,9 +68,13 @@ mcp_off() { # [servers to keep]
 }
 
 dispatch() {
-  local mode=$1 worktree=$2 brief=$3 out=$4 effort=${5:-high}
-  local model=${MODEL}
-  [ "${mode}" = review ] && model=${REVIEW_MODEL}
+  local mode=$1 worktree=$2 brief=$3 out=$4
+  local model=${MODEL} effort sandbox=read-only
+  case "${mode}" in
+    build) model=$5 effort=${6:-high} sandbox=danger-full-access ;;
+    review) model=${REVIEW_MODEL} effort=${5:-high} ;;
+    *) effort=${5:-high} ;;
+  esac
   [ -d "${worktree}" ] || { echo "astra: no worktree at ${worktree}" >&2; return 2; }
   [ -s "${brief}" ] || { echo "astra: brief ${brief} is missing or empty" >&2; return 2; }
   mkdir -p "${out}"; out=$(cd "${out}" && pwd); worktree=$(cd "${worktree}" && pwd)
@@ -79,9 +89,14 @@ dispatch() {
   local line
   # Skills load from ~/.agents/skills whatever CODEX_HOME says, so a reader also gets a home
   # of its own holding only the login (checked on 0.162.1, 2026-10-14). The tester keeps the
-  # real one: its browser comes from npx's cache there.
-  if [ "${mode}" = review ]; then
+  # real one: its browser comes from npx's cache there. A builder gets the same blank home,
+  # but its shell must still see the real one, or npm, xcodebuild (DerivedData, keychains),
+  # Playwright's browser cache and the package stores break; `--ignore-user-config` drops
+  # Pete's own policy block, so both lines below are needed. Each -c value is TOML, so the
+  # quotes around the strings ride inside the argument.
+  if [ "${mode}" = review ] || [ "${mode}" = build ]; then
     common+=(--ignore-user-config)
+    [ "${mode}" = build ] && common+=(-c 'shell_environment_policy.inherit="all"' -c "shell_environment_policy.set.HOME=\"${HOME}\"")
     mkdir -p "${out}/home/.codex"
     ln -sf "${CODEX_HOME:-$HOME/.codex}/auth.json" "${out}/home/.codex/auth.json"
     env=(HOME="${out}/home" CODEX_HOME="${out}/home/.codex")
@@ -92,7 +107,7 @@ dispatch() {
   brief=$(cd "$(dirname "${brief}")" && pwd)/$(basename "${brief}")
   rm -f "${last}"
   local started_at; started_at=$(date +%s)
-  : > "${events}"; env ${env[@]+"${env[@]}"} "${CODEX}" exec -C "${worktree}" -s read-only "${common[@]}" - < "${brief}" >> "${events}" 2> "${out}/stderr.txt" &
+  : > "${events}"; env ${env[@]+"${env[@]}"} "${CODEX}" exec -C "${worktree}" -s "${sandbox}" "${common[@]}" - < "${brief}" >> "${events}" 2> "${out}/stderr.txt" &
   local pid=$! now seen_start=0
   while kill -0 "${pid}" 2>/dev/null; do
     sleep "${TICK}"; now=$(date +%s)
@@ -130,7 +145,7 @@ selftest() {
   expect 3 "went silent mid-run"            test "${dir}/wt" "${dir}/brief.md" "${dir}/o4"
   stub "cat >/dev/null; exit 7"
   expect 7 "codex's own failure passes through" test "${dir}/wt" "${dir}/brief.md" "${dir}/o5"
-  expect 2 "the retired build modes are refused" run "${dir}/wt" "${dir}/brief.md" "${dir}/o6"
+  expect 2 "the retired run mode is refused"  run "${dir}/wt" "${dir}/brief.md" "${dir}/o6"
   : > "${dir}/empty.md"
   expect 2 "an empty brief"                 test "${dir}/wt" "${dir}/empty.md" "${dir}/o7"
   printf '[mcp_servers.agent-device]\n[mcp_servers.node_repl]\n' > "${dir}/config.toml"
@@ -153,11 +168,21 @@ selftest() {
      [ -L "${dir}/o10/home/.codex/auth.json" ]; then
     echo "  ok   a review run is read-only, on Sol, on a blank config and a home of its own, so no MCP server, connector, plugin or skill reaches it"
   else echo "  FAIL a review run's flags: $(cat "${dir}/args")"; fails=$((fails+1)); fi
-  rm -rf "${dir}"; echo "astra self-test: $((14 - fails))/14"; [ "${fails}" = 0 ]
+  expect 0 "a build run finishes"           build "${dir}/wt" "${dir}/brief.md" "${dir}/o11" gpt-6.1-sol
+  if grep -q -- '-s danger-full-access' "${dir}/args" && grep -q -- '-m gpt-6.1-sol' "${dir}/args" &&
+     grep -q -- '--ignore-user-config' "${dir}/args" && ! grep -q 'mcp_servers' "${dir}/args" &&
+     grep -q 'features.apps=false' "${dir}/args" && grep -q "HOME=${dir}/o11/home\$" "${dir}/args" &&
+     [ -L "${dir}/o11/home/.codex/auth.json" ] && grep -q 'shell_environment_policy.inherit="all"' "${dir}/args" &&
+     grep -q "shell_environment_policy.set.HOME=\"${HOME}\"" "${dir}/args"; then
+    echo "  ok   a build run is sandbox-off, on the model asked for, on a blank config and a home of its own, with the real home back in its shell"
+  else echo "  FAIL a build run's flags: $(cat "${dir}/args")"; fails=$((fails+1)); fi
+  expect 2 "a build with no model is refused" build "${dir}/wt" "${dir}/brief.md" "${dir}/o12"
+  rm -rf "${dir}"; echo "astra self-test: $((16 - fails))/16"; [ "${fails}" = 0 ]
 }
 
 case "${1:-}" in
   --selftest) selftest ;;
-  test|review) [ $# -ge 4 ] || { sed -n '2,11p' "$0" >&2; exit 2; }; dispatch "$@" ;;
-  *) sed -n '2,11p' "$0" >&2; exit 2 ;;
+  test|review) [ $# -ge 4 ] || { sed -n '2,14p' "$0" >&2; exit 2; }; dispatch "$@" ;;
+  build) [ $# -ge 5 ] || { sed -n '2,14p' "$0" >&2; exit 2; }; dispatch "$@" ;;
+  *) sed -n '2,14p' "$0" >&2; exit 2 ;;
 esac
