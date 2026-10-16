@@ -389,6 +389,13 @@ and open the tracker PR against main. Its own rebase later finds those commits a
 there. A PR based on the other branch strands at landing whenever that branch
 hasn't landed first (incidents: Worktrees).
 
+**A card key in the idea (`CEL-103`) means look before forking:** `git branch -a --list
+'*<key>*'` and `gh pr list --state open --search <key>`. A hit whose worktree has no live
+session (none in ListAgents, its `.ship-stage` not moving) is a stalled ship: resume it in
+that worktree at its stage, PR and all. A fresh fork beside it once rebuilt CEL-103 while
+its first run sat at `build:6:7` with PR #200 open. A hit with a live session is another
+ship's: tell Pete in one line and stop.
+
 Check free disk first (`df -h ~`): under 10 GB, tell Pete in one line before forking.
 A fork copies the repo's ignored files, and a full disk once failed `stage.sh` and
 `decisions.py` with ENOSPC in the middle of a LAND.
@@ -432,7 +439,10 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   convex command or dev server: until it does, the worktree's `.env.local` is main's and
   points at shared dev. It takes about 1.5 minutes and prints the copy's name; that name is
   the BACKEND a verify brief pins. From then on the worktree's `convex dev`, and the Convex
-  plugin's Stop hook, push to the copy, which is what they should do. Stripe and Clerk
+  plugin's Stop hook, push to the copy, which is what they should do. The hook fires only
+  when a turn ends, so any edit under `convex/` in REVIEW or TEST goes to the copy with `npx
+  convex dev --once` before the next QA step: a triage fix that skipped it failed CEL-103's
+  QA on the old function. Stripe and Clerk
   webhooks still go to shared dev, so a webhook flow is tested there or said to be untested.
   The copy expires 7 days after it was made, which is the cleanup; a branch older than
   that restores its env files from main (`wt step copy-ignored` where the repo uses it) and
