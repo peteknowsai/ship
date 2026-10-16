@@ -11,7 +11,7 @@ session/start, turn/start with the brief, then frames until turn/completed. Ever
 and a final `usage/read`, rewrites ~/.claude/muse-usage-cache.json (or SHIP_QUOTA_MUSE), which
 quota.py reads for the `muse` pool.
 
-<out-dir> gets events.jsonl (every frame), last.md (the last agentMessage), stderr.txt and
+<out-dir> gets events.jsonl (every frame), last.md (the last finalAnswer message, else the last agentMessage), stderr.txt and
 home/, the serve's HOME: a shadow of the real home, every entry linked back except the skill
 folders (SKIP_HOME), so the login (macOS Keychain), Xcode, npm and Playwright caches all work in
 the model's shell while Pete's personal skills never load and never reach Meta. `serve` has no
@@ -28,6 +28,7 @@ the reset. MUSE_BIN overrides the `muse` command.
 import json
 import os
 import select
+import shutil
 import signal
 import subprocess
 import sys
@@ -79,13 +80,19 @@ def write_cache(data):
 
 
 def save_usage(usage):
-    write_cache(dict(usage, observedAtMs=usage.get('observedAtMs') or int(time.time() * 1000)))
+    """An older observation never overwrites a newer one, such as a parallel build's exhausted mark."""
+    seen = usage.get('observedAtMs') or int(time.time() * 1000)
+    if ((read_cache() or {}).get('observedAtMs') or 0) > seen:
+        return
+    write_cache(dict(usage, observedAtMs=seen))
 
 
 def mark_exhausted(detail):
     """A quota failure empties the pool until the reset it names."""
     now_ms = int(time.time() * 1000)
-    reset = detail.get('resetsAtMs') or now_ms + 5 * 3600 * 1000
+    reset = detail.get('resetsAtMs') or 0
+    if reset <= now_ms:  # a missing or past reset would reopen the pool at once
+        reset = now_ms + 5 * 3600 * 1000
     data = read_cache() or {}
     window = dict(data.get('window') or {}, usedPercent=100, resetsAtMs=reset)
     window.setdefault('windowDurationMins', 300)
@@ -98,12 +105,16 @@ def mark_exhausted(detail):
 class Serve:
     def __init__(self, argv, env, cwd, out):
         self.events = open(os.path.join(out, 'events.jsonl'), 'w', buffering=1)
-        with open(os.path.join(out, 'stderr.txt'), 'wb') as err:
-            self.p = subprocess.Popen(argv, cwd=cwd, env=env, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                                      stderr=err, start_new_session=True)
+        try:
+            with open(os.path.join(out, 'stderr.txt'), 'wb') as err:
+                self.p = subprocess.Popen(argv, cwd=cwd, env=env, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                          stderr=err, start_new_session=True)
+        except OSError as error:
+            self.events.close()
+            raise Exit(1, f'could not start {argv[0]}: {error}')
         self.buf, self.ids = b'', 0
         self.began = self.heard = time.time()
-        self.turn_started, self.last, self.done = False, None, None
+        self.turn_started, self.last, self.final, self.done = False, None, None, None
 
     def kill(self):
         try:
@@ -155,6 +166,8 @@ class Serve:
             item = params.get('item') or {}
             if item.get('kind') == 'agentMessage' and item.get('text'):
                 self.last = item['text']
+                if item.get('messagePhase') == 'finalAnswer':
+                    self.final = item['text']
         elif method == 'usage/changed':
             save_usage(params)
         elif method == 'turn/completed':
@@ -197,12 +210,20 @@ def build(worktree, brief, out, model):
     if quota.confidential(worktree):
         raise Exit(2, f'{worktree} is confidential: Muse trains on what it sees. Route it to Codex.')
     real = os.path.expanduser('~')  # before the child's HOME moves
-    worktree, out = os.path.abspath(worktree), os.path.abspath(out)
-    shadow_home(real, os.path.join(out, 'home'))
+    worktree, out = os.path.realpath(worktree), os.path.realpath(out)
+    if out == worktree or out.startswith(worktree.rstrip('/') + '/'):
+        raise Exit(2, f'out-dir {out} is inside the worktree: Muse would index the shadow home and git add -A '
+                      'would commit it. Put it outside.')
+    home = os.path.join(out, 'home')
+    if os.path.islink(home):  # a reused out-dir: never build on top of the real home or old links
+        os.unlink(home)
+    elif os.path.isdir(home):
+        shutil.rmtree(home)  # removes the links inside, never their targets
+    shadow_home(real, home)
     last = os.path.join(out, 'last.md')
     if os.path.exists(last):
         os.remove(last)
-    env = dict(os.environ, HOME=os.path.join(out, 'home'), MUSE_NO_AUTO_UPDATE='1')
+    env = dict(os.environ, HOME=home, MUSE_NO_AUTO_UPDATE='1')
     argv = [os.environ.get('MUSE_BIN') or 'muse', 'serve', *FLAGS, '--model', model, '--no-session-log']
     started = time.time()
     serve = Serve(argv, env, worktree, out)
@@ -226,11 +247,12 @@ def build(worktree, brief, out, model):
             print(f'muse: usage/read: {error}', file=sys.stderr)
     finally:
         serve.kill()
-    if serve.last:
-        open(last, 'w').write(serve.last)
+    message = serve.final or serve.last  # the final answer, else whatever it said last
+    if message:
+        open(last, 'w').write(message)
     done, error = serve.done, serve.done.get('error') or {}
     if done.get('terminal') == 'completed':
-        if not serve.last:
+        if not message:
             raise Exit(4, 'turn completed and no agent message. The run DID NOT RUN; retry it.')
         print(f'muse: done in {time.time() - started:.0f}s -> {last}')
         return 0
@@ -265,12 +287,14 @@ for line in sys.stdin:
         out(id=i, result={})
         out(method='turn/started', params={'sessionId': 's1'})
         if scenario != 'nomsg':
-            out(method='item/completed', params={'sessionId': 's1', 'item': {'kind': 'agentMessage', 'text': 'built it'}})
+            for phase, text in (('finalAnswer', 'built it'), ('commentary', 'one more look')):
+                out(method='item/completed', params={'sessionId': 's1', 'item': {
+                    'kind': 'agentMessage', 'messagePhase': phase, 'text': text}})
         out(method='usage/changed', params=usage(42))
         if scenario == 'quota':
             out(method='turn/completed', params={'sessionId': 's1', 'terminal': 'failed', 'error': {
                 'kind': 'modelError', 'message': 'out of quota', 'retryable': False,
-                'quota': {'limitKind': 'tierLimit', 'resetsAtMs': 1900000000000}}})
+                'quota': {'limitKind': 'tierLimit', 'resetsAtMs': int(os.environ.get('STUB_RESET') or 1900000000000)}}})
         else:
             out(method='turn/completed', params={'sessionId': 's1', 'terminal': 'completed'})
     else:
@@ -301,17 +325,17 @@ def selftest():
         open(os.path.join(tmp, 'paths'), 'w').write(f"# clients\n{os.path.join(tmp, 'secret')}\n")
         cache = os.path.join(tmp, 'cache.json')
 
-        def run(scenario, name, worktree=wt, **env):
-            for f in ('started', 'cache.json'):
+        def run(scenario, name, worktree=wt, keep_cache=False, **env):
+            for f in ('started',) + (() if keep_cache else ('cache.json',)):
                 if os.path.exists(os.path.join(tmp, f)):
                     os.remove(os.path.join(tmp, f))
-            out = os.path.join(tmp, name)
+            out = name if os.path.isabs(name) else os.path.join(tmp, name)
             r = subprocess.run([sys.executable, os.path.abspath(__file__), 'build', worktree,
                                 os.path.join(tmp, 'brief.md'), out, 'muse-spark-1.3'],
                                capture_output=True, text=True, timeout=60,
-                               env=dict(os.environ, HOME=real, MUSE_BIN=stub, STUB_DIR=tmp, STUB_SCENARIO=scenario,
-                                        SHIP_QUOTA_MUSE=cache, SHIP_CONFIDENTIAL_PATHS=os.path.join(tmp, 'paths'),
-                                        **env))
+                               env=dict(os.environ, **{'HOME': real, 'MUSE_BIN': stub, 'STUB_DIR': tmp,
+                                        'STUB_SCENARIO': scenario, 'SHIP_QUOTA_MUSE': cache,
+                                        'SHIP_CONFIDENTIAL_PATHS': os.path.join(tmp, 'paths'), **env}))
             started = os.path.join(tmp, 'started')
             return r, out, json.load(open(started)) if os.path.exists(started) else None
 
@@ -324,12 +348,12 @@ def selftest():
 
         r, out, seen = run('ok', 'o1')
         got = read_cache(cache)
-        check('a completed build exits 0 and writes last.md', r.returncode == 0 and
+        check('a completed build exits 0 and last.md is the final answer, not later commentary', r.returncode == 0 and
               open(os.path.join(out, 'last.md')).read() == 'built it' and 'done in' in r.stdout)
         check('usage/changed writes the cache; an empty usage/read leaves it',
               got and got['weekly']['usedPercent'] == 42 and got.get('observedAtMs'))
         check('every frame lands in events.jsonl',
-              sum(1 for _ in open(os.path.join(out, 'events.jsonl'))) == 8)
+              sum(1 for _ in open(os.path.join(out, 'events.jsonl'))) == 9)
         home = os.path.join(out, 'home')
         auth = os.path.join(home, '.config', 'muse', 'auth.json')
         linked = sorted(os.listdir(home))
@@ -361,6 +385,41 @@ def selftest():
 
         r, _, seen = run('ok', 'o6', worktree=os.path.join(tmp, 'secret', 'wt'))
         check('a confidential worktree exits 2 and never starts the server', r.returncode == 2 and seen is None)
+
+        os.makedirs(os.path.join(tmp, 'o7'))
+        os.symlink(real, os.path.join(tmp, 'o7', 'home'))
+        r, out, _ = run('ok', 'o7')
+        home = os.path.join(out, 'home')
+        check('a reused out-dir whose home links to the real home gets a fresh shadow',
+              r.returncode == 0 and not os.path.islink(home) and '.agents' not in os.listdir(home) and
+              os.path.isdir(os.path.join(real, '.agents', 'skills')))
+        os.makedirs(os.path.join(tmp, 'o8', 'home'))
+        os.symlink(os.path.join(real, '.agents'), os.path.join(tmp, 'o8', 'home', '.agents'))
+        r, out, _ = run('ok', 'o8')
+        check("a reused home's old links go, and their targets stay",
+              r.returncode == 0 and '.agents' not in os.listdir(os.path.join(out, 'home')) and
+              os.path.isdir(os.path.join(real, '.agents', 'skills')) and os.path.isdir(os.path.join(real, '.npm')))
+
+        r, _, seen = run('ok', os.path.join(wt, 'out'))
+        check('an out-dir inside the worktree exits 2 and builds no home there',
+              r.returncode == 2 and seen is None and not os.path.exists(os.path.join(wt, 'out')))
+
+        mark = int(time.time() * 1000)
+        json.dump({'observedAtMs': mark, 'weekly': {'usedPercent': 43, 'resetsAtMs': 9e12},
+                   'window': {'usedPercent': 100, 'resetsAtMs': 1900000000000}}, open(cache, 'w'))
+        r, _, _ = run('ok', 'o9', keep_cache=True)
+        got = read_cache(cache)
+        check("a parallel build's older usage never erases an exhausted mark",
+              r.returncode == 0 and got['window']['usedPercent'] == 100 and got['observedAtMs'] == mark)
+
+        r, _, _ = run('quota', 'o10', STUB_RESET='1000')
+        got = read_cache(cache)
+        check('a quota reset already past is floored at five hours from now',
+              r.returncode == 5 and got['window']['resetsAtMs'] >= (time.time() + 5 * 3600 - 60) * 1000)
+
+        r, _, _ = run('ok', 'o11', MUSE_BIN=os.path.join(tmp, 'no-such-muse'))
+        check('a serve that cannot start exits 1 with a line, not a traceback',
+              r.returncode == 1 and 'could not start' in r.stderr and 'Traceback' not in r.stderr)
     print(f'muse self-test: {fails} failed')
     return fails == 0
 
