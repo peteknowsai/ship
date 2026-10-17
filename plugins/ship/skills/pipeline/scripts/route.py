@@ -163,13 +163,14 @@ def parse_tasks(text):
     for line in text.splitlines():
         if line.lstrip().startswith(('```', '~~~')):
             fenced = not fenced
-        heading = None if fenced else re.match(r'#{2,3} (Task\s+\d+\b.*)', line)
+        heading = None if fenced else re.match(r'#{2,3} (Task\s+\d+[a-z]?\b.*)', line)
         if heading:
             title = heading.group(1).strip()
-            n = int(re.match(r'Task\s+(\d+)', title).group(1))  # the plan's own number, gaps and all
+            label = re.match(r'Task\s+(\d+[a-z]?)', title).group(1)  # "3b" for a split task
+            n = int(re.match(r'\d+', label).group(0))  # the plan's own number, gaps and all
             if any(t['n'] == n for t in tasks):
                 n = max(t['n'] for t in tasks) + 1
-            tasks.append({'n': n, 'title': title, 'lines': [],
+            tasks.append({'n': n, 'label': label, 'title': title, 'lines': [],
                           'driver': bool(re.search(r'\((driver|inline)\)', title, re.I))})
         elif tasks:
             tasks[-1]['lines'].append(line)
@@ -378,7 +379,7 @@ def plan(path):
     for t in tasks:
         s = scores.get(t['n'], {})
         engine = 'driver' if t['driver'] else engines[t['n']]
-        out.append({'n': t['n'], 'title': t['title'], 'engine': engine, 'tier': tiers.get(t['n']),
+        out.append({'n': t['n'], 'label': t['label'], 'title': t['title'], 'engine': engine, 'tier': tiers.get(t['n']),
                     'pool': POOL.get(engine), 'score': s.get('score'), 'confidence': s.get('confidence')})
     for row in out:
         score = '  -  ' if row['score'] is None else f"{row['score']:.2f}"
@@ -432,7 +433,9 @@ def log(pairs):
     picked = None
     if saved and os.path.isfile(saved) and 'task' in row:
         try:
-            picked = {t['n']: t for t in json.load(open(saved))['tasks']}.get(row['task'])
+            saved_tasks = json.load(open(saved))['tasks']  # task=3b finds its label, task=4 its number
+            picked = ({t['label']: t for t in saved_tasks if t.get('label')}.get(str(row['task']))
+                      or {t['n']: t for t in saved_tasks}.get(row['task']))
         except (OSError, ValueError, KeyError, TypeError):
             pass  # a broken route file costs the fill, never the row
     if row.get('engine') in POOL:
@@ -812,6 +815,20 @@ def selftest():
         gaps = os.path.join(tmp, 'gaps.md')
         open(gaps, 'w').write('### Task 1: a\n\nx\n\n### Task 3: b\n\ny\n')
         check('tasks keep the numbers the plan gives them', [t['n'] for t in parse_tasks(open(gaps).read())] == [1, 3])
+        split = parse_tasks('### Task 3a: one half\n\nx\n\n### Task 3b: other half\n\ny\n\n### Task 4: z\n\nz\n')
+        check('split tasks 3a and 3b are tasks, each with its own number and label',
+              [(t['n'], t['label']) for t in split] == [(3, '3a'), (4, '3b'), (5, '4')])
+        json.dump({'tasks': [{'n': 3, 'label': '3a', 'score': 1, 'engine': 'wonder'},
+                             {'n': 4, 'label': '3b', 'score': 2, 'engine': 'fable'},
+                             {'n': 5, 'label': '4', 'score': 3, 'engine': 'opus'}]},
+                  open(os.path.join(repo, '.ship-route.json'), 'w'))
+        os.chdir(repo)
+        try:
+            by_label, plain = log(['task=3b', 'engine=fable']), log(['task=4', 'engine=opus'])
+        finally:
+            os.chdir(here)
+        check('log finds task=3b by its label, and task=4 is the plan\'s Task 4, not 3b',
+              by_label.get('routed') == 'fable' and plain.get('routed') == 'opus')
         os.remove(stage)
         plan(shipped)
         check('outside a ship no marker appears', not os.path.exists(stage))
