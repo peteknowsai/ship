@@ -24,8 +24,8 @@ engine != routed and nobody re-asks the router or types a score by hand.
 The router ranks the routable tasks by their difficulty score, cuts them into TIERS by
 rank (easy, middle, hard), and picks an engine inside each tier: the hard tier is fixed
 (the hardest 3/4 to Opus, the rest to Fable, then the Opus cap and Fable-empty
-overrides), the middle and easy tiers are dealt across their engines by each pool's spare
-rate from quota.py. A confidential repo never reaches Muse; an empty pool's engines leave
+overrides), the middle tier alternates Fable and Wonder Full down the rank, and the easy tier is dealt
+across Wonder Full and Astra by each pool's spare rate from quota.py. A confidential repo never reaches Muse; an empty pool's engines leave
 the middle and easy tiers, and a tier with no engine left escalates one tier up. A task
 whose heading says (driver) or (inline) stays with the driver and is not ranked. Scores
 come from SubQ Snap (Pete, 2026-10-16), else Jev when SubQ has no key or fails. Neither
@@ -67,7 +67,9 @@ LEVELS = [
     'modes that need careful reasoning to get right.',
 ]
 # Each tier's share of the ranked tasks, easiest first; the last tier takes the rest and
-# always gets the hardest task. Pete, 2026-10-16: three tiers across Claude Code, Codex
+# always gets the hardest task. Pete, 2026-10-17: no cheap builders. Sol only reviews and
+# Spark is out; Fable moves down into the middle in Astra's place, Wonder Full ranks over
+# Astra, and Opus keeps its share (hard, 3/4). Before it (10-16): three tiers across Claude Code, Codex
 # and Muse, each tier's engines picked by spare quota (hard is fixed 3/4 Opus). Before
 # it (10-05): Fable 5.1 took the easier half and Opus 5.5 the harder; Sonnet 25 / Fable
 # 50 / Opus 25 (10-02); thirds of Sonnet, Fable and Opus (10-01), and the same day a
@@ -75,8 +77,9 @@ LEVELS = [
 # made the driver rerun the tests on most of Sol's tasks, as it had on Astra's; before
 # that, Astra 33%, Fable 42%, Opus 25%.
 TIERS = [('easy', 1 / 3), ('middle', 1 / 3), ('hard', 1 / 3)]
-ENGINES = {'easy': ['sol', 'spark'], 'middle': ['astra', 'wonder'], 'hard': ['opus', 'fable']}
-POOL = {'opus': 'anthropic', 'fable': 'fable', 'astra': 'openai', 'sol': 'openai', 'wonder': 'muse', 'spark': 'muse'}
+ENGINES = {'easy': ['wonder', 'astra'], 'middle': ['fable', 'wonder'], 'hard': ['opus', 'fable']}
+POOL = {'opus': 'anthropic', 'fable': 'fable', 'astra': 'openai', 'wonder': 'muse',
+        'sol': 'openai', 'spark': 'muse'}  # sol and spark build nothing now; old ledger rows keep their pool
 HARD_OPUS_SHARE = 0.75
 FALLBACK_ENGINE = 'fable'
 QUESTION = 'How hard is this coding task for an AI coding agent to complete correctly on the first attempt?'
@@ -279,7 +282,7 @@ def pick(tiers, pools, confidential):
         if not p['known']:
             notes.append(f"{name} quota unknown ({p['note']}): counted as {p['used']:.0f}% used")
     if confidential:
-        notes.append('confidential repo: Muse engines (wonder, spark) left out')
+        notes.append('confidential repo: Muse (wonder) left out')
     carried = []
     for tier, _ in TIERS:
         tasks = carried + [n for n, t in tiers.items() if t == tier]
@@ -304,7 +307,10 @@ def pick(tiers, pools, confidential):
                 notes.append(f'{tier} tier has no engine left: {len(tasks)} task(s) escalate one tier up')
                 carried = tasks
                 continue
-            chosen = deal(tasks, candidates, pools)
+            # ponytail: middle alternates down the rank, Fable first, so Fable's share holds even
+            # when Muse's spare rate dwarfs it (Pete, 2026-10-17); easy alone deals by spare rate
+            chosen = ({n: candidates[i % len(candidates)] for i, n in enumerate(tasks)} if tier == 'middle'
+                      else deal(tasks, candidates, pools))
         engines.update(chosen)
         landed.update(dict.fromkeys(tasks, tier))
     return engines, landed, notes
@@ -556,16 +562,17 @@ def selftest():
         engines, landed, notes = pick(tiers, pools(), False)
         check('hard: 2 of 3 to Opus, the hardest among them, 1 to Fable',
               [engines[n] for n in (7, 8, 9)] == ['fable', 'opus', 'opus'])
-        check('middle with openai rate 60 and muse 20 deals 3 tasks 2 astra / 1 wonder, interleaved',
-              [engines[n] for n in (4, 5, 6)] == ['astra', 'wonder', 'astra'])
-        check('easy deals the same way on sol and spark',
-              [engines[n] for n in (1, 2, 3)] == ['sol', 'spark', 'sol'] and not notes)
+        check('middle alternates fable and wonder whatever the spare rates, fable first',
+              [engines[n] for n in (4, 5, 6)] == ['fable', 'wonder', 'fable'])
+        check('easy deals the same way on wonder and astra, and sol and spark build nothing',
+              [engines[n] for n in (1, 2, 3)] == ['wonder', 'astra', 'astra'] and not notes
+              and not {'sol', 'spark'} & set(engines.values()))
         hard = lambda n, **over: list(pick({i: 'hard' for i in range(1, n + 1)}, pools(**over), False)[0].values())
         check('a hard tier of 1 is opus, of 3 is 2 opus + 1 fable, of 4 is 3 + 1',
               hard(1) == ['opus'] and hard(3) == ['fable', 'opus', 'opus'] and hard(4) == ['fable'] + ['opus'] * 3)
         engines, landed, notes = pick(tiers, pools(), True)
-        check('confidential drops wonder and spark',
-              {engines[n] for n in (1, 2, 3)} == {'sol'} and {engines[n] for n in (4, 5, 6)} == {'astra'}
+        check('confidential drops wonder: easy all astra, middle all fable',
+              {engines[n] for n in (1, 2, 3)} == {'astra'} and {engines[n] for n in (4, 5, 6)} == {'fable'}
               and any('confidential' in n for n in notes))
         engines, _, notes = pick(tiers, pools(anthropic=P(15, used=72, opus_blocked=True)), False)
         check('the Opus cap moves hard to fable, noted',
@@ -578,16 +585,20 @@ def selftest():
               {engines[n] for n in (7, 8, 9)} == {'fable'} and landed[9] == 'hard'
               and any('Fable pool is empty too' in n for n in notes))
         engines, _, _ = pick(tiers, pools(muse=P(0, used=97, empty=True)), False)
-        check('muse empty sends middle all to astra and easy all to sol',
-              {engines[n] for n in (4, 5, 6)} == {'astra'} and {engines[n] for n in (1, 2, 3)} == {'sol'})
+        check('muse empty sends middle all to fable and easy all to astra',
+              {engines[n] for n in (4, 5, 6)} == {'fable'} and {engines[n] for n in (1, 2, 3)} == {'astra'})
         engines, landed, notes = pick(tiers, pools(muse=P(0, empty=True), openai=P(0, empty=True)), False)
-        check('both easy pools empty escalates easy to middle, which escalates on to hard',
-              {landed[n] for n in range(1, 7)} == {'hard'} and engines[1] == 'fable' and engines[9] == 'opus'
-              and sum('escalate' in n for n in notes) == 2)
+        check('both easy pools empty escalates easy to middle, where fable takes it',
+              {landed[n] for n in range(1, 7)} == {'middle'} and {engines[n] for n in range(1, 7)} == {'fable'}
+              and sum('escalate' in n for n in notes) == 1)
+        engines, landed, notes = pick(tiers, pools(muse=P(0, empty=True), fable=P(0, empty=True)), False)
+        check('fable and muse empty: easy on astra, middle escalates to hard, all opus',
+              {engines[n] for n in (1, 2, 3)} == {'astra'} and {landed[n] for n in (4, 5, 6)} == {'hard'}
+              and {engines[n] for n in range(4, 10)} == {'opus'})
         engines, _, _ = pick({1: 'middle', 2: 'middle', 3: 'middle'},
-                             pools(openai=P(14.29, known=False, note='x'), muse=P(14.29, known=False, note='x')), False)
-        check('two unknown pools at 50/50 dealing 3 give the extra to the first engine',
-              list(engines.values()) == ['astra', 'wonder', 'astra'])
+                             pools(fable=P(14.29, known=False, note='x'), muse=P(14.29, known=False, note='x')), False)
+        check('a middle of 3 with unknown pools still alternates, the extra to fable',
+              list(engines.values()) == ['fable', 'wonder', 'fable'])
         plan_md = os.path.join(tmp, 'plan.md')
         titles = ['Task 1: docs', 'Task 2: hard socket', 'Task 3: glue (driver)', 'Task 4: medium wiring',
                   'Task 5: easy rename', 'Task 6: auth boundary', 'Task 7: small test', 'Task 8: mid state',
@@ -606,11 +617,11 @@ def selftest():
               sorted(n for n in tier if tier[n] == 'easy') == [1, 5, 7]
               and sorted(n for n in tier if tier[n] == 'middle') == [4, 9]
               and sorted(n for n in tier if tier[n] == 'hard') == [2, 6, 8])
-        check('plan picks from the live pools: easy sol/spark, middle astra, hard 2 opus + fable',
-              got == {1: 'sol', 5: 'spark', 7: 'sol', 9: 'astra', 4: 'astra', 8: 'fable', 2: 'opus', 6: 'opus',
+        check('plan picks from the live pools: easy wonder/astra, middle fable/wonder, hard 2 opus + fable',
+              got == {1: 'wonder', 5: 'astra', 7: 'astra', 9: 'fable', 4: 'wonder', 8: 'fable', 2: 'opus', 6: 'opus',
                       3: 'driver'})
         check('the JSON carries pool per task and the quota pools',
-              {t['pool'] for t in result['tasks'] if t['n'] in (1, 7)} == {'openai'}
+              {t['pool'] for t in result['tasks'] if t['n'] in (5, 7)} == {'openai'}
               and result['quota']['openai']['rate'] == 60 and result['quota_notes'] == [])
         os.remove(caches['muse'])
         result = plan(plan_md)
@@ -635,7 +646,7 @@ def selftest():
             quota.pools = real_pools
         check('a quota.py that raises never stops the build: pools unknown, Muse off, noted',
               not result['fallback'] and not any(t['pool'] == 'muse' for t in result['tasks'])
-              and {t['engine'] for t in result['tasks'] if t['tier'] in ('easy', 'middle')} == {'sol', 'astra'}
+              and {t['engine'] for t in result['tasks'] if t['tier'] in ('easy', 'middle')} == {'fable', 'astra'}
               and all(not p['known'] for p in result['quota'].values())
               and any('quota.py failed (RuntimeError: boom)' in n for n in result['quota_notes']))
         for name, answers in [('bare numbers', {f't{n}': 1 for n in scores}),
@@ -651,7 +662,7 @@ def selftest():
         json.dump({'answers': {f't{n}': {'score': n} for n in range(1, 6)}}, open(reply, 'w'))
         got = [t['engine'] for t in plan(few)['tasks']]
         check('a fenced heading and "### Task list" are not tasks', len(got) == 5)
-        check('five tasks spread over every tier', got == ['sol', 'sol', 'astra', 'fable', 'opus'])
+        check('five tasks spread over every tier', got == ['wonder', 'astra', 'fable', 'fable', 'opus'])
         one = os.path.join(tmp, 'one.md')
         open(one, 'w').write('### Task 1: t\n\nx\n')
         check('a lone task is hard, on opus',
@@ -767,7 +778,7 @@ def selftest():
         check('log fills the score and the routed engine from the saved picks',
               row.get('score') == 3.4 and row.get('routed') == 'opus' and row['engine'] == 'opus')
         check('an override shows as engine differing from routed, and an unknown task logs unfilled',
-              moved.get('routed') == 'sol' and moved['engine'] == 'opus' and 'routed' not in missing)
+              moved.get('routed') == 'wonder' and moved['engine'] == 'opus' and 'routed' not in missing)
         gaps = os.path.join(tmp, 'gaps.md')
         open(gaps, 'w').write('### Task 1: a\n\nx\n\n### Task 3: b\n\ny\n')
         check('tasks keep the numbers the plan gives them', [t['n'] for t in parse_tasks(open(gaps).read())] == [1, 3])

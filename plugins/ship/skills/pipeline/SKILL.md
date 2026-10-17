@@ -99,23 +99,23 @@ reset, and a run on 2026-10-16 still used Astra with 91% of Fable's week unspent
 `scripts/route.py plan <plan.md>` from this skill's directory. It asks SubQ Snap, Subquadratic's
 decision model, to score every task's difficulty (about a second, a fraction of a cent;
 Jev, TypeSafe's, answers when SubQ has no key or fails; Pete, 2026-10-16), cuts the routable tasks
-into thirds by rank, and picks an engine in each (Pete, 2026-10-16: each model builds in the
-harness made for it, and the work goes where spare quota is):
+into thirds by rank, and picks an engine in each. Each model builds in the harness made for
+it (Pete, 2026-10-16), and no cheap model writes code: Sol only reviews, Spark is out, Fable
+takes Astra's place in the middle, Wonder Full ranks over Astra, and Opus keeps its share
+(Pete, 2026-10-17):
 
 | Tier | Engines | Pick |
 |---|---|---|
 | hard, top third (always the hardest task) | `opus`, `fable` | the hardest 3/4 to Opus, the rest to Fable |
-| middle third | `astra`, `wonder` | dealt by each pool's spare rate |
-| easy, bottom third | `sol`, `spark` | dealt by each pool's spare rate |
+| middle third | `fable`, `wonder` | alternating down the rank, Fable first, whatever the spare rates |
+| easy, bottom third | `wonder`, `astra` | dealt by each pool's spare rate |
 
 | engine | model | runs as (in the background) | pool |
 |---|---|---|---|
 | `opus` | Opus 5.5 | harness subagent, `model: "opus"` | `anthropic` |
 | `fable` | Fable 5.1 | harness subagent, `model: "fable"` | `fable`, its own weekly limit, which drains about twice as fast |
 | `astra` | GPT-6 Astra | `scripts/astra.sh build <wt> <brief> <out> gpt-6-astra` | `openai` |
-| `sol` | GPT-6.1 Sol | `scripts/astra.sh build <wt> <brief> <out> gpt-6.1-sol` | `openai` |
 | `wonder` | Muse Wonder Full | `scripts/muse.py build <wt> <brief> <out> muse-wonder-full-1.0` | `muse` |
-| `spark` | Muse Spark 1.3 | `scripts/muse.py build <wt> <brief> <out> muse-spark-1.3` | `muse` |
 
 `scripts/quota.py` reads the four pools (the status line's Anthropic and Codex caches, and the
 Muse usage `muse.py` records after every turn); `route.py quota` prints them. A pool's **spare
@@ -123,7 +123,7 @@ rate** is its budget left per day until reset, so a pool with plenty left that r
 the most work: OpenAI on a quiet weekend, Muse late in its week. Before dealing, the router applies:
 - **Confidential repos never reach Muse**, whose Contributor mode trains on what it reads. The
   list is local, `~/.config/ship/confidential-paths`, never in this repo, and matches a repo's
-  main checkout as well as its worktree. There, middle is all `astra` and easy all `sol`. With
+  main checkout as well as its worktree. There, middle is all `fable` and easy all `astra`. With
   no list file at all, Muse is off everywhere until one exists (an empty file means none).
 - **The driver's Opus comes first**: no `opus` build while the Anthropic week is at 70% or its
   5-hour session at 85%; those go to `fable`. An empty Fable pool sends its share to `opus`.
@@ -177,7 +177,7 @@ third of the first 81 rows were round-number guesses.
 `seconds`. `route.py report` prints the table by engine and difficulty band, then by pool.
 Pete reads it after a few ships on this split and moves the tiers.
 
-**Codex runs in three places**: BUILD's `astra` and `sol` tasks (`scripts/astra.sh build`),
+**Codex runs in three places**: BUILD's `astra` tasks (`scripts/astra.sh build`),
 Sol's read of the branch at every REVIEW (`scripts/astra.sh review`, unasked), and testing
 when Pete asks for it ("test in codex"),
 through `ship:verify`'s `reference/codex.md`: `scripts/codex-handoff.py` for a hand-off to
