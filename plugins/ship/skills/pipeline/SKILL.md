@@ -429,7 +429,10 @@ wt switch --create feature/<slug> --base origin/<base> --no-cd --format=json -y
 (`origin/<base>`, the base branch resolved above, because a stale local copy has cost a
 rebase and reinstall), then enter
 the path from the JSON. A second ship in the same session calls
-`ExitWorktree({action:"keep"})` before `EnterWorktree` on the new path; if the cwd isn't
+`ExitWorktree({action:"keep"})` before `EnterWorktree` on the new path. A session launched
+inside a worktree can't: `EnterWorktree` refuses a second wt-made worktree, and its sandbox
+only covers the launch tree, so its next ship starts a fresh session from the main checkout
+(CEL-128, 2026-10-17); if the cwd isn't
 inside the repo at all (a teardown by absolute path leaves it in `~` or a removed folder),
 `cd <main checkout>` first, since `EnterWorktree` refuses from there. In the session's primary repo, `EnterWorktree({path})`
 is required: the status line and FleetView read the session's cwd,
