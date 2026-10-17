@@ -798,9 +798,14 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   `.env.example`): a key main gained after the fork is missing here, and an agent that
   can't start reads as a product bug and costs a QA round. Then boot the app, confirm the
   server on its port is this worktree's (`lsof -iTCP:<port>
-  -sTCP:LISTEN -Fp` for the pid, then `lsof -p <pid> -d cwd -Fn`: brief-and-home's
+  -sTCP:LISTEN -Fp` for the pid, then `lsof -p <pid> -d cwd -Fn`, walking up its parents
+  with `ps -o ppid=` when that cwd reads `/`, as a Next server's does: brief-and-home's
   hashed port was already held by another checkout's server, its own died on EADDRINUSE
-  in a log nobody read, and the first smoke walked the wrong app), and load each surface
+  in a log nobody read, and the first smoke walked the wrong app). Another checkout's
+  listener is never stopped, before or during a run: start this worktree's server on a
+  free port (the contract's `dev:` says how; `PORT=<n>` by default) and read the port back
+  from the repo's dev command for every link, smoke, test and app build after (CEL-120
+  stopped CEL-118's server on a shared 3144, thinking it its own). Then load each surface
   the feature touches once in the chrome-devtools browser: it renders, its first step works, the console is clean. Then the contract's
   `smoke: branch`, once. Not a walk-through:
   that is TEST's QA run. A feature that makes model calls also counts the canned or
