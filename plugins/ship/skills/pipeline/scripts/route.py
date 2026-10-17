@@ -14,11 +14,13 @@ engine != routed and nobody re-asks the router or types a score by hand.
                                  missed, and real ones in the tasks it owned; it never
                                  counts as a BUILD task
   route.py owners <slug>         which branch reader owns which of the ship's tasks: Sol
-                                 the ones a Claude model wrote, Opus the ones GPT wrote,
+                                 the ones a Claude model wrote, the Claude reader GPT's,
                                  both the ones Muse wrote, by the ledger's last engine per task
   route.py report                the ledger as a table by engine and difficulty, by
                                  pool, then the reviewers'
   route.py quota                 the four pools, one line each (quota.py --table)
+  route.py reader                fable while Fable's week lags the main pool's, else opus:
+                                 the Claude model that reads the branch at REVIEW
   route.py --selftest
 
 The router ranks the routable tasks by their difficulty score, cuts them into TIERS by
@@ -81,6 +83,15 @@ ENGINES = {'easy': ['wonder', 'astra'], 'middle': ['fable', 'wonder'], 'hard': [
 POOL = {'opus': 'anthropic', 'fable': 'fable', 'astra': 'openai', 'wonder': 'muse',
         'sol': 'openai', 'spark': 'muse'}  # sol and spark build nothing now; old ledger rows keep their pool
 HARD_OPUS_SHARE = 0.75
+HARD_OPUS_SHARE_FABLE_BEHIND = 0.5
+
+
+def fable_behind(pools):
+    """Fable has used less of its week than the main Anthropic pool. The account stops when
+    the main pool runs out, whatever Fable has left, so Fable must drain first (Pete,
+    2026-10-17): while it lags, it takes all of middle and half of hard, and reads the branch."""
+    f, a = pools.get('fable', {}), pools.get('anthropic', {})
+    return bool(f.get('known') and a.get('known') and not f.get('empty') and f['used'] < a['used'])
 FALLBACK_ENGINE = 'fable'
 QUESTION = 'How hard is this coding task for an AI coding agent to complete correctly on the first attempt?'
 # Jev, the smaller window, takes 64k tokens per request, and pasted code runs near 3 characters a token. Each
@@ -291,7 +302,8 @@ def pick(tiers, pools, confidential):
             continue
         candidates = [e for e in ENGINES[tier] if not (confidential and POOL[e] == 'muse')]
         if tier == 'hard':  # fixed split, then the caps; this tier never escalates or empties
-            k = min(math.ceil(HARD_OPUS_SHARE * len(tasks)), max(len(tasks) - 1, 1))
+            share = HARD_OPUS_SHARE_FABLE_BEHIND if fable_behind(pools) else HARD_OPUS_SHARE
+            k = min(math.ceil(share * len(tasks)), max(len(tasks) - 1, 1))
             chosen = {n: 'opus' if i >= len(tasks) - k else 'fable' for i, n in enumerate(tasks)}
             capped, drained = pools['anthropic'].get('opus_blocked'), pools['fable']['empty']
             if capped:
@@ -309,8 +321,12 @@ def pick(tiers, pools, confidential):
                 continue
             # ponytail: middle alternates down the rank, Fable first, so Fable's share holds even
             # when Muse's spare rate dwarfs it (Pete, 2026-10-17); easy alone deals by spare rate
-            chosen = ({n: candidates[i % len(candidates)] for i, n in enumerate(tasks)} if tier == 'middle'
-                      else deal(tasks, candidates, pools))
+            if tier == 'middle' and 'fable' in candidates and fable_behind(pools):
+                chosen = dict.fromkeys(tasks, 'fable')
+            elif tier == 'middle':
+                chosen = {n: candidates[i % len(candidates)] for i, n in enumerate(tasks)}
+            else:
+                chosen = deal(tasks, candidates, pools)
         engines.update(chosen)
         landed.update(dict.fromkeys(tasks, tier))
     return engines, landed, notes
@@ -434,7 +450,7 @@ def log(pairs):
     return row
 
 
-READERS = {'anthropic': ['sol'], 'fable': ['sol'], 'openai': ['opus'], 'muse': ['opus', 'sol']}
+READERS = {'anthropic': ['sol'], 'fable': ['sol'], 'openai': ['claude'], 'muse': ['claude', 'sol']}
 
 
 def owners(slug):
@@ -454,7 +470,7 @@ def owners(slug):
     owned = {}
     for n, engine in last.items():
         pool = 'anthropic' if engine == 'driver' else POOL.get(engine)
-        for reader in READERS.get(pool, ['opus', 'sol']):  # an unknown engine gets both
+        for reader in READERS.get(pool, ['claude', 'sol']):  # an unknown engine gets both
             owned.setdefault(reader, []).append((n, engine))
     key = lambda t: (0, int(t[0])) if t[0].isdigit() else (1, t[0])
     return {r: sorted(ts, key=key) for r, ts in sorted(owned.items())}
@@ -567,6 +583,20 @@ def selftest():
         check('easy deals the same way on wonder and astra, and sol and spark build nothing',
               [engines[n] for n in (1, 2, 3)] == ['wonder', 'astra', 'astra'] and not notes
               and not {'sol', 'spark'} & set(engines.values()))
+        behind = pools(anthropic=P(15, used=40, opus_blocked=False), fable=P(7.5, used=21))
+        engines, _, notes = pick(tiers, behind, False)
+        check('Fable behind the main pool: middle all fable, hard half opus, easy unchanged',
+              fable_behind(behind) and {engines[n] for n in (4, 5, 6)} == {'fable'}
+              and [engines[n] for n in (7, 8, 9)] == ['fable', 'opus', 'opus']
+              and [engines[n] for n in (1, 2, 3)] == ['wonder', 'astra', 'astra'])
+        twelve = assign([{'n': n} for n in range(1, 13)], {n: {'score': n} for n in range(1, 13)})
+        got12 = pick(twelve, behind, False)[0]
+        check('twelve tasks with Fable behind: hard 2 opus + 2 fable, middle 4 fable',
+              [got12[n] for n in (9, 10, 11, 12)] == ['fable', 'fable', 'opus', 'opus']
+              and {got12[n] for n in (5, 6, 7, 8)} == {'fable'})
+        check('Fable not behind when level, unknown or empty',
+              not fable_behind(pools()) and not fable_behind(pools(fable=P(7.5, used=21, known=False)))
+              and not fable_behind(pools(anthropic=P(15, used=40), fable=P(0, used=21, empty=True))))
         hard = lambda n, **over: list(pick({i: 'hard' for i in range(1, n + 1)}, pools(**over), False)[0].values())
         check('a hard tier of 1 is opus, of 3 is 2 opus + 1 fable, of 4 is 3 + 1',
               hard(1) == ['opus'] and hard(3) == ['fable', 'opus', 'opus'] and hard(4) == ['fable'] + ['opus'] * 3)
@@ -768,7 +798,7 @@ def selftest():
             log(pairs)
         got = {r: [n for n, _ in ts] for r, ts in owners('xl').items()}
         check('owners: Sol gets Claude-written tasks, Opus GPT-written, both Muse, last engine wins',
-              got == {'opus': ['4', '5', '6'], 'sol': ['1', '2', '3', '4', '5']})
+              got == {'claude': ['4', '5', '6'], 'sol': ['1', '2', '3', '4', '5']})
         try:
             log(['review=opus', 'real=1', 'owned=2'])
             bad = False
@@ -802,6 +832,8 @@ if __name__ == '__main__':
             print(f"{reader:5} " + ', '.join(f'{n} ({e})' for n, e in tasks))
     elif args == ['report']:
         print(report())
+    elif args == ['reader']:  # the Claude model that reads the branch at REVIEW
+        print('fable' if fable_behind(quota.pools()) else 'opus')
     elif args == ['quota']:
         print(quota.table())
     else:

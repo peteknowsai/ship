@@ -80,11 +80,13 @@ final say. Every model runs at high effort: the driver, every subagent, and ever
 codex run. Never xhigh or max, and never medium to save time.
 
 **Fable 5.1 reviews the plan** at the end of PLAN, before anything is built. It also builds
-a band of BUILD tasks. **The branch gets two readers from different labs at REVIEW, Opus
-5.5 and GPT-6.1 Sol**, because a reader shares the blind spots of code its own lab wrote and
+a band of BUILD tasks. **The branch gets two readers from different labs at REVIEW, a Claude
+reader and GPT-6.1 Sol**, because a reader shares the blind spots of code its own lab wrote and
 goes easy on it (Pete, 2026-10-14, 2026-10-16). Both read the whole branch, since bugs hide
 where tasks meet, and each **owns** the tasks the other lab wrote: Sol owns what Opus,
-Fable or the driver wrote, Opus owns what Astra or Sol wrote, and both own Muse's.
+Fable or the driver wrote, the Claude reader owns what Astra wrote, and both own Muse's.
+The Claude reader is whatever `route.py reader` prints: `fable` while Fable's week lags the
+main pool's, else `opus`.
 `route.py owners <slug>` lists them from the ledger. Readers only report; they never edit,
 because a reader that rewrites breaks working code. Their tallies go to the ledger. Every
 review brief, plan or branch, says a claim about how a dependency behaves at runtime is checked in its
@@ -125,6 +127,10 @@ the most work: OpenAI on a quiet weekend, Muse late in its week. Before dealing,
   list is local, `~/.config/ship/confidential-paths`, never in this repo, and matches a repo's
   main checkout as well as its worktree. There, middle is all `fable` and easy all `astra`. With
   no list file at all, Muse is off everywhere until one exists (an empty file means none).
+- **Fable drains first.** The account stops when the main Anthropic pool runs out, whatever
+  Fable has left (Pete, 2026-10-17). So while Fable's used % is below the main pool's, the
+  middle tier is all `fable`, the hard tier splits half `opus`, half `fable`, and Fable is
+  the Claude reader at REVIEW. Once it catches up, the table above holds again.
 - **The driver's Opus comes first**: no `opus` build while the Anthropic week is at 70% or its
   5-hour session at 85%; those go to `fable`. An empty Fable pool sends its share to `opus`.
 - **An empty pool** (95% used, Codex's `limit_reached`, or Muse's 5-hour window at 95%) drops
@@ -846,7 +852,8 @@ he asks.
 - **Freeze upstream while the QA run walks** — no merges or rebases until its result
   lands (incidents: Worktrees). Absorb upstream *before* a run, never during; the run's
   own fixes are the only edits.
-- **Correctness review: a fresh Opus subagent (`model: "opus"`), launched first** so
+- **Correctness review: a fresh subagent on the model `route.py reader` prints (`model:
+  "fable"` or `"opus"`), launched first** so
   it works while the rest of REVIEW proceeds. Its brief names the tasks it owns
   (`route.py owners <slug>`, Engines) and says to clear each one task by task, then read the
   whole branch for the rest. The branch was drafted one
@@ -864,7 +871,7 @@ he asks.
   `> log 2>&1` (read-only, no
   tools but the shell, a few minutes), same brief with Sol's own tasks named, its findings
   in `<out-dir>/last.md`. Neither reader sees the other's findings. Codex out of quota or
-  astra's nonzero exit: Opus reads alone and owns every task; say so in the `result:` line,
+  astra's nonzero exit: the Claude reader reads alone and owns every task; say so in the `result:` line,
   never wait on it.
   The driver triages every finding from both
   — adversarial reviewers over-flag by design, and a finding two readers reached on their own
