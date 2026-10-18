@@ -374,7 +374,9 @@ Each stage writes its marker with `scripts/stage.sh <worktree> <stage>` (the sta
 line and the FleetView row read `.ship-stage`). Call this skill's scripts (`stage.sh`,
 `route.py`, `decisions.py`) by absolute path, the base directory the harness printed when
 this skill loaded plus `/scripts/`, typed out in full, never through a shell variable,
-which the worktree guard refuses; and every stage flip posts Pete one
+which the worktree guard refuses. A script or brief file goes in the job's tmp through
+the Write tool, since the Bash sandbox can't write there, or under `$TMPDIR` from Bash;
+and every stage flip posts Pete one
 line: the goal, the stage, what's next. Post it again after a compaction or a side job.
 Five runs had him asking "where are we?" mid-flight.
 
@@ -531,7 +533,10 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   (`gh api search/issues` `total_count`), never from the length of a `--limit` list: a
   capped list put 18 merges on a storyboard that should have said 62.
 - **Bug-shaped requests get an empirical root-cause check** — reproduce the failure or
-  read the runtime evidence; never spec a fix from a hypothesis (incidents: Design).
+  read the runtime evidence; never spec a fix from a hypothesis (incidents: Design). When
+  the measurement contradicts the card's own call, the measurement wins: fix what it
+  shows, and say so in the PR and on the card. CEL-74's card said to stub a slow step;
+  no run was slow, and the fault was a port collision.
 - **Consult the installed domain experts before you spec.** Recon tells you what the
   repo does; an expert tells you what the *stack* will do to you. Where the change
   lands in a domain some installed agent knows better than you, ask it — as harness
@@ -871,7 +876,7 @@ he asks.
   invented, a test that only passes on hand-built rows. Its brief says: before calling a
   field unwritten or a function uncalled, grep the whole repo, packages, extensions and
   scripts included, not only the directories the diff touched (a HIGH that would have
-  parked secrets-report missed the writer in a browser extension). It touches nothing and returns
+  parked secrets-report missed the writer in a browser extension). It touches nothing, runs no test that binds a port or starts a server, and returns
   findings as file:line, the failure scenario, and a severity.
   **Sol reads the same branch at the same time**: write that brief to a file and run
   `scripts/astra.sh review <worktree> <brief> <out-dir>` in the background, exactly that

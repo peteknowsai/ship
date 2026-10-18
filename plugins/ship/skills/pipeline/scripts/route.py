@@ -446,8 +446,12 @@ def log(pairs):
     elif 'task' in row and 'routed' not in row:
         print('route log: no saved route for this task here, so score and routed are not filled '
               '(run log from the ship worktree)', file=sys.stderr)
-    with open(ledger_path(), 'a') as ledger:
-        ledger.write(json.dumps(row) + '\n')
+    try:
+        with open(ledger_path(), 'a') as ledger:
+            ledger.write(json.dumps(row) + '\n')
+    except PermissionError:  # Claude Code's Bash sandbox can't write ~/.claude: CEL-74 lost four rows to it
+        raise SystemExit(f'route log: no write access to {ledger_path()}, so nothing was logged. '
+                         'Run this same command again with the Bash sandbox off.')
     if 'review' not in row and 'task' in row:
         mark_build(os.getcwd(), task=row['task'])
     return row
@@ -808,6 +812,19 @@ def selftest():
         except SystemExit:
             bad = True
         check('a review row with owned above real is refused', bad)
+        locked = os.path.join(tmp, 'locked')
+        os.makedirs(locked)
+        os.chmod(locked, 0o500)
+        os.environ['SHIP_LEDGER'], kept = os.path.join(locked, 'ledger.jsonl'), os.environ['SHIP_LEDGER']
+        try:
+            log(['repo=ship', 'task=1', 'engine=opus'])
+            said = ''
+        except SystemExit as stop:
+            said = str(stop)
+        finally:
+            os.environ['SHIP_LEDGER'] = kept
+            os.chmod(locked, 0o700)
+        check('a ledger it cannot write says to rerun with the sandbox off', 'sandbox off' in said)
         check('log fills the score and the routed engine from the saved picks',
               row.get('score') == 3.4 and row.get('routed') == 'opus' and row['engine'] == 'opus')
         check('an override shows as engine differing from routed, and an unknown task logs unfilled',
