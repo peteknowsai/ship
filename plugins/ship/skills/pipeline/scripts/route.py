@@ -171,7 +171,8 @@ def parse_tasks(text):
             if any(t['n'] == n for t in tasks):
                 n = max(t['n'] for t in tasks) + 1
             tasks.append({'n': n, 'label': label, 'title': title, 'lines': [],
-                          'driver': bool(re.search(r'\((driver|inline)\)', title, re.I))})
+                          'driver': bool(re.search(r'\((driver|inline)\)', title, re.I)),
+                          'inline': bool(re.search(r'\(inline\)', title, re.I))})
         elif tasks:
             tasks[-1]['lines'].append(line)
     for t in tasks:
@@ -378,7 +379,10 @@ def plan(path):
     out = []
     for t in tasks:
         s = scores.get(t['n'], {})
-        engine = 'driver' if t['driver'] else engines[t['n']]
+        # an (inline) task is small but still code: a Fable subagent writes it while Fable has
+        # quota, sparing the driver's Opus (Pete, 2026-10-18); (driver) stays with the driver
+        engine = (('driver' if pools['fable']['empty'] else 'fable') if t['inline']
+                  else 'driver' if t['driver'] else engines[t['n']])
         out.append({'n': t['n'], 'label': t['label'], 'title': t['title'], 'engine': engine, 'tier': tiers.get(t['n']),
                     'pool': POOL.get(engine), 'score': s.get('score'), 'confidence': s.get('confidence')})
     for row in out:
@@ -650,6 +654,11 @@ def selftest():
         got = {t['n']: t['engine'] for t in result['tasks']}
         tier = {t['n']: t['tier'] for t in result['tasks']}
         check('the driver task stays with the driver', got[3] == 'driver' and tier[3] is None)
+        small = os.path.join(tmp, 'small.md')
+        open(small, 'w').write('### Task 1: a config line (inline)\n\nx\n\n### Task 2: wire 1 to 3 (driver)\n\ny\n')
+        picked_small = [(t['engine'], t['tier']) for t in plan(small)['tasks']]
+        check('an (inline) task goes to fable unranked, a (driver) task stays with the driver',
+              picked_small == [('fable', None), ('driver', None)])
         check('eight routable tasks cut 3/2/3 by rank',
               sorted(n for n in tier if tier[n] == 'easy') == [1, 5, 7]
               and sorted(n for n in tier if tier[n] == 'middle') == [4, 9]

@@ -151,7 +151,9 @@ A builder that fails (a nonzero wrapper exit, a quota error, or two wrong diffs)
 tier up, on the engine `route.py quota` shows with the most spare outside the pool that just
 failed; hard moves `fable` → `opus`. The ledger records it as `verdict=redone`.
 
-A task headed `(driver)` or `(inline)` is never ranked; the driver writes it. An all-inline
+A task headed `(driver)` or `(inline)` is never ranked. `route.py` gives an `(inline)` task
+to `fable` while Fable has quota, and to the driver once its pool is empty; a `(driver)`
+task is always the driver's. An all-inline
 plan is still written down and still gets Fable's plan review (PLAN), and still runs `route.py plan`, which ranks nothing and sets the marker, and each task
 still logs with `engine=driver`, which counts it done. When the
 JSON's `fallback` is set (stderr says `ROUTER DOWN`), no decision model answered and every task
@@ -189,11 +191,14 @@ when Pete asks for it ("test in codex"),
 through `ship:verify`'s `reference/codex.md`: `scripts/codex-handoff.py` for a hand-off to
 his Codex app, `scripts/astra.sh test` headless. Never a hand-typed `codex exec`.
 
-**The driver writes inline anything under one file and ~50 lines**: config, glue
-between two tasks, a test tweak, a small fix from triage. Mark those tasks `(inline)`
-in the plan so the router skips them. Skill and agent prose and design taste never
-route either. Recon, expert consults and review fan-outs go
-to Opus 5.5 harness subagents (the Agent tool), with the chrome-devtools MCP for
+**The driver's Opus is the scarce one** (Pete, 2026-10-18): the main Anthropic pool ends
+the account when it runs out, so the driver keeps only what needs its own context, and
+Fable subagents do the rest while Fable has quota. A task under one file and ~50 lines
+(config, a test tweak, a small fix from triage) is marked `(inline)` and goes to a Fable
+subagent; `(driver)` is for glue only the driver can write, such as wiring two tasks it
+just reviewed. Skill and agent prose and design taste stay with the driver. Recon, expert
+consults and review fan-outs go to Fable 5.1 harness subagents (`model: "fable"`; Opus
+once Fable's pool is empty), with the chrome-devtools MCP for
 anything in a browser. Never `claude -p` from inside a session. Nothing runs
 on Sonnet.
 
@@ -704,7 +709,8 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   the worktree's latest. A build that failed is yours to fix before you post.
 - Invoke `superpowers:subagent-driven-development` (the driver drives) and send each
   task to the engine `route.py plan` picked (Engines), in the background; `(inline)`
-  and `(driver)` tasks the driver writes itself. The driver owns the brief, the diff
+  tasks go where `route.py` put them (Fable while it has quota), and `(driver)` tasks the
+  driver writes itself. The driver owns the brief, the diff
   review, the gates, the ledger line, and git. One writer per tree at a time, which
   is why fan-out means sub-worktrees, below.
 - **Check the plan's files against work in flight, before the first dispatch.** `gh pr
@@ -927,9 +933,15 @@ he asks.
   column change that an old process's positional insert breaks is a one-way door, so it
   lands additive first or says so in Merge Danger.
 - **TEST — ship runs its QA script, and a pass lands it.** With green gates and the
-  review triaged, push, `stage.sh <root> test`, and invoke `ship:verify` (the full name:
-  bare `verify` resolves to another skill and is refused). It writes the QA script, runs
-  it in this session on the chrome-devtools browser and, when the native app can see the
+  review triaged, push, `stage.sh <root> test`, and hand the QA run to **a Fable subagent**
+  (`model: "fable"`, in the foreground) while Fable has quota, the driver itself once
+  Fable's pool is empty. Its brief: the worktree's absolute path, the URL, the BACKEND,
+  test-auth, IOS and STORYBOARD lines, the spec or plan, and "call the Skill tool with
+  `ship:verify` (the full name: bare `verify` resolves to another skill and is refused),
+  walk, fix and rerun, never commit, end with VERDICT and the result path". The tester
+  still fixes what it finds, so the one who sees the bug fixes it; the driver reviews its
+  diff, reruns the gates and commits. It writes the QA script, runs
+  it on the chrome-devtools browser and, when the native app can see the
   change, on agent-device (`ios:` builds and installs the branch's app first; the phone is
   the default and a simulator stands in when it isn't connected or another ship holds it;
   a mobile-web build may add a simulator's Safari, never the phone), fixes what fails and
