@@ -166,7 +166,8 @@ logs the override in the ledger's `note`.
 
 **Pete's budget word outranks ship's defaults.** When he caps subagents or spend for a run
 ("no extra parallel agents"), skip the steps that add them, run the rest inline, and name
-what was skipped in the `result:` line.
+what was skipped in the `result:` line. REVIEW then keeps one reader, Sol, which reads the
+whole branch: it is the other lab for the driver's own code and draws on no Claude quota.
 
 **Every engine gets the same brief and the same rules** (the standing boilerplate in
 BUILD): the named files only, never commit, never `git reset/checkout/stash`, end with
@@ -346,7 +347,9 @@ Every key is optional, and the default is what a repo with no contract gets:
   own server where main deploys nothing (cells-app: `local-pack.sh --restart` smokes main on
   localhost). It is the one check that sees ships together: each branch was tested alone,
   and two that land an hour apart are never walked side by side. Default: none, and LAND's
-  one load of each live URL is the whole check.
+  one load of each live URL is the whole check. A smoke red whose failing step is a network error
+  to a third party (a connect timeout, a DNS failure) gets one rerun, said in the `result:`
+  line; any other red is real.
 - **`board:`** where the repo's tickets live, how to file one, and what each column means
   (cells-app's names them and says which a ship may file into). Default: none, and
   follow-ups stay in the `result:` message.
@@ -965,8 +968,9 @@ he asks.
   the session enters a worktree. `<shots-root>` is the worktree the session entered;
   on a cross-repo ship, where the session never entered one, it is the session's launch
   directory. The driver writes that absolute path into every brief that screenshots.
-  Exclude `.ship-shots` in `<shots-root>`'s repo `info/exclude` the way `.ship-stage`
-  is, since it is never committed (~6MB of PNGs broke a push). Copy anything the
+  `.ship-shots` is never committed (~6MB of PNGs broke a push). In the worktree,
+  `stage.sh`'s `.ship-*` exclude already covers it; a cross-repo `<shots-root>` gets the same
+  line with `scripts/stage.sh <shots-root> exclude`, which writes no marker. Copy anything the
   presented card references somewhere durable before teardown, or the card 404s its
   own proof (incidents: Worktrees), then delete `<shots-root>/.ship-shots/<slug>/`,
   which on a cross-repo ship is not inside the worktree teardown removes.
