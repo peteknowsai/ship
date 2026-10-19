@@ -65,6 +65,9 @@ What scales is the ceremony before TEST, and you size it, not Pete:
   surface, visual identity, a product tradeoff, ambiguous scope, a money path — the
   gated pipeline below.
 
+**A card key doesn't size the ship.** A board card that is an EXPRESS-sized fix runs as
+EXPRESS: no written plan, no plan review.
+
 **The gate test is never size — it's whether Pete's answer would change what gets
 built** (or the change is risky/irreversible). If his input wouldn't change the outcome,
 don't stop. Every lane lands only on green gates and the QA run's `works`. A
@@ -404,6 +407,11 @@ the Write tool, since the Bash sandbox can't write there, or under `$TMPDIR` fro
 and every stage flip posts Pete one
 line: the goal, the stage, what's next. Post it again after a compaction or a side job.
 Five runs had him asking "where are we?" mid-flight.
+
+**What runs with the Bash sandbox off.** Anything that writes outside the worktree or binds
+a port: the fork (`wt switch --create`, `stage.sh` on a new worktree), the ledger (`route.py
+log`), the wrappers (`astra.sh`, `muse.py`), gates, smokes and dev servers. Everything else
+stays in the sandbox.
 
 **`$TMPDIR` changes with the sandbox.** A sandboxed Bash call sees `/tmp/claude-<uid>`, one
 with the sandbox off sees `/var/folders/…/T`, so a file one writes is missing to the

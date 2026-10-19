@@ -219,6 +219,10 @@ these on each page it touched, and every pass line the repo's checks add:
 
 A failed measure is a failed step like any other, with the number as its evidence.
 
+**Wait on the real thing.** A server: `scripts/listener.sh <port>` (in the pipeline skill's
+directory). A process: `pgrep -f <pattern>`, never `ps | grep`, which matches its own grep
+and reports a server that isn't there yet (CEL-169 ran its checks early that way).
+
 ## 3. Regression sweep — you run the codified checks; fix red directly
 
 Run it with the Bash sandbox off: a `listen EPERM` or a failed font or package fetch under
