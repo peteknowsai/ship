@@ -31,7 +31,11 @@ one line up front, and size that.
 
 **The fork is the verb's FIRST act — before any question, recon agent, or authoring
 step.** The moment a verb lands, resolve the target repo and run stage 0 there. The
-marker flip is how Pete *sees* ship engage.
+marker flip is how Pete *sees* ship engage. One exception: a card whose brief may end in no
+code ("reproduce first; if it's gone or not ours, close it with evidence") reproduces
+read-only against main first, posting one line that it is doing so, and forks only once a
+code change is known. A run that closes the card that way changes nothing, so it has no
+worktree, PR or landing; its proof goes on the card (CEL-172).
 
 - **`/ship express <tweak>`** — pins EXPRESS. The verb pins ceremony *down*, never
   safety down: a money path or a taste call promotes per the mid-flight rule regardless.
