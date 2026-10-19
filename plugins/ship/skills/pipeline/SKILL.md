@@ -53,7 +53,8 @@ What scales is the ceremony before TEST, and you size it, not Pete:
   path. No spec, no plan, no cards, no stops: worktree → change → repo gates
   (tsc/tests) → pre-flight (the page loads, no console errors) → push, links → TEST →
   land on a pass →
-  `result:` line. A dab of `ponytail` (smallest diff), and `impeccable` for anything
+  `result:` line. No branch readers: REVIEW's two-lab read belongs to SELF-DIRECTED and
+  GATED. A dab of `ponytail` (smallest diff), and `impeccable` for anything
   visual. The first Pete hears of it is the links.
 - **SELF-DIRECTED — real work with no taste question in it.** Write whatever
   machine-facing spec/plan *you* need to build it well, then build, run the full REVIEW
@@ -162,6 +163,10 @@ build. A 402 means that model is out of credits (stderr names it): tell Pete in 
 ship routes blind until he tops up. The driver may
 override one pick for a concrete reason, such as a file an Opus lane already holds, and
 logs the override in the ledger's `note`.
+
+**Pete's budget word outranks ship's defaults.** When he caps subagents or spend for a run
+("no extra parallel agents"), skip the steps that add them, run the rest inline, and name
+what was skipped in the `result:` line.
 
 **Every engine gets the same brief and the same rules** (the standing boilerplate in
 BUILD): the named files only, never commit, never `git reset/checkout/stash`, end with
@@ -396,6 +401,11 @@ the Write tool, since the Bash sandbox can't write there, or under `$TMPDIR` fro
 and every stage flip posts Pete one
 line: the goal, the stage, what's next. Post it again after a compaction or a side job.
 Five runs had him asking "where are we?" mid-flight.
+
+**`$TMPDIR` changes with the sandbox.** A sandboxed Bash call sees `/tmp/claude-<uid>`, one
+with the sandbox off sees `/var/folders/…/T`, so a file one writes is missing to the
+other. Anything that crosses (a log, a script, a brief) gets an absolute path under the
+job's tmp or the worktree, or rides the background call's own output file.
 
 **Shell inside a worktree session.** The harness refuses a command it can't tell stays
 in the worktree: `$(git …)` substitutions, `cd <dir> && git …`, loops or heredocs that
