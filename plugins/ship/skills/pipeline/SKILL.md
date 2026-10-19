@@ -493,8 +493,13 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   `convex/` turns that database into a fight: the Convex plugin's Stop hook pushes each
   tree's whole `convex/` at every turn end, so each push drops the functions the other
   added (a catalog ship's survived only because the other branch's data failed
-  validation). Check at the fork (`git worktree list`, then `git diff --name-only
-  origin/main...HEAD -- convex/` in each live one). When one does, tell its session and
+  validation). Check at the fork, and again right before any push to shared dev, since a
+  sibling can start touching Convex in between (`git worktree list`, then `git diff
+  --name-only origin/main...HEAD -- <paths>` in each live one). The paths are every folder
+  the repo's Convex code lives in, not just `convex/`: the ones the contract names (cells-app:
+  `convex/`, `convex-core/`, `packs/*/convex/`), else each `convex.json`'s `functions` folder.
+  On `backend: copy`, `branch-db.py diff <worktree> [<app-dir>]` lists the functions a push
+  from this branch would drop from shared dev, and exits 1 when there are any. When one does, tell its session and
   plan one merged push up front: from a throwaway `git worktree add --detach` holding both
   branches' `convex/`, until the first lands; then merge main and push alone. A repo that
   keeps hitting this belongs on `backend: copy`. `per-branch` → provision the branch's database preview now; a worktree
@@ -685,7 +690,9 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   frame or requirement the spec names that no task covers (it maps each one to its task
   and lists the orphans: one plan built a spec's intro and none of the screens its frames
   asked for, and Pete caught it mid-build), a missing task, a wrong file, a test that cannot fail, an order that breaks, an
-  `(inline)` task that is not small, a seam two tasks each assume the other owns, a
+  `(inline)` task that is not small, a seam two tasks each assume the other owns, a concurrency fix whose guard checks only
+  which write is newer and not whose it is (CEL-152's newest-wins rule passed plan review;
+  both branch readers caught it), a
   screen that waits on someone else with no way back to it (trace how the user returns
   once the other side acts; one plan's payoff screen was unreachable without re-walking
   the intro), and a
@@ -1066,7 +1073,10 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
   with a draft PR first.
 - **A long-running local process that serves main's code (a launchd job, a queue
   runner) picks up the change only when it restarts.** QA can't drive it before the merge,
-  so TEST proves that path at data level (verify: API, CLI, script). After the merge,
+  so TEST proves that path at data level (verify: API, CLI, script). A change no person
+  can trigger (a race, a background worker, a third party mid-call) is verified at data
+  level, every case on the branch's backend, plus a browser check of any screen that reads
+  the result, and that is `works`, not partial. After the merge,
   restart it once it is idle, never with a job in flight, which the restart would fail, and
   say so in `result:` rather than "nothing deploys". The contract's `worker:` line names
   the restart command and the idle check; a repo with such a process and no line gets one
