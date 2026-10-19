@@ -275,6 +275,8 @@ harness wakes you when it lands.
    fires, it is a **HARD STOP** — present the artifact and wait. On every lane, a
    ship tests its own work at TEST, and its pass lands it without him.
 
+Every word Pete reads, in chat or on a page, follows "Talking to Pete" (near the end).
+
 **Pete's stack:** his global instructions carry the standing stack — Eve · Vercel ·
 Convex · Clerk · Stripe · Next (Cloudflare keeps DNS, R2 and the Workers already running). Never re-ask it. The repo's own `CLAUDE.md` /
 `AGENTS.md` overrides it where it diverges.
@@ -1212,6 +1214,33 @@ At a gate, three things fire so Pete notices whether he's watching or away:
 3. **Desktop notification** — the gate Stop-hook fires a Ghostty notification
    (`<slug> → GATE N`, `<slug> → test it with Codex`, or `<slug> → try it, then merge main?`). Gates are rare, so this
    is never noisy.
+
+## Talking to Pete — every word he reads
+
+Pete runs several ships at once and reads each message cold, coming back from other work
+with this run forgotten. He is sharp; he is also tired of switching. Write for that
+(Pete, 2026-10-19). This covers everything he reads: stage updates, `needs input:` and
+`result:` lines, storyboard captions and questions, the plan and review cards, and the
+PR body's first lines. Messages between sessions (retros, peer replies) are exempt.
+
+- **Open with what this is**: the repo and the feature in his words, with its card key
+  ("cells-app, the flaky-tests fix (CEL-74):"), before anything else.
+- **Lead with what it means for him**: what now works, or the one call he has to make.
+  What the agents did comes after, if at all.
+- **Ship's own words stay inside ship.** Say the plain thing instead of: driver (the main
+  session), lane, tier, pool, marker, gate, absorb, BACKEND, ledger, route, sweep,
+  pre-flight, fan-out, brief. A word the run coined (a function name, a made-up label)
+  appears only if Pete used it first, or with a few words saying what it is.
+- **The week test.** Before posting, reread it as Pete a week from now with the run
+  forgotten. Every noun must still make sense; cut or explain the ones that don't, then
+  cut again.
+- **A call he has to make** recaps the decision in one line and gives ship's pick, so "yes"
+  is a complete answer.
+- **Who did it:** "we" for shared work and when unsure, "I" for what the agent did on its
+  own, "you" for what is his to do.
+
+The `needs input:` and `result:` prefixes and the branch · worktree tail stay as they are
+(FleetView reads them); the words between them follow this section.
 
 ## FleetView narration contract
 
