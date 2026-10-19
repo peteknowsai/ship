@@ -424,6 +424,12 @@ refs/remotes/origin/HEAD` (strip `refs/remotes/origin/`), else `origin/main`, el
 `origin/master`, else local `main`. Every `main` in this pipeline means that detected
 base branch.
 
+**Waiting on other ships to land** (a docs ship written from main once its siblings are
+  in): run the wait as a background Bash call, which wakes the session when it exits:
+  `until [ -z "$(gh pr list --state open --search '<keys>' --json number -q '.[].number')" ];
+  do sleep 300; done` in a script file. Give it no deadline; if it does stop (a usage pause,
+  a restart), start it again rather than landing early.
+
 **Never stack on a branch that hasn't landed.** Asked to build on top of another
 ship's branch, branch off main anyway, cherry-pick only the commits you need from it,
 and open the tracker PR against main. Its own rebase later finds those commits already
@@ -474,7 +480,10 @@ into commits otherwise (incidents: Worktrees). Never build on main.
 
 - **Push the branch at once** (`git push -u origin feature/<slug>`), and open the
   **tracker PR** as a draft with the first commit (`gh pr create --draft --base main
-  --fill`; GitHub refuses a PR with no commits). Its body is the one-line why and the
+  --fill`; GitHub refuses a PR with no commits). Every commit message and PR body is a file
+  written with the Write tool, then `git commit -F <file>` and `gh pr create --body-file
+  <file>`, one command per call: the worktree guard refuses a heredoc and a chained
+  commit, push and PR. Its body is the one-line why and the
   preview links, refreshed as they change. It is GitHub's record of what is in flight and,
   once squashed, of what shipped; it is never a review step. `land: direct` opens none.
   A branch that should carry a card key (`cel-52-…`) gets it at the fork. Renaming one
@@ -1045,7 +1054,8 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
   2. `wt remove feature/<slug> -f` — frees the branch for `--delete-branch`.
   3. `gh pr merge <#> --squash --delete-branch` — from the main checkout.
   4. `git pull --ff-only` (+ `git branch -D feature/<slug>` if a local branch
-     lingers). Dirty main checkout (another session's work) → skip the local ff
+     lingers: a squash merge rewrites the commits, so `wt remove` and git both call the
+     branch unmerged and keep it, and only `-D` takes it). Dirty main checkout (another session's work) → skip the local ff
      and run any deploy from a throwaway worktree pinned to `origin/main`.
   - A worktree ship didn't create, a session launched inside its worktree, a repo with
     no GitHub remote, or `land:` other than `pr`: `reference/rare-cases.md`, Landing variants.
