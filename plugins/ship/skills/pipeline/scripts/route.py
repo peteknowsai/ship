@@ -433,6 +433,12 @@ def log(pairs):
     if 'review' in row and isinstance(row.get('owned'), int) and isinstance(row.get('real'), int) \
             and row['owned'] > row['real']:
         raise SystemExit(f"route log: owned={row['owned']} is more than real={row['real']}")
+    out = row.pop('out', None)  # a wrapper's out-dir: its `seconds` file is the run's own wall time
+    if out and 'seconds' not in row:
+        try:
+            row['seconds'] = int(open(os.path.join(str(out), 'seconds')).read().strip())
+        except (OSError, ValueError):
+            print(f'route log: no seconds file in {out}, so seconds is left out', file=sys.stderr)
     saved = route_file(os.getcwd())
     picked = None
     if saved and os.path.isfile(saved) and 'task' in row:
@@ -821,6 +827,12 @@ def selftest():
         except SystemExit:
             bad = True
         check('a review row with owned above real is refused', bad)
+        wrapped = os.path.join(tmp, 'wrapped')
+        os.makedirs(wrapped)
+        open(os.path.join(wrapped, 'seconds'), 'w').write('412\n')
+        timed = log(['repo=ship', 'task=8', 'engine=astra', f'out={wrapped}'])
+        check('out=<dir> fills seconds from the wrapper and keeps out of the row',
+              timed.get('seconds') == 412 and 'out' not in timed)
         locked = os.path.join(tmp, 'locked')
         os.makedirs(locked)
         os.chmod(locked, 0o500)

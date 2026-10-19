@@ -176,6 +176,9 @@ route.py log repo=<repo> ship=<slug> task=<n> engine=<engine> \
   seconds=<wall time> fix_rounds=<n> gates_first_pass=<true|false> verdict=<clean|fixed|redone>
 ```
 
+For a task `astra.sh` or `muse.py` built, pass `out=<out-dir>` in place of `seconds`: each
+wrapper writes its run's wall time there.
+
 Run it from the worktree: it fills the task's score and the engine the router picked
 from the saved route, so an override shows as `engine` differing from `routed`. Seconds
 come from the run itself (the task notification's duration), and a number you don't have is left out, never estimated: a
@@ -443,7 +446,10 @@ git fetch origin
 wt switch --create feature/<slug> --base origin/<base> --no-cd --format=json -y
 ```
 (`origin/<base>`, the base branch resolved above, because a stale local copy has cost a
-rebase and reinstall), then enter
+rebase and reinstall), with the Bash sandbox off: it writes under `~/Projects/.worktrees`,
+which the sandbox refuses after the branch already exists. A fork that half-ran ("Branch
+already exists", no worktree) finishes with `wt switch feature/<slug> --no-cd -y`, without
+`--create`. Then enter
 the path from the JSON. A second ship in the same session calls
 `ExitWorktree({action:"keep"})` before `EnterWorktree` on the new path. A session launched
 inside a worktree can't: `EnterWorktree` refuses a second wt-made worktree, and its sandbox
@@ -628,7 +634,10 @@ into commits otherwise (incidents: Worktrees). Never build on main.
      the direction to decision memory, then straight into PLAN.
   Pen (the Pencil app) is no longer the default. When Pete asks to take a frame into
   pen, put it there, let him iterate, and harvest the result back into the frame
-  before the lock; the storyboard stays the single design of record either way.
+  before the lock; the storyboard stays the single design of record either way. When the design of record lives
+  on another branch, copy the frames this ship builds into its own branch at PLAN and point
+  every brief at that copy: a design session on the other branch trimmed CEL-146's frames
+  before its QA ran.
 - **Commit every gate artifact to the branch before you fire the gate** (storyboard,
   plan card). A parked ship with uncommitted work looks disposable to another
   session's cleanup sweep, and one nearly lost its spec that way (incidents: Worktrees).
@@ -923,7 +932,9 @@ he asks.
 - **Keep it running, for the QA run and for Pete.** Two surfaces: the branch's **preview
   links** (the contract's `preview:`, the real host, database and sign-in), and the
   worktree's **localhost** (the contract's `dev:` command, else the dev script). Pete may
-  look whenever he likes; it never holds the ship. Boot the dev server detached, never through a bounded pipe (`nohup <dev>
+  look whenever he likes; it never holds the ship. Boot the dev server detached, from the worktree root by absolute path (`cd <worktree> &&`
+  first: the shell keeps the last `cd`, and one into `packs/homebody` started `npm run dev`
+  in the wrong folder), never through a bounded pipe (`nohup <dev>
   > dev.log 2>&1 &`, then curl-probe — a `| head -50` has SIGPIPE'd a server mid-verify)
   and `show.sh <root> <slug> test <url>` the URL it printed (`preview` for a preview link). A feature behind an auth gate needs its test-auth path
   working on both, or it 403s and reads as broken (incidents: Backends). Never run a
