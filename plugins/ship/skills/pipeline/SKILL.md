@@ -339,9 +339,9 @@ Every key is optional, and the default is what a repo with no contract gets:
   localhost). It is the one check that sees ships together: each branch was tested alone,
   and two that land an hour apart are never walked side by side. Default: none, and LAND's
   one load of each live URL is the whole check.
-- **`board:`** where the repo's tickets live and how to file one (cells-app: Linear team
-  CEL through the `linear` skill, columns Icebox, Backlog, Up Next, On Deck). Default: none,
-  and follow-ups stay in the `result:` message.
+- **`board:`** where the repo's tickets live, how to file one, and what each column means
+  (cells-app's names them and says which a ship may file into). Default: none, and
+  follow-ups stay in the `result:` message.
 - **`ios:`** for a native iOS app, the command that builds the branch's own app, pointed
   at the branch's server, installs it on a device by name ("iPhone PM" or a simulator),
   and prints its IOS line (device, udid, bundle id). Default: none. A web app is tested in
@@ -1226,11 +1226,15 @@ loophole around the scope law. Never invent one, and never gate the merge on thi
 Sort each one, and give it one plain line on why it's worth doing (Talking to Pete):
 - **Quick ship**: the whole change is visible, there's no taste call, and it fits one
   sitting, the size of EXPRESS. Pete says "ship <n>" and it runs as an EXPRESS ship.
-- **Ticket**, with the column it belongs in on the repo's `board:`:
-  - **On Deck**: worth starting now, in its own session;
-  - **Up Next**: next in line, because people or the next ship will hit it soon;
-  - **Backlog**: worth building, no rush;
-  - **Icebox**: someday, a nice-to-have.
+- **Ticket**, placed by what it needs, in the column the repo's `board:` gives that meaning
+  (cells-app: Ready, Backlog, Icebox):
+  - **ready to build**: an agent can build, prove and land it alone, the cause or the shape
+    already known, no taste call. On cells-app it goes in Ready, which `/groom` starts from;
+  - **needs Pete**: his OK, a design call, a product question, a money path. On cells-app,
+    Backlog, with the ask written on it;
+  - **someday**: a nice-to-have. On cells-app, Icebox.
+
+  Never a column that means work in flight (cells-app's Building): that is a live session's.
 
   Pete says "file them" (or names which) and each lands in its column with the why
   written on it and a link back to this PR. A repo with no `board:` gets the list only.
