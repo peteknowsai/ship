@@ -335,6 +335,9 @@ Every key is optional, and the default is what a repo with no contract gets:
   localhost). It is the one check that sees ships together: each branch was tested alone,
   and two that land an hour apart are never walked side by side. Default: none, and LAND's
   one load of each live URL is the whole check.
+- **`board:`** where the repo's tickets live and how to file one (cells-app: Linear team
+  CEL through the `linear` skill, columns Icebox, Backlog, Up Next, On Deck). Default: none,
+  and follow-ups stay in the `result:` message.
 - **`ios:`** for a native iOS app, the command that builds the branch's own app, pointed
   at the branch's server, installs it on a device by name ("iPhone PM" or a simulator),
   and prints its IOS line (device, udid, bundle id). Default: none. A web app is tested in
@@ -1063,8 +1066,8 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
   never offer to, unless the contract's `release:` names it: then Pete's release word runs
   it. Where main is production, landing is the release and ship watches it through.
 - Run RETRO, then end with a `result:` line: what shipped, one sentence, with the live
-  links (or the lane's) — plus `· retro sent` and/or `· K backlog candidates`
-  when applicable. Only a landing earns `result:`; a ship parked at TEST ends its turns
+  links (or the lane's) — plus `· retro sent` when it was. Then the follow-ups
+  (below), or nothing when there are none. Only a landing earns `result:`; a ship parked at TEST ends its turns
   with `needs input:`.
 
 ### 6 · RETRO — how this run used ship, sent to the maintainer  → no marker
@@ -1103,9 +1106,8 @@ should have caught (the lens of mattpocock's `retro`):
   repo's `CLAUDE.md` or docs home would have saved;
 - **an expensive tool call** that a script or a narrower command would replace.
 
-Each real one is a backlog candidate (below), listed under the `result:` line with what
-to add and where: the run has landed, so a guardrail or pointer is its own small ship,
-never a commit slipped onto main. A gap the repo already knows about (the same finding in
+Each real one is a follow-up (below), with what to add and where: the run has landed,
+so a guardrail or pointer is its own small ship, never a commit slipped onto main. A gap the repo already knows about (the same finding in
 an earlier run's list) is not news; say nothing.
 
 Don't gate `result:` on any of this.
@@ -1181,25 +1183,40 @@ Render `reference/review-card.html` filled with the meta only — PM-framed, one
   demo/test output.)
 - **Already checked for you** — gates green, the QA script walked end-to-end, any committed e2e spec (name it); what was NOT touched (schema / money /
   public surfaces).
-- **Flagged** — taste notes, if any. Reports, not work — Pete
-  decides: fix now / backlog / ignore.
+- **Flagged** — taste notes, if any. Reports, not work: one Pete wants changed becomes
+  a follow-up.
 - **Only you can confirm** — the 1–2 things that need his eye, on the preview links or
   the open localhost.
-- **Also worth building — didn't make this round** — the run's backlog candidates (see
-  below). Most rounds have none — omit the section entirely; never pad it.
+- **What we should do next** — the follow-ups (below). Most rounds have none: omit the
+  section entirely; never pad it.
 - **Where it is** — the live links landing deployed (the contract's `live:`), or the
   preview links and localhost when the ship parked. The verdict line (`LANDING_STATUS`)
   says which: "Landed on main" with the live URL, or what it waits on. The tracker PR
   link is there for the record, but he shouldn't need it.
 
-## Backlog candidates — collect deferrals for the card
+## Follow-ups — what we should do next
 
-A run throws off build-worthy ideas that aren't this round's job. Keep a running list
-(no scratch file — you're one continuous run) of the ones you'd *actually build*, each
-with a one-line why-deferred. A candidate is a thing OUTSIDE the spec's scope —
-never a specced surface you chose not to build; this is not a loophole around the scope
-law. Surface them on the review card when there is one, else under the `result:` line,
-which names the count. Don't invent a tracker. Never gate the merge on this.
+A run throws off work that isn't this round's job: an idea outside the spec, a guardrail
+or pointer from the repo's retro, a taste note, a bug it saw in passing. Keep a running
+list of the ones worth doing (no scratch file; you're one continuous run). A follow-up is
+OUTSIDE the spec's scope, never a specced surface you chose not to build; this is not a
+loophole around the scope law. Never invent one, and never gate the merge on this.
+
+Sort each one, and give it one plain line on why it's worth doing (Talking to Pete):
+- **Quick ship**: the whole change is visible, there's no taste call, and it fits one
+  sitting, the size of EXPRESS. Pete says "ship <n>" and it runs as an EXPRESS ship.
+- **Ticket**, with the column it belongs in on the repo's `board:`:
+  - **On Deck**: worth starting now, in its own session;
+  - **Up Next**: next in line, because people or the next ship will hit it soon;
+  - **Backlog**: worth building, no rush;
+  - **Icebox**: someday, a nice-to-have.
+
+  Pete says "file them" (or names which) and each lands in its column with the why
+  written on it and a link back to this PR. A repo with no `board:` gets the list only.
+
+They go on the review card under "What we should do next", and when there is no card,
+under the `result:` line as a numbered list. Ship fixes found in its own RETRO go to the
+maintainer, never on this list.
 
 ## Gate signals — how a parked ship reaches Pete
 
