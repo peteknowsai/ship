@@ -422,6 +422,9 @@ with the sandbox off sees `/var/folders/…/T`, so a file one writes is missing 
 other. Anything that crosses (a log, a script, a brief) gets an absolute path under the
 job's tmp or the worktree, or rides the background call's own output file.
 
+**Env files without sourcing.** The guard refuses `set -a && . ./.env.local`; give the tool
+the file instead (`tsx --env-file=.env.local`, `node --env-file=.env.local`).
+
 **Shell inside a worktree session.** The harness refuses a command it can't tell stays
 in the worktree: `$(git …)` substitutions, `cd <dir> && git …`, loops or heredocs that
 name git, and read-only commands it misparses (a path segment named `source`, a zsh
@@ -1037,7 +1040,8 @@ he asks.
     it couldn't open) makes the result partial, and partial is `unverifiable`, never a
     footnote on a landing. Three ships went to Pete with a known gap and he found it in
     minutes ("this should have been tested before you sent it").
-- **Render the review card** from `reference/review-card.html` (contract below) to the
+- **Render the review card** (SELF-DIRECTED and GATED; an EXPRESS ship has none, and its
+  `result:` line carries the proof shots' paths) from `reference/review-card.html` (contract below) to the
   docs home as soon as the result is in, and commit it on the branch, with the proof
   shots it shows copied beside it, before LAND's step 0: LAND removes the worktree. A
   Codex hand-off Pete watched gets none; its record is the `result:` line, the PR body,
@@ -1242,7 +1246,7 @@ It is the *only* thing Pete reads before a build starts, and his go is needed on
 when it asks him something. The execution plan is written
 after his go and he never reads it.
 
-## The review card (every pass and park but a watched Codex hand-off)
+## The review card (every SELF-DIRECTED and GATED pass and park, but a watched Codex hand-off)
 
 Render `reference/review-card.html` filled with the meta only — PM-framed, one screen; a
 `17-pr-writeup` for a PM, never a file tour. Pete reviews *this*, not the diff:

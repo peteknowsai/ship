@@ -91,7 +91,9 @@ what the last one learned (Pete, 2026-10-19). No file yet: §5 writes it from th
 criteria. Its head names what the run uses: URL, AUTH (the test-auth path, with everything
 a fresh account needs, an invite code or a PIN), IOS (the line `ios:` printed, or none),
 BACKEND (on `backend: copy` or `per-branch`, the exact deployment, pinned on every CLI call, or seeds
-land on one backend and the app reads another), PROTECTION (the bypass value, or none),
+land on one backend and the app reads another), ENV (any variable the dev script sets only
+for its own server that a data-level script needs too; cells-app's `LOCAL_STAGE=local-<port>`,
+without which a script reads main's stage and comes back empty), PROTECTION (the bypass value, or none),
 STORYBOARD (a GATED ship's frames and `~/.claude/skills/impeccable/reference/craft-floor.md`,
 or none). Then numbered steps, each one thing a person does and what they should see:
 "4. Scroll up slowly past the first page of history → the message you were reading stays
