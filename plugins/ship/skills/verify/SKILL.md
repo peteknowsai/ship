@@ -82,6 +82,11 @@ down mid-QA (2026-10-14). Never control the Mac's desktop.
 
 ## 2. Write the QA script → run it → fix → rerun (≤ 3 fix rounds)
 
+**Start from the repo's checks.** A repo keeps how it is proven in a project skill,
+`.claude/skills/checks/SKILL.md`: how to start it, sign in, walk each screen, and the pass
+lines it must meet. Read it first and build the QA script on it, so a run never rediscovers
+what the last one learned (Pete, 2026-10-19). No file yet: §5 writes it from this run.
+
 **Write `<out-dir>/qa.md`** (outside the repo) from the spec or plan, else the acceptance
 criteria. Its head names what the run uses: URL, AUTH (the test-auth path, with everything
 a fresh account needs, an invite code or a PIN), IOS (the line `ios:` printed, or none),
@@ -203,6 +208,17 @@ EXPECTED / OBSERVED: for every step that didn't pass
 TASTE: <0-3 short "looked off / couldn't confirm" notes, or "none">
 ```
 
+**Measure what a person feels.** On a change with a screen, after the walk passes, run
+these on each page it touched, and every pass line the repo's checks add:
+
+| Check | Passes when | On a fail |
+|---|---|---|
+| Layout shift: `performance_start_trace` (it reloads the page), at desktop and 390px; the summary prints CLS | CLS under 0.1 | `performance_analyze_insight` with `CLSCulprits` and the insight set id names the element that moved: reserve its space, rerun |
+| Accessibility: `lighthouse_audit` (`mode: "snapshot"` for a state the walk reached), its accessibility failures and the nodes they flag | no failure on an element the change added or changed | fix it and rerun; one main already had goes in TASTE |
+| Load time, only on a production build or a preview (a dev server compiles on first load) | LCP under 2.5 s | the trace's LCP breakdown says which part is slow |
+
+A failed measure is a failed step like any other, with the number as its evidence.
+
 ## 3. Regression sweep — you run the codified checks; fix red directly
 
 Run it with the Bash sandbox off: a `listen EPERM` or a failed font or package fetch under
@@ -236,7 +252,17 @@ features: skip this — drive, prove, report, done. The standing suite stays thi
 not a spec per micro-feature. **Running** the committed spec in the gate is the **repo's** job
 (the seam) — verify writes it, the repo wires it.
 
-## 5. Hand back proof
+## 5. Write back what the run learned
+
+Update the repo's `.claude/skills/checks/SKILL.md` in the branch, so it lands with the
+change: a screen the change added (how to reach it, what it shows), a step that changed, a
+trick the run had to discover (sign-in, a seed, a port), a pass line Pete asked for. Replace
+a stale line rather than add one. No file yet: write it from
+`reference/checks-template.md` with what this run proved, and say so in the hand-back. Name
+it `checks`, never `verify`, which is Claude Code's own skill. A run that learned nothing
+leaves it alone.
+
+## 6. Hand back proof
 
 Return to the caller: `VERDICT`, `EVIDENCE` (the ordered screenshot + caption storyboard),
 `TASTE` notes, and the crystallized spec path (or none). In ship they go on the review card:
