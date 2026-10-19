@@ -3,6 +3,10 @@
 
   branch-db.py up <worktree> [<app-dir>]   app-dir: the folder with convex.json, relative
                                            to the worktree; default the worktree itself
+  branch-db.py diff <worktree> [<app-dir>]  before pushing this branch's functions to shared
+                                           dev: the functions only shared dev has (a push
+                                           drops them) and only the branch's copy has.
+                                           Exit 1 when the push would drop any.
   branch-db.py --selftest
 
 `up` creates a cloud dev deployment `dev/<branch>` in the same Convex project, expiring in
@@ -173,6 +177,38 @@ def up(worktree, app_rel="."):
     return 0
 
 
+def ids(deployment, cwd):
+    import json
+    out = npx(["function-spec", "--deployment", deployment], cwd)
+    spec = json.JSONDecoder().raw_decode(out, out.index("{"))[0]  # npx() appends stderr after the JSON
+    # HTTP routes carry a method and path instead of an identifier
+    return {f.get("identifier") or f"{f.get('method')} {f.get('path')}" for f in spec["functions"]}
+
+
+def compare(shared, branch):
+    """Lines for the two sides of a function-spec diff, and whether a push drops anything."""
+    lines = [f"only on shared dev, a push from this branch drops these ({len(shared - branch)}):"]
+    lines += [f"  {i}" for i in sorted(shared - branch)]
+    lines += [f"only on the branch copy ({len(branch - shared)}):"] + [f"  {i}" for i in sorted(branch - shared)]
+    return lines, bool(shared - branch)
+
+
+def diff(worktree, app_rel="."):
+    worktree = os.path.abspath(worktree)
+    main = subprocess.run(["git", "-C", worktree, "worktree", "list", "--porcelain"],
+                          capture_output=True, text=True).stdout.split("\n")[0].removeprefix("worktree ")
+    mine = env_value(os.path.join(worktree, app_rel, ".env.local"), "CONVEX_DEPLOYMENT")
+    shared = env_value(os.path.join(main, app_rel, ".env.local"), "CONVEX_DEPLOYMENT")
+    if not mine or not shared:
+        sys.exit("branch-db: no CONVEX_DEPLOYMENT in the worktree's or the main checkout's .env.local")
+    if mine == shared:
+        sys.exit("branch-db: this worktree is on shared dev itself, with no copy to compare (run up first)")
+    app = os.path.join(worktree, app_rel)
+    lines, drops = compare(ids(shared.partition(":")[2], app), ids(mine.partition(":")[2], app))
+    print("\n".join(lines))
+    return 1 if drops else 0
+
+
 def selftest():
     t = tempfile.mkdtemp()
     try:
@@ -183,6 +219,9 @@ def selftest():
         for p in (f"{wt}/.env.local", f"{wt}/packs/a/.env.local", f"{mn}/.env.local", f"{wt}/node_modules/x/.env"):
             open(p, "w").write(dev)
         assert source(f"{wt}/.env.local", f"{mn}/.env.local") == ("charming-caiman-61", None)
+        lines, drops = compare({"a.js:x", "b.js:y"}, {"a.js:x", "c.js:z"})
+        assert drops and lines[1] == "  b.js:y" and lines[-1] == "  c.js:z", lines
+        assert compare({"a.js:x"}, {"a.js:x", "c.js:z"})[1] is False
         assert slug("feature/Desk Doorway!") == "feature-desk-doorway"
         assert len(slug("x" * 80)) == 40
         changed = repoint(wt, "charming-caiman-61", "brainy-otter-615")
@@ -220,5 +259,7 @@ if __name__ == "__main__":
         selftest()
     elif a[:1] == ["up"] and len(a) in (2, 3):
         sys.exit(up(*a[1:]))
+    elif a[:1] == ["diff"] and len(a) in (2, 3):
+        sys.exit(diff(*a[1:]))
     else:
         sys.exit(__doc__)
