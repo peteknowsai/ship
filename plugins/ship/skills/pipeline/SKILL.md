@@ -1108,7 +1108,9 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
   so TEST proves that path at data level (verify: API, CLI, script). A change no person
   can trigger (a race, a background worker, a third party mid-call) is verified at data
   level, every case on the branch's backend, plus a browser check of any screen that reads
-  the result, and that is `works`, not partial. After the merge,
+  the result, and that is `works`, not partial. A change to a prompt is proven by replay: run the
+  same saved model inputs through main's prompt and the branch's, a few times each, and
+  quote both results (CEL-170: main showed the bug in 1 of 2, the branch in 0 of 2). After the merge,
   restart it once it is idle, never with a job in flight, which the restart would fail, and
   say so in `result:` rather than "nothing deploys". The contract's `worker:` line names
   the restart command and the idle check; a repo with such a process and no line gets one
