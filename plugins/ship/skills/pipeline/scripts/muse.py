@@ -254,7 +254,9 @@ def build(worktree, brief, out, model):
     if done.get('terminal') == 'completed':
         if not message:
             raise Exit(4, 'turn completed and no agent message. The run DID NOT RUN; retry it.')
-        print(f'muse: done in {time.time() - started:.0f}s -> {last}')
+        secs = round(time.time() - started)
+        open(os.path.join(os.path.dirname(last), 'seconds'), 'w').write(f'{secs}\n')  # route.py log out=<out>
+        print(f'muse: done in {secs}s -> {last}')
         return 0
     if error.get('quota'):
         reset = mark_exhausted(error['quota'])

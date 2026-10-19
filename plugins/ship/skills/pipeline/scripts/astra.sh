@@ -122,7 +122,9 @@ dispatch() {
   wait "${pid}"; local code=$?
   [ "${code}" = 0 ] || { echo "astra: codex exited ${code}. See ${out}/stderr.txt" >&2; return "${code}"; }
   [ -s "${last}" ] || { echo "astra: exit 0 and no final message. The run DID NOT RUN; retry it." >&2; return 4; }
-  echo "astra: done in $(( $(date +%s) - started_at ))s -> ${last}"
+  local secs=$(( $(date +%s) - started_at ))
+  echo "${secs}" > "${out}/seconds"  # route.py log out=<out> reads it
+  echo "astra: done in ${secs}s -> ${last}"
 }
 
 selftest() {
