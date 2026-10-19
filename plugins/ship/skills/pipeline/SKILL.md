@@ -289,7 +289,11 @@ facts. The workflow is ship's; the contract only says what this repo's commands 
 Every key is optional, and the default is what a repo with no contract gets:
 
 - **`gates:`** the commands that must pass: tests, typecheck, production build. Default:
-  whatever you can find.
+  whatever you can find. Gates, smokes and dev servers run with the Bash sandbox off: they
+  bind ports and fetch fonts and packages by design, and under the sandbox they fail with
+  `listen EPERM` or a fetch error that reads as a real red (CEL-147 lost a 7-minute suite
+  to 27 of them). A multi-step gate run goes in a script file written with the Write tool,
+  then `bash <file>`, since the worktree guard refuses long inline commands.
 - **`preview:`** a command that prints this branch's preview links, one per app, with
   each build's state (cells-app: `scripts/preview-links.sh`, which reads Vercel). Ship
   runs it after every push and posts what it prints. A contract may mark it `on demand`
@@ -329,7 +333,7 @@ Every key is optional, and the default is what a repo with no contract gets:
 - **`smoke:`** the repo's automated end-to-end smoke, in two halves. `branch <cmd>` runs
   against the worktree's own server once, in BUILD's pre-flight, and again only if the tree
   changed before landing (LAND's step 0); never per milestone push or per task, because a
-  smoke can cost real model calls (cells-app's: about 12 bot turns, ~$0.13). `main <cmd>`
+  smoke can cost real model calls (cells-app's: about 12 bot turns, about 13 cents). `main <cmd>`
   runs once per landing, after the deploy watch, against what landing put live, or main's
   own server where main deploys nothing (cells-app: `local-pack.sh --restart` smokes main on
   localhost). It is the one check that sees ships together: each branch was tested alone,
@@ -813,9 +817,9 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   compare the key names in the worktree's env files with the main checkout's (and
   `.env.example`): a key main gained after the fork is missing here, and an agent that
   can't start reads as a product bug and costs a QA round. Then boot the app, confirm the
-  server on its port is this worktree's (`lsof -iTCP:<port>
-  -sTCP:LISTEN -Fp` for the pid, then `lsof -p <pid> -d cwd -Fn`, walking up its parents
-  with `ps -o ppid=` when that cwd reads `/`, as a Next server's does: brief-and-home's
+  server on its port is this worktree's: `scripts/listener.sh <port>` waits for the
+  listener and prints its pid and the checkout it serves, walking up the parent processes
+  when a Next server's own cwd reads `/`: brief-and-home's
   hashed port was already held by another checkout's server, its own died on EADDRINUSE
   in a log nobody read, and the first smoke walked the wrong app). Another checkout's
   listener is never stopped, before or during a run: start this worktree's server on a
@@ -945,10 +949,16 @@ he asks.
   `ship:verify` (the full name: bare `verify` resolves to another skill and is refused),
   walk, fix and rerun, never commit, end with VERDICT and the result path". The tester
   still fixes what it finds, so the one who sees the bug fixes it; the driver reviews its
-  diff, reruns the gates and commits. It writes the QA script, runs
+  diff, reruns the gates and commits. A change with nothing to walk, whose whole QA is one
+  data-level script (a few API calls with a test session), the driver may run itself: a
+  brief would cost more than the run. It writes the QA script, runs
   it on the chrome-devtools browser and, when the native app can see the
   change, on agent-device (`ios:` builds and installs the branch's app first; the phone is
-  the default and a simulator stands in when it isn't connected or another ship holds it;
+  the default and a simulator stands in when it isn't connected, another ship holds it, or
+  it answers "Locked". A locked phone parks the ship (`needs input:` "unlock iPhone PM")
+  only when the change needs what a simulator can't show: push, location or other system
+  prompts, the camera, real scrolling and touch feel. Otherwise walk the simulator and say
+  so on the card;
   a mobile-web build may add a simulator's Safari, never the phone), fixes what fails and
   reruns, up to three fix rounds. No desktop control of the Mac. It walks the surface Pete
   would open, signed in the way he would be, with real clicks, taps and keys, never events

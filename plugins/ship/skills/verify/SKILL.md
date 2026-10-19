@@ -205,6 +205,9 @@ TASTE: <0-3 short "looked off / couldn't confirm" notes, or "none">
 
 ## 3. Regression sweep — you run the codified checks; fix red directly
 
+Run it with the Bash sandbox off: a `listen EPERM` or a failed font or package fetch under
+the sandbox is the sandbox, never a red to fix.
+
 Run it in full before the first QA run, and again once after the last fix round, once its
 last edit is in: a sweep started before then reports on code that's gone. Between rounds,
 run it **scoped** to what the fix touched: the typecheck, plus the tests that cover the

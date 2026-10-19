@@ -447,7 +447,7 @@ def log(pairs):
     if picked:
         row.setdefault('score', picked['score'])
         row.setdefault('routed', picked['engine'])
-    elif 'task' in row and 'routed' not in row:
+    elif 'task' in row and 'routed' not in row and row.get('engine') != 'driver':  # EXPRESS routes nothing
         print('route log: no saved route for this task here, so score and routed are not filled '
               '(run log from the ship worktree)', file=sys.stderr)
     try:
