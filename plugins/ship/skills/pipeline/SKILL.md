@@ -31,10 +31,13 @@ one line up front, and size that.
 
 **The fork is the verb's FIRST act — before any question, recon agent, or authoring
 step.** The moment a verb lands, resolve the target repo and run stage 0 there. The
-marker flip is how Pete *sees* ship engage. One exception: a card whose brief may end in no
-code ("reproduce first; if it's gone or not ours, close it with evidence") reproduces
-read-only against main first, posting one line that it is doing so, and forks only once a
-code change is known. A run that closes the card that way changes nothing, so it has no
+marker flip is how Pete *sees* ship engage. One exception: a bug card reproduces read-only
+against main first, posting one line that it is doing so, and forks only once a code change
+is known. That covers a brief that may end in no code ("if it's gone or not ours, close it
+with evidence") and a recheck of a fix that just landed: compare the bad data's timestamps
+with the fix's merge time before anything else, since a row written before the fix proves
+nothing (CEL-174 forked and copied a database for one). Keep the repro's files at absolute
+paths under the job's tmp, since `$TMPDIR` differs with the sandbox. A run that closes the card that way changes nothing, so it has no
 worktree, PR or landing; its proof goes on the card (CEL-172).
 
 - **`/ship express <tweak>`** — pins EXPRESS. The verb pins ceremony *down*, never
