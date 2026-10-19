@@ -952,7 +952,8 @@ he asks.
   review triaged, push, `stage.sh <root> test`, and hand the QA run to **a Fable subagent**
   (`model: "fable"`, in the foreground) while Fable has quota, the driver itself once
   Fable's pool is empty. Its brief: the worktree's absolute path, the URL, the BACKEND,
-  test-auth, IOS and STORYBOARD lines, the spec or plan, and "call the Skill tool with
+  test-auth, IOS and STORYBOARD lines, the spec or plan, the repo's checks skill
+  (`.claude/skills/checks/SKILL.md`, or "none yet: write it"), and "call the Skill tool with
   `ship:verify` (the full name: bare `verify` resolves to another skill and is refused),
   walk, fix and rerun, never commit, end with VERDICT and the result path". The tester
   still fixes what it finds, so the one who sees the bug fixes it; the driver reviews its
