@@ -312,10 +312,14 @@ Every key is optional, and the default is what a repo with no contract gets:
   bind ports and fetch fonts and packages by design, and under the sandbox they fail with
   `listen EPERM` or a fetch error that reads as a real red (CEL-147 lost a 7-minute suite
   to 27 of them). A multi-step gate run goes in a script file written with the Write tool,
-  then `bash <file>`, since the worktree guard refuses long inline commands. A full run whose
-  only failures are timeouts in files the diff never touched, under heavy load from sibling
-  ships, reruns just those files alone; both runs go in the commit or the `result:` line. A
-  timeout in a file the diff touched, or a failure that isn't a timeout, is a real red.
+  then `bash <file>`, since the worktree guard refuses long inline commands. That script
+  starts with `set -euo pipefail`: without it, `npm test | tail -8` exits with tail's code,
+  and CEL-180's script printed green over a failed test. A full run whose only failures are
+  in files the diff never touched, under heavy load from sibling ships (timeouts, or a set
+  that moves between unrelated files from run to run), reruns just those files alone. If
+  they pass alone, it's load: both runs and the `uptime` load figure go in the commit or the
+  `result:` line, and it isn't root-caused. A failure in a file the diff touched is a real
+  red.
 - **`preview:`** a command that prints this branch's preview links, one per app, with
   each build's state (cells-app: `scripts/preview-links.sh`, which reads Vercel). Ship
   runs it after every push and posts what it prints. A contract may mark it `on demand`
