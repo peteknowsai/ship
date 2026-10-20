@@ -417,7 +417,9 @@ Five runs had him asking "where are we?" mid-flight.
 
 **What runs with the Bash sandbox off.** Anything that writes outside the worktree or binds
 a port: the fork (`wt switch --create`, `stage.sh` on a new worktree), the ledger (`route.py
-log`), the wrappers (`astra.sh`, `muse.py`), gates, smokes and dev servers. Everything else
+log`), the wrappers (`astra.sh`, `muse.py`), anything that talks to GitHub (`gh`, `git
+push`, `git fetch`: the sandbox's proxy fails their TLS check), gates, smokes and dev
+servers. Everything else
 stays in the sandbox.
 
 **`$TMPDIR` changes with the sandbox.** A sandboxed Bash call sees `/tmp/claude-<uid>`, one
@@ -1131,7 +1133,9 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
   so TEST proves that path at data level (verify: API, CLI, script). A change no person
   can trigger (a race, a background worker, a third party mid-call) is verified at data
   level, every case on the branch's backend, plus a browser check of any screen that reads
-  the result, and that is `works`, not partial. A change to a prompt is proven by replay: run the
+  the result, and that is `works`, not partial. When that screen can only be reached by
+  seeding model output, a render test of the real component with the result's real shape
+  counts as the screen check. A change to a prompt is proven by replay: run the
   same saved model inputs through main's prompt and the branch's, a few times each, and
   quote both results (CEL-170: main showed the bug in 1 of 2, the branch in 0 of 2). After the merge,
   restart it once it is idle, never with a job in flight, which the restart would fail, and
