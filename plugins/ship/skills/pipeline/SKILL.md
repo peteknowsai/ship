@@ -312,7 +312,10 @@ Every key is optional, and the default is what a repo with no contract gets:
   bind ports and fetch fonts and packages by design, and under the sandbox they fail with
   `listen EPERM` or a fetch error that reads as a real red (CEL-147 lost a 7-minute suite
   to 27 of them). A multi-step gate run goes in a script file written with the Write tool,
-  then `bash <file>`, since the worktree guard refuses long inline commands.
+  then `bash <file>`, since the worktree guard refuses long inline commands. A full run whose
+  only failures are timeouts in files the diff never touched, under heavy load from sibling
+  ships, reruns just those files alone; both runs go in the commit or the `result:` line. A
+  timeout in a file the diff touched, or a failure that isn't a timeout, is a real red.
 - **`preview:`** a command that prints this branch's preview links, one per app, with
   each build's state (cells-app: `scripts/preview-links.sh`, which reads Vercel). Ship
   runs it after every push and posts what it prints. A contract may mark it `on demand`
@@ -528,7 +531,10 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   convex command or dev server: until it does, the worktree's `.env.local` is main's and
   points at shared dev. It takes about 1.5 minutes and prints the copy's name; that name is
   the BACKEND a verify brief pins. From then on the worktree's `convex dev`, and the Convex
-  plugin's Stop hook, push to the copy, which is what they should do. The hook fires only
+  plugin's Stop hook, push to the copy, which is what they should do. The Convex MCP tools
+  don't follow it: they resolve the shared dev deployment. Read and write the copy with the
+  CLI from the app-dir (`npx convex data <table>`, `npx convex run`), never the MCP, or a
+  test write lands on shared dev. The hook fires only
   when a turn ends, so any edit under `convex/` in REVIEW or TEST goes to the copy with `npx
   convex dev --once` before the next QA step: a triage fix that skipped it failed CEL-103's
   QA on the old function. Stripe and Clerk
@@ -1074,7 +1080,10 @@ he asks.
 Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
 
 - **Land — `land: pr` (the default), from the MAIN CHECKOUT, teardown first** (incidents: Worktrees — both orderings that deviate have stranded ships):
-  0. Pre-flight *from the worktree*: `stage.sh <root> land`, then `git fetch origin`; if main moved, absorb +
+  0. Pre-flight *from the worktree*: delete any test data the run kept for itself (cells-app:
+     a `--keep` smoke person, `npm run prune -- --people --finish <id>`) while the worktree's
+     server still answers, since the cleanup needs it and Clerk's test instance caps at 100
+     people; then `stage.sh <root> land`, then `git fetch origin`; if main moved, absorb +
      re-gate by overlap (REVIEW) + push; and if the tree changed since its last full sweep
      (TEST's fix rounds run scoped), run the full gates and `smoke: branch` once here either way (`git restore next-env.d.ts` first: `next dev` rewrites it and the
      rebase refuses the dirty file), with the worktree's dev server stopped and any simulator shut first,
