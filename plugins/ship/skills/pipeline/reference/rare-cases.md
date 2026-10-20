@@ -30,6 +30,9 @@ where they differ.
   hook missed. Never `wt remove` the folder the session is standing in.
 - No GitHub remote → `wt merge` (squashes, ff's main, removes the worktree) is the
   fallback.
+- A repo whose own land script merges the PR itself (cells-app's `scripts/land-pr.sh`,
+  which rebases, gates, merges and smokes main): run it from the worktree in place of
+  steps 2 and 3, then tear down (`wt remove`, `git branch -D`, the marker).
 - **`land: direct`** replaces SKILL.md LAND's steps 0–4: from the worktree, `git fetch origin && git
   rebase origin/main`, re-gate, `git push origin HEAD:main`, confirm main moved, then
   teardown and `git push origin --delete <branch>`.

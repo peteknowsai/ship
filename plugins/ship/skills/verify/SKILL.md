@@ -221,6 +221,10 @@ these on each page it touched, and every pass line the repo's checks add:
 
 A failed measure is a failed step like any other, with the number as its evidence.
 
+**Prove something stays idle** (a spinner that must not appear, a message that must not
+come): `wait_for` on the failure text with the step's timeout (`timeout: 90000` for 90 s).
+A timeout is the pass; the text showing up is the fail. `sleep` is blocked.
+
 **Wait on the real thing.** A server: `scripts/listener.sh <port>` (in the pipeline skill's
 directory). A process: `pgrep -f <pattern>`, never `ps | grep`, which matches its own grep
 and reports a server that isn't there yet (CEL-169 ran its checks early that way).
