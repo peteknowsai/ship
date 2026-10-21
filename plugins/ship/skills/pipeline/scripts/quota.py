@@ -36,7 +36,17 @@ from datetime import datetime, timezone
 DAY = 86400
 STALE = 30 * 60  # the status line's own staleness rule
 EMPTY = 95
-OPUS_WEEKLY_CAP = 70
+OPUS_WEEKLY_CAP = 70  # the default; Pete's number in ~/.config/ship/opus-weekly-cap wins
+
+
+def opus_weekly_cap():
+    """Pete tunes how much of the week Opus may build with (2026-10-21: "I can use more of
+    Opus, I just need it to last"): one number in a file, else the default."""
+    path = os.environ.get('SHIP_OPUS_CAP') or os.path.expanduser('~/.config/ship/opus-weekly-cap')
+    try:
+        return float(open(path).read().split()[0])
+    except (OSError, ValueError, IndexError):
+        return OPUS_WEEKLY_CAP
 OPUS_SESSION_CAP = 85
 UNKNOWN_USED, UNKNOWN_DAYS = 50, 3.5
 WEEK, FIVE_HOURS = 7 * DAY, 5 * 3600
@@ -129,7 +139,7 @@ def anthropic_pools(t):
     session_full = (session or 0) >= OPUS_SESSION_CAP  # blocks Opus even when the weekly is unknown
     if 'weekly_all' in found:
         used, reset = roll(*found['weekly_all'], WEEK, t)
-        opus = pool(used, reset, t, session=session, opus_blocked=used >= OPUS_WEEKLY_CAP or session_full)
+        opus = pool(used, reset, t, session=session, opus_blocked=used >= opus_weekly_cap() or session_full)
     else:
         opus = unknown(why or 'no weekly_all limit', session=session, opus_blocked=session_full)
     if 'fable' in found:
@@ -319,6 +329,19 @@ def selftest():
         check('Opus blocked at session 85', pools()['anthropic']['opus_blocked'] is True)
         claude(69, 3, session=84)
         check('Opus free at weekly 69 and session 84', pools()['anthropic']['opus_blocked'] is False)
+        capfile = os.path.join(tmp, 'opus-cap')
+        open(capfile, 'w').write('92\n')
+        os.environ['SHIP_OPUS_CAP'] = capfile
+        claude(80, 3)
+        free80 = pools()['anthropic']['opus_blocked'] is False
+        claude(92, 3)
+        blocked92 = pools()['anthropic']['opus_blocked'] is True
+        open(capfile, 'w').write('not a number')
+        claude(80, 3)
+        fallback = pools()['anthropic']['opus_blocked'] is True
+        del os.environ['SHIP_OPUS_CAP']
+        check('a cap file of 92 frees Opus at 80 and blocks it at 92; a bad file falls back to 70',
+              free80 and blocked92 and fallback)
         claude(10, 6, fable=95)
         check('Fable at 95 is empty', pools()['fable']['empty'] is True)
         muse(20, 99, t - 60)

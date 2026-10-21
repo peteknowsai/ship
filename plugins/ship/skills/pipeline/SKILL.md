@@ -115,7 +115,7 @@ rank, and picks one engine per tier:
 
 | Tier | Engine | When it can't |
 |---|---|---|
-| hard, top third (always the hardest task) | `opus` | Opus capped (the Anthropic week at 70% or its 5-hour session at 85%) → `wonder` |
+| hard, top third (always the hardest task) | `opus` | Opus capped (the Anthropic week at the number in `~/.config/ship/opus-weekly-cap`, default 70%, or its 5-hour session at 85%) → `wonder` |
 | middle and easy thirds | `wonder` | Muse's pool empty, or a confidential repo → `sonnet` |
 
 | engine | model | runs as (in the background) | pool |

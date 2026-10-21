@@ -270,7 +270,7 @@ def pick(tiers, pools, confidential):
         notes.append('Muse pool empty: wonder tasks on sonnet')
     capped = pools['anthropic'].get('opus_blocked')
     if capped and any(t == 'hard' for t in tiers.values()):
-        notes.append('Opus capped (weekly_all >= 70% or session >= 85%): hard tasks on '
+        notes.append('Opus capped (week at the cap, or session >= 85%): hard tasks on '
                      + ('wonder' if muse_ok else 'sonnet'))
     engines = {}
     for n, tier in tiers.items():
