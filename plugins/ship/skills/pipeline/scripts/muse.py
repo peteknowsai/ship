@@ -2,6 +2,8 @@
 """Muse Code builds through `muse serve`, with astra.sh's guards, and records the plan usage it reports.
 
   muse.py build <worktree> <brief.md> <out-dir> <model>   BUILD's Muse builder on the model the router picked
+  muse.py review <worktree> <brief.md> <out-dir> [model]  a read-only reader (plan review, REVIEW's other-lab
+                                                          read), Wonder Full by default; exit 6 if it changed the tree
   muse.py usage                                           the cached plan usage; no prompt spent
   muse.py --selftest
 
@@ -348,6 +350,23 @@ def selftest():
             except OSError:
                 return True
 
+        gwt = os.path.join(tmp, 'gwt')
+        os.makedirs(gwt)
+        subprocess.run(['git', 'init', '-q', gwt], check=True)
+        open(os.path.join(gwt, 'a.txt'), 'w').write('a\n')
+        subprocess.run(['git', '-C', gwt, '-c', 'user.email=t@t', '-c', 'user.name=t', 'add', '-A'], check=True)
+        subprocess.run(['git', '-C', gwt, '-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-qm', 'a'], check=True)
+        state = tree_state(gwt)
+        rr = subprocess.run([sys.executable, os.path.abspath(__file__), 'review', gwt, os.path.join(tmp, 'brief.md'),
+                             os.path.join(tmp, 'rv')], capture_output=True, text=True, timeout=60,
+                            env=dict(os.environ, **{'HOME': real, 'MUSE_BIN': stub, 'STUB_DIR': tmp,
+                                     'STUB_SCENARIO': 'ok', 'SHIP_QUOTA_MUSE': cache,
+                                     'SHIP_CONFIDENTIAL_PATHS': os.path.join(tmp, 'paths')}))
+        sent = open(os.path.join(tmp, 'rv', 'review-brief.md')).read()
+        check('review leads the brief with read-only rules and passes on an untouched tree',
+              rr.returncode == 0 and sent.startswith('Read only.') and sent.endswith('do the thing'))
+        open(os.path.join(gwt, 'a.txt'), 'w').write('changed\n')
+        check('the tree check notices an edit a reader made', tree_state(gwt) != state)
         r, out, seen = run('ok', 'o1')
         got = read_cache(cache)
         check('a completed build exits 0 and last.md is the final answer, not later commentary', r.returncode == 0 and
@@ -426,6 +445,31 @@ def selftest():
     return fails == 0
 
 
+REVIEW_MODEL = 'muse-wonder-full-1.0'
+READ_ONLY = ('Read only. Edit no file, commit nothing, and run no command that writes files, binds a port '
+             'or starts a server. Report findings as file:line, the failure scenario, and a severity.\n\n')
+
+
+def tree_state(worktree):
+    """What a reader must leave as it found it: HEAD, and the status and diff of the working tree."""
+    git = lambda *a: subprocess.run(['git', '-C', worktree, *a], capture_output=True, text=True).stdout
+    return git('rev-parse', 'HEAD') + git('status', '--porcelain') + git('diff', 'HEAD')
+
+
+def review(worktree, brief, out, model=REVIEW_MODEL):
+    if not (os.path.isfile(brief) and os.path.getsize(brief)):
+        raise Exit(2, f'brief {brief} is missing or empty')
+    os.makedirs(out, exist_ok=True)
+    ro = os.path.join(out, 'review-brief.md')
+    open(ro, 'w').write(READ_ONLY + open(brief).read())
+    before = tree_state(worktree)
+    code = build(worktree, ro, out, model)
+    if tree_state(worktree) != before:
+        raise Exit(6, f'the reader changed {worktree}: its findings are in {out}/last.md, but check '
+                      '`git status` and `git diff` before trusting the tree')
+    return code
+
+
 def main(args):
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(143))  # so `finally` kills the serve
     if args == ['--selftest']:
@@ -434,11 +478,11 @@ def main(args):
         data = read_cache()
         print(json.dumps(data, indent=1) if data else f'muse: no usage observed yet ({cache_path()})')
         return 0
-    if len(args) != 5 or args[0] != 'build':
+    if not ((args[:1] == ['build'] and len(args) == 5) or (args[:1] == ['review'] and len(args) in (4, 5))):
         print(__doc__.split('\n\n')[1], file=sys.stderr)
         return 2
     try:
-        return build(*args[1:])
+        return (build if args[0] == 'build' else review)(*args[1:])
     except Exit as error:
         print(f'muse: {error}', file=sys.stderr)
         return error.code
