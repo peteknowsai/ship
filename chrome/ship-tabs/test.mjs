@@ -22,6 +22,39 @@ check('done rides on the tag', shipTag('file:///r/card.html#ship=app/x/review&do
 check('raise rides on the tag, and only when asked', shipTag('file:///r/sb.html#ship=app/x/storyboard&raise').raise === true &&
   !t.raise && shipTag('file:///r/sb.html#ship=app/x/storyboard&raise').key === 'app/x/storyboard');
 check('an untagged tab is left alone', shipTag('http://localhost:3218/home') === null && shipTag('https://github.com/x#ship') === null);
+
+// background.js's sort() against a chrome stub: Pete is on tab 1, the storyboard's older copy is
+// tab 5, and a new copy opens as tab 7. Unasked, he gets tab 1 back; a gate button's `raise`
+// keeps him on 7. Either way the older copy closes.
+async function reopenStoryboard(hash) {
+  const vm = await import('node:vm');
+  const store = { byKey: { 'app/x/storyboard': 5 }, byTab: { 5: 'app/x/storyboard' }, active: { 1: [5, 1] } };
+  const tabs = { 1: { id: 1, windowId: 1, active: false }, 5: { id: 5, windowId: 1, active: false }, 7: { id: 7, windowId: 1, active: true } };
+  const calls = [];
+  let created;
+  const listen = { addListener: () => {} };
+  const chrome = {
+    storage: { session: { get: async () => JSON.parse(JSON.stringify(store)), set: async (o) => Object.assign(store, o) } },
+    tabs: { get: async (id) => tabs[id], update: async (id, p) => calls.push(['update', id, p]), remove: async (ids) => calls.push(['remove', ids]),
+      query: async () => [], group: async () => 1, onCreated: { addListener: (f) => { created = f; } }, onUpdated: listen, onActivated: listen, onRemoved: listen },
+    tabGroups: { query: async () => [], update: async () => {} },
+    scripting: { executeScript: async () => {} },
+    runtime: { onMessage: listen, onStartup: listen, onInstalled: listen, sendNativeMessage: async () => ({}) },
+    alarms: { get: async () => ({}), create: () => {}, onAlarm: listen },
+  };
+  const ctx = vm.createContext({ chrome, console, URL, setTimeout });
+  ctx.importScripts = (f) => vm.runInContext(readFileSync(join(here, f), 'utf8'), ctx);
+  vm.runInContext(readFileSync(join(here, 'background.js'), 'utf8'), ctx);
+  created({ id: 7, url: `file:///w/sb.html#ship=app/x/storyboard${hash}` });
+  await new Promise((r) => setTimeout(r, 50));
+  return calls;
+}
+const unasked = await reopenStoryboard('');
+const raised = await reopenStoryboard('&raise');
+check('a reopened page hands Pete back his tab, and closes the old copy',
+  unasked.some(([c, id, p]) => c === 'update' && id === 1 && p.active) && unasked.some(([c, ids]) => c === 'remove' && ids.includes(5)));
+check('a raised page stays in front, and still closes the old copy',
+  !raised.some(([c, , p]) => c === 'update' && p?.active) && raised.some(([c, ids]) => c === 'remove' && ids.includes(5)));
 check('the label says what the tab is, for which app and ship', tabLabel(t) === '🎨 cells-app · smarter-search · ');
 check('docs and cards go to docs, running apps to test', groupOf(t) === GROUPS.docs && groupOf(shipTag('http://localhost:1/#ship=a/b/test')) === GROUPS.test &&
   groupOf(shipTag('https://x-git-b.vercel.app/#ship=a/b/preview')) === GROUPS.test && groupOf(shipTag('https://homebody.mac.cells.md/#ship=cells/x/preview')) === GROUPS.test && groupOf(shipTag('file:///p/app/docs/n.html')) === GROUPS.docs);
