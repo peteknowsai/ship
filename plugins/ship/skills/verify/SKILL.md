@@ -220,6 +220,12 @@ these on each page it touched, and every pass line the repo's checks add:
 
 A failed measure is a failed step like any other, with the number as its evidence.
 
+**A terminal UI** (a Claude Code mod, a CLI screen): run it in a detached tmux session
+(`tmux new-session -d`, then `send-keys` and `capture-pane -p` for each step) against a
+scratch repo, with a stub `open` first on `PATH` so nothing reaches Pete's screen. A
+`claude --plugin-dir` load writes `tsconfig.json` and `.claude-plugin/types` into the plugin
+folder; delete them before committing.
+
 **Prove something stays idle** (a spinner that must not appear, a message that must not
 come): `wait_for` on the failure text with the step's timeout (`timeout: 90000` for 90 s).
 A timeout is the pass; the text showing up is the fail. `sleep` is blocked.

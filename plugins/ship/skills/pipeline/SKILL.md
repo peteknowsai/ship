@@ -183,9 +183,10 @@ third of the first 81 rows were round-number guesses.
 `log` fills the task's `pool` from its engine. `route.py report` prints the table by engine
 and difficulty band, then by pool. Pete reads it after a few ships on this split.
 
-**Codex runs only when Pete asks for it** ("test in codex"), through `ship:verify`'s
-`reference/codex.md`: `scripts/codex-handoff.py` for a hand-off to his Codex app,
-`scripts/astra.sh test` headless. Never a hand-typed `codex exec`.
+**Codex is off.** Since 2026-10-21 Pete's ChatGPT account refuses the GPT-6 models in Codex
+(400 "model is not supported when using Codex with a ChatGPT account"), so "test in codex"
+has no engine: tell Pete in one line and test in this session. `ship:verify`'s
+`reference/codex.md` and `astra.sh` stay for when he turns it back on.
 
 **The driver's Opus is the scarce one** (Pete, 2026-10-18): the main Anthropic pool ends
 the account when it runs out, so the driver keeps only what needs its own context. A task
