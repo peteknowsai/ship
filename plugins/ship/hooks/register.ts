@@ -14,12 +14,14 @@ let gate: Gate | null = null
 let answered = false
 // The git top of the session's cwd, read again only when the cwd moves.
 let top: { cwd: string; dir: string | null } | null = null
+// One look at a time: a slow git must not let an older tick land last with a stale gate.
+let looking = false
 
 // Same reading as statusline.sh: a Codex `stage:` line wins, else the first line.
 function parseStage(text: string): string {
   const lines = text.split('\n')
-  const keyed = lines.find(l => l.startsWith('stage:'))
-  return (keyed ? keyed.slice(6) : (lines[0] ?? '')).replace(/[ \n]/g, '').toLowerCase()
+  const keyed = lines.find(l => l.startsWith('stage:'))?.replace(/^stage:\s*/, '')
+  return (keyed || lines[0] || '').replace(/[ \n]/g, '').toLowerCase()
 }
 
 function kindOf(stage: string): Kind | null {
@@ -60,11 +62,15 @@ async function readGate($: EngineInterface): Promise<Gate | null> {
 }
 
 async function refresh($: EngineInterface) {
+  if (looking) return
+  looking = true
   let found: Gate | null = null
   try {
     found = await readGate($)
   } catch {
     // An unreadable marker or a git that won't start reads as no gate.
+  } finally {
+    looking = false
   }
   if (found?.root === gate?.root && found?.stage === gate?.stage) return
   gate = found
@@ -73,49 +79,65 @@ async function refresh($: EngineInterface) {
 }
 
 // Brings the page forward without -g: Pete pressed it, so Chrome coming up is the point.
-// The URL keeps show.sh's #ship= tag, so ship-tabs swaps the tab in place.
+// The URL keeps show.sh's #ship= tag, so ship-tabs replaces the old tab, and `raise`
+// tells it to leave this one in front rather than hand back the tab he was on.
 async function show($: EngineInterface, g: Gate) {
   let best: { url: string; at: number } | null = null
   for (const kind of g.kind === 'test' ? ['preview', 'test'] : [g.kind]) {
     const file = `${g.root}/.ship-shown/${kind}`
     if (!(await $.fs.exists(file))) continue
+    const url = (await $.fs.read(file)).trim()
     const at = (await $.fs.stat(file)).mtimeMs
-    if (!best || at > best.at) best = { url: (await $.fs.read(file)).trim(), at }
+    if (url && (!best || at > best.at)) best = { url, at }
   }
   if (!best) {
     $.ui.toast(`no ${g.kind === 'test' ? 'app' : g.kind} opened yet`)
     return
   }
-  await $.process.run(['open', '-a', 'Google Chrome', best.url])
+  await $.process.run(['open', '-a', 'Google Chrome', `${best.url}&raise`])
+}
+
+function reopen($: EngineInterface) {
+  answered = false
+  $.ui.invalidate('ui.render')
 }
 
 function answer($: EngineInterface, text: string) {
+  if (answered) return
   answered = true
   $.ui.invalidate('ui.render')
-  const reopen = () => {
-    answered = false
-    $.ui.invalidate('ui.render')
-  }
-  $.prompt.submit({ text, asUser: true }).then(r => {
-    if (r && 'drop' in r) reopen()
-  }, reopen)
+  $.prompt.submit({ text, asUser: true }).then(
+    r => {
+      if (r?.drop !== undefined) reopen($)
+    },
+    () => reopen($),
+  )
 }
 
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
-    await refresh($)
-    $.clock.every(2000, () => refresh($))
+    // Nothing draws in `-p` or the SDK, so nothing to poll for.
+    if (e.isInteractive) {
+      await refresh($)
+      $.clock.every(2000, () => refresh($))
+    }
     return next(e)
   })
 
+  // The answer's turn ended, or was stopped: show the gate again if it still stands.
   on('turn.complete', async ($, e, next) => {
     const result = await next(e)
     if (e.agentId === undefined) {
-      answered = false
+      reopen($)
       await refresh($)
-      $.ui.invalidate('ui.render')
     }
     return result
+  })
+
+  // /clear, /resume and /branch start no turn and no session.start.
+  on('classic.SessionStart', { source: ['clear', 'resume', 'fork'] }, async ($, e, next) => {
+    reopen($)
+    return next(e)
   })
 
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {

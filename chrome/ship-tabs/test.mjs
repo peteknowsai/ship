@@ -19,6 +19,8 @@ const t = shipTag('file:///w/specs/designs/x.html#ship=cells-app/smarter-search/
 check('a tag names the repo, slug and kind', t && t.repo === 'cells-app' && t.slug === 'smarter-search' && t.kind === 'storyboard' && !t.done);
 check('a tag after the app\'s own hash still reads', shipTag('http://localhost:3007/#tab=2&ship=app/x/test')?.kind === 'test');
 check('done rides on the tag', shipTag('file:///r/card.html#ship=app/x/review&done').done === true);
+check('raise rides on the tag, and only when asked', shipTag('file:///r/sb.html#ship=app/x/storyboard&raise').raise === true &&
+  !t.raise && shipTag('file:///r/sb.html#ship=app/x/storyboard&raise').key === 'app/x/storyboard');
 check('an untagged tab is left alone', shipTag('http://localhost:3218/home') === null && shipTag('https://github.com/x#ship') === null);
 check('the label says what the tab is, for which app and ship', tabLabel(t) === '🎨 cells-app · smarter-search · ');
 check('docs and cards go to docs, running apps to test', groupOf(t) === GROUPS.docs && groupOf(shipTag('http://localhost:1/#ship=a/b/test')) === GROUPS.test &&

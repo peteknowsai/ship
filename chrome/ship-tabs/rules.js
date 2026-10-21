@@ -1,5 +1,6 @@
 // What a ship tab is. Pages ship opens through pipeline/scripts/show.sh carry a
-// `#ship=<repo>/<slug>/<kind>[&done]` tag; a ship doc opened any other way (an older
+// `#ship=<repo>/<slug>/<kind>[&done][&raise]` tag (`raise`: Pete pressed a gate button for it,
+// so it stays the tab he sees); a ship doc opened any other way (an older
 // session's bare `open`, a click in Finder) is read from its path instead, and so is a
 // page any agent writes for Pete, and a claude.ai Artifact. Anything else (Pete's own
 // tabs) gets null and is left alone.
@@ -9,7 +10,7 @@ function shipTag(href) {
   const m = url.hash.match(/[#&]ship=([^/&]+)\/([^/&]+)\/([^/&]+)/);
   if (m) {
     const [repo, slug, kind] = m.slice(1).map(decodeURIComponent);
-    return { repo, slug, kind, key: `${repo}/${slug}/${kind}`, done: /[#&]done\b/.test(url.hash) };
+    return { repo, slug, kind, key: `${repo}/${slug}/${kind}`, done: /[#&]done\b/.test(url.hash), raise: /[#&]raise\b/.test(url.hash) };
   }
   const art = url.hostname === 'claude.ai' && url.pathname.match(/\/artifact\/([\w-]+)/);
   if (art) return { repo: 'claude', slug: art[1].slice(0, 8), kind: 'artifact', key: url.origin + url.pathname, done: false, inferred: true };

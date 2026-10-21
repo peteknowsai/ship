@@ -31,8 +31,8 @@ async function sort(tabId, href) {
   s.byKey[tag.key] = tabId; s.byTab[tabId] = tag.key;
 
   // Opening made it the active tab; hand Pete back the one he was on, unless he was
-  // looking at the page this one replaces.
-  if (tab.active && !replacedActive) {
+  // looking at the page this one replaces, or he asked for it with a gate button (`raise`).
+  if (tab.active && !replacedActive && !tag.raise) {
     const [before, now] = s.active[tab.windowId] || [];
     const back = now === tabId ? before : now;
     if (back) await chrome.tabs.update(back, { active: true }).catch(() => {});
