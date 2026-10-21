@@ -86,97 +86,77 @@ a gate. Never use an autonomous lane to slip a taste call past Pete.
 
 ## Engines
 
-**Opus 5.5 drives every stage.** It owns design, briefs, triage, gates, git, and the
-final say. Every model runs at high effort: the driver, every subagent, and every
-codex run. Never xhigh or max, and never medium to save time.
+**Three models, in this order** (Pete, 2026-10-21): **Opus 5.5**, **Muse Wonder Full**, and
+**Sonnet 5.5** last. Nothing else runs: no Fable, no Astra, no Sol, no Spark. Every model runs at
+high effort, never xhigh or max, and never medium to save time.
 
-**Fable 5.1 reviews the plan** at the end of PLAN, before anything is built. It also builds
-a band of BUILD tasks. **The branch gets two readers from different labs at REVIEW, a Claude
-reader and GPT-6.1 Sol**, because a reader shares the blind spots of code its own lab wrote and
-goes easy on it (Pete, 2026-10-14, 2026-10-16). Both read the whole branch, since bugs hide
-where tasks meet, and each **owns** the tasks the other lab wrote: Sol owns what Opus,
-Fable or the driver wrote, the Claude reader owns what Astra wrote, and both own Muse's.
-The Claude reader is whatever `route.py reader` prints: `fable` while Fable's week lags the
-main pool's, else `opus`.
-`route.py owners <slug>` lists them from the ledger. Readers only report; they never edit,
-because a reader that rewrites breaks working code. Their tallies go to the ledger. Every
-review brief, plan or branch, says a claim about how a dependency behaves at runtime is checked in its
-installed code (`node_modules/<pkg>/dist`), not its docs: a plan review once took Eve's
-docs on queued messages at their word, and the runtime did otherwise (2026-10-14).
-**Fable out** (`route.py quota` shows its pool empty, or the plan review gets a 429 "Fable
-limit"): GPT-6 Astra reviews the plan in its place, through `ASTRA_REVIEW_MODEL=gpt-6-astra
-astra.sh review` (Pete, 2026-10-15). Check the pool every ship: Fable is back at its weekly
-reset, and a run on 2026-10-16 still used Astra with 91% of Fable's week unspent.
+**Opus 5.5 drives every stage.** It owns design, briefs, triage, gates, git, and the
+final say.
+
+**Muse Wonder Full reviews the plan** at the end of PLAN, before anything is built, through
+`scripts/muse.py review <worktree> <brief> <out-dir>` (read-only; it exits 6 if the reader
+changed the tree). **The branch gets two readers from different labs at REVIEW, Opus and
+Wonder**, because a reader shares the blind spots of code its own lab wrote and goes easy on
+it (Pete, 2026-10-14). Both read the whole branch, since bugs hide where tasks meet, and each
+**owns** the tasks the other lab wrote: Wonder owns what Opus, Sonnet or the driver wrote,
+Opus owns what Wonder wrote. `route.py owners <slug>` lists them from the ledger. Readers
+only report; they never edit, because a reader that rewrites breaks working code. Their
+tallies go to the ledger. Every review brief, plan or branch, says a claim about how a
+dependency behaves at runtime is checked in its installed code (`node_modules/<pkg>/dist`),
+not its docs: a plan review once took Eve's docs on queued messages at their word, and the
+runtime did otherwise (2026-10-14). Muse out (its pool empty, or a confidential repo): Sonnet
+reads in Wonder's place, as a harness subagent.
 
 **BUILD routes by difficulty.** Once the execution plan is written and reviewed, run
 `scripts/route.py plan <plan.md>` from this skill's directory. It asks SubQ Snap, Subquadratic's
 decision model, to score every task's difficulty (about a second, a fraction of a cent;
-Jev, TypeSafe's, answers when SubQ has no key or fails; Pete, 2026-10-16), cuts the routable tasks
-into thirds by rank, and picks an engine in each. Each model builds in the harness made for
-it (Pete, 2026-10-16), and no cheap model writes code: Sol only reviews, Spark is out, Fable
-takes Astra's place in the middle, Wonder Full ranks over Astra, and Opus keeps its share
-(Pete, 2026-10-17):
+Jev, TypeSafe's, answers when SubQ has no key or fails), cuts the routable tasks into thirds by
+rank, and picks one engine per tier:
 
-| Tier | Engines | Pick |
+| Tier | Engine | When it can't |
 |---|---|---|
-| hard, top third (always the hardest task) | `opus`, `fable` | the hardest 3/4 to Opus, the rest to Fable |
-| middle third | `fable`, `wonder` | alternating down the rank, Fable first, whatever the spare rates |
-| easy, bottom third | `wonder`, `astra` | dealt by each pool's spare rate |
+| hard, top third (always the hardest task) | `opus` | Opus capped (the Anthropic week at 70% or its 5-hour session at 85%) → `wonder` |
+| middle and easy thirds | `wonder` | Muse's pool empty, or a confidential repo → `sonnet` |
 
 | engine | model | runs as (in the background) | pool |
 |---|---|---|---|
 | `opus` | Opus 5.5 | harness subagent, `model: "opus"` | `anthropic` |
-| `fable` | Fable 5.1 | harness subagent, `model: "fable"` | `fable`, its own weekly limit, which drains about twice as fast |
-| `astra` | GPT-6 Astra | `scripts/astra.sh build <wt> <brief> <out> gpt-6-astra` | `openai` |
 | `wonder` | Muse Wonder Full | `scripts/muse.py build <wt> <brief> <out> muse-wonder-full-1.0` | `muse` |
+| `sonnet` | Sonnet 5.5 | harness subagent, `model: "sonnet"` | `anthropic`, the same main pool as Opus |
 
-`scripts/quota.py` reads the four pools (the status line's Anthropic and Codex caches, and the
-Muse usage `muse.py` records after every turn); `route.py quota` prints them. A pool's **spare
-rate** is its budget left per day until reset, so a pool with plenty left that resets soon gets
-the most work: OpenAI on a quiet weekend, Muse late in its week. Before dealing, the router applies:
+`scripts/quota.py` reads the pools; `route.py quota` prints them. The main Anthropic pool ends
+the account when it runs out, and Sonnet draws on it too, so Sonnet is the last resort, never a
+default. Unknown quota counts as half used and is noted, never a stop.
 - **Confidential repos never reach Muse**, whose Contributor mode trains on what it reads. The
   list is local, `~/.config/ship/confidential-paths`, never in this repo, and matches a repo's
-  main checkout as well as its worktree. There, middle is all `fable` and easy all `astra`. With
-  no list file at all, Muse is off everywhere until one exists (an empty file means none).
-- **Fable drains first.** The account stops when the main Anthropic pool runs out, whatever
-  Fable has left (Pete, 2026-10-17). So while Fable's used % is below the main pool's, the
-  middle tier is all `fable`, the hard tier splits half `opus`, half `fable`, and Fable is
-  the Claude reader at REVIEW. Once it catches up, the table above holds again.
-- **The driver's Opus comes first**: no `opus` build while the Anthropic week is at 70% or its
-  5-hour session at 85%; those go to `fable`. An empty Fable pool sends its share to `opus`.
-- **An empty pool** (95% used, Codex's `limit_reached`, or Muse's 5-hour window at 95%) drops
-  out of middle and easy; a tier
-  left with no engine moves up one. Unknown quota counts as half used and is noted, never a stop.
+  main checkout as well as its worktree. With no list file at all, Muse is off everywhere
+  until one exists (an empty file means none).
 
-A non-Claude engine gets the same brief file a subagent would, run as a background Bash call
-of its wrapper: the driver reads `<out>/last.md` (STATUS, TESTS, CONCERNS), reviews the diff and
-runs the gates exactly as for a subagent. The `<out>` folder lives outside the worktree, in the
-job's tmp (`muse.py` refuses one inside it). Each wrapper keeps the model away from Pete's skills,
-MCP servers and connectors and runs with its sandbox off inside the worktree (Codex's sandbox
-blocked tests and made the driver rerun most of its tasks in October). Codex gets a blank home
-with the real one put back in its shell; Muse gets a shadow home, every real entry linked in but
-the skill folders, because its login lives in the Keychain. Either way tests find their caches,
-though under Muse `$HOME` reads as the shadow path. Muse runs only through
-`muse.py`, Codex only through `astra.sh`; never a hand-typed `muse exec` or `codex exec`.
-A builder that fails (a nonzero wrapper exit, a quota error, or two wrong diffs) reruns one
-tier up, on the engine `route.py quota` shows with the most spare outside the pool that just
-failed; hard moves `fable` → `opus`. The ledger records it as `verdict=redone`.
+Wonder gets the same brief file a subagent would, run as a background Bash call of `muse.py`:
+the driver reads `<out>/last.md` (STATUS, TESTS, CONCERNS), reviews the diff and runs the gates
+exactly as for a subagent. The `<out>` folder lives outside the worktree, in the job's tmp
+(`muse.py` refuses one inside it). `muse.py` keeps the model away from Pete's skills, MCP
+servers and connectors with a shadow home, every real entry linked in but the skill folders,
+because its login lives in the Keychain; tests find their caches, though `$HOME` reads as the
+shadow path. Muse runs only through `muse.py`, never a hand-typed `muse exec`. A builder that
+fails (a nonzero wrapper exit, a quota error, or two wrong diffs) reruns on the next engine in
+the order: `wonder` → `opus`, or `sonnet` when Opus is capped. The ledger records it as
+`verdict=redone`.
 
 A task headed `(driver)` or `(inline)` is never ranked. `route.py` gives an `(inline)` task
-to `fable` while Fable has quota, and to the driver once its pool is empty; a `(driver)`
-task is always the driver's. An all-inline
-plan is still written down and still gets Fable's plan review (PLAN), and still runs `route.py plan`, which ranks nothing and sets the marker, and each task
-still logs with `engine=driver`, which counts it done. When the
-JSON's `fallback` is set (stderr says `ROUTER DOWN`), no decision model answered and every task
-went to Fable: say so in the `result:` line and carry on, because the router never blocks a
-build. A 402 means that model is out of credits (stderr names it): tell Pete in one line at once, since every
-ship routes blind until he tops up. The driver may
-override one pick for a concrete reason, such as a file an Opus lane already holds, and
-logs the override in the ledger's `note`.
+to `wonder`, and to the driver when Muse is out; a `(driver)` task is always the driver's. An
+all-inline plan is still written down and still gets the plan review (PLAN), and still runs
+`route.py plan`, which ranks nothing and sets the marker, and each task still logs, which
+counts it done. When the JSON's `fallback` is set (stderr says `ROUTER DOWN`), no decision
+model answered and every task went to Wonder: say so in the `result:` line and carry on,
+because the router never blocks a build. A 402 means that model is out of credits (stderr
+names it): tell Pete in one line at once, since every ship routes blind until he tops up. The
+driver may override one pick for a concrete reason, such as a file an Opus lane already
+holds, and logs the override in the ledger's `note`.
 
 **Pete's budget word outranks ship's defaults.** When he caps subagents or spend for a run
 ("no extra parallel agents"), skip the steps that add them, run the rest inline, and name
-what was skipped in the `result:` line. REVIEW then keeps one reader, Sol, which reads the
+what was skipped in the `result:` line. REVIEW then keeps one reader, Wonder, which reads the
 whole branch: it is the other lab for the driver's own code and draws on no Claude quota.
 
 **Every engine gets the same brief and the same rules** (the standing boilerplate in
@@ -192,34 +172,29 @@ route.py log repo=<repo> ship=<slug> task=<n> engine=<engine> \
   seconds=<wall time> fix_rounds=<n> gates_first_pass=<true|false> verdict=<clean|fixed|redone>
 ```
 
-For a task `astra.sh` or `muse.py` built, pass `out=<out-dir>` in place of `seconds`: each
-wrapper writes its run's wall time there.
+For a task `muse.py` built, pass `out=<out-dir>` in place of `seconds`: it writes its run's
+wall time there.
 
 Run it from the worktree: it fills the task's score and the engine the router picked
 from the saved route, so an override shows as `engine` differing from `routed`. Seconds
 come from the run itself (the task notification's duration), and a number you don't have is left out, never estimated: a
 third of the first 81 rows were round-number guesses.
 
-`log` fills the task's `pool` from its engine, and a wrapper's "done in Ns" line is its
-`seconds`. `route.py report` prints the table by engine and difficulty band, then by pool.
-Pete reads it after a few ships on this split and moves the tiers.
+`log` fills the task's `pool` from its engine. `route.py report` prints the table by engine
+and difficulty band, then by pool. Pete reads it after a few ships on this split.
 
-**Codex runs in three places**: BUILD's `astra` tasks (`scripts/astra.sh build`),
-Sol's read of the branch at every REVIEW (`scripts/astra.sh review`, unasked), and testing
-when Pete asks for it ("test in codex"),
-through `ship:verify`'s `reference/codex.md`: `scripts/codex-handoff.py` for a hand-off to
-his Codex app, `scripts/astra.sh test` headless. Never a hand-typed `codex exec`.
+**Codex runs only when Pete asks for it** ("test in codex"), through `ship:verify`'s
+`reference/codex.md`: `scripts/codex-handoff.py` for a hand-off to his Codex app,
+`scripts/astra.sh test` headless. Never a hand-typed `codex exec`.
 
 **The driver's Opus is the scarce one** (Pete, 2026-10-18): the main Anthropic pool ends
-the account when it runs out, so the driver keeps only what needs its own context, and
-Fable subagents do the rest while Fable has quota. A task under one file and ~50 lines
-(config, a test tweak, a small fix from triage) is marked `(inline)` and goes to a Fable
-subagent; `(driver)` is for glue only the driver can write, such as wiring two tasks it
-just reviewed. Skill and agent prose and design taste stay with the driver. Recon, expert
-consults and review fan-outs go to Fable 5.1 harness subagents (`model: "fable"`; Opus
-once Fable's pool is empty), with the chrome-devtools MCP for
-anything in a browser. Never `claude -p` from inside a session. Nothing runs
-on Sonnet.
+the account when it runs out, so the driver keeps only what needs its own context. A task
+under one file and ~50 lines (config, a test tweak, a small fix from triage) is marked
+`(inline)` and goes to Wonder; `(driver)` is for glue only the driver can write, such as
+wiring two tasks it just reviewed. Skill and agent prose and design taste stay with the
+driver. Recon, expert consults and review fan-outs go to Sonnet 5.5 harness subagents
+(`model: "sonnet"`), with the chrome-devtools MCP for anything in a browser. Never
+`claude -p` from inside a session.
 
 **The driver owns the envelope**, whoever drafts: it writes the brief (exact files, the wiring points among them: where the new piece is
 registered, exported, routed or called from, which workers otherwise leave to the driver,
@@ -424,7 +399,7 @@ Five runs had him asking "where are we?" mid-flight.
 
 **What runs with the Bash sandbox off.** Anything that writes outside the worktree or binds
 a port: the fork (`wt switch --create`, `stage.sh` on a new worktree), the ledger (`route.py
-log`), the wrappers (`astra.sh`, `muse.py`), anything that talks to GitHub (`gh`, `git
+log`), `muse.py`, anything that talks to GitHub (`gh`, `git
 push`, `git fetch`: the sandbox's proxy fails their TLS check), gates, smokes and dev
 servers. Everything else
 stays in the sandbox.
@@ -745,9 +720,10 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   the production writers produce garbage (incidents: Design).
 - **Headings are the router's input.** Every task is a `### Task N: <name>` heading, and
   a task the driver writes itself says `(inline)` or `(driver)` in its heading.
-- **Fable reviews the plan before BUILD, on every lane that has one.** A fresh
-  subagent (`model: "fable"`) reads the storyboard or spec, the execution plan and the
-  repo's ship contract, edits nothing, and returns findings as task, problem, fix: a
+- **Wonder reviews the plan before BUILD, on every lane that has one.** Write the brief to
+  a file and run `scripts/muse.py review <worktree> <brief> <out-dir>` in the background
+  (Sonnet, a harness subagent, when Muse is out). It reads the storyboard or spec, the
+  execution plan and the repo's ship contract, edits nothing, and returns findings as task, problem, fix: a
   frame or requirement the spec names that no task covers (it maps each one to its task
   and lists the orphans: one plan built a spec's intro and none of the screens its frames
   asked for, and Pete caught it mid-build), a missing task, a wrong file, a test that cannot fail, an order that breaks, an
@@ -786,7 +762,7 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   the worktree's latest. A build that failed is yours to fix before you post.
 - Invoke `superpowers:subagent-driven-development` (the driver drives) and send each
   task to the engine `route.py plan` picked (Engines), in the background; `(inline)`
-  tasks go where `route.py` put them (Fable while it has quota), and `(driver)` tasks the
+  tasks go where `route.py` put them (Wonder while Muse has quota), and `(driver)` tasks the
   driver writes itself. The driver owns the brief, the diff
   review, the gates, the ledger line, and git. One writer per tree at a time, which
   is why fan-out means sub-worktrees, below.
@@ -831,8 +807,8 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   the product per task cost 20 minutes a task and found nothing the gates missed.
 - **Standing brief boilerplate** (each line from a burned run, incidents: Dispatch):
   one task per brief, with the plan's complete code pasted in, the exact test commands
-  and the files it may touch; "do it, do not propose", because Astra stops and
-  proposes on an open ask; test files whose assertions the planned change invalidates are always in
+  and the files it may touch; "do it, do not propose", because a worker given an open ask
+  stops and proposes; test files whose assertions the planned change invalidates are always in
   scope, allowlist or not; the final message is STATUS, TESTS, CONCERNS, and a longer
   report goes in a file inside the worktree; the worker never commits and never
   runs `git reset/checkout/stash`. A
@@ -948,8 +924,7 @@ he asks.
 - **Freeze upstream while the QA run walks** — no merges or rebases until its result
   lands (incidents: Worktrees). Absorb upstream *before* a run, never during; the run's
   own fixes are the only edits.
-- **Correctness review: a fresh subagent on the model `route.py reader` prints (`model:
-  "fable"` or `"opus"`), launched first** so
+- **Correctness review: a fresh Opus subagent (`model: "opus"`), launched first** so
   it works while the rest of REVIEW proceeds. Its brief names the tasks it owns
   (`route.py owners <slug>`, Engines) and says to clear each one task by task, then read the
   whole branch for the rest. The branch was drafted one
@@ -961,20 +936,17 @@ he asks.
   scripts included, not only the directories the diff touched (a HIGH that would have
   parked secrets-report missed the writer in a browser extension). It touches nothing, runs no test that binds a port or starts a server, and returns
   findings as file:line, the failure scenario, and a severity.
-  **Sol reads the same branch at the same time**: write that brief to a file and run
-  `scripts/astra.sh review <worktree> <brief> <out-dir>` in the background, exactly that
-  with no redirect, since it logs to `<out-dir>` itself and the worktree guard refuses
-  `> log 2>&1` (read-only, no
-  tools but the shell, a few minutes), same brief with Sol's own tasks named, its findings
-  in `<out-dir>/last.md`. Neither reader sees the other's findings. Codex out of quota or
-  astra's nonzero exit: the Claude reader reads alone and owns every task; say so in the `result:` line,
-  never wait on it.
+  **Wonder reads the same branch at the same time**: write that brief to a file, with
+  Wonder's own tasks named, and run `scripts/muse.py review <worktree> <brief> <out-dir>` in
+  the background, its findings in `<out-dir>/last.md`. Neither reader sees the other's
+  findings. Muse out, or a nonzero exit: Opus reads alone and owns every task; say so in
+  the `result:` line, never wait on it.
   The driver triages every finding from both
   — adversarial reviewers over-flag by design, and a finding two readers reached on their own
   is the strongest lead, never proof — checks each against the code, fixes what's real, puts judgment calls
   on the card or in the `result:` line. Then one ledger row per reader: `route.py log
   repo=<repo> ship=<slug> review=opus real=<n> false=<n> only=<n> owned=<n> seconds=<n>` and
-  the same with `review=sol`, where `only` counts the real findings the other reader missed
+  the same with `review=wonder`, where `only` counts the real findings the other reader missed
   and `owned` the real ones in tasks that reader owned.
   The high-value fan-out is here: several verifiers on one diff beats one.
 - **Design against the storyboard is the QA run's to judge**: the script carries a step
@@ -1013,9 +985,9 @@ he asks.
   column change that an old process's positional insert breaks is a one-way door, so it
   lands additive first or says so in Merge Danger.
 - **TEST — ship runs its QA script, and a pass lands it.** With green gates and the
-  review triaged, push, `stage.sh <root> test`, and hand the QA run to **a Fable subagent**
-  (`model: "fable"`, in the foreground) while Fable has quota, the driver itself once
-  Fable's pool is empty. Its brief: the worktree's absolute path, the URL, the BACKEND,
+  review triaged, push, `stage.sh <root> test`, and hand the QA run to **a Sonnet 5.5
+  subagent** (`model: "sonnet"`, in the foreground); the driver runs it itself when Pete has
+  capped subagents. Its brief: the worktree's absolute path, the URL, the BACKEND,
   test-auth, IOS and STORYBOARD lines, the spec or plan, the repo's checks skill
   (`.claude/skills/checks/SKILL.md`, or "none yet: write it"), and "call the Skill tool with
   `ship:verify` (the full name: bare `verify` resolves to another skill and is refused),
