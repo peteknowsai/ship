@@ -222,7 +222,8 @@ never comes forward and takes the screen while he works, and tags the URL so his
 extension (`chrome/ship-tabs/` in the ship repo) files it in the window's 📐 docs or
 🧪 test group, titles it (`🧪 cells-app · smarter-search · …`), hands him back the tab he was on, and closes the tab it
 replaces: a redrawn storyboard or a restarted server is one tab, never two. `done` on the
-review card that goes with `result:` closes the ship's other tabs. A storyboard, plan or
+review card that goes with `result:` closes the ship's other tabs. It keeps each kind's last
+URL in `.ship-shown/<kind>` at the worktree's top, which the gate buttons open. A storyboard, plan or
 review card Pete has shared from its Share button is republished by show.sh on each
 redraw, so the link he sent follows the rounds; sharing a doc is his press, never
 ship's. Never connect to his
@@ -1290,7 +1291,7 @@ maintainer, never on this list.
 
 ## Gate signals — how a parked ship reaches Pete
 
-At a gate, three things fire so Pete notices whether he's watching or away:
+At a gate, four things fire so Pete notices whether he's watching or away:
 
 1. **Status line** — the `gate:N` marker shows `✋ <slug> — storyboard?/go?` in bold amber.
    TEST's `test` marker is not a gate: it shows `🧪 <slug> — testing`. A Codex
@@ -1301,6 +1302,10 @@ At a gate, three things fire so Pete notices whether he's watching or away:
 3. **Desktop notification** — the gate Stop-hook fires a Ghostty notification
    (`<slug> → GATE N`, `<slug> → test it with Codex`, or `<slug> → try it, then merge main?`). Gates are rare, so this
    is never noisy.
+4. **Gate buttons** — the mod in `hooks/register.ts` draws buttons above the prompt that a
+   bare digit presses: `1` raises the page show.sh last opened for the gate, `2` sends
+   "lock it" or "go" as Pete's words. It reads `.ship-stage` and `.ship-shown/`, so
+   `stage.sh` and `show.sh` are all a run calls; a run writes no button text of its own.
 
 ## Talking to Pete — every word he reads
 

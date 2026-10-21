@@ -83,6 +83,14 @@ credits remain, green until it drops under 10k, then red. Gray numbers with a tr
 so a dead token can't pass off old numbers as live. `bash plugins/ship/statusline-test.sh`
 is its check.
 
+The gate buttons are a Claude Code mod, `plugins/ship/hooks/register.ts`, loaded from
+`hooks/hooks.json`'s `modules`. It reads the marker the way statusline.sh does, and the
+last page per kind that `show.sh` keeps in `.ship-shown/`. Checks: `claude plugin test
+plugins/ship` and `show.sh --selftest`. `claude plugin validate plugins/ship` checks
+nothing here, because the manifest isn't in `.claude-plugin/`: validate a copy that has
+one to see the mod's hooks and calls. Like the skills, a merge reaches sessions only
+after the cache deploy below, and only sessions started after it.
+
 ## Deploying skill changes
 
 Merging to main does NOT update the installed plugin — running and new sessions read

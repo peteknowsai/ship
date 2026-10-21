@@ -1,6 +1,6 @@
 #!/bin/bash
 # stage.sh <worktree> <stage>: set the ship's stage marker, which the status line reads,
-# and keep ship's own files (.ship-stage, .ship-shots, .ship-route.json) out of git.
+# and keep ship's own files (.ship-stage, .ship-shots, .ship-shown, .ship-route.json) out of git.
 # stage.sh <dir> exclude: only the exclude line, no marker (a cross-repo ship's shots root).
 # One plain command, so it never trips the harness's worktree-isolation guard the way
 # `echo … >> $(git rev-parse …)` does.
