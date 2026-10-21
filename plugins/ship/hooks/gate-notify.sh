@@ -4,7 +4,12 @@
 # unless .ship-stage at the git root holds a gate:* marker, so normal turns are silent. The
 # plain `test` marker is the Codex tester at work, not a stop.
 
-root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
+# The session's ship-active pointer first, as the status line reads it: a cross-repo ship's
+# worktree isn't the session's own repo.
+sid=$(jq -r '.session_id // empty' 2>/dev/null)
+ptr="$HOME/.claude/ship-active/${sid:-none}"
+if [ -n "$sid" ] && [ -s "$ptr" ]; then root=$(head -1 "$ptr")
+else root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; fi
 stage_file="$root/.ship-stage"
 [ -f "$stage_file" ] || exit 0
 stage=$(head -1 "$stage_file" 2>/dev/null | tr -d ' \n')
