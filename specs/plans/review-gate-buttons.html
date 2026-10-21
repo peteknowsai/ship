@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>✅ {{SLUG}} · review</title>
+<!--
+  /ship REVIEW template. Fill the slots, write to specs/plans/review-<slug>.html,
+  and show it with `scripts/show.sh <root> <slug> review <file>` (`done` with the result). This is what Pete reviews — NOT the raw PR diff. PM-framed:
+  what it DOES, what's already checked, what only he can confirm. The meta, one screen.
+-->
+<style>
+  :root{--page:#f5f5f7;--card:#fff;--ink:#1d1d1f;--slate:#515154;--mut:#636366;
+    --line:#e3e3e8;--amber:#c8892b;--grn:#3f7d4e;--red:#b4543a;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--page);color:var(--ink);
+    font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    -webkit-font-smoothing:antialiased;padding:40px 20px}
+  .wrap{max-width:700px;margin:0 auto}
+  h1{font-size:36px;line-height:1.05;margin:6px 0 2px;font-weight:600}
+  .sub{color:var(--slate);margin:0 0 22px;font-size:15px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin:14px 0}
+  .card h2{margin:0 0 12px;text-transform:uppercase;color:var(--mut);
+    font-weight:700;font-size:12px;letter-spacing:.14em}
+  ul{margin:0;padding-left:18px} li{margin:7px 0}
+  li b{color:var(--ink)}
+  .shipped li::marker{color:var(--grn)}
+  .eye{border-left:3px solid var(--amber);padding:8px 0 8px 14px;margin:10px 0}
+  .eye .q{font-weight:700;margin:0 0 2px}
+  .eye .d{color:var(--slate);font-size:14px;margin:0}
+  .pill{display:inline-block;background:#e7f0e7;color:#2f6a3e;border:1px solid #cfe3cf;
+    border-radius:20px;padding:2px 11px;font-size:13px;font-weight:600;margin:2px 4px 2px 0}
+  .verdict{text-align:center;font-size:22px;margin:26px 0 4px;font-weight:600}
+  .foot{color:var(--mut);font-size:13px;margin-top:16px;text-align:center}
+  code{background:#ececf0;border-radius:5px;padding:1px 6px;font-size:13px;font-family:ui-monospace,Menlo,monospace}
+  a{color:var(--amber)}
+  .vpill{display:inline-block;background:#e7f0e7;color:#2f6a3e;border:1px solid #cfe3cf;
+    border-radius:6px;padding:2px 9px;font-size:12px;font-weight:700;letter-spacing:.04em;
+    text-transform:uppercase;margin-left:8px;vertical-align:1px}
+  .cand{border-left:3px solid var(--slate);padding:2px 0 2px 14px;margin:10px 0}
+  .cand .t{font-weight:700;margin:0}
+  .cand .w{color:var(--slate);font-size:14px;margin:2px 0 0}
+  .dest{display:inline-block;border-radius:5px;padding:1px 8px;font-size:11px;font-weight:700;
+    letter-spacing:.04em;text-transform:uppercase;margin-left:8px;vertical-align:1px;
+    background:#ececf0;color:var(--slate);border:1px solid var(--line)}
+  .storyboard{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .beat{margin:0}
+  .beat img{width:100%;aspect-ratio:16/10;object-fit:cover;border:1px solid var(--line);
+    border-radius:8px;display:block}
+  .beat figcaption{font-size:12px;color:var(--slate);margin-top:6px}
+  .term{background:#1d1d1f;color:#e8e8ed;border-radius:8px;padding:10px 12px;margin:0 0 6px;
+    font:12px/1.5 ui-monospace,Menlo,monospace;white-space:pre;overflow-x:auto}
+  .term .am{color:#e0a64a;font-weight:700} .term .k{color:#7cc4ff}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Review: gate buttons</h1>
+  <p class="sub">ship, gate buttons (PR #238). When a ship parks at a gate, you answer it from the prompt with one key.</p>
+
+  <div class="card shipped">
+    <h2>What you got</h2>
+    <ul>
+      <li><b>Buttons above the prompt at every gate.</b> Storyboard: <code>1</code> show storyboard, <code>2</code> lock it. Go: <code>1</code> show plan card, <code>2</code> go. Try it: <code>1</code> open the app.</li>
+      <li><b>A lone digit in an empty prompt presses it</b>, after a short pause, so a typed reply like "1abc" stays a reply. Clicking works too.</li>
+      <li><b>"Show" brings that page's tab to the front</b> of Chrome, the same tab ship already opened, not a second copy.</li>
+      <li><b>"Lock it" and "go" go in as your words</b>, and the buttons hide until that turn ends, so a double press answers once.</li>
+      <li>"merge main" never gets a button.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>Proof it works <span class="vpill">works</span></h2>
+    <p class="term"><span class="am">✋ qa-demo</span>  <span class="k">1</span>: show storyboard  <span class="k">2</span>: lock it
+❯ Try "how do I log an error?"
+  ✋ qa-demo — storyboard?</p>
+    <p class="beat"><figcaption>A real Claude Code session in a scratch repo parked at the storyboard gate: the buttons sit above the prompt, your status line below.</figcaption></p>
+    <p class="term">1        → opened file:///…/sb.html#ship=repo/qa-demo/storyboard&amp;raise
+1abc     → nothing opened, "1abc" stays in the prompt
+2        → ❯ lock it   (buttons hidden while it runs)</p>
+    <p class="beat"><figcaption>Pressing keys in that session. Chrome was a fake, so nothing popped on your screen.</figcaption></p>
+    <p class="term">gate:2     → <span class="k">1</span>: show plan card  <span class="k">2</span>: go
+build:1:3  → (nothing)
+gate:test  → <span class="k">1</span>: open the app   → opened http://localhost:3999#…&amp;raise</p>
+    <p class="beat"><figcaption>Moving the stage marker by hand: the buttons followed within two seconds.</figcaption></p>
+  </div>
+
+  <div class="card">
+    <h2>Already checked for you</h2>
+    <span class="pill">12 mod tests</span><span class="pill">type-check</span><span class="pill">show.sh self-test</span><span class="pill">ship-tabs checks</span><span class="pill">status line test</span><span class="pill">walked in a live session</span>
+    <p style="margin:10px 0 0;font-size:14px;color:var(--slate)">Two reviewers read the branch, Opus and Muse Wonder Full. Their real findings are fixed: a double press, buttons that could stay hidden after /clear, and "show" handing you back your old tab. Nothing here touches money, data or anything public. A revert undoes it.</p>
+  </div>
+
+  <div class="card">
+    <h2>Only you can confirm</h2>
+    <div class="eye"><p class="q">Reload ship-tabs once</p><p class="d">In <code>chrome://extensions</code>, press reload on ship-tabs. Until then, "show" opens the page but Chrome hands you back the tab you were on. I checked the extension's tab logic with a fake Chrome, not in your real one.</p></div>
+    <div class="eye"><p class="q">Start a new session to get the buttons</p><p class="d">Sessions already running keep the old plugin.</p></div>
+  </div>
+
+  <div class="card">
+    <h2>What we should do next</h2>
+    <div class="cand">
+      <p class="t">The desktop notification misses some gates<span class="dest">Quick ship</span></p>
+      <p class="w">It reads only the first line of the marker and only the session's own repo, so a Codex-written marker or a ship aimed at another repo never pings you. The buttons already handle both cases.</p>
+    </div>
+    <p style="margin:12px 0 0;font-size:14px;color:var(--slate)">Say <b>ship 1</b> to run it now.</p>
+  </div>
+
+  <div class="verdict">Tested · landing on main</div>
+  <p class="foot">The diff, if you want it: <a href="https://github.com/peteknowsai/ship/pull/238">PR #238</a> · but you shouldn't need to.</p>
+</div>
+</body>
+</html>
+

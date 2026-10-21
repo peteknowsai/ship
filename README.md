@@ -10,6 +10,15 @@ It's opinionated. Built for a hands-off, PM-style workflow: you stay in your lan
 - **Sized to the ask.** Three lanes, ship picks: **express** (quick fix — no spec/plan, straight through to dev), **self-directed** (writes its own spec + plan, builds, reviews, merges — zero stops), **gated** (the two gates, when your taste is in play). Same worktree → merge → dev rails in all three; gates fire only when your answer would change what gets built.
 - **You read the meta, never the diff.** Every checkpoint puts an HTML page in a background Chrome tab, never taking the screen — a **storyboard** (an artboard board of every screen and state, live mockups, not a document), a one-screen **plan card**, and a **review card** at merge or when a ship parks. Never "go read the PR."
 - **Gate notifications.** When a ship parks at a gate, a desktop notification taps you on the shoulder (Ghostty-native, with a macOS fallback) — so you can walk away.
+- **Gate buttons.** At a gate, buttons appear above the prompt. Type a bare digit into an empty prompt (and pause), or click:
+
+  | Gate | `1` | `2` |
+  |---|---|---|
+  | storyboard | show storyboard | lock it |
+  | go | show plan card | go |
+  | try it | open the app | — |
+
+  "Show" brings that page's tab to the front (the newest of the preview and localhost for "open the app"). "Lock it" and "go" send those words as if you typed them, and the buttons hide until the turn they start ends. Reactions to a storyboard round still get typed, and "merge main" never gets a button. Since a lone digit in an empty prompt presses a button, a reply that is just `2` answers the gate.
 - **Stage-aware status line.** Which ship, what phase (`designing → planning → building → reviewing`), ships-in-flight, your context + weekly budget, effort level. A bold banner when a ship needs you.
 - **Opus 5.5 drives; each build task goes to the engine its difficulty earns.** `scripts/route.py` asks Jev, TypeSafe's classifier, to score every task in the plan and ranks them: the easier half goes to a Fable 5.1 subagent and the harder half to Opus 5.5. That split is an experiment the ledger will judge. Fable also reviews the plan before BUILD and the whole branch in REVIEW, and GPT-6.1 Sol reads the branch beside it, the one check from outside Claude's family; the ledger tallies which reader's findings were real. The driver owns the brief, the diff review, the gates, and git, and logs every task's outcome to a ledger (`route.py report`) so the split can be tuned on data.
 - **Ship tests it as Pete would, and a pass lands it.** TEST invokes the bundled `verify` skill: the session writes a QA script and runs it itself, in a browser through chrome-devtools and on iOS through agent-device (Pete's iPhone, or an Xcode simulator), fixes what fails and reruns, and its `works` lands the branch without waiting on Pete. Codex tests only when Pete asks (`verify/reference/codex.md`: a hand-off to his Codex app through `scripts/codex-handoff.py`, or the headless `astra.sh test`). Money paths, and changes Pete asked to try himself, still wait for his "merge main".
@@ -18,7 +27,7 @@ It's opinionated. Built for a hands-off, PM-style workflow: you stay in your lan
 
 - `skills/ship` — the pipeline playbook + the storyboard / plan-card / review-card templates + the design record.
 - `skills/verify` — fresh read-only verification against the running app before merge.
-- `hooks/` — the gate desktop-notification hook.
+- `hooks/` — the gate desktop-notification hook, and the gate-buttons mod (`register.ts`, a Claude Code mod; `claude plugin test plugins/ship` runs its tests).
 - `statusline.sh` — the stage-aware status line, with Anthropic and Codex quota.
 - `.codex-plugin/plugin.json` — the Codex Desktop manifest (see below).
 
