@@ -272,6 +272,7 @@ def confidential(path):
 
 def selftest():
     fails = 0
+    os.environ['SHIP_OPUS_CAP'] = os.devnull  # never Pete's real cap file: the default 70 is what's tested
 
     def check(name, ok):
         nonlocal fails
@@ -339,7 +340,7 @@ def selftest():
         open(capfile, 'w').write('not a number')
         claude(80, 3)
         fallback = pools()['anthropic']['opus_blocked'] is True
-        del os.environ['SHIP_OPUS_CAP']
+        os.environ['SHIP_OPUS_CAP'] = os.devnull
         check('a cap file of 92 frees Opus at 80 and blocks it at 92; a bad file falls back to 70',
               free80 and blocked92 and fallback)
         claude(10, 6, fable=95)
