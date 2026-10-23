@@ -83,4 +83,10 @@ refuse "fresh caches carry no ?"   "?" "$(line2)"
 touch -t 202001010000 "$HOME/.claude/usage-cache.json" "$HOME/.claude/codex-usage-cache.json"
 expect "stale caches get a ?"      "↻5d? │ C 100% ↻4d?" "$(line2)"
 
+mkdir -p "$HOME/.config/ship" && touch "$HOME/.config/ship/no-codex"
+quota 1 1 12 435600 522000
+refuse "no-codex hides C"          "C 12%" "$(line2)"
+expect "no-codex keeps O and F"    "O 1% · F 1% ↻5d" "$(line2)"
+rm "$HOME/.config/ship/no-codex"
+
 echo "statusline test: $fails failed"; [ "$fails" = 0 ]

@@ -617,7 +617,9 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   path; a refinement stays on the incumbent world. Before new-work, merge `"buildPath":
   "code"` into the repo's gitignored `.impeccable/config.local.json`: ship builds in code,
   and the storyboard is the one approval Pete sees, never impeccable's decision page or
-  image comps (impeccable 4.5, 2026-10-05). Use `/image-gen` freely for imagery inside a frame.
+  image comps (impeccable 4.5, 2026-10-05). Imagery inside a frame is drawn in code (SVG,
+  CSS, a gradient or a labeled placeholder): `/image-gen` runs on Codex, which Pete has
+  dropped for now (2026-10-22).
   **Ground the design in the live product**: a subagent walks the running app /
   deployed URL over the chrome-devtools MCP and reports the real theme/CSS with screenshots;
   design from those, never from in-repo mockups (incidents: Design).
@@ -885,8 +887,9 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   Every web surface the feature touches also runs `scripts/icon-check.py <url>...` (same
   exit codes): it needs a browser icon and a 180px PNG Home Screen icon, since Pete opens
   apps by name from his phone and the launcher shows their icons (Pete, 2026-10-14). When one is
-  missing, make it before landing in the app's own colors, the mark through impeccable and
-  pixels through /image-gen (Next: `app/icon.svg` and `app/apple-icon.png`).
+  missing, make it before landing in the app's own colors: the mark through impeccable as an
+  SVG, and the PNG rendered from it by chrome-headless-shell (`--headless --screenshot=<png>
+  --window-size=180,180 --default-background-color=00000000 file://<svg>`) (Next: `app/icon.svg` and `app/apple-icon.png`).
   Also, on `backend: per-branch`,
   the branch touched `convex/` → re-push the preview (`npx convex deploy --preview-name <name-from-
   .env.local> -y`, from the worktree root — the branch name and the shell's leftover cwd

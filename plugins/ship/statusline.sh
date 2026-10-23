@@ -137,7 +137,7 @@ if [ -f "$codex_cache" ]; then
   codex_age=$(($(date +%s) - $(stat -f %m "$codex_cache" 2>/dev/null || echo 0)))
   [ "$codex_age" -lt 300 ] && codex_stale=0
 fi
-if [ "$codex_stale" -eq 1 ] && [ "$HAS_JQ" -eq 1 ] && [ -f "$HOME/.codex/auth.json" ]; then
+if [ "$codex_stale" -eq 1 ] && [ "$HAS_JQ" -eq 1 ] && [ -f "$HOME/.codex/auth.json" ] && [ ! -f "$HOME/.config/ship/no-codex" ]; then
   codex_tok=$(jq -r '.tokens.access_token // empty' "$HOME/.codex/auth.json" 2>/dev/null)
   codex_acct=$(jq -r '.tokens.account_id // empty' "$HOME/.codex/auth.json" 2>/dev/null)
   if [ -n "$codex_tok" ]; then
@@ -301,6 +301,8 @@ if [ -n "$weekly_pct" ]; then
   [ -n "$rs" ] && printf " $(c '38;5;245')↻%s$(rst)" "$rs"
   [ "$anthro_stale" = 1 ] && printf "$(c '38;5;245')?$(rst)"
 fi
+# ~/.config/ship/no-codex (Pete, 2026-10-22: no Codex subscription for a while) hides C
+[ -f "$HOME/.config/ship/no-codex" ] && codex_pct=""
 if [ -n "$codex_pct" ]; then
   [ -n "$weekly_pct" ] && dim_sep "│" || printf "  "
   if [ "${codex_pct%.*}" -ge 100 ] && [ "${codex_credits:-0}" -gt 0 ]; then
