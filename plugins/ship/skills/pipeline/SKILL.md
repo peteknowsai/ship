@@ -86,10 +86,11 @@ a gate. Never use an autonomous lane to slip a taste call past Pete.
 
 ## Engines
 
-**Opus 5.5 only** (Pete, 2026-10-24). The driver and every subagent it starts
-(`model: "opus"`) run Opus 5.5 at high effort, never xhigh, max or medium. Nothing runs on
-Wonder, Sonnet, Fable or a Codex model. `muse.py` and `astra.sh` stay in `scripts/` for
-when he turns one back on.
+**Opus 5.5 writes; Muse Wonder Full reads beside it** (Pete, 2026-10-24). The driver and
+every subagent it starts (`model: "opus"`) run Opus 5.5 at high effort, never xhigh, max or
+medium. Wonder Full reviews the plan and reads the branch, and never writes code. Nothing
+else runs: no Sonnet, Fable or a Codex model. `muse.py build` and `astra.sh` stay in
+`scripts/` for when he turns one back on.
 
 **One loop does the work, and a subagent earns its seat.** The driver builds, tests and
 fixes in its own context, where it reads the raw diff, test output and browser snapshot
@@ -109,17 +110,32 @@ jobs only:
 Speed is never the reason: Pete doesn't measure a ship by wall time, and serial work is
 easier to reason through. Never `claude -p` from inside a session.
 
-**The readers.** Every review brief, plan or branch, says to assume the writer was wrong
-at every seam: the reader is the same model as the writer and shares its blind spots, so
-it hunts where tasks meet, where a value crosses a process or an API, and where the plan
-and the code disagree. It reports and never edits, because a reader that rewrites breaks
-working code. A claim about how a dependency behaves at runtime is checked in its
+**The loop's context grows with every task, and compaction is survivable by design.**
+Claude Code compacts it automatically, so a ship keeps its state on disk, never only in
+context: the plan file, a commit per task, the marker, `.ship-done`, the ledger, the QA
+result. After each compaction the plugin's `hooks/ship-recap.sh` prints that state into the
+fresh context (stage, plan path, each task done or todo, the branch's commits, uncommitted
+files); trust it over the summary, reread the plan and this skill's section for the stage,
+and post Pete the one-line status.
+
+**The readers: Opus and Wonder, two labs.** A reader shares the blind spots of code its own
+lab wrote and goes easy on it (Pete, 2026-10-14), and Opus wrote every line, so Wonder is
+the reader that can see them; the Opus reader is a fresh subagent whose brief says to assume
+the writer was wrong at every seam. Wonder runs as `scripts/muse.py review <worktree>
+<brief> <out-dir>`, a background Bash call: read-only, exit 6 if it changed the tree, its
+findings in `<out-dir>/last.md`, with `<out-dir>` in the job's tmp, outside the worktree
+(`muse.py` refuses one inside it). Muse runs only through `muse.py`, never a hand-typed
+`muse exec`. Any nonzero exit means Muse is out (2: a confidential repo, since Muse's
+Contributor mode trains on what it reads, listed in `~/.config/ship/confidential-paths`, and
+with no list file Muse is off everywhere; 5: its quota): an Opus subagent reads in its place,
+and the `result:` line says so. Readers report and never edit, because a reader that
+rewrites breaks working code. A claim about how a dependency behaves at runtime is checked in its
 installed code (`node_modules/<pkg>/dist`), not its docs: a plan review once took Eve's
 docs on queued messages at their word, and the runtime did otherwise (2026-10-14).
 
 **Pete's budget word outranks ship's defaults.** When he caps subagents or spend for a run
-("no extra parallel agents"), the reviews run in the driver's own loop, and the `result:`
-line names what that skipped.
+("no extra parallel agents"), skip the Opus readers and keep Wonder, which draws on no
+Claude quota, and the `result:` line names what that skipped.
 
 **The ledger judges the fold.** After PLAN, `scripts/route.py plan <plan.md>` lists the
 tasks, saves them and moves the marker to `build:0:<M>`. When a task's diff is accepted,
@@ -342,7 +358,7 @@ Five runs had him asking "where are we?" mid-flight.
 
 **What runs with the Bash sandbox off.** Anything that writes outside the worktree or binds
 a port: the fork (`wt switch --create`, `stage.sh` on a new worktree), the ledger (`route.py
-log`), anything that talks to GitHub (`gh`, `git
+log`), `muse.py`, anything that talks to GitHub (`gh`, `git
 push`, `git fetch`: the sandbox's proxy fails their TLS check), gates, smokes and dev
 servers. Everything else
 stays in the sandbox.
@@ -664,8 +680,8 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   through the real writer** — not just unit tests over hand-built rows, which pass while
   the production writers produce garbage (incidents: Design).
 - **Every task is a `### Task N: <name>` heading**, which `route.py plan` counts.
-- **A fresh Opus subagent reviews the plan before BUILD, on every lane that has one**
-  (Engines: the readers). It reads the storyboard or spec, the
+- **Wonder reviews the plan before BUILD, on every lane that has one** (Engines: the
+  readers; an Opus subagent when Muse is out). Write the brief to a file. It reads the storyboard or spec, the
   execution plan and the repo's ship contract, edits nothing, and returns findings as task, problem, fix: a
   frame or requirement the spec names that no task covers (it maps each one to its task
   and lists the orphans: one plan built a spec's intro and none of the screens its frames
@@ -842,10 +858,17 @@ he asks.
   scripts included, not only the directories the diff touched (a HIGH that would have
   parked secrets-report missed the writer in a browser extension). It touches nothing, runs no test that binds a port or starts a server, and returns
   findings as file:line, the failure scenario, and a severity.
-  The driver triages every finding
-  — adversarial reviewers over-flag by design — checks each against the code, fixes what's real, puts judgment calls
-  on the card or in the `result:` line. Then one ledger row: `route.py log
-  repo=<repo> ship=<slug> review=opus real=<n> false=<n> seconds=<n>`.
+  **Wonder reads the same branch at the same time**: write that brief to a file and run
+  `scripts/muse.py review <worktree> <brief> <out-dir>` in the background. Neither reader
+  sees the other's findings. Muse out: Opus reads alone; say so in the `result:` line, never
+  wait on it.
+  The driver triages every finding from both
+  — adversarial reviewers over-flag by design, and a finding both reached on their own is
+  the strongest lead, never proof — checks each against the code, fixes what's real, puts judgment calls
+  on the card or in the `result:` line. Then one ledger row per reader: `route.py log
+  repo=<repo> ship=<slug> review=opus real=<n> false=<n> only=<n> seconds=<n>` and the same
+  with `review=wonder` (`out=<out-dir>` in place of `seconds`), where `only` counts the real
+  findings the other reader missed.
 - **Design against the storyboard is the QA run's to judge**: the script carries a step
   per frame the change built and the craft floor
   (`~/.claude/skills/impeccable/reference/craft-floor.md`), and a gap is a failure like

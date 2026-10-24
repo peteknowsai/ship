@@ -1,5 +1,7 @@
 {
-  "modules": ["./register.ts"],
+  "modules": [
+    "./register.ts"
+  ],
   "hooks": {
     "Stop": [
       {
@@ -8,6 +10,17 @@
           {
             "type": "command",
             "command": "bash \"$CLAUDE_PLUGIN_ROOT/hooks/gate-notify.sh\" || true"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PLUGIN_ROOT/hooks/ship-recap.sh\" || true"
           }
         ]
       }
