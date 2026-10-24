@@ -7,8 +7,9 @@ test in Codex, and `astra.sh --selftest` is its check;
 `route.py --selftest` checks the task counter and build ledger,
 `codex-handoff.py --selftest` the TEST hand-off to Pete's Codex app, and
 `decisions.py --selftest` the per-repo decision log, `quota.py --selftest` the four usage pools the
-router reads, `muse.py --selftest` the Muse Code wrapper (unused since ship went Opus-only on
-2026-10-24, kept for when Pete turns it back on), `branch-db.py --selftest` the copy of
+router reads, `muse.py --selftest` the Muse Code wrapper (Wonder Full's read-only plan and branch
+reviews; its build mode is unused since 2026-10-24), `bash plugins/ship/hooks/ship-recap.sh
+--selftest` the recap a ship prints into its context after each compaction, `branch-db.py --selftest` the copy of
 the Convex dev database each worktree gets, and `icon-check.py --selftest` the
 pre-flight's check that every page has a browser icon and a Home Screen icon. The bare
 `/ship` slash command is a *personal* command at `~/.claude/commands/ship.md` (a thin
