@@ -351,7 +351,9 @@ line and the FleetView row read `.ship-stage`). Call this skill's scripts (`stag
 `route.py`, `decisions.py`) by absolute path, the base directory the harness printed when
 this skill loaded plus `/scripts/`, typed out in full, never through a shell variable,
 which the worktree guard refuses. A script or brief file goes in the job's tmp through
-the Write tool, since the Bash sandbox can't write there, or under `$TMPDIR` from Bash;
+the Write tool, since the Bash sandbox can't write there, or under `$TMPDIR` from Bash, and
+either one runs by its path typed out in full, never `python3 "$TMPDIR/x.py"`, which the
+guard refuses like any computed path;
 and every stage flip posts Pete one
 line: the goal, the stage, what's next. Post it again after a compaction or a side job.
 Five runs had him asking "where are we?" mid-flight.
@@ -448,7 +450,12 @@ gitignored runtime files. With none, provision the worktree yourself before the 
 gate: the repo's frozen-lockfile install, a real one and never a link (this tree runs the
 dev server and the production build, and Turbopack refuses a linked `node_modules`), and
 a copy of the main checkout's gitignored env files (`.env.local`). Without them the first
-test run dies on module-not-found, which reads as a real red. Run `scripts/stage.sh <root> discover`: it writes the marker
+test run dies on module-not-found, which reads as a real red. A provisioned install is the
+main checkout's, which can be older than the origin/main the worktree forked from: when the
+worktree's lockfile differs from the main checkout's (`cmp <worktree>/package-lock.json
+<main-checkout>/package-lock.json`, or the repo's own lockfile), run the frozen-lockfile
+install before the first gate (eca-finder's copied `node_modules` lacked main's new
+`@amplitude/*` packages and failed typecheck five times). Run `scripts/stage.sh <root> discover`: it writes the marker
 and adds `.ship-*` to the repo's `info/exclude`, since `git add -A` sweeps the marker
 into commits otherwise (incidents: Worktrees). Never build on main.
 
@@ -1007,7 +1014,9 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
     `git worktree list` — zero ship-created worktrees must remain; a leftover means
     teardown failed (usually a merge run inside the worktree) — recover before
     declaring done.
-- **Watch what landing deploys (the contract's `live:`).** Where main is production and
+- **Watch what landing deploys (the contract's `live:`).** A diff that touches nothing
+  `live:` builds deploys nothing: skip the deploy and say so in the `result:` line, since a
+  deploy run for it would ship main's other unreleased commits (eca-finder, 2026-10-24). Where main is production and
   the host builds it (cells-app: each touched pack's Vercel production build, Convex
   first), watch every such build to READY or ERROR, then load each live URL once (`curl -sS -o
   /dev/null -w '%{http_code}'`, and the page's text): READY with a 404 or the host's "not
