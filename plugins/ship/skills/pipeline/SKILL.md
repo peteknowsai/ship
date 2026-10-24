@@ -86,125 +86,66 @@ a gate. Never use an autonomous lane to slip a taste call past Pete.
 
 ## Engines
 
-**Three models, in this order** (Pete, 2026-10-21): **Opus 5.5**, **Muse Wonder Full**, and
-**Sonnet 5.5** last. Nothing else runs: no Fable, no Astra, no Sol, no Spark. Every model runs at
-high effort, never xhigh or max, and never medium to save time.
+**Opus 5.5 only** (Pete, 2026-10-24). The driver and every subagent it starts
+(`model: "opus"`) run Opus 5.5 at high effort, never xhigh, max or medium. Nothing runs on
+Wonder, Sonnet, Fable or a Codex model. `muse.py` and `astra.sh` stay in `scripts/` for
+when he turns one back on.
 
-**Opus 5.5 drives every stage.** It owns design, briefs, triage, gates, git, and the
-final say.
+**One loop does the work, and a subagent earns its seat.** The driver builds, tests and
+fixes in its own context, where it reads the raw diff, test output and browser snapshot
+itself; a subagent hands back a summary, and a summary drops what the next step needed
+(Anthropic, "when to fold subagents into your main agent loop"; here, briefs left the
+wiring between files to the driver on 6 of 9 tasks in one ship). A subagent is for three
+jobs only:
+1. **Fresh eyes**: the plan review (PLAN) and the branch review (REVIEW), where a reader
+   that didn't write the code is the point.
+2. **A sweep whose answer is all the driver needs**: recon across many files, an expert
+   consult, a reference lookup.
+3. **Reading the rest of the ship never needs**: a task whose context would crowd the
+   driver's, such as a wide mechanical migration. It gets a brief (BUILD's boilerplate),
+   logs `engine=opus` with the reason in `note`, and the driver reviews its diff and runs
+   the gates as for its own.
 
-**Muse Wonder Full reviews the plan** at the end of PLAN, before anything is built, through
-`scripts/muse.py review <worktree> <brief> <out-dir>` (read-only; it exits 6 if the reader
-changed the tree). **The branch gets two readers from different labs at REVIEW, Opus and
-Wonder**, because a reader shares the blind spots of code its own lab wrote and goes easy on
-it (Pete, 2026-10-14). Both read the whole branch, since bugs hide where tasks meet, and each
-**owns** the tasks the other lab wrote: Wonder owns what Opus, Sonnet or the driver wrote,
-Opus owns what Wonder wrote. `route.py owners <slug>` lists them from the ledger. Readers
-only report; they never edit, because a reader that rewrites breaks working code. Their
-tallies go to the ledger. Every review brief, plan or branch, says a claim about how a
-dependency behaves at runtime is checked in its installed code (`node_modules/<pkg>/dist`),
-not its docs: a plan review once took Eve's docs on queued messages at their word, and the
-runtime did otherwise (2026-10-14). Muse out (its pool empty, or a confidential repo): Sonnet
-reads in Wonder's place, as a harness subagent.
+Speed is never the reason: Pete doesn't measure a ship by wall time, and serial work is
+easier to reason through. Never `claude -p` from inside a session.
 
-**BUILD routes by difficulty.** Once the execution plan is written and reviewed, run
-`scripts/route.py plan <plan.md>` from this skill's directory. It asks SubQ Snap, Subquadratic's
-decision model, to score every task's difficulty (about a second, a fraction of a cent;
-Jev, TypeSafe's, answers when SubQ has no key or fails), cuts the routable tasks into thirds by
-rank, and picks one engine per tier:
-
-| Tier | Engine | When it can't |
-|---|---|---|
-| hard, top third (always the hardest task) | `opus` | Opus capped (the Anthropic week at the number in `~/.config/ship/opus-weekly-cap`, default 70%, or its 5-hour session at 85%) → `wonder` |
-| middle and easy thirds | `wonder` | Muse's pool empty, or a confidential repo → `sonnet` |
-
-| engine | model | runs as (in the background) | pool |
-|---|---|---|---|
-| `opus` | Opus 5.5 | harness subagent, `model: "opus"` | `anthropic` |
-| `wonder` | Muse Wonder Full | `scripts/muse.py build <wt> <brief> <out> muse-wonder-full-1.0` | `muse` |
-| `sonnet` | Sonnet 5.5 | harness subagent, `model: "sonnet"` | `anthropic`, the same main pool as Opus |
-
-`scripts/quota.py` reads the pools; `route.py quota` prints them. The main Anthropic pool ends
-the account when it runs out, and Sonnet draws on it too, so Sonnet is the last resort, never a
-default. Unknown quota counts as half used and is noted, never a stop.
-- **Confidential repos never reach Muse**, whose Contributor mode trains on what it reads. The
-  list is local, `~/.config/ship/confidential-paths`, never in this repo, and matches a repo's
-  main checkout as well as its worktree. With no list file at all, Muse is off everywhere
-  until one exists (an empty file means none).
-
-Wonder gets the same brief file a subagent would, run as a background Bash call of `muse.py`:
-the driver reads `<out>/last.md` (STATUS, TESTS, CONCERNS), reviews the diff and runs the gates
-exactly as for a subagent. The `<out>` folder lives outside the worktree, in the job's tmp
-(`muse.py` refuses one inside it). `muse.py` keeps the model away from Pete's skills, MCP
-servers and connectors with a shadow home, every real entry linked in but the skill folders,
-because its login lives in the Keychain; tests find their caches, though `$HOME` reads as the
-shadow path. Muse runs only through `muse.py`, never a hand-typed `muse exec`. A builder that
-fails (a nonzero wrapper exit, a quota error, or two wrong diffs) reruns on the next engine in
-the order: `wonder` → `opus`, or `sonnet` when Opus is capped. The ledger records it as
-`verdict=redone`.
-
-A task headed `(driver)` or `(inline)` is never ranked. `route.py` gives an `(inline)` task
-to `wonder`, and to the driver when Muse is out; a `(driver)` task is always the driver's. An
-all-inline plan is still written down and still gets the plan review (PLAN), and still runs
-`route.py plan`, which ranks nothing and sets the marker, and each task still logs, which
-counts it done. When the JSON's `fallback` is set (stderr says `ROUTER DOWN`), no decision
-model answered and every task went to Wonder: say so in the `result:` line and carry on,
-because the router never blocks a build. A 402 means that model is out of credits (stderr
-names it): tell Pete in one line at once, since every ship routes blind until he tops up. The
-driver may override one pick for a concrete reason, such as a file an Opus lane already
-holds, and logs the override in the ledger's `note`.
+**The readers.** Every review brief, plan or branch, says to assume the writer was wrong
+at every seam: the reader is the same model as the writer and shares its blind spots, so
+it hunts where tasks meet, where a value crosses a process or an API, and where the plan
+and the code disagree. It reports and never edits, because a reader that rewrites breaks
+working code. A claim about how a dependency behaves at runtime is checked in its
+installed code (`node_modules/<pkg>/dist`), not its docs: a plan review once took Eve's
+docs on queued messages at their word, and the runtime did otherwise (2026-10-14).
 
 **Pete's budget word outranks ship's defaults.** When he caps subagents or spend for a run
-("no extra parallel agents"), skip the steps that add them, run the rest inline, and name
-what was skipped in the `result:` line. REVIEW then keeps one reader, Wonder, which reads the
-whole branch: it is the other lab for the driver's own code and draws on no Claude quota.
+("no extra parallel agents"), the reviews run in the driver's own loop, and the `result:`
+line names what that skipped.
 
-**Every engine gets the same brief and the same rules** (the standing boilerplate in
-BUILD): the named files only, never commit, never `git reset/checkout/stash`, end with
-STATUS, TESTS, CONCERNS. A harness subagent gets the worktree's absolute path and works
-only there.
-
-**The ledger judges the split.** When the driver accepts a task's diff, it appends the
-outcome:
+**The ledger judges the fold.** After PLAN, `scripts/route.py plan <plan.md>` lists the
+tasks, saves them and moves the marker to `build:0:<M>`. When a task's diff is accepted,
+append its outcome, from the worktree:
 
 ```bash
-route.py log repo=<repo> ship=<slug> task=<n> engine=<engine> \
+route.py log repo=<repo> ship=<slug> task=<n> engine=<driver|opus> \
   seconds=<wall time> fix_rounds=<n> gates_first_pass=<true|false> verdict=<clean|fixed|redone>
 ```
 
-For a task `muse.py` built, pass `out=<out-dir>` in place of `seconds`: it writes its run's
-wall time there.
+`routed` fills itself as `driver`, so a task handed to a subagent shows as `engine=opus`.
+Seconds come from the run itself, and a number you don't have is left out, never
+estimated: a third of the first 81 rows were round-number guesses. `route.py report`
+compares driver-built and subagent-built tasks by first-pass gates and fix rounds; if
+handed-off tasks keep needing more rounds, the third job above shrinks.
 
-Run it from the worktree: it fills the task's score and the engine the router picked
-from the saved route, so an override shows as `engine` differing from `routed`. Seconds
-come from the run itself (the task notification's duration), and a number you don't have is left out, never estimated: a
-third of the first 81 rows were round-number guesses.
+**Codex is off.** Pete dropped the subscription (2026-10-22), so "test in codex" has no
+engine: tell him in one line and test in this session. `ship:verify`'s
+`reference/codex.md` stays for when he turns it back on.
 
-`log` fills the task's `pool` from its engine. `route.py report` prints the table by engine
-and difficulty band, then by pool. Pete reads it after a few ships on this split.
-
-**Codex is off.** Since 2026-10-21 Pete's ChatGPT account refuses the GPT-6 models in Codex
-(400 "model is not supported when using Codex with a ChatGPT account"), so "test in codex"
-has no engine: tell Pete in one line and test in this session. `ship:verify`'s
-`reference/codex.md` and `astra.sh` stay for when he turns it back on.
-
-**The driver's Opus is the scarce one** (Pete, 2026-10-18): the main Anthropic pool ends
-the account when it runs out, so the driver keeps only what needs its own context. A task
-under one file and ~50 lines (config, a test tweak, a small fix from triage) is marked
-`(inline)` and goes to Wonder; `(driver)` is for glue only the driver can write, such as
-wiring two tasks it just reviewed. Skill and agent prose and design taste stay with the
-driver. Recon, expert consults and review fan-outs go to Sonnet 5.5 harness subagents
-(`model: "sonnet"`), with the chrome-devtools MCP for anything in a browser. Never
-`claude -p` from inside a session.
-
-**The driver owns the envelope**, whoever drafts: it writes the brief (exact files, the wiring points among them: where the new piece is
-registered, exported, routed or called from, which workers otherwise leave to the driver,
-as on 6 of 9 tasks in one ship;
-signatures, test cases, constraints; a vague brief burns the savings in fix rounds;
-call the Skill tool with `mattpocock-skills:writing-for-agents` once per run before the first brief),
-reviews the returned diff and runs the gates before anything is committed (never trust
-a "tests pass" claim from a worker), and owns git entirely. One writer per tree at a
-time: serialize, or give each lane its own sub-worktree.
+**A brief, when there is one, is the driver's envelope**: the exact files and the wiring
+points among them (where the new piece is registered, exported, routed or called from),
+signatures, test cases, constraints. Call the Skill tool with
+`mattpocock-skills:writing-for-agents` once per run before the first brief. The driver
+reviews what comes back and runs the gates before anything is committed (never trust a
+"tests pass" claim from a worker), and owns git entirely. One writer per tree at a time.
 
 **Browser work runs on the chrome-devtools MCP** (`mcp__chrome-devtools__*`: headless,
 a fresh isolated profile per session, so parallel walks never collide and no window
@@ -401,7 +342,7 @@ Five runs had him asking "where are we?" mid-flight.
 
 **What runs with the Bash sandbox off.** Anything that writes outside the worktree or binds
 a port: the fork (`wt switch --create`, `stage.sh` on a new worktree), the ledger (`route.py
-log`), `muse.py`, anything that talks to GitHub (`gh`, `git
+log`), anything that talks to GitHub (`gh`, `git
 push`, `git fetch`: the sandbox's proxy fails their TLS check), gates, smokes and dev
 servers. Everything else
 stays in the sandbox.
@@ -722,16 +663,13 @@ into commits otherwise (incidents: Worktrees). Never build on main.
 - **A task that computes from rows another code path writes gets one end-to-end test
   through the real writer** — not just unit tests over hand-built rows, which pass while
   the production writers produce garbage (incidents: Design).
-- **Headings are the router's input.** Every task is a `### Task N: <name>` heading, and
-  a task the driver writes itself says `(inline)` or `(driver)` in its heading.
-- **Wonder reviews the plan before BUILD, on every lane that has one.** Write the brief to
-  a file and run `scripts/muse.py review <worktree> <brief> <out-dir>` in the background
-  (Sonnet, a harness subagent, when Muse is out). It reads the storyboard or spec, the
+- **Every task is a `### Task N: <name>` heading**, which `route.py plan` counts.
+- **A fresh Opus subagent reviews the plan before BUILD, on every lane that has one**
+  (Engines: the readers). It reads the storyboard or spec, the
   execution plan and the repo's ship contract, edits nothing, and returns findings as task, problem, fix: a
   frame or requirement the spec names that no task covers (it maps each one to its task
   and lists the orphans: one plan built a spec's intro and none of the screens its frames
-  asked for, and Pete caught it mid-build), a missing task, a wrong file, a test that cannot fail, an order that breaks, an
-  `(inline)` task that is not small, a seam two tasks each assume the other owns, a concurrency fix whose guard checks only
+  asked for, and Pete caught it mid-build), a missing task, a wrong file, a test that cannot fail, an order that breaks, a seam two tasks each assume the other owns, a concurrency fix whose guard checks only
   which write is newer and not whose it is (CEL-152's newest-wins rule passed plan review;
   both branch readers caught it), a
   screen that waits on someone else with no way back to it (trace how the user returns
@@ -748,63 +686,31 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   parsed a "Price" heading from a mock when the live brief says "Budget", and only QA
   caught it (market-loops, 2026-10-15). The driver triages and edits the plan. Nothing goes back to Pete unless it changes what
   gets built. Then `route.py plan` (Engines). No task starts before the review lands,
-  `(inline)` ones included, unless the plan names it a spike: two runs built early and
+  unless the plan names it a spike: two runs built early and
   rewrote what the review then flagged.
 
 ### 3 · BUILD — automatic  → marker: `build:N:M` (N done of M tasks)
 
 - `route.py plan` already moved the marker to `build:0:<M>`, and each `route.py log`
-  counts one task done, so `(inline)` and `(driver)` tasks log too, with
-  `engine=driver`. A run that skipped the router writes `build:0:<M>` itself before the
-  first dispatch, and still logs each task it built: `route.py log` needs no saved route,
+  counts one task done. A run that skipped `route.py plan` writes `build:0:<M>` itself before the
+  first task, and still logs each task it built: `route.py log` needs no saved route,
   so a ship promoted mid-flight logs its tasks as `engine=driver`; a status line still on `plan` mid-BUILD is the tell. Build all M tasks in one session; commit
   each task on the branch as it lands, land only when the whole plan is built.
-- **Push at every milestone, and hand Pete the links.** After a task (or a lane's merge)
+- **Push at every milestone, and hand Pete the links.** After a task
   is committed, push the branch. When the repo has a per-push `preview:`, run it once the
   builds settle, never blocking the next dispatch on them, and post one line per app with
   what changed and what to try; with an on-demand one, post the localhost. Pete works solo and tests mid-flight, so the links always show
   the worktree's latest. A build that failed is yours to fix before you post.
-- Invoke `superpowers:subagent-driven-development` (the driver drives) and send each
-  task to the engine `route.py plan` picked (Engines), in the background; `(inline)`
-  tasks go where `route.py` put them (Wonder while Muse has quota), and `(driver)` tasks the
-  driver writes itself. The driver owns the brief, the diff
-  review, the gates, the ledger line, and git. One writer per tree at a time, which
-  is why fan-out means sub-worktrees, below.
-- **Check the plan's files against work in flight, before the first dispatch.** `gh pr
+- **The driver builds every task itself, in plan order** (Engines), test first where the
+  task names its tests, and commits each one as its gates go green. A task handed to a
+  subagent is the exception Engines names, and says why in the ledger's `note`.
+- **Check the plan's files against work in flight, before the first task.** `gh pr
   list --state open --json number,headRefName,files` and `git log origin/main --since=1.day
   --name-only`: a plan file another PR or a fresh main commit also touches gets read first.
   If it already makes the same change, drop the task and absorb it once it lands; if it is
   mid-flight, ask its session (ListAgents, SendMessage). showing-followups rebuilt "each
   branch gets its own Simulator" while cells-app #206 had it in review, and the rebase
   conflicted.
-- **Fan out by file overlap, before the first dispatch.** The plan names each task's
-  files. Group tasks that share a file; every group is a lane. Each lane past the
-  first gets its own sub-worktree off the branch (`git worktree add <dir> -b
-  <branch>-<lane> <branch>`) and its own worker, all launched together; a lane's
-  tasks run in plan order inside it, each on its routed engine. The driver merges lanes back in plan order and
-  runs the gates once after each merge, then removes that lane: `git -C <worktree>
-  worktree remove <lane dir>` and `git -C <worktree> branch -D <branch>-<lane>`, as two
-  calls. If the harness refuses, leave it; `wt-sweep` removes a lane that has committed and whose
-  changes are all in its parent; a lane with no commits yet is left alone. Serial is only for tasks that share files.
-  Three disjoint tasks run serially cost the sum of their times; fanned out, the
-  slowest one's.
-- **A lane worktree has no installs, and a borrowed one must be excluded before the
-  first commit.** A fresh `git worktree add` carries no `node_modules` (or `.venv`,
-  `vendor`, `.build`). Either run the repo's frozen-lockfile install in the lane, or
-  symlink the main worktree's installs in. If you symlink, write each link's path to
-  the `info/exclude` that `stage.sh` already wrote `.ship-*` to (its path is `git -C
-  <root> rev-parse --git-common-dir` plus `/info/exclude`, run as its own call): a `.gitignore` line like `node_modules/` ignores a directory and not a link, so
-  `git add -A` commits it and the merge swaps the real install for a link to itself
-  (incidents: Worktrees). Commit lanes with the links excluded, and after the last lane
-  merges confirm the main worktree's install is still a directory before trusting a red
-  gate. A lane with borrowed installs never runs an install itself (it writes through
-  the link into the parent's install, and removing the lane can take it with it), and
-  its production build may refuse the link (Turbopack does): build with the bundler
-  that accepts it (`next build --webpack`) in the lane, or gate the build after the
-  merge, in the parent.
-- **Merging lanes back:** a generated file that conflicts (Convex's `_generated/`, a
-  codegen'd type) is regenerated after the merge, never hand-merged; an append-only file
-  (a stylesheet, a union of labels) keeps both sides.
 - **A task's check is the diff and the gates, nothing else.** Read the diff, run
   tsc/tests/lint, commit. Nobody drives the app or CLI per task: the pre-flight is once
   at the end of BUILD, and the QA run is TEST's. A reviewer hand-driving
@@ -817,7 +723,7 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   report goes in a file inside the worktree; the worker never commits and never
   runs `git reset/checkout/stash`. A
   repo whose rules load by path (`.claude/rules/`, a `scripts/rules-for.py`) gets those
-  rule files named in every brief, because a subagent only sees them if told. A lane
+  rule files named in every brief, because a subagent only sees them if told. A subagent
   never gets a copy of the env files: the Convex plugin's Stop hook pushes the tree's
   uncommitted `convex/` to whatever deployment its `.env.local` names, so one copied in
   ships a half-edit to the copy the driver is testing, or on `shared-dev` to everyone. A Convex
@@ -832,17 +738,13 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   next message and the `result:` line. One run dropped a settings dropdown Pete had
   asked for and he found out by asking "this is all done?".
 - **A fix round goes back to the same worker** with the findings as the brief, so the
-  context is already paid for: `SendMessage` to the same subagent. A wrapper run can't be
-  resumed, so its fix round is a fresh run with the findings added to the brief. Two wrong
-  diffs on one task move it one tier up (Engines), and the ledger records `verdict=redone`.
+  context is already paid for: `SendMessage` to the same subagent. Two wrong diffs on one
+  task and the driver takes it back and writes it, and the ledger records `verdict=redone`.
 - **A quiet run never blocks the build.** The harness wakes the driver when a subagent
-  returns, so silence is not a signal to chase. If a lane's work is visibly in the tree and no report has
+  returns, so silence is not a signal to chase. If a subagent's work is visibly in the tree and no report has
   landed, self-serve: review the diff and run the gates yourself. Dead air on the
   *reporting* path has stalled a real ship twice in one run; the work was already done
   both times.
-- **Small edits don't fan out.** A lane whose tasks are all sub-threshold is the
-  driver's, inline, while the dispatched lanes run. Review fans out regardless of
-  build size: several verifiers on one diff beats one.
 - `ponytail` posture; `superpowers:verification-before-completion` before claiming any
   task done — actually run it; `superpowers:systematic-debugging` on a red test. A test
   that fails three or more times across full runs is a bug, not a flake: root-cause it
@@ -930,9 +832,8 @@ he asks.
   lands (incidents: Worktrees). Absorb upstream *before* a run, never during; the run's
   own fixes are the only edits.
 - **Correctness review: a fresh Opus subagent (`model: "opus"`), launched first** so
-  it works while the rest of REVIEW proceeds. Its brief names the tasks it owns
-  (`route.py owners <slug>`, Engines) and says to clear each one task by task, then read the
-  whole branch for the rest. The branch was drafted one
+  it works while the rest of REVIEW proceeds. Its brief lists the plan's tasks and says to clear each
+  one task by task, then read the whole branch for the rest. The branch was drafted one
   task at a time; the reviewer reads it whole (`git diff <lane-target>...HEAD`) in a
   clean context, with the spec, and hunts the seams between tasks as hard as the tasks
   themselves — a writer and its reader drifting apart, a helper two tasks each
@@ -941,19 +842,10 @@ he asks.
   scripts included, not only the directories the diff touched (a HIGH that would have
   parked secrets-report missed the writer in a browser extension). It touches nothing, runs no test that binds a port or starts a server, and returns
   findings as file:line, the failure scenario, and a severity.
-  **Wonder reads the same branch at the same time**: write that brief to a file, with
-  Wonder's own tasks named, and run `scripts/muse.py review <worktree> <brief> <out-dir>` in
-  the background, its findings in `<out-dir>/last.md`. Neither reader sees the other's
-  findings. Muse out, or a nonzero exit: Opus reads alone and owns every task; say so in
-  the `result:` line, never wait on it.
-  The driver triages every finding from both
-  — adversarial reviewers over-flag by design, and a finding two readers reached on their own
-  is the strongest lead, never proof — checks each against the code, fixes what's real, puts judgment calls
-  on the card or in the `result:` line. Then one ledger row per reader: `route.py log
-  repo=<repo> ship=<slug> review=opus real=<n> false=<n> only=<n> owned=<n> seconds=<n>` and
-  the same with `review=wonder`, where `only` counts the real findings the other reader missed
-  and `owned` the real ones in tasks that reader owned.
-  The high-value fan-out is here: several verifiers on one diff beats one.
+  The driver triages every finding
+  — adversarial reviewers over-flag by design — checks each against the code, fixes what's real, puts judgment calls
+  on the card or in the `result:` line. Then one ledger row: `route.py log
+  repo=<repo> ship=<slug> review=opus real=<n> false=<n> seconds=<n>`.
 - **Design against the storyboard is the QA run's to judge**: the script carries a step
   per frame the change built and the craft floor
   (`~/.claude/skills/impeccable/reference/craft-floor.md`), and a gap is a failure like
@@ -990,17 +882,13 @@ he asks.
   column change that an old process's positional insert breaks is a one-way door, so it
   lands additive first or says so in Merge Danger.
 - **TEST — ship runs its QA script, and a pass lands it.** With green gates and the
-  review triaged, push, `stage.sh <root> test`, and hand the QA run to **a Sonnet 5.5
-  subagent** (`model: "sonnet"`, in the foreground); the driver runs it itself when Pete has
-  capped subagents. Its brief: the worktree's absolute path, the URL, the BACKEND,
-  test-auth, IOS and STORYBOARD lines, the spec or plan, the repo's checks skill
-  (`.claude/skills/checks/SKILL.md`, or "none yet: write it"), and "call the Skill tool with
-  `ship:verify` (the full name: bare `verify` resolves to another skill and is refused),
-  walk, fix and rerun, never commit, end with VERDICT and the result path". The tester
-  still fixes what it finds, so the one who sees the bug fixes it; the driver reviews its
-  diff, reruns the gates and commits. A change with nothing to walk, whose whole QA is one
-  data-level script (a few API calls with a test session), the driver may run itself: a
-  brief would cost more than the run. It writes the QA script, runs
+  review triaged, push, `stage.sh <root> test`, and **the driver runs the QA itself**: call
+  the Skill tool with `ship:verify` (the full name: bare `verify` resolves to another skill
+  and is refused), with the worktree's absolute path, the URL, the BACKEND, test-auth, IOS
+  and STORYBOARD lines, the spec or plan, and the repo's checks skill
+  (`.claude/skills/checks/SKILL.md`, or "none yet: write it"). The one who sees the bug fixes
+  it, with the snapshot and console in front of it, then reruns the gates and commits. It
+  writes the QA script, runs
   it on the chrome-devtools browser and, when the native app can see the
   change, on agent-device (`ios:` builds and installs the branch's app first; the phone is
   the default and a simulator stands in when it isn't connected, another ship holds it, or

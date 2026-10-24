@@ -14,7 +14,7 @@ user_invocable: true
 # /verify — prove the feature works, then hand proof to TEST
 
 **You test it yourself** (Pete, 2026-10-05), in whatever session runs this skill: in
-ship, a Sonnet subagent (pipeline TEST), never a hand-off between two: write the QA script, run it
+ship, the driver itself (pipeline TEST), never a hand-off between two: write the QA script, run it
 on the running app, fix what fails, run it again. The one who sees the bug reads the logs
 and makes the fix, so a round costs a rerun, not a hand-off. Split across two sessions it
 cost six rounds on one iPhone scroll bug: the tester could see it but not fix it, and the
