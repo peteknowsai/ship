@@ -89,6 +89,19 @@ before or after a smoke or e2e, never beside one: a showing-followups smoke went
 on ECONNRESET while it ran, and 12/12 on the rerun. A shared booted one is another ship's to shut
 down mid-QA (2026-10-14). Never control the Mac's desktop.
 
+**A Mac app, through the repo's own rig.** In a repo whose contract has `mac:`, run it
+whenever the Mac app can see the change; it prints the MAC line. Drive the app the way the
+repo's checks skill says (its UI test fixtures, a live test against the branch server), never
+by desktop control, and launch it with `open -g` so it never takes Pete's screen. A Chrome it
+needs, an extension under test included, is Chrome for Testing launched by the global rule
+(`open -g -n -a <app> --args --no-startup-window --use-mock-keychain --load-extension=<dir>`),
+never his Chrome. A rig a run had to build (CEL-198 built a relaunch script and a live-test
+fixture, and it found six real bugs) goes into the checks skill at §5, so the next run starts
+from it. Before a step that captures the Mac's screen, check the lock: `ioreg -n Root -d1 |
+grep -q '"CGSSessionScreenIsLocked"=Yes'` means locked, and a capture then hangs (CEL-198's
+`Page.captureScreenshot` sat over 60 s). Locked parks that step with `needs input:` "unlock
+the Mac", the way a locked iPhone does; steps that capture nothing still run.
+
 ## 2. Write the QA script → run it → fix → rerun (≤ 3 fix rounds per failing step)
 
 **Start from the repo's checks.** A repo keeps how it is proven in a project skill,
