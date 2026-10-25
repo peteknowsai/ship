@@ -167,7 +167,9 @@ its origin, and the walk lost a round to "No alert by that id".
     `print()` block-buffers off a terminal, so its lines arrive late or never.
   - Scroll a feed with `agent-device gesture pan <x> <y> <dx> <dy> <ms>` from mid-screen.
     `scroll up` starts at the bottom edge and can land on the composer, and an open keyboard
-    swallows it.
+    swallows it. After a pan, press only from a snapshot taken once the scroll has stopped
+    (two snapshots a second apart that match): a ref read during momentum taps where the
+    element was (CEL-213).
   - Seed content from the Mac (the repo's own test helpers or API), never by typing it on
     the phone: `fill` garbles long text.
   - To reach a state a short test account can't (paging, a long list), shrink the constants
@@ -271,7 +273,9 @@ not a spec per micro-feature. **Running** the committed spec in the gate is the 
 
 Update the repo's `.claude/skills/checks/SKILL.md` in the branch, so it lands with the
 change: a screen the change added (how to reach it, what it shows), a step that changed, a
-trick the run had to discover (sign-in, a seed, a port), a pass line Pete asked for. Replace
+trick the run had to discover (sign-in, a seed, a port), a pass line Pete asked for, and a
+false alarm a measured check raises on every run (cells-app's localhost branch strip in each
+Lighthouse audit), named as known so the next run skips it. Replace
 a stale line rather than add one. No file yet: write it from
 `reference/checks-template.md` with what this run proved, and say so in the hand-back. Name
 it `checks`, never `verify`, which is Claude Code's own skill. A run that learned nothing
