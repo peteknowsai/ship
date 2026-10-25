@@ -364,7 +364,7 @@ def selftest():
                                      'SHIP_CONFIDENTIAL_PATHS': os.path.join(tmp, 'paths')}))
         sent = open(os.path.join(tmp, 'rv', 'review-brief.md')).read()
         check('review leads the brief with read-only rules and passes on an untouched tree',
-              rr.returncode == 0 and sent.startswith('Read only.') and sent.endswith('do the thing'))
+              rr.returncode == 0 and sent.startswith('Read only.') and 'one batch of parallel calls' in sent and sent.endswith('do the thing'))
         open(os.path.join(gwt, 'a.txt'), 'w').write('changed\n')
         check('the tree check notices an edit a reader made', tree_state(gwt) != state)
         r, out, seen = run('ok', 'o1')
@@ -446,8 +446,16 @@ def selftest():
 
 
 REVIEW_MODEL = 'muse-wonder-full-1.0'
+# Pacing, from four plan reviews on 2026-10-24: 21-52 serial turns of one read each, 6-17 min,
+# the prompt growing from 26k to 270k tokens, and a 37-47k character report that took 3 min alone.
 READ_ONLY = ('Read only. Edit no file, commit nothing, and run no command that writes files, binds a port '
-             'or starts a server. Report findings as file:line, the failure scenario, and a severity.\n\n')
+             'or starts a server. Report findings as file:line, the failure scenario, and a severity.\n\n'
+             'Pace: in your first turn, read every file the brief names in one batch of parallel calls, and '
+             'batch every later read and search the same way. How a dependency behaves is checked in its '
+             'installed code; the web is only for a platform API with no code on disk. Report once each item '
+             'in the brief is checked, within about 25 tool rounds. The report is every real finding, most '
+             'severe first, at most two lines each, with no preamble and no summary of the plan, under 1,000 '
+             'words.\n\n')
 
 
 def tree_state(worktree):
