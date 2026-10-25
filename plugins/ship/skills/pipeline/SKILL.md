@@ -811,6 +811,10 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   that is TEST's QA run. A feature that makes model calls also counts the canned or
   fallback lines in the dev log after those loads: a nonzero count is a defect (a
   timeout shorter than the model's real turn, a length cap every answer fails), never noise.
+  A 401 or a missing-key error on a model call instead means localhost can't run that flow
+  (no key in any local env file): walk it on a preview, and write that into the repo's
+  checks skill (eca-finder's local live search "finished" with 0 places in 8 s and read as a
+  product bug).
   A change with UI also runs impeccable's detector on the UI files it touched,
   `~/.claude/skills/impeccable/scripts/impeccable detect --no-advisory <files>` (exit
   0 clean, 2 findings on stderr, 1 a file it couldn't read): fix each finding, or waive a
@@ -883,6 +887,11 @@ he asks.
   repo=<repo> ship=<slug> review=opus real=<n> false=<n> only=<n> seconds=<n>` and the same
   with `review=wonder` (`out=<out-dir>` in place of `seconds`), where `only` counts the real
   findings the other reader missed.
+- **A text transform runs over the real corpus.** A change to anything that rewrites text
+  (a name cleaner, a parser, a formatter) runs over the whole of the dev data it will see,
+  and the driver reads the before-and-after diff, not only the hand-picked test cases:
+  eca-finder's name cleaner passed review and its tests, then a run over all 9,373 dev
+  catalog names found four mangles nobody had imagined.
 - **Design against the storyboard is the QA run's to judge**: the script carries a step
   per frame the change built and the craft floor
   (`~/.claude/skills/impeccable/reference/craft-floor.md`), and a gap is a failure like
