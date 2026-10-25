@@ -361,8 +361,10 @@ Five runs had him asking "where are we?" mid-flight.
 **What runs with the Bash sandbox off.** Anything that writes outside the worktree or binds
 a port: the fork (`wt switch --create`, `stage.sh` on a new worktree), the ledger (`route.py
 log`), `muse.py`, anything that talks to GitHub (`gh`, `git
-push`, `git fetch`: the sandbox's proxy fails their TLS check), gates, smokes and dev
-servers. Everything else
+push`, `git fetch`: the sandbox's proxy fails their TLS check), any git command that rewrites
+the tree (`rebase`, `merge`, `checkout`, `reset`: the sandbox denies writes under `.claude/`,
+and CEL-213's rebase stopped halfway there, leaving the tree split between main and the
+branch), gates, smokes and dev servers. Everything else
 stays in the sandbox.
 
 **`$TMPDIR` changes with the sandbox.** A sandboxed Bash call sees `/tmp/claude-<uid>`, one
