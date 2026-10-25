@@ -311,6 +311,9 @@ Every key is optional, and the default is what a repo with no contract gets:
   meant for phones (the spec or storyboard says mobile web), the QA script may add Safari in a
   booted simulator. That is a judgment call on the build, and never iPhone PM, which is
   for native apps (Pete, 2026-10-05).
+- **`mac:`** for a native Mac app, the command that builds the branch's own app, pointed at
+  the branch's server, and prints its MAC line (the .app path, bundle id, and how the repo's
+  checks skill drives it). Default: none.
 - **`land:`** how a branch reaches main. `pr` (the default) squash-merges
   the tracker PR. `direct` pushes `HEAD:main` after a rebase and opens no PR. `auto`, for a repo whose main
   deploys nothing, lands on the QA run's `works` and never waits for Pete, money paths
@@ -1186,7 +1189,9 @@ Render `reference/review-card.html` filled with the meta only — PM-framed, one
   section entirely; never pad it.
 - **Where it is** — the live links landing deployed (the contract's `live:`), or the
   preview links and localhost when the ship parked. The verdict line (`LANDING_STATUS`)
-  says which: "Landed on main" with the live URL, or what it waits on. The tracker PR
+  says which: "Landed on main" with the live URL, or what it waits on, plus the
+  branch-built native app when the ship made one (the IOS or MAC line: the device and
+  bundle, or the .app path), so he can open what he's asked to try. The tracker PR
   link is there for the record, but he shouldn't need it.
 
 ## Follow-ups — what we should do next
