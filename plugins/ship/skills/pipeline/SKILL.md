@@ -707,7 +707,9 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   2026-10-14). A task that reads what another part of the app produces, a loop's brief or
   a tool's payload, quotes a real sample of it, never the storyboard's mock: one plan
   parsed a "Price" heading from a mock when the live brief says "Budget", and only QA
-  caught it (market-loops, 2026-10-15). The driver triages and edits the plan. Nothing goes back to Pete unless it changes what
+  caught it (market-loops, 2026-10-15). The driver triages and edits the plan, and logs the reader's tally: `route.py log
+  repo=<repo> ship=<slug> review=wonder stage=plan real=<n> false=<n> out=<out-dir>` (`review=opus
+  seconds=<n>` when Opus read in its place). Nothing goes back to Pete unless it changes what
   gets built. Then `route.py plan` (Engines). No task starts before the review lands,
   unless the plan names it a spike: two runs built early and
   rewrote what the review then flagged.
