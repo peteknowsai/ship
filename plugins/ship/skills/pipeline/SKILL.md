@@ -931,7 +931,7 @@ he asks.
   prompts, the camera, real scrolling and touch feel. Otherwise walk the simulator and say
   so on the card;
   a mobile-web build may add a simulator's Safari, never the phone), fixes what fails and
-  reruns, up to three fix rounds. No desktop control of the Mac. It walks the surface Pete
+  reruns, up to three fix rounds on any one failing step (a new bug each round is progress, and the `result:` line gives the count). No desktop control of the Mac. It walks the surface Pete
   would open, signed in the way he would be, with real clicks, taps and keys, never events
   dispatched from a script (a right-click menu bug got past synthetic events twice). When
   getting past sign-in on the repo's test-auth path took a trick (Clerk's bot check, say),
@@ -948,7 +948,7 @@ he asks.
     undoes it) lands now; **one-way** (it deletes or migrates data, moves money, sends
     something to people, or a revert can't undo it) waits for Pete's "merge main" like a
     money path.
-  - **`broken` after three fix rounds, or `unverifiable`: park.** End the turn with
+  - **`broken` after three fix rounds on one step, or `unverifiable`: park.** End the turn with
     `needs input:` ("test: <feature> — couldn't prove it works: <reason>") and hand Pete
     the result and evidence. A step the run couldn't reach (a mic, a bot check, a device
     it couldn't open) makes the result partial, and partial is `unverifiable`, never a

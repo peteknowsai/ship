@@ -33,9 +33,19 @@ server, booted for you; standalone, boot it first and note the URL. Ready means 
 poll it with curl up to a deadline and watch the dev log for errors, never a process grep,
 since a dev server can build for minutes before it listens. Reuse that stack, never
 boot a second. A preview behind the host's login wall (Vercel protection) is reached with its
-automation bypass: send the `x-vercel-protection-bypass` value as an extra header on the
-page (and `x-vercel-set-bypass-cookie: true` on the first load), never through Pete's
-browser.
+automation bypass, never through Pete's browser, and the secret never sits in a tool call
+or a URL, where the transcript keeps it (chrome-devtools' `emulate` extraHttpHeaders would
+put it there). Let the CLI read it and set the cookie: `vercel curl / --deployment <host> --
+--silent --output /dev/null --header 'x-vercel-set-bypass-cookie: true' --cookie-jar <jar in
+the job's tmp>`, then load the jar's cookies into a Playwright context (`addCookies`) and walk
+the preview there (the Playwright recipe in §2). Walk one stable host across fix rounds so the
+cookie, driver and harness carry over: the branch's git alias
+(`<project>-git-<branch>-<team>.vercel.app`) when the host builds each push, else alias each
+new deploy to one name (`vercel alias set <deploy-url> <name>.vercel.app`); live-search
+rebuilt all three for seven fresh deploy URLs. The measured checks still run on
+chrome-devtools, against the worktree's own production build (`next build && next start`,
+or the repo's equivalent): CLS and accessibility don't change with the host, and CLS summed
+by hand from layout-shift entries misreads it (0.12 against a real 0.056).
 
 **The generic seam (don't cross it):** if the feature is behind auth, the **repo** must
 provide a test way to reach authed surfaces: its contract's `test-auth:`. `seed <how>` is a
@@ -79,7 +89,7 @@ before or after a smoke or e2e, never beside one: a showing-followups smoke went
 on ECONNRESET while it ran, and 12/12 on the rerun. A shared booted one is another ship's to shut
 down mid-QA (2026-10-14). Never control the Mac's desktop.
 
-## 2. Write the QA script → run it → fix → rerun (≤ 3 fix rounds)
+## 2. Write the QA script → run it → fix → rerun (≤ 3 fix rounds per failing step)
 
 **Start from the repo's checks.** A repo keeps how it is proven in a project skill,
 `.claude/skills/checks/SKILL.md`: how to start it, sign in, walk each screen, and the pass
@@ -196,8 +206,8 @@ reads "Connecting..." can vanish, which is a finding, not a retype. Re-run the g
 and rerun the failed steps plus
 every step the fix could touch. The same step failing twice means the
 last fix was a guess: call the Skill tool with `mattpocock-skills:diagnosing-bugs` and get a loop that goes red
-on it (a test, a script, a trace) before the next fix. Three fix rounds without a pass:
-stop, and hand the caller what keeps failing with its evidence. A step you can't reach (a
+on it (a test, a script, a trace) before the next fix. Three fix rounds on the same
+failing step without a pass: stop, and hand the caller what keeps failing with its evidence. A step you can't reach (a
 mic, a bot check, a missing device, an auth wall with no test-auth path) makes the result
 `unverifiable`, naming the step, even when everything else passed. Never loop forever; never
 merge unproven.
