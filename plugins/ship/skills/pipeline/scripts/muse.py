@@ -285,6 +285,8 @@ for line in sys.stdin:
     elif method == 'usage/read':
         out(id=i, result={'usage': usage(43)} if scenario == 'quota' else {})
     elif method == 'turn/start':
+        if scenario == 'edit':  # a reader, or anything else, writing in the tree mid-read
+            open(os.environ['STUB_EDIT'], 'w').write('x\n')
         out(id=i, result={})
         out(method='turn/started', params={'sessionId': 's1'})
         if scenario != 'nomsg':
@@ -361,6 +363,13 @@ def selftest():
               rr.returncode == 0 and sent.startswith('Read only.') and 'one batch of parallel calls' in sent and sent.endswith('do the thing'))
         open(os.path.join(gwt, 'a.txt'), 'w').write('changed\n')
         check('the tree check notices an edit a reader made', tree_state(gwt) != state)
+        rr = subprocess.run([sys.executable, os.path.abspath(__file__), 'review', gwt, os.path.join(tmp, 'brief.md'),
+                             os.path.join(tmp, 'rv2')], capture_output=True, text=True, timeout=60,
+                            env=dict(os.environ, **{'HOME': real, 'MUSE_BIN': stub, 'STUB_DIR': tmp,
+                                     'STUB_SCENARIO': 'edit', 'STUB_EDIT': os.path.join(gwt, 'b.txt'),
+                                     'SHIP_QUOTA_MUSE': cache}))
+        check('a write during the read exits 6 and names the changed file',
+              rr.returncode == 6 and 'b.txt' in rr.stderr and 'a build, the gates' in rr.stderr)
         r, out, seen = run('ok', 'o1')
         got = read_cache(cache)
         check('a completed build exits 0 and last.md is the final answer, not later commentary', r.returncode == 0 and
@@ -465,8 +474,11 @@ def review(worktree, brief, out, model=REVIEW_MODEL):
     before = tree_state(worktree)
     code = build(worktree, ro, out, model)
     if tree_state(worktree) != before:
-        raise Exit(6, f'the reader changed {worktree}: its findings are in {out}/last.md, but check '
-                      '`git status` and `git diff` before trusting the tree')
+        now = subprocess.run(['git', '-C', worktree, 'status', '--porcelain'], capture_output=True,
+                             text=True).stdout.strip() or '(clean again)'
+        raise Exit(6, f'the tree changed during the read: its findings are in {out}/last.md. Changed now:\n'
+                      f'{now[:1500]}\nAnything else that wrote in the worktree meanwhile (a build, the gates) '
+                      'trips this too; check `git diff` before trusting the tree')
     return code
 
 
