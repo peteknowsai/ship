@@ -365,7 +365,8 @@ Five runs had him asking "where are we?" mid-flight.
 a port: the fork (`wt switch --create`, `stage.sh` on a new worktree), the ledger (`route.py
 log`), `muse.py`, anything that talks to GitHub (`gh`, `git
 push`, `git fetch`: the sandbox's proxy fails their TLS check), any git command that rewrites
-the tree (`rebase`, `merge`, `pull`, `checkout`, `reset`, before the fork too: the sandbox denies writes under `.claude/`,
+the tree or makes a branch (`rebase`, `merge`, `pull`, `checkout`, `reset`, `switch`, `branch`, before the fork too: the sandbox denies writes under `.claude/`
+and to the shared `.git/config`, where thin-search's `switch -c` left a half-made branch,
 and CEL-213's rebase stopped halfway there, leaving the tree split between main and the
 branch), gates, smokes and dev servers. Everything else
 stays in the sandbox.
@@ -389,8 +390,9 @@ file under the job's tmp directory. Any file edit the Edit and Write tools can't
 goes the same way: Write the script to the job's tmp, then `bash <path>` or `python3
 <path>`. Never an inline heredoc, `sed -i` chain or loop first, not even once: one run
 hit the guard eight times reaching for them. A command on the main checkout (`cd <main> && git`,
-`git -C <main>`) is refused while the session is in the worktree: run it from a script, or
-after `ExitWorktree` at LAND. Two runs lost 40 commands to split-and-retry, and two more
+`git -C <main>`) is refused while the session is in the worktree: run it after `ExitWorktree`
+at LAND, never from a script that hides it from the guard; LAND step 1 says what to do when
+there is no worktree to exit. Two runs lost 40 commands to split-and-retry, and two more
 lost about ten each (2026-10-05). Written for Claude Code; a Codex driver runs `codex/ship.md` instead (see
 `reference/rare-cases.md`, Running under Codex Desktop).
 
