@@ -248,7 +248,9 @@ Every key is optional, and the default is what a repo with no contract gets:
   to 27 of them). A multi-step gate run goes in a script file written with the Write tool,
   then `bash <file>`, since the worktree guard refuses long inline commands. That script
   starts with `set -euo pipefail`: without it, `npm test | tail -8` exits with tail's code,
-  and CEL-180's script printed green over a failed test. A full run whose only failures are
+  and CEL-180's script printed green over a failed test. Filter the output with `grep -E
+'FAIL|Test Files|Tests '` rather than `tail`, so a red names its failing test: browser-replay
+reran a 90-second suite only to read the name tail had cut. A full run whose only failures are
   in files the diff never touched, under heavy load from sibling ships (timeouts, or a set
   that moves between unrelated files from run to run), reruns just those files alone. If
   they pass alone, it's load: both runs and the `uptime` load figure go in the commit or the
@@ -971,9 +973,9 @@ he asks.
     body in its shape: Summary (the smallest visual that shows the change), Evidence
     (before/after: the QA result and its shots, the test that went green), Merge Danger
     (door and blast radius). The door is ship's call on every ship: **two-way** (a revert
-    undoes it) lands now; **one-way** (it deletes or migrates data, moves money, sends
-    something to people, or a revert can't undo it) waits for Pete's "merge main" like a
-    money path.
+    undoes it) lands now; **one-way** (it deletes or migrates data, sends something to people, or a
+    revert can't undo it) waits for Pete's "merge main". A money path waits as its own reason
+    whatever the door, so a PR can be "two-way, but a money path".
   - **`broken` after three fix rounds on one step, or `unverifiable`: park.** End the turn with
     `needs input:` ("test: <feature> — couldn't prove it works: <reason>") and hand Pete
     the result and evidence. A step the run couldn't reach (a mic, a bot check, a device
