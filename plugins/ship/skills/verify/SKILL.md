@@ -151,7 +151,10 @@ its origin, and the walk lost a round to "No alert by that id".
   Enter in a field does start paid work, that is a failure to report: a real user hits it too. A React controlled input can ignore `fill` (the value snaps back): click it and
   `type_text`. The tool's clicks are slower than a person's, so a control with a short
   settle timer (picks counted after ~2s) can read three picks as three separate ones: judge
-  its result, not each click. Keep the QA script and the dev log under the job's tmp
+  its result, not each click. When the app drives a browser of its own on another box (a
+  bot's remote Chrome), capture that box's real screen (its X display) as soon as clicks
+  there stop landing: in browser-replay a Chrome dialog swallowed every click and only the
+  screen showed it. Keep the QA script and the dev log under the job's tmp
   directory (else the worktree), never `/tmp`: a restart mid-QA wiped one. Screenshots and
   `take_snapshot` files go under `<shots-root>/.ship-shots/<slug>/` (below), because the
   chrome-devtools MCP refuses a path outside the session's workspace roots, the job's tmp
