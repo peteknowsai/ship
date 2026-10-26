@@ -458,11 +458,12 @@ gate: the repo's frozen-lockfile install, a real one and never a link (this tree
 dev server and the production build, and Turbopack refuses a linked `node_modules`), and
 a copy of the main checkout's gitignored env files (`.env.local`). Without them the first
 test run dies on module-not-found, which reads as a real red. A provisioned install is the
-main checkout's, which can be older than the origin/main the worktree forked from: when the
-worktree's lockfile differs from the main checkout's (`cmp <worktree>/package-lock.json
-<main-checkout>/package-lock.json`, or the repo's own lockfile), run the frozen-lockfile
-install before the first gate (eca-finder's copied `node_modules` lacked main's new
-`@amplitude/*` packages and failed typecheck five times). Run `scripts/stage.sh <root> discover`: it writes the marker
+main checkout's, which can be older than the origin/main the worktree forked from, or than
+the main checkout's own lockfile, so whenever `node_modules` came copied, run the
+frozen-lockfile install before the first gate. Matching lockfiles prove nothing:
+eca-finder's copied `node_modules` lacked main's new `@amplitude/*` packages and failed
+typecheck five times, and joined-search's lacked two quickjs packages with both lockfiles
+identical. Run `scripts/stage.sh <root> discover`: it writes the marker
 and adds `.ship-*` to the repo's `info/exclude`, since `git add -A` sweeps the marker
 into commits otherwise (incidents: Worktrees). Never build on main.
 

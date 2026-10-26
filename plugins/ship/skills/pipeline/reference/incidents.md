@@ -29,6 +29,11 @@ These are facts, not process — the process lives in SKILL.md.
   no-op; after `wt remove` the guard refused every Bash command, a subagent inherited
   the pin, and the only way out was recreating the directory by hand. Such a session
   merges from the worktree and removes it last, or leaves it to `wt-sweep`.
+  An entered worktree removed without `ExitWorktree` first does the same to the next ship
+  in that session (eca-finder thin-search, 2026-10-26): its cwd pointed at a deleted
+  folder, `EnterWorktree` refused with "not in a git repository", Bash kept resetting
+  there, and chrome-devtools would save shots only under the dead path, recreating it.
+  joined-search had to drive its whole worktree by absolute path.
 
 - **The browser writes screenshots only inside the session's workspace roots**
   (2026-09-24, when gstack's `/browse` gave way to the chrome-devtools MCP). A verifier
