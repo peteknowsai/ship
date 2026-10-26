@@ -154,7 +154,10 @@ its origin, and the walk lost a round to "No alert by that id".
   its result, not each click. When the app drives a browser of its own on another box (a
   bot's remote Chrome), capture that box's real screen (its X display) as soon as clicks
   there stop landing: in browser-replay a Chrome dialog swallowed every click and only the
-  screen showed it. Keep the QA script and the dev log under the job's tmp
+  screen showed it. A screen shown only while async work runs needs a target whose work
+  outlasts the walk to it (reading-tally's small town finished during the intro, and a
+  second paid search went to a mid-size one). `navigate_page`'s `initScript` lasts that one
+  navigation, since the MCP removes it after, so pass it again on every navigation that needs it. Keep the QA script and the dev log under the job's tmp
   directory (else the worktree), never `/tmp`: a restart mid-QA wiped one. Screenshots and
   `take_snapshot` files go under `<shots-root>/.ship-shots/<slug>/` (below), because the
   chrome-devtools MCP refuses a path outside the session's workspace roots, the job's tmp

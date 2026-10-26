@@ -5,7 +5,7 @@
 # One plain command, so it never trips the harness's worktree-isolation guard the way
 # `echo … >> $(git rev-parse …)` does.
 set -eu
-[ $# -eq 2 ] || { sed -n '2p' "$0"; exit 2; }
+[ $# -eq 2 ] || { echo "stage.sh: expected 2 args, got $#" >&2; sed -n '2p' "$0"; exit 2; }
 root=$(git -C "$1" rev-parse --show-toplevel)
 common=$(git -C "$root" rev-parse --git-common-dir)
 case "$common" in /*) ;; *) common="$root/$common" ;; esac
