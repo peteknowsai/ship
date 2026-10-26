@@ -43,6 +43,16 @@ if [ "$HAS_JQ" -eq 1 ]; then
   model_name=$(echo "$input" | jq -r '.model.display_name // .model.id // ""' 2>/dev/null)
   context_pct=$(echo "$input" | jq -r '.context_window.used_percentage // 0' 2>/dev/null)
   context_pct=$(printf "%.0f" "$context_pct" 2>/dev/null)
+  # 🧠 reads against the auto-compact point, not the model's whole window: with Pete's 400k
+  # autoCompactWindow on a 1M window, 35% of the window was already 3% from compaction.
+  ctx_tokens=$(echo "$input" | jq -r '.context_window.total_input_tokens // empty' 2>/dev/null)
+  ctx_size=$(echo "$input" | jq -r '.context_window.context_window_size // empty' 2>/dev/null)
+  compact_at=${CLAUDE_CODE_AUTO_COMPACT_WINDOW:-$(jq -r '.autoCompactWindow // empty' "$HOME/.claude/settings.json" 2>/dev/null)}
+  num() { case "$1" in ''|*[!0-9]*) return 1 ;; esac; }
+  if num "$ctx_tokens" && num "$compact_at" && [ "$compact_at" -gt 0 ] \
+     && { ! num "${ctx_size%.*}" || [ "$compact_at" -lt "${ctx_size%.*}" ]; }; then
+    context_pct=$(( ctx_tokens * 100 / compact_at ))
+  fi
 else
   current_dir="~"; cc_version=""; effort=""; context_pct=0; model_name=""
 fi
