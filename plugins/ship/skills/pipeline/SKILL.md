@@ -794,7 +794,10 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   page.** Run the gates and, for a framework with its own production build, that build;
   compare the key names in the worktree's env files with the main checkout's (and
   `.env.example`): a key main gained after the fork is missing here, and an agent that
-  can't start reads as a product bug and costs a QA round. Then boot the app, confirm the
+  can't start reads as a product bug and costs a QA round. A repo with `ios:` or `mac:`
+  builds the branch's app here once, before REVIEW: upstream churn alone can break a native
+  build harness between PLAN and TEST (peggy-qa's bundle id moved into an xcconfig and its
+  build patch refused every build), and that is BUILD's to fix, not TEST's. Then boot the app, confirm the
   server on its port is this worktree's: `scripts/listener.sh <port>` waits for the
   listener and prints its pid and the checkout it serves, walking up the parent processes
   when a Next server's own cwd reads `/`: brief-and-home's
@@ -993,7 +996,9 @@ he asks.
 Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
 
 - **Land — `land: pr` (the default), from the MAIN CHECKOUT, teardown first** (incidents: Worktrees — both orderings that deviate have stranded ships):
-  0. Pre-flight *from the worktree*: delete any test data the run kept for itself (cells-app:
+  0. Pre-flight *from the worktree*: release what the run started from inside it (a QA-run
+     directory's own teardown, its containers, a simulator it cloned), since removing the
+     worktree first orphans them (peggy-qa's `qa-run.sh remove`); delete any test data the run kept for itself (cells-app:
      a `--keep` smoke person, `npm run prune -- --people --finish <id>`) while the worktree's
      server still answers, since the cleanup needs it and Clerk's test instance caps at 100
      people; then `stage.sh <root> land`, then `git fetch origin`; if main moved, absorb +
@@ -1005,9 +1010,11 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
      says `MERGEABLE`.
   1. Return to the main checkout (`ExitWorktree({action:"keep"})`). If it answers that no
      EnterWorktree session is active, run 2–4 by absolute path against the main checkout
-     instead (`wt -C <main> remove …`, `gh pr merge <#> -R <owner/repo> …`, `git -C <main>
-     pull --ff-only`), then `cd <main checkout>` so the next ship's `EnterWorktree` can
-     take.
+     instead (`wt -C <main> remove … -D`, `gh pr merge <#> -R <owner/repo> …`), then `cd <main
+     checkout>` so the next ship's `EnterWorktree` can take, and `git pull --ff-only` there.
+     When the guard still refuses git against the main checkout, leave its pull to the next
+     session in it and say so in the `result:` line: the next fork branches from origin/main
+     either way (peggy-qa, 2026-10-26).
   2. `wt remove feature/<slug> -f` — frees the branch for `--delete-branch`.
   3. `gh pr merge <#> --squash --delete-branch` — from the main checkout.
   4. `git pull --ff-only` (+ `git branch -D feature/<slug>` if a local branch
