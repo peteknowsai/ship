@@ -365,7 +365,7 @@ Five runs had him asking "where are we?" mid-flight.
 a port: the fork (`wt switch --create`, `stage.sh` on a new worktree), the ledger (`route.py
 log`), `muse.py`, anything that talks to GitHub (`gh`, `git
 push`, `git fetch`: the sandbox's proxy fails their TLS check), any git command that rewrites
-the tree (`rebase`, `merge`, `checkout`, `reset`: the sandbox denies writes under `.claude/`,
+the tree (`rebase`, `merge`, `pull`, `checkout`, `reset`, before the fork too: the sandbox denies writes under `.claude/`,
 and CEL-213's rebase stopped halfway there, leaving the tree split between main and the
 branch), gates, smokes and dev servers. Everything else
 stays in the sandbox.
@@ -940,7 +940,8 @@ he asks.
 - **TEST — ship runs its QA script, and a pass lands it.** With green gates and the
   review triaged, push, `stage.sh <root> test`, and **the driver runs the QA itself**: call
   the Skill tool with `ship:verify` (the full name: bare `verify` resolves to another skill
-  and is refused), with the worktree's absolute path, the URL, the BACKEND, test-auth, IOS
+  and is refused; an API-only change goes through it too, its QA script then being the
+  data-level calls), with the worktree's absolute path, the URL, the BACKEND, test-auth, IOS
   and STORYBOARD lines, the spec or plan, and the repo's checks skill
   (`.claude/skills/checks/SKILL.md`, or "none yet: write it"). The one who sees the bug fixes
   it, with the snapshot and console in front of it, then reruns the gates and commits. It
