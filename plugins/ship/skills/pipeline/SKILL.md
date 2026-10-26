@@ -127,8 +127,8 @@ findings in `<out-dir>/last.md`, with `<out-dir>` in the job's tmp, outside the 
 (`muse.py` refuses one inside it). Muse runs only through `muse.py`, never a hand-typed
 `muse exec`. Any nonzero exit means Muse is out (5: its quota; 2: a usage error, so read stderr): an
 Opus subagent reads in its place, and the `result:` line says so. Readers report and never edit, because a reader that
-rewrites breaks working code. Nothing else writes in the worktree while Muse reads, the gates
-and a build included, since `muse.py` compares the tree before and after and exits 6 on any
+rewrites breaks working code. Nothing else writes in the worktree while Muse reads, the gates,
+a build and a commit included, since `muse.py` compares the tree before and after and exits 6 on any
 change (find-three-more's `next build` during a read tripped it on a clean tree). A claim about how a dependency behaves at runtime is checked in its
 installed code (`node_modules/<pkg>/dist`), not its docs: a plan review once took Eve's
 docs on queued messages at their word, and the runtime did otherwise (2026-10-14).
@@ -744,7 +744,11 @@ into commits otherwise (incidents: Worktrees). Never build on main.
 - **A task's check is the diff and the gates, nothing else.** Read the diff, run
   tsc/tests/lint, commit. Nobody drives the app or CLI per task: the pre-flight is once
   at the end of BUILD, and the QA run is TEST's. A reviewer hand-driving
-  the product per task cost 20 minutes a task and found nothing the gates missed.
+  the product per task cost 20 minutes a task and found nothing the gates missed. One
+  exception: code that something else starts (an MCP server, a worker, a scheduled job) and
+  that finds a package or file by a bare or relative name gets one check run from a temp
+  working directory, since its host starts it elsewhere and tests from the repo root never
+  see it (fast-readers' worker loaded tsx by bare name and its writer tested blind).
 - **Standing brief boilerplate** (each line from a burned run, incidents: Dispatch):
   one task per brief, with the plan's complete code pasted in, the exact test commands
   and the files it may touch; "do it, do not propose", because a worker given an open ask
