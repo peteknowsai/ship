@@ -1042,7 +1042,11 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
     declaring done.
 - **Watch what landing deploys (the contract's `live:`).** A Convex MCP deployment selector
   carries the folder it was taken in, so one from the worktree fails with ENOENT after
-  teardown: take new ones from the main checkout for every post-landing check. A diff that touches nothing
+  teardown: take new ones from the main checkout for every post-landing check. Wait on a
+  Vercel build with `vercel inspect <url> --wait --timeout <t>`, never `vercel ls` through
+  grep, which misses "Building". A CLI `--prod` deploy in a repo whose git integration also
+  builds main starts a second production build about 30 s later, and that one ends up live:
+  watch it too (eca-finder, 2026-10-26). A diff that touches nothing
   `live:` builds deploys nothing: skip the deploy and say so in the `result:` line, since a
   deploy run for it would ship main's other unreleased commits (eca-finder, 2026-10-24). Where main is production and
   the host builds it (cells-app: each touched pack's Vercel production build, Convex
