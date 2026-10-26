@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Read the four BUILD quota pools from their usage caches, and say which repos are confidential.
+"""Read the four BUILD quota pools from their usage caches.
 
   quota.py               the pools as JSON
   quota.py --table       one line per pool: used, unused, spare rate, reset
@@ -19,15 +19,9 @@ Caches: ~/.claude/usage-cache.json, ~/.claude/codex-usage-cache.json and
 ~/.claude/muse-usage-cache.json, or SHIP_QUOTA_ANTHROPIC, SHIP_QUOTA_CODEX, SHIP_QUOTA_MUSE.
 SHIP_QUOTA_NOW (epoch seconds) pins the clock for tests.
 
-confidential(path) reads absolute path prefixes from ~/.config/ship/confidential-paths (or
-SHIP_CONFIDENTIAL_PATHS), one per line, # comments, ~ expanded, matched ignoring case. That
-file stays on Pete's Mac: this repo is public and must not name client repos. It fails
-closed: no list file, or one it can't read, makes every repo confidential; an empty list
-makes none.
 """
 import json
 import os
-import subprocess
 import sys
 import tempfile
 import time
@@ -206,68 +200,6 @@ def table(found=None):
     return '\n'.join(lines)
 
 
-def list_path():
-    return os.environ.get('SHIP_CONFIDENTIAL_PATHS') or os.path.expanduser('~/.config/ship/confidential-paths')
-
-
-def list_missing():
-    """No list file at all: confidential() keeps every repo away from Muse until one exists."""
-    return not os.path.exists(list_path())
-
-
-def prefixes():
-    if list_missing():
-        return []
-    lines = open(list_path()).read().splitlines()  # an unreadable list raises: confidential() fails closed
-    return [os.path.realpath(os.path.expanduser(line.strip())) for line in lines
-            if line.strip() and not line.strip().startswith('#')]
-
-
-def main_checkout(path):
-    """The main checkout of the repo holding `path`, None outside a repo. Asks git, else walks up to
-    a `.git`: a linked worktree's is a file, `gitdir: <main>/.git/worktrees/<name>`. Raises on a
-    `.git` file it can't read that way, so confidential() fails closed."""
-    try:
-        return os.path.dirname(subprocess.check_output(
-            ['git', '-C', path, 'rev-parse', '--path-format=absolute', '--git-common-dir'],
-            text=True, stderr=subprocess.DEVNULL).strip())
-    except (OSError, subprocess.CalledProcessError):
-        pass
-    here = os.path.abspath(path)
-    while True:
-        dot = os.path.join(here, '.git')
-        if os.path.isdir(dot):
-            return here
-        if os.path.isfile(dot):
-            line = open(dot).read().strip()
-            if not line.startswith('gitdir:'):
-                raise ValueError(f'{dot} has no gitdir line')
-            main, sep, _ = os.path.join(here, line[len('gitdir:'):].strip()).partition('/.git/worktrees/')
-            if not sep:
-                raise ValueError(f'{dot} does not point into a .git/worktrees folder')
-            return main
-        if os.path.dirname(here) == here:
-            return None
-        here = os.path.dirname(here)
-
-
-def confidential(path):
-    """True when `path`, or the main checkout of the repo holding it, sits under a listed prefix,
-    and whenever the list file is missing. An empty list means nothing is confidential."""
-    try:
-        if list_missing():
-            return True
-        listed = [p.lower().rstrip('/') + '/' for p in prefixes()]  # macOS paths ignore case
-        if not listed:
-            return False
-        places = [path, main_checkout(path)]
-        for place in filter(None, places):
-            here = os.path.realpath(place).lower().rstrip('/') + '/'
-            if any(here.startswith(p) for p in listed):
-                return True
-        return False
-    except Exception:  # fail closed: a broken list must never send a client repo to a training model
-        return True
 
 
 def selftest():
@@ -389,48 +321,6 @@ def selftest():
         check('one bad Anthropic field keeps the rest: session 90 still blocks Opus, Fable still known',
               crashed is None and p['anthropic']['opus_blocked'] is True and p['fable']['known'] is True)
 
-        git = lambda *args: subprocess.run(['git', *args], check=True, capture_output=True)
-        listed = os.path.join(tmp, 'clients')
-        main = os.path.join(listed, 'Peg')
-        git('init', '-q', main)
-        git('-C', main, '-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '--allow-empty', '-m', 'x')
-        worktree = os.path.join(tmp, 'worktrees', 'peg-feature')
-        git('-C', main, 'worktree', 'add', '-q', '-b', 'feature', worktree)
-        other = os.path.join(tmp, 'other', 'repo')
-        git('init', '-q', other)
-        peggy = os.path.join(tmp, 'clients-x', 'Peggy2')
-        os.makedirs(peggy)
-        paths = os.path.join(tmp, 'confidential-paths')
-        open(paths, 'w').write(f'# clients\n\n{listed}/Peg\n')
-        os.environ['SHIP_CONFIDENTIAL_PATHS'] = paths
-        check('a worktree outside the prefix is confidential through its main checkout', confidential(worktree) is True)
-        check('the main checkout itself is confidential', confidential(main) is True)
-        check('a repo under no prefix is not', confidential(other) is False)
-        open(paths, 'w').write(f'{tmp}/clients-x/Peg\n')
-        check('/a/Peg does not match /a/Peggy2', confidential(peggy) is False)
-        check('a path that does not exist is just a path', confidential(os.path.join(tmp, 'nowhere')) is False)
-        open(paths, 'w').write(f'{listed}/Peg\n')
-        odd = os.path.join(tmp, 'odd')
-        os.makedirs(odd)
-        open(os.path.join(odd, '.git'), 'w').write('not a gitdir line\n')
-        check('a .git file that will not parse fails closed', confidential(odd) is True)
-        path, empty_bin = os.environ.get('PATH', ''), os.path.join(tmp, 'empty-bin')
-        os.makedirs(empty_bin)
-        os.environ['PATH'] = empty_bin  # git is gone
-        try:
-            no_git = confidential(worktree), confidential(other)
-        finally:
-            os.environ['PATH'] = path
-        check('with git missing, the worktree .git file still leads to the listed main checkout', no_git[0] is True)
-        check('with git missing, a repo under no prefix is still not confidential', no_git[1] is False)
-        open(paths, 'w').write(os.path.join(tmp, 'CLIENTS', 'PEG') + '\n')
-        check('the prefix matches ignoring case, as macOS paths do', confidential(worktree) is True)
-        open(paths, 'w').write('# nothing listed yet\n\n')
-        check('an empty or comments-only list means nothing is confidential',
-              confidential(worktree) is False and list_missing() is False)
-        os.environ['SHIP_CONFIDENTIAL_PATHS'] = os.path.join(tmp, 'no-list')
-        check('no list file fails closed: every repo is confidential and list_missing says so',
-              confidential(other) is True and list_missing() is True)
     print(f'quota self-test: {fails} failed')
     return fails == 0
 
