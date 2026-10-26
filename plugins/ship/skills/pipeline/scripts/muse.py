@@ -18,11 +18,10 @@ home/, the serve's HOME: a shadow of the real home, every entry linked back exce
 folders (SKIP_HOME), so the login (macOS Keychain), Xcode, npm and Playwright caches all work in
 the model's shell while Pete's personal skills never load and never reach Meta. `serve` has no
 setting for this: its `--no-foreign-personal-context` skips only ~/.claude and ~/.codex skills,
-and it has no shell-environment policy (2026-10-16). A confidential repo is refused
-before serve starts: Contributor mode trains on what it sees.
+and it has no shell-environment policy (2026-10-16).
 
 Exit 0: completed with a final message. 1: the turn failed, or a request got a JSON-RPC error.
-2: usage error or confidential worktree. 3: killed by the watchdog (no turn/started inside
+2: usage error. 3: killed by the watchdog (no turn/started inside
 MUSE_STARTUP seconds, default 60, or no frame for MUSE_IDLE, default 900). 4: completed with no
 agent message, which means it DID NOT RUN. 5: quota hit; the cache is marked exhausted until
 the reset. MUSE_BIN overrides the `muse` command.
@@ -39,7 +38,7 @@ import time
 import uuid
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import quota  # noqa: E402  one reader for confidential()
+import quota  # noqa: E402
 
 STARTUP = float(os.environ.get('MUSE_STARTUP') or 60)
 IDLE = float(os.environ.get('MUSE_IDLE') or 900)
@@ -209,8 +208,6 @@ def build(worktree, brief, out, model):
         raise Exit(2, f'no worktree at {worktree}')
     if not (os.path.isfile(brief) and os.path.getsize(brief)):
         raise Exit(2, f'brief {brief} is missing or empty')
-    if quota.confidential(worktree):
-        raise Exit(2, f'{worktree} is confidential: Muse trains on what it sees. Route it to Codex.')
     real = os.path.expanduser('~')  # before the child's HOME moves
     worktree, out = os.path.realpath(worktree), os.path.realpath(out)
     if out == worktree or out.startswith(worktree.rstrip('/') + '/'):
@@ -323,10 +320,8 @@ def selftest():
         open(os.path.join(real, '.config', 'muse', 'auth.json'), 'w').write('{"fake": true}')
         for skills in ('.agents/skills', '.claude/skills', '.codex/skills', 'Library/Keychains', '.npm'):
             os.makedirs(os.path.join(real, skills))
-        os.makedirs(os.path.join(tmp, 'secret', 'wt'))
         os.makedirs(wt)
         open(os.path.join(tmp, 'brief.md'), 'w').write('do the thing')
-        open(os.path.join(tmp, 'paths'), 'w').write(f"# clients\n{os.path.join(tmp, 'secret')}\n")
         cache = os.path.join(tmp, 'cache.json')
 
         def run(scenario, name, worktree=wt, keep_cache=False, **env):
@@ -339,7 +334,7 @@ def selftest():
                                capture_output=True, text=True, timeout=60,
                                env=dict(os.environ, **{'HOME': real, 'MUSE_BIN': stub, 'STUB_DIR': tmp,
                                         'STUB_SCENARIO': scenario, 'SHIP_QUOTA_MUSE': cache,
-                                        'SHIP_CONFIDENTIAL_PATHS': os.path.join(tmp, 'paths'), **env}))
+                                        **env}))
             started = os.path.join(tmp, 'started')
             return r, out, json.load(open(started)) if os.path.exists(started) else None
 
@@ -360,8 +355,7 @@ def selftest():
         rr = subprocess.run([sys.executable, os.path.abspath(__file__), 'review', gwt, os.path.join(tmp, 'brief.md'),
                              os.path.join(tmp, 'rv')], capture_output=True, text=True, timeout=60,
                             env=dict(os.environ, **{'HOME': real, 'MUSE_BIN': stub, 'STUB_DIR': tmp,
-                                     'STUB_SCENARIO': 'ok', 'SHIP_QUOTA_MUSE': cache,
-                                     'SHIP_CONFIDENTIAL_PATHS': os.path.join(tmp, 'paths')}))
+                                     'STUB_SCENARIO': 'ok', 'SHIP_QUOTA_MUSE': cache}))
         sent = open(os.path.join(tmp, 'rv', 'review-brief.md')).read()
         check('review leads the brief with read-only rules and passes on an untouched tree',
               rr.returncode == 0 and sent.startswith('Read only.') and 'one batch of parallel calls' in sent and sent.endswith('do the thing'))
@@ -404,8 +398,6 @@ def selftest():
         r, _, _ = run('rpcerror', 'o5')
         check('a JSON-RPC error exits 1 with its message', r.returncode == 1 and 'unknown model nope' in r.stderr)
 
-        r, _, seen = run('ok', 'o6', worktree=os.path.join(tmp, 'secret', 'wt'))
-        check('a confidential worktree exits 2 and never starts the server', r.returncode == 2 and seen is None)
 
         os.makedirs(os.path.join(tmp, 'o7'))
         os.symlink(real, os.path.join(tmp, 'o7', 'home'))

@@ -125,10 +125,8 @@ the writer was wrong at every seam. Wonder runs as `scripts/muse.py review <work
 <brief> <out-dir>`, a background Bash call: read-only, exit 6 if it changed the tree, its
 findings in `<out-dir>/last.md`, with `<out-dir>` in the job's tmp, outside the worktree
 (`muse.py` refuses one inside it). Muse runs only through `muse.py`, never a hand-typed
-`muse exec`. Any nonzero exit means Muse is out (2: a confidential repo, since Muse's
-Contributor mode trains on what it reads, listed in `~/.config/ship/confidential-paths`, and
-with no list file Muse is off everywhere; 5: its quota): an Opus subagent reads in its place,
-and the `result:` line says so. Readers report and never edit, because a reader that
+`muse exec`. Any nonzero exit means Muse is out (5: its quota; 2: a usage error, so read stderr): an
+Opus subagent reads in its place, and the `result:` line says so. Readers report and never edit, because a reader that
 rewrites breaks working code. A claim about how a dependency behaves at runtime is checked in its
 installed code (`node_modules/<pkg>/dist`), not its docs: a plan review once took Eve's
 docs on queued messages at their word, and the runtime did otherwise (2026-10-14).
