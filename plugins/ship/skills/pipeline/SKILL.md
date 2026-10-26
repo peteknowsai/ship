@@ -127,7 +127,9 @@ findings in `<out-dir>/last.md`, with `<out-dir>` in the job's tmp, outside the 
 (`muse.py` refuses one inside it). Muse runs only through `muse.py`, never a hand-typed
 `muse exec`. Any nonzero exit means Muse is out (5: its quota; 2: a usage error, so read stderr): an
 Opus subagent reads in its place, and the `result:` line says so. Readers report and never edit, because a reader that
-rewrites breaks working code. A claim about how a dependency behaves at runtime is checked in its
+rewrites breaks working code. Nothing else writes in the worktree while Muse reads, the gates
+and a build included, since `muse.py` compares the tree before and after and exits 6 on any
+change (find-three-more's `next build` during a read tripped it on a clean tree). A claim about how a dependency behaves at runtime is checked in its
 installed code (`node_modules/<pkg>/dist`), not its docs: a plan review once took Eve's
 docs on queued messages at their word, and the runtime did otherwise (2026-10-14).
 
@@ -913,7 +915,10 @@ he asks.
   resolves a relative path against the launch directory, which stops being a root once
   the session enters a worktree. `<shots-root>` is the worktree the session entered;
   on a cross-repo ship, where the session never entered one, it is the session's launch
-  directory. The driver writes that absolute path into every brief that screenshots.
+  directory. A session reused for a later ship keeps its first root: when a save is refused
+  as outside the workspace roots, save under the folder the session started in and exclude
+  it there with `stage.sh <that folder> exclude` (find-three-more's root was the previous
+  ship's worktree). The driver writes that absolute path into every brief that screenshots.
   `.ship-shots` is never committed (~6MB of PNGs broke a push). In the worktree,
   `stage.sh`'s `.ship-*` exclude already covers it; a cross-repo `<shots-root>` gets the same
   line with `scripts/stage.sh <shots-root> exclude`, which writes no marker. Copy anything the
@@ -1035,7 +1040,9 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
     `git worktree list` — zero ship-created worktrees must remain; a leftover means
     teardown failed (usually a merge run inside the worktree) — recover before
     declaring done.
-- **Watch what landing deploys (the contract's `live:`).** A diff that touches nothing
+- **Watch what landing deploys (the contract's `live:`).** A Convex MCP deployment selector
+  carries the folder it was taken in, so one from the worktree fails with ENOENT after
+  teardown: take new ones from the main checkout for every post-landing check. A diff that touches nothing
   `live:` builds deploys nothing: skip the deploy and say so in the `result:` line, since a
   deploy run for it would ship main's other unreleased commits (eca-finder, 2026-10-24). Where main is production and
   the host builds it (cells-app: each touched pack's Vercel production build, Convex
