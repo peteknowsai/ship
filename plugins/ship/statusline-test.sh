@@ -89,4 +89,12 @@ refuse "no-codex hides C"          "C 12%" "$(line2)"
 expect "no-codex keeps O and F"    "O 1% · F 1% ↻5d" "$(line2)"
 rm "$HOME/.config/ship/no-codex"
 
+ctx() { printf '{"model":{"display_name":"Opus 5.5"},"context_window":{"used_percentage":35,"total_input_tokens":350000,"context_window_size":1000000}}' | (cd "$T" && NO_COLOR=1 bash "$SL") | tail -1; }
+expect "no compact setting: share of the window" "🧠 35%" "$(ctx)"
+echo '{"autoCompactWindow":400000}' > "$HOME/.claude/settings.json"
+expect "a 400k compact point: share of it"     "🧠 87%" "$(ctx)"
+echo '{"autoCompactWindow":"auto"}' > "$HOME/.claude/settings.json"
+expect "auto falls back to the window"         "🧠 35%" "$(ctx)"
+rm "$HOME/.claude/settings.json"
+
 echo "statusline test: $fails failed"; [ "$fails" = 0 ]
