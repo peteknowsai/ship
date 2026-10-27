@@ -143,7 +143,8 @@ its origin, and the walk lost a round to "No alert by that id".
   ToolSearch call; headless, a fresh profile, never Pete's Chrome). Click, hover, fill and
   press keys through its tools; `evaluate_script` reads state, never fires events, because a
   script-fired event passes where a real right-click or drag fails. `emulate` covers the
-  390px layout and dark mode; `handle_dialog` answers a native prompt. Check the console and
+  390px layout and dark mode (a screenshot right after a viewport change can come back blank
+  with the DOM fine: take it again before calling it a bug); `handle_dialog` answers a native prompt. Check the console and
   failed requests as you go. On a long page, `take_snapshot` with a `filePath` and grep
   the file for the uid you need, rather than reading the whole tree back each time. A form
   that starts paid work (a model, a tier, a run): set its cost fields first and submit with
@@ -249,7 +250,9 @@ these on each page it touched, and every pass line the repo's checks add:
 | Accessibility: `lighthouse_audit` (`mode: "snapshot"` for a state the walk reached), its accessibility failures and the nodes they flag | no failure on an element the change added or changed | fix it and rerun; one main already had goes in TASTE |
 | Load time, only on a production build or a preview (a dev server compiles on first load) | LCP under 2.5 s | the trace's LCP breakdown says which part is slow |
 
-A failed measure is a failed step like any other, with the number as its evidence.
+A failed measure is a failed step like any other, with the number as its evidence. Trace
+each page on its own URL before blaming a shift on the change: Settings opened over
+/activity scored 0.26 from that view's sheet animating in, and 0.00 on its own.
 
 **A terminal UI** (a Claude Code mod, a CLI screen): run it in a detached tmux session
 (`tmux new-session -d`, then `send-keys` and `capture-pane -p` for each step) against a

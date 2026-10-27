@@ -18,7 +18,7 @@ printf '%s' "$2" > "$root/.ship-stage"
 if [ "$2" = land ]; then
   slug=$(git -C "$root" rev-parse --abbrev-ref HEAD); slug=${slug#*/}
   base=$(git -C "$root" rev-parse --abbrev-ref origin/HEAD 2>/dev/null || echo origin/main)
-  git -C "$root" diff --name-only "$base"...HEAD 2>/dev/null | grep -q "review.*$slug" ||
+  git -C "$root" diff --name-only "$base"...HEAD 2>/dev/null | grep -qE "review.*$slug|$slug.*review" ||
     echo "warning: no review card for $slug on this branch; commit it now unless this is EXPRESS" >&2
 fi
 echo "$root: $2"
