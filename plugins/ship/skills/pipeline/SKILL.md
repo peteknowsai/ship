@@ -754,6 +754,11 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   that finds a package or file by a bare or relative name gets one check run from a temp
   working directory, since its host starts it elsewhere and tests from the repo root never
   see it (fast-readers' worker loaded tsx by bare name and its writer tested blind).
+- **A script that writes data keeps a record and an undo.** When a task's script writes
+  outside the tree (rows in the dev database, links, files elsewhere), it logs what it wrote
+  and the ship adds the way to take those writes back before REVIEW. When REVIEW or TEST
+  tightens the rule those writes followed, recheck every one under the new rule: a catalog
+  ship found 5 of 19 links wrong after review and had no way to undo them.
 - **Standing brief boilerplate** (each line from a burned run, incidents: Dispatch):
   one task per brief, with the plan's complete code pasted in, the exact test commands
   and the files it may touch; "do it, do not propose", because a worker given an open ask
@@ -823,6 +828,10 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   that is TEST's QA run. A feature that makes model calls also counts the canned or
   fallback lines in the dev log after those loads: a nonzero count is a defect (a
   timeout shorter than the model's real turn, a length cap every answer fails), never noise.
+  A fallback that logs nothing hides the same failure, so a model check that falls back
+  quietly is proven answering twice: one case where it should fire, and one direct call that
+  prints the model's raw reply (a catalog ship's checks passed a live walk without one
+  answer, and its unit test threw in the fixture before the call).
   A 401 or a missing-key error on a model call instead means localhost can't run that flow
   (no key in any local env file): walk it on a preview, and write that into the repo's
   checks skill (eca-finder's local live search "finished" with 0 places in 8 s and read as a
