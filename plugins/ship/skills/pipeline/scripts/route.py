@@ -8,7 +8,7 @@ task done, so the status line reaches BUILD without the driver remembering to sa
 `plan` also saves the task list to .ship-route.json beside the marker, and `log task=<n>`
 fills that task's `routed` engine from it, so a task the driver handed to a subagent
 shows as engine=opus, routed=driver.
-  route.py log review=<opus|wonder|fable> real=<n> false=<n> only=<n> seconds=<n> ...
+  route.py log review=<opus|wonder> real=<n> false=<n> only=<n> seconds=<n> ...
                                  append one REVIEW reader's tally for the ship: findings
                                  that were real, false alarms, and real ones another
                                  reader missed; it never counts as a BUILD task
@@ -196,9 +196,13 @@ def plan(path, now=None):
         raise SystemExit(f'route: no "### Task" headings in {path}')
     where = os.path.dirname(os.path.abspath(path))
     fable = (now or datetime.datetime.now(datetime.timezone.utc)) < FABLE_UNTIL
-    out = [{'n': t['n'], 'label': t['label'], 'title': t['title'],
-            'engine': 'fable' if fable and not re.search(r'\((driver|inline)\)', t['title']) else 'driver'}
-           for t in tasks]
+    out, routable = [], 0
+    for t in tasks:  # in the window, every other routable task goes to Fable: half each (Pete, 2026-10-28)
+        engine = 'driver'
+        if fable and not re.search(r'\((driver|inline)\)', t['title']):
+            engine = 'fable' if routable % 2 == 0 else 'driver'
+            routable += 1
+        out.append({'n': t['n'], 'label': t['label'], 'title': t['title'], 'engine': engine})
     for row in out:
         print(f"{row['label']:4} {row['title'][:80]}", file=sys.stderr)
     result = {'plan': os.path.abspath(path), 'tasks': out}  # ship-recap.sh names it after a compaction
@@ -345,8 +349,9 @@ def selftest():
         os.environ['SHIP_LEDGER'] = os.path.join(tmp, 'ledger.jsonl')
         after = FABLE_UNTIL + datetime.timedelta(seconds=1)
         burn = plan(plan_md, now=FABLE_UNTIL - datetime.timedelta(seconds=1))
-        check('before FABLE_UNTIL every task is fable but the one headed (driver)',
-              [t['engine'] for t in burn['tasks']] == ['fable', 'fable', 'driver'] + ['fable'] * 6)
+        check('before FABLE_UNTIL every other routable task is fable, and (driver) stays the driver\'s',
+              [t['engine'] for t in burn['tasks']] == ['fable', 'driver', 'driver', 'fable', 'driver',
+                                                       'fable', 'driver', 'fable', 'driver'])
         result = plan(plan_md, now=after)
         check('after it every task is the driver\'s, (driver) or not, and nothing is scored; the plan path is saved',
               result['plan'] == os.path.abspath(plan_md) and [t['engine'] for t in result['tasks']] == ['driver'] * 9
