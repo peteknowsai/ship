@@ -8,7 +8,7 @@ task done, so the status line reaches BUILD without the driver remembering to sa
 `plan` also saves the task list to .ship-route.json beside the marker, and `log task=<n>`
 fills that task's `routed` engine from it, so a task the driver handed to a subagent
 shows as engine=opus, routed=driver.
-  route.py log review=<opus|wonder> real=<n> false=<n> only=<n> seconds=<n> ...
+  route.py log review=<opus|wonder|fable> real=<n> false=<n> only=<n> seconds=<n> ...
                                  append one REVIEW reader's tally for the ship: findings
                                  that were real, false alarms, and real ones another
                                  reader missed; it never counts as a BUILD task
@@ -26,6 +26,7 @@ git history (`git log -S ask_scores`). decisions.py still asks SubQ, else Jev, t
 Keys: SUBQ_API_KEY else keychain service "subq"; TYPESAFE_API_KEY else keychain "typesafe".
 The ledger is ~/.claude/ship-ledger.jsonl, or SHIP_LEDGER.
 """
+import datetime
 import json
 import os
 import re
@@ -47,7 +48,9 @@ DECIDERS = [
     {'name': 'Jev', 'url': 'https://api.typesafe.ai/v1/systemone', 'model': 'jev-latest',
      'env': 'TYPESAFE_API_KEY', 'keychain': 'typesafe', 'questions': 1000},
 ]
-# Old ledger rows keep their pool; only opus and driver build since 2026-10-24.
+# Old ledger rows keep their pool; only opus and driver build since 2026-10-24, and fable
+# until FABLE_UNTIL: Pete's window to use the week's Fable quota before it resets (2026-10-28).
+FABLE_UNTIL = datetime.datetime(2026, 10, 29, 18, tzinfo=datetime.timezone.utc)
 POOL = {'opus': 'anthropic', 'driver': 'anthropic', 'wonder': 'muse', 'sonnet': 'anthropic',
         'fable': 'fable', 'astra': 'openai', 'sol': 'openai', 'spark': 'muse'}
 # Jev, the smaller window, takes 64k tokens per request, and pasted text runs near 3
@@ -184,7 +187,7 @@ def decide(items, build, cost=lambda item: QUESTION_CHARS):
     raise RuntimeError('; '.join(failures))
 
 
-def plan(path):
+def plan(path, now=None):
     try:
         tasks = parse_tasks(open(path).read())
     except OSError as error:
@@ -192,7 +195,10 @@ def plan(path):
     if not tasks:
         raise SystemExit(f'route: no "### Task" headings in {path}')
     where = os.path.dirname(os.path.abspath(path))
-    out = [{'n': t['n'], 'label': t['label'], 'title': t['title'], 'engine': 'driver'} for t in tasks]
+    fable = (now or datetime.datetime.now(datetime.timezone.utc)) < FABLE_UNTIL
+    out = [{'n': t['n'], 'label': t['label'], 'title': t['title'],
+            'engine': 'fable' if fable and not re.search(r'\((driver|inline)\)', t['title']) else 'driver'}
+           for t in tasks]
     for row in out:
         print(f"{row['label']:4} {row['title'][:80]}", file=sys.stderr)
     result = {'plan': os.path.abspath(path), 'tasks': out}  # ship-recap.sh names it after a compaction
@@ -337,8 +343,12 @@ def selftest():
                   'Task 9: one file']
         open(plan_md, 'w').write('# Plan\n\n' + ''.join(f'### {t}\n\nbody {i}\n\n' for i, t in enumerate(titles)))
         os.environ['SHIP_LEDGER'] = os.path.join(tmp, 'ledger.jsonl')
-        result = plan(plan_md)
-        check('every task is the driver\'s, (driver) or not, and nothing is scored; the plan path is saved',
+        after = FABLE_UNTIL + datetime.timedelta(seconds=1)
+        burn = plan(plan_md, now=FABLE_UNTIL - datetime.timedelta(seconds=1))
+        check('before FABLE_UNTIL every task is fable but the one headed (driver)',
+              [t['engine'] for t in burn['tasks']] == ['fable', 'fable', 'driver'] + ['fable'] * 6)
+        result = plan(plan_md, now=after)
+        check('after it every task is the driver\'s, (driver) or not, and nothing is scored; the plan path is saved',
               result['plan'] == os.path.abspath(plan_md) and [t['engine'] for t in result['tasks']] == ['driver'] * 9
               and not any('score' in t for t in result['tasks']))
         few = os.path.join(tmp, 'few.md')
@@ -407,7 +417,7 @@ def selftest():
         plan(shipped)
         check('routing moves the marker to build:0:9', open(stage).read() == 'build:0:9')
         open(stage, 'w').write('plan')
-        plan(shipped)
+        plan(shipped, now=after)
         here = os.getcwd()
         os.chdir(repo)
         try:
