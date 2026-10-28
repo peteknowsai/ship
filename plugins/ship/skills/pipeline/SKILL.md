@@ -79,7 +79,7 @@ EXPRESS: no written plan, no plan review.
 built** (or the change is risky/irreversible). If his input wouldn't change the outcome,
 don't stop. Every lane lands only on green gates and the QA run's `works`. A
 money path, a one-way door (the PR body's Merge Danger call, TEST below), and a change
-Pete said he wants to try himself also wait for his "merge main" after the pass.
+Pete said he wants to try or see himself (a copy change he asked to approve) also wait for his "merge main" after the pass.
 Mid-flight, promote the moment taste or direction appears (park, write the spec from
 what you've learned, present GATE 1); size alone moves EXPRESS → SELF-DIRECTED, never to
 a gate. Never use an autonomous lane to slip a taste call past Pete.
@@ -264,7 +264,9 @@ reran a 90-second suite only to read the name tail had cut. A full run whose onl
   that moves between unrelated files from run to run), reruns just those files alone. If
   they pass alone, it's load: both runs and the `uptime` load figure go in the commit or the
   `result:` line, and it isn't root-caused. A failure in a file the diff touched is a real
-  red. A ship whose job is load timeouts ranks tests by duration from one loaded run, rather
+  red. The same holds when the contract's own landing script runs the gates (cells-app's
+  land-pr.sh): rerun the failed files alone, and when they pass, run the landing script again
+  (CEL-226 went red on two untouched files at a load near 150, then landed on the rerun). A ship whose job is load timeouts ranks tests by duration from one loaded run, rather
   than hand-writing a ranker (CEL-214 and CEL-228 each did): `npx vitest run
   --reporter=json --outputFile=<job tmp>/run.json`, then `jq -r '.testResults[].assertionResults[]
   | "\(.duration) \(.fullName)"' <job tmp>/run.json | sort -rn | head -20`.
@@ -949,20 +951,18 @@ he asks.
   production deploy to let him review, and never tell him to "go look at the live site".
   (Non-UI change → show the demo/test output instead.)
 - **Screenshots go in `<shots-root>/.ship-shots/<slug>/`, always as an absolute path**,
-  because the chrome-devtools MCP writes only inside the session's workspace roots and
-  resolves a relative path against the launch directory, which stops being a root once
-  the session enters a worktree. `<shots-root>` is the worktree the session entered;
-  on a cross-repo ship, where the session never entered one, it is the session's launch
-  directory. The MCP's roots can stay where the session started even after it enters a
-  worktree (CEL-175, launched in the main checkout; find-three-more, reused from the previous
-  ship's worktree): when a save is refused as outside the workspace roots, save under the
-  folder the session started in and exclude it there with `stage.sh <that folder> exclude`. The driver writes that absolute path into every brief that screenshots.
-  `.ship-shots` is never committed (~6MB of PNGs broke a push). In the worktree,
-  `stage.sh`'s `.ship-*` exclude already covers it; a cross-repo `<shots-root>` gets the same
-  line with `scripts/stage.sh <shots-root> exclude`, which writes no marker. Copy anything the
+  because the chrome-devtools MCP writes only inside its workspace roots, and those stay
+  where the session was launched even after it enters a worktree (CEL-175 and CEL-226,
+  launched in the main checkout; find-three-more, reused from the previous ship's worktree).
+  So `<shots-root>` is the session's launch directory, which is the worktree only when the
+  session was launched inside it. The driver writes that absolute path into every brief
+  that screenshots. `.ship-shots` is never committed (~6MB of PNGs broke a push): the
+  `.ship-*` line `stage.sh` writes to the repo's shared exclude covers the main checkout and
+  every worktree of that repo, and a `<shots-root>` in another repo gets the same line with
+  `scripts/stage.sh <shots-root> exclude`, which writes no marker. Copy anything the
   presented card references somewhere durable before teardown, or the card 404s its
   own proof (incidents: Worktrees), then delete `<shots-root>/.ship-shots/<slug>/`,
-  which on a cross-repo ship is not inside the worktree teardown removes.
+  which teardown doesn't remove unless it sits in the worktree.
 - **Before the QA run, check the wiring.** Run the contract's `stack:` (a ✗ is yours to
   fix first), and look at what landing will change in the backend: a change that
   **removes or renames** a backend function or table lands in two passes, first the app
@@ -1022,7 +1022,8 @@ he asks.
   or `show.sh … review` the worktree's with the park. It is the
   record of what landed and the proof, not a gate.
 - **What still waits for Pete's "merge main" after a pass**: a money path, a one-way
-  door, and a change he said he wants to try himself. `stage.sh <root> gate:test`, post the links (and the
+  door, and a change he said he wants to try or see first, the words of a copy change
+  included (CEL-226). `stage.sh <root> gate:test`, post the links (and the
   card), and end the turn:
   `needs input: test <slug> — <what to try> · say "merge main"`, then the branch ·
   worktree tail. His word means take this worktree all the way, PR merge, deploy,
