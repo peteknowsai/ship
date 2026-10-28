@@ -953,10 +953,10 @@ he asks.
   resolves a relative path against the launch directory, which stops being a root once
   the session enters a worktree. `<shots-root>` is the worktree the session entered;
   on a cross-repo ship, where the session never entered one, it is the session's launch
-  directory. A session reused for a later ship keeps its first root: when a save is refused
-  as outside the workspace roots, save under the folder the session started in and exclude
-  it there with `stage.sh <that folder> exclude` (find-three-more's root was the previous
-  ship's worktree). The driver writes that absolute path into every brief that screenshots.
+  directory. The MCP's roots can stay where the session started even after it enters a
+  worktree (CEL-175, launched in the main checkout; find-three-more, reused from the previous
+  ship's worktree): when a save is refused as outside the workspace roots, save under the
+  folder the session started in and exclude it there with `stage.sh <that folder> exclude`. The driver writes that absolute path into every brief that screenshots.
   `.ship-shots` is never committed (~6MB of PNGs broke a push). In the worktree,
   `stage.sh`'s `.ship-*` exclude already covers it; a cross-repo `<shots-root>` gets the same
   line with `scripts/stage.sh <shots-root> exclude`, which writes no marker. Copy anything the
