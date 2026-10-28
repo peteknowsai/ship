@@ -92,7 +92,11 @@ down mid-QA (2026-10-14). Never control the Mac's desktop.
 **A Mac app, through the repo's own rig.** In a repo whose contract has `mac:`, run it
 whenever the Mac app can see the change; it prints the MAC line. Drive the app the way the
 repo's checks skill says (its UI test fixtures, a live test against the branch server), never
-by desktop control, and launch it with `open -g` so it never takes Pete's screen. A Chrome it
+by desktop control, and launch it with `open -g` so it never takes Pete's screen. A rig's own
+windows are on his screen too, `orderBack` or not, until torn down: open them just before the
+steps that need them and tear them down right after (CEL-222's live-node test windows sat over
+his terminal until he asked). A window level under `.normal` hides them from CGWindowList,
+which the capture needs, so that is no way out. A Chrome it
 needs, an extension under test included, is Chrome for Testing launched by the global rule
 (`open -g -n -a <app> --args --no-startup-window --use-mock-keychain --load-extension=<dir>`),
 never his Chrome. A rig a run had to build (CEL-198 built a relaunch script and a live-test

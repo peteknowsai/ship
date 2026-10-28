@@ -94,7 +94,8 @@ else runs: no Sonnet or Codex model, and Fable only in the window below. `muse.p
 
 **Until 2026-10-29 18:00 UTC, Fable 5.1 builds half the tasks** (Pete, 2026-10-28: use the
 week's Fable and Opus quota before they reset). `route.py plan` marks every other task `fable`,
-skipping any headed `(driver)` or `(inline)`, and the rest stay the driver's. The driver briefs each `fable` task to a
+skipping any headed `(driver)` or `(inline)`, and the rest stay the driver's. Head a task
+`(driver)` only when a brief truly can't carry it: CEL-222 marked all three and Fable built none. The driver briefs each `fable` task to a
 background harness subagent, `model: "fable"` at high effort, one at a time in the worktree while it works the non-tree
 list, then reviews the diff, runs the gates and logs `engine=fable`; it still writes the glue,
 the small fixes and anything a brief can't carry. Reviews stay Wonder and Opus. After the
@@ -1035,8 +1036,9 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
      a `--keep` smoke person, `npm run prune -- --people --finish <id>`) while the worktree's
      server still answers, since the cleanup needs it and Clerk's test instance caps at 100
      people; then `stage.sh <root> land`, then `git fetch origin`; if main moved, absorb +
-     re-gate by overlap (REVIEW) + push; and if the tree changed since its last full sweep
-     (TEST's fix rounds run scoped), run the full gates and `smoke: branch` once here either way (`git restore next-env.d.ts` first: `next dev` rewrites it and the
+     re-gate by overlap (REVIEW) + push; and if the tree changed since the last full gates and
+     `smoke: branch` (TEST's fix rounds run scoped), run both once here, else skip them, and put
+     the smoke's result line in the commit that follows it so a later step can see it ran (`git restore next-env.d.ts` first: `next dev` rewrites it and the
      rebase refuses the dirty file), with the worktree's dev server stopped and any simulator shut first,
      since a loaded box turns a full suite's slow tests into timeouts that read as real red; run `stack:` once more; bring the `pr`-shaped body from TEST up to date with what actually
      shipped (the squash commit takes it); `gh pr ready <#>`; confirm `gh pr view <#> --json mergeable`
