@@ -89,8 +89,17 @@ a gate. Never use an autonomous lane to slip a taste call past Pete.
 **Opus 5.5 writes; Muse Wonder Full reads beside it** (Pete, 2026-10-24). The driver and
 every subagent it starts (`model: "opus"`) run Opus 5.5 at high effort, never xhigh, max or
 medium. Wonder Full reviews the plan and reads the branch, and never writes code. Nothing
-else runs: no Sonnet, Fable or a Codex model. `muse.py build` and `astra.sh` stay in
+else runs: no Sonnet or Codex model, and Fable only in the window below. `muse.py build` and `astra.sh` stay in
 `scripts/` for when he turns one back on.
+
+**Until 2026-10-29 18:00 UTC, Fable 5.1 builds and reads too** (Pete, 2026-10-28: use the
+week's Fable quota before it resets). `route.py plan` marks every task `fable` except one
+headed `(driver)` or `(inline)`. The driver briefs each to a background harness subagent,
+`model: "fable"` at high effort, one at a time in the worktree while it works the non-tree
+list, then reviews the diff, runs the gates and logs `engine=fable`; it still writes the glue,
+the small fixes and anything a brief can't carry. Fable is also a third blind reader beside
+Wonder and Opus at the plan review and the branch review, logged `review=fable`. After the
+cutoff `route.py plan` goes back to `driver` on its own, and the ledger compares the two.
 
 **One loop does the work, and a subagent earns its seat.** The driver builds, tests and
 fixes in its own context, where it reads the raw diff, test output and browser snapshot
@@ -142,7 +151,7 @@ tasks, saves them and moves the marker to `build:0:<M>`. When a task's diff is a
 append its outcome, from the worktree:
 
 ```bash
-route.py log repo=<repo> ship=<slug> task=<n> engine=<driver|opus> \
+route.py log repo=<repo> ship=<slug> task=<n> engine=<driver|opus|fable> \
   seconds=<wall time> fix_rounds=<n> gates_first_pass=<true|false> verdict=<clean|fixed|redone>
 ```
 
@@ -738,7 +747,8 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   the worktree's latest. A build that failed is yours to fix before you post.
 - **The driver builds every task itself, in plan order** (Engines), test first where the
   task names its tests, and commits each one as its gates go green. A task handed to a
-  subagent is the exception Engines names, and says why in the ledger's `note`.
+  subagent is the exception Engines names, and says why in the ledger's `note`. Until 2026-10-29
+  18:00 UTC each task `route.py plan` marks `fable` goes to a Fable subagent instead (Engines).
 - **Check the plan's files against work in flight, before the first task.** `gh pr
   list --state open --json number,headRefName,files` and `git log origin/main --since=1.day
   --name-only`: a plan file another PR or a fresh main commit also touches gets read first.
