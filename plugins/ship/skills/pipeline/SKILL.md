@@ -394,7 +394,9 @@ job's tmp or the worktree, or rides the background call's own output file.
 the file instead (`tsx --env-file=.env.local`, `node --env-file=.env.local`).
 
 **Shell inside a worktree session.** The harness refuses a command it can't tell stays
-in the worktree: `$(git …)` substitutions, `cd <dir> && git …`, loops or heredocs that
+in the worktree: `$(git …)` substitutions, `cd <dir> && git …`, a script wrapped in a
+redirect and a chained `echo $?` or `tail` (start it bare with `run_in_background` and read
+its output file; CEL-229's land-pr call), loops or heredocs that
 name git, and read-only commands it misparses (a path segment named `source`, a zsh
 `echo ==`, a `for` loop over `sed`, a heredoc that only writes files, a docker `--format '{{…}}'`
 string, a `python3 -` heredoc whose text says "git", a `$VAR` argument even to a binary that isn't git). Read and search
