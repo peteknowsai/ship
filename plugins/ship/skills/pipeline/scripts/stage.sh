@@ -18,8 +18,10 @@ printf '%s' "$2" > "$root/.ship-stage"
 # Only those lanes run route.py plan, so .ship-route.json tells them from EXPRESS.
 if [ "$2" = land ] && [ -f "$root/.ship-route.json" ]; then
   slug=$(git -C "$root" rev-parse --abbrev-ref HEAD); slug=${slug#*/}
-  base=$(git -C "$root" rev-parse --abbrev-ref origin/HEAD 2>/dev/null || echo origin/main)
-  git -C "$root" diff --name-only "$base"...HEAD 2>/dev/null | grep -qE "review.*$slug|$slug.*review" ||
+  base=$(git -C "$root" rev-parse --abbrev-ref origin/HEAD 2>/dev/null) || base=origin/main
+  key=$(printf '%s' "$slug" | grep -oE '^[a-z]+-[0-9]+' || true)  # cel-221: a card folder may carry just the key
+  id=${key:-$slug}
+  git -C "$root" diff --name-only "$base"...HEAD 2>/dev/null | grep -qE "review.*$id|$id.*review" ||
     echo "warning: no review card for $slug on this branch; commit it now" >&2
 fi
 # A session keeps the ship it loaded at startup; a long one can run on rules since fixed.

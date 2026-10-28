@@ -266,7 +266,10 @@ reran a 90-second suite only to read the name tail had cut. A full run whose onl
   `result:` line, and it isn't root-caused. A failure in a file the diff touched is a real
   red. The same holds when the contract's own landing script runs the gates (cells-app's
   land-pr.sh): rerun the failed files alone, and when they pass, run the landing script again
-  (CEL-226 went red on two untouched files at a load near 150, then landed on the rerun). A ship whose job is load timeouts ranks tests by duration from one loaded run, rather
+  (CEL-226 went red on two untouched files at a load near 150, then landed on the rerun). A production build in a worktree whose dev server is up wipes
+  the server's record in `.next`, so the repo's stop command later finds nothing and the next
+  start dies on EADDRINUSE (CEL-221, CEL-213): stop the dev server before a build, start it
+  again after. A ship whose job is load timeouts ranks tests by duration from one loaded run, rather
   than hand-writing a ranker (CEL-214 and CEL-228 each did): `npx vitest run
   --reporter=json --outputFile=<job tmp>/run.json`, then `jq -r '.testResults[].assertionResults[]
   | "\(.duration) \(.fullName)"' <job tmp>/run.json | sort -rn | head -20`.
