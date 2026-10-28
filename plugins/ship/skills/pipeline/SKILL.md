@@ -264,7 +264,10 @@ reran a 90-second suite only to read the name tail had cut. A full run whose onl
   that moves between unrelated files from run to run), reruns just those files alone. If
   they pass alone, it's load: both runs and the `uptime` load figure go in the commit or the
   `result:` line, and it isn't root-caused. A failure in a file the diff touched is a real
-  red.
+  red. A ship whose job is load timeouts ranks tests by duration from one loaded run, rather
+  than hand-writing a ranker (CEL-214 and CEL-228 each did): `npx vitest run
+  --reporter=json --outputFile=<job tmp>/run.json`, then `jq -r '.testResults[].assertionResults[]
+  | "\(.duration) \(.fullName)"' <job tmp>/run.json | sort -rn | head -20`.
 - **`preview:`** a command that prints this branch's preview links, one per app, with
   each build's state (cells-app: `scripts/preview-links.sh`, which reads Vercel). Ship
   runs it after every push and posts what it prints. A contract may mark it `on demand`
