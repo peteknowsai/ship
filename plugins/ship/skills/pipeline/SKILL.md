@@ -700,7 +700,11 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   recommendation, the risk line, and "go". Commit it, `show.sh … plan` it.
 - **Calls on the card are plain language, and only the ones that change what he gets.**
   Each says what he'd see either way. A technical choice where you have a clear pick is
-  yours: take it and log it. Never offer to phase the work.
+  yours: take it and log it. Never offer to phase the work. Anything the plan needs Pete to
+  create himself (an OAuth app, an account, a key) is always a call, beside the setup an
+  agent can do alone where one exists; on a lane with no card it is a `needs input:` at
+  PLAN, never a surprise at TEST (cc-bridge's GitHub OAuth App surfaced at TEST, and "why do
+  we need a GitHub app" swapped it for Cloudflare Access, which the API set up).
 - **GATE 2 is his go when the card carries a call** (Two principles). `stage.sh <root>
   gate:2`, fire the gate notification, end the turn with `needs input:` ("go?"). **HARD
   STOP.** A card with no call is not a stop: `show.sh … plan` it, post one line ("plan card: no
@@ -929,7 +933,9 @@ he asks.
   The driver triages every finding from both
   — adversarial reviewers over-flag by design, and a finding both reached on their own is
   the strongest lead, never proof — checks each against the code, fixes what's real, puts judgment calls
-  on the card or in the `result:` line. Then one ledger row per reader: `route.py log
+  on the card or in the `result:` line. The moment triage ends, before the first fix, one
+  ledger row per reader, since the tally lives only in context and a compaction during the
+  fixes loses it (cc-bridge logged both rows empty): `route.py log
   repo=<repo> ship=<slug> review=opus real=<n> false=<n> only=<n> seconds=<n>` and the same
   with `review=wonder` (`out=<out-dir>` in place of `seconds`), where `only` counts the real
   findings the other reader missed.
