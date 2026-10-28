@@ -15,10 +15,18 @@ grep -qxF '.ship-*' "$common/info/exclude" 2>/dev/null || echo '.ship-*' >> "$co
 printf '%s' "$2" > "$root/.ship-stage"
 # land: a SELF-DIRECTED or GATED ship commits its review card before LAND removes the
 # worktree; warn when the branch adds none for its slug (thin-search needed a second PR).
-if [ "$2" = land ]; then
+# Only those lanes run route.py plan, so .ship-route.json tells them from EXPRESS.
+if [ "$2" = land ] && [ -f "$root/.ship-route.json" ]; then
   slug=$(git -C "$root" rev-parse --abbrev-ref HEAD); slug=${slug#*/}
   base=$(git -C "$root" rev-parse --abbrev-ref origin/HEAD 2>/dev/null || echo origin/main)
   git -C "$root" diff --name-only "$base"...HEAD 2>/dev/null | grep -qE "review.*$slug|$slug.*review" ||
-    echo "warning: no review card for $slug on this branch; commit it now unless this is EXPRESS" >&2
+    echo "warning: no review card for $slug on this branch; commit it now" >&2
 fi
+# A session keeps the ship it loaded at startup; a long one can run on rules since fixed.
+here=$(cd "$(dirname "$0")/../../.." && pwd)
+new=$(jq -r '.plugins["ship@ship"][0].installPath // empty' "${SHIP_INSTALLED:-$HOME/.claude/plugins/installed_plugins.json}" 2>/dev/null || true)
+case "$here" in */plugins/cache/ship/ship/*)
+  [ -n "$new" ] && [ "$(basename "$new")" != "$(basename "$here")" ] && [ -d "$new" ] &&
+    echo "notice: ship was updated since this session loaded it ($(basename "$here") -> $(basename "$new")). Reread $new/skills/pipeline/SKILL.md, Engines and this stage's section, and call scripts from $new from here on; the newer rules win." >&2
+esac
 echo "$root: $2"
