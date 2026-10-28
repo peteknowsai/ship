@@ -1,5 +1,6 @@
 #!/bin/bash
-# listener.sh <port> [seconds]: wait for a server to listen on <port> (default 60 s), then
+# listener.sh <port> [seconds]: wait for a server to listen on <port> (default 300 s: under
+# load cells-app's dev took about 4 minutes to open its port, CEL-175), then
 # print "pid <pid> cwd <dir>": the checkout it serves. A Next server's own cwd reads "/",
 # so it walks up the parent processes to the first real one. Exit 1 if nothing listens.
 # listener.sh --selftest
@@ -14,7 +15,7 @@ if [ "${1:-}" = --selftest ]; then
   "$0" 1 1 >/dev/null 2>&1 && { echo "listener self-test: an empty port should fail"; exit 1; }
   exit 0
 fi
-port=${1:?usage: listener.sh <port> [seconds]}; wait=${2:-60}
+port=${1:?usage: listener.sh <port> [seconds]}; wait=${2:-300}
 for ((i = 0; i < wait; i++)); do
   pid=$(lsof -nP -iTCP:"$port" -sTCP:LISTEN -t 2>/dev/null | head -1)
   [ -n "$pid" ] && break
