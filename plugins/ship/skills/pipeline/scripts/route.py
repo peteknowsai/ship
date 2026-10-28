@@ -12,6 +12,9 @@ shows as engine=opus, routed=driver.
                                  append one REVIEW reader's tally for the ship: findings
                                  that were real, false alarms, and real ones another
                                  reader missed; it never counts as a BUILD task
+  route.py log recall=<shown> used=<n> ...
+                                 append how many of the decisions `decisions.py relevant`
+                                 showed the ship it actually used; never a BUILD task
   route.py report                the ledger as a table by engine and difficulty, by
                                  pool, then the reviewers'
   route.py quota                 the pools, one line each (quota.py --table)
@@ -295,7 +298,8 @@ def report():
     except FileNotFoundError:
         pass
     reviews = [r for r in rows if 'review' in r]
-    rows = [r for r in rows if 'review' not in r]
+    recalls = [r for r in rows if 'recall' in r]
+    rows = [r for r in rows if 'review' not in r and 'recall' not in r]
     def mean(group, key):
         values = [r[key] for r in group if isinstance(r.get(key), (int, float)) and not isinstance(r[key], bool)]
         return f'{sum(values) / len(values):.1f}' if values else '-'
@@ -328,6 +332,12 @@ def report():
             minutes = f'{sum(secs) / len(secs) / 60:.1f}' if secs else '-'
             lines.append(f"{name:8} {len(group):>5} {total('real'):>5} {total('false'):>5} {total('only'):>7} "
                          f"{total('owned'):>5} {minutes:>8}")
+    if recalls:  # does decision recall earn its keep? (Pete, 2026-10-28)
+        count = lambda key: sum(r[key] for r in recalls if isinstance(r.get(key), int) and not isinstance(r[key], bool))
+        shown, used = count('recall'), count('used')
+        none = sum(1 for r in recalls if r.get('used') == 0)
+        lines += ['', f"decision recall: {len(recalls)} ships used {used} of {shown} shown"
+                      f" ({100 * used // shown if shown else 0}%); {none} used none"]
     return '\n'.join(lines)
 
 
@@ -412,6 +422,12 @@ def selftest():
               and '-             1' in table)
         check('reviewers get their own table, outside the BUILD one',
               'sol          2     3     3       1     1      1.5' in table and 'sol      unscored' not in table)
+        log(['repo=ship', 'ship=a', 'recall=6', 'used=2'])
+        log(['repo=ship', 'ship=b', 'recall=6', 'used=0'])
+        recalled = report()
+        check('recall rows get one line and never join the BUILD table',
+              'decision recall: 2 ships used 2 of 12 shown (16%); 1 used none' in recalled
+              and recalled.count('?') == table.count('?'))
         repo = os.path.join(tmp, 'repo')
         subprocess.run(['git', 'init', '-q', repo], check=True)
         stage = os.path.join(repo, '.ship-stage')

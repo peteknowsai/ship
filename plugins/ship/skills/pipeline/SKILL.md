@@ -354,6 +354,11 @@ it from inside the target repo.
   answers it prints the newest instead and says so). Treat them as settled calls with
   their rationale. Don't re-ask Pete a settled question; reversing one is allowed, but
   say so explicitly.
+- **At LAND, log what recall bought** (Pete, 2026-10-28: does it earn its keep?):
+  `route.py log repo=<repo> ship=<slug> recall=<shown> used=<n>`, where `used` counts the
+  decisions that changed what the ship did (a question not asked, a choice made their way,
+  a reversal said out loud), never ones that only agreed with what it would have done. The
+  retro carries the same count as one line. `route.py report` totals it.
 - **When a gate (or Pete mid-run) resolves a durable call** — design direction, scope
   cut, architecture or tool choice — log it:
   `decisions.py log '{"decision":"…","rationale":"…","source":"user"}'`, or `log --file <json>`
