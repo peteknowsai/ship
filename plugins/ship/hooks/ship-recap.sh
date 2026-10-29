@@ -20,15 +20,20 @@ recap() {
   route="$root/.ship-route.json"; done_file="$root/.ship-done"
   echo "/ship recap after compaction, read from disk (trust it over the summary):"
   echo "- worktree $root, branch ${branch:-?}, stage $stage"
+  local tasks=""
   if [ -f "$route" ]; then
-    jq -r --rawfile done <( [ -f "$done_file" ] && cat "$done_file" || true ) '
+    tasks=$(jq -r --rawfile done <( [ -f "$done_file" ] && cat "$done_file" || true ) '
       ($done | split("\n") | map(select(length > 0))) as $d
       | "- plan " + (.plan // "path not saved") + ", "
         + ([.tasks[] | select(((.label // (.n|tostring)) as $l | $d | index($l)) or ((.n|tostring) as $n | $d | index($n)))] | length | tostring)
         + " of " + (.tasks | length | tostring) + " tasks logged",
-        (.tasks[] | "  " + (if (((.label // (.n|tostring)) as $l | $d | index($l)) or ((.n|tostring) as $n | $d | index($n))) then "done " else "todo " end) + .title)
-    ' "$route" 2>/dev/null
+        (.tasks[] | "  " + (if (((.label // (.n|tostring)) as $l | $d | index($l)) or ((.n|tostring) as $n | $d | index($n))) then "done " else "todo " end) + .title + (if .engine == "fable" then " [fable]" else "" end))
+    ' "$route" 2>/dev/null)
+    printf '%s\n' "$tasks"
   fi
+  # A fable task's report dies with the old context, so its files may be built and unchecked.
+  grep -q '^  todo .*\[fable\]$' <<<"$tasks" &&
+    echo "- a todo [fable] task may already be built by a subagent whose report is gone: treat its files as unchecked, compile and run its tests before you accept them (CEL-140)"
   base=$(git -C "$root" merge-base HEAD origin/main 2>/dev/null || git -C "$root" merge-base HEAD main 2>/dev/null)
   if [ -n "$base" ]; then
     echo "- commits on the branch:"
@@ -49,14 +54,18 @@ selftest() {
   git checkout -q -b feature/x
   echo a > a.txt && git add a.txt && git -c user.email=t@t -c user.name=t commit -q -m "task 1 lands"
   echo 'build:1:2' > .ship-stage; printf '1\n' > .ship-done
-  echo '{"plan":"/p/plan.md","tasks":[{"n":1,"label":"1","title":"Task 1: first"},{"n":2,"label":"2","title":"Task 2: second"}]}' > .ship-route.json
+  echo '{"plan":"/p/plan.md","tasks":[{"n":1,"label":"1","title":"Task 1: first"},{"n":2,"label":"2","title":"Task 2: second","engine":"fable"}]}' > .ship-route.json
   echo b > b.txt; echo n > next-env.d.ts
   out=$(printf '{"session_id":"","cwd":"%s"}' "$tmp/repo" | recap)
   check() { if eval "$2"; then echo "  ok   $1"; else echo "  FAIL $1"; fails=$((fails+1)); fi; }
   check 'names the stage and branch' '[[ "$out" == *"branch feature/x, stage build:1:2"* ]]'
   check 'counts logged tasks and marks each' '[[ "$out" == *"1 of 2 tasks logged"* && "$out" == *"done Task 1: first"* && "$out" == *"todo Task 2: second"* ]]'
+  check 'flags a fable task as possibly built and unchecked' '[[ "$out" == *"todo Task 2: second [fable]"* && "$out" == *"report is gone"* && "$out" != *"first [fable]"* ]]'
   check 'lists the branch commits and uncommitted files, not ship files' '[[ "$out" == *"task 1 lands"* && "$out" == *"b.txt"* && "$out" != *".ship-done"* ]]'
   check 'marks build churn as noise, and only that' '[[ "$out" == *"next-env.d.ts (build noise"* && "$out" != *"b.txt (build"* ]]'
+  printf '1\n2\n' > .ship-done
+  out=$(printf '{"session_id":"","cwd":"%s"}' "$tmp/repo" | recap)
+  check 'no fable warning once its task is logged' '[[ "$out" == *"done Task 2: second [fable]"* && "$out" != *"report is gone"* ]]'
   out=$(printf '{"session_id":"","cwd":"%s"}' "$tmp" | recap)
   check 'silent outside a ship' '[ -z "$out" ]'
   echo "ship-recap self-test: $fails failed"
