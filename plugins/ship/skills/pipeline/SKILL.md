@@ -1055,8 +1055,9 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
      worktree first orphans them (peggy-qa's `qa-run.sh remove`); delete any test data the run kept for itself (cells-app:
      a `--keep` smoke person, `npm run prune -- --people --finish <id>`) while the worktree's
      server still answers, since the cleanup needs it and Clerk's test instance caps at 100
-     people; then `stage.sh <root> land`, then `git fetch origin`; if main moved, absorb +
-     re-gate by overlap (REVIEW) + push; and if the tree changed since the last full gates and
+     people; then `stage.sh <root> land`, then `git fetch origin`; if main moved, absorb it in a call of
+     its own and see it merged clean before any gate or stop runs (CEL-140 sent the merge and
+     the gates in parallel, and they ran on a half-merged tree), then re-gate by overlap (REVIEW) + push; and if the tree changed since the last full gates and
      `smoke: branch` (TEST's fix rounds run scoped), run both once here, else skip them, and put
      the smoke's result line in the commit that follows it so a later step can see it ran (`git restore next-env.d.ts` first: `next dev` rewrites it and the
      rebase refuses the dirty file), with the worktree's dev server stopped and any simulator shut first,
