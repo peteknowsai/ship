@@ -35,7 +35,9 @@ recap() {
     git -C "$root" log --oneline "$base"..HEAD | head -20 | sed 's/^/  /'
   fi
   local dirty; dirty=$(git -C "$root" status --short 2>/dev/null | grep -v ' \.ship-' | head -10)
-  [ -n "$dirty" ] && { echo "- uncommitted:"; printf '%s\n' "$dirty" | sed 's/^/  /'; }
+  # Build tools rewrite these on their own; say so, or a resumed driver treats them as work.
+  [ -n "$dirty" ] && { echo "- uncommitted:"; printf '%s\n' "$dirty" |
+    sed -E 's/^/  /; s/(Package\.resolved|next-env\.d\.ts)$/& (build noise: restore it)/'; }
   echo "Before the next step: reread the plan and the pipeline skill's section for this stage, then post Pete the one-line status."
 }
 
@@ -48,12 +50,13 @@ selftest() {
   echo a > a.txt && git add a.txt && git -c user.email=t@t -c user.name=t commit -q -m "task 1 lands"
   echo 'build:1:2' > .ship-stage; printf '1\n' > .ship-done
   echo '{"plan":"/p/plan.md","tasks":[{"n":1,"label":"1","title":"Task 1: first"},{"n":2,"label":"2","title":"Task 2: second"}]}' > .ship-route.json
-  echo b > b.txt
+  echo b > b.txt; echo n > next-env.d.ts
   out=$(printf '{"session_id":"","cwd":"%s"}' "$tmp/repo" | recap)
   check() { if eval "$2"; then echo "  ok   $1"; else echo "  FAIL $1"; fails=$((fails+1)); fi; }
   check 'names the stage and branch' '[[ "$out" == *"branch feature/x, stage build:1:2"* ]]'
   check 'counts logged tasks and marks each' '[[ "$out" == *"1 of 2 tasks logged"* && "$out" == *"done Task 1: first"* && "$out" == *"todo Task 2: second"* ]]'
   check 'lists the branch commits and uncommitted files, not ship files' '[[ "$out" == *"task 1 lands"* && "$out" == *"b.txt"* && "$out" != *".ship-done"* ]]'
+  check 'marks build churn as noise, and only that' '[[ "$out" == *"next-env.d.ts (build noise"* && "$out" != *"b.txt (build"* ]]'
   out=$(printf '{"session_id":"","cwd":"%s"}' "$tmp" | recap)
   check 'silent outside a ship' '[ -z "$out" ]'
   echo "ship-recap self-test: $fails failed"

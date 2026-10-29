@@ -195,7 +195,13 @@ its origin, and the walk lost a round to "No alert by that id".
   - A phone another ship just released can still answer `DEVICE_IN_USE` for that ship's
     session handle: reuse it with `--session <that id>`, never close it, since it is theirs.
   - Never `press` a ref you didn't just read back from a snapshot. An empty or stale one
-    stops the script: on Pete's own phone a misfired tap lands somewhere real.
+    stops the script: on Pete's own phone a misfired tap lands somewhere real. A step that
+    reads a ref and presses it (snapshot, pick, press, wait for a text) is one script file
+    under the job's tmp run with `bash`, since the worktree guard refuses `ref=$(…)` then
+    `press "$ref"` inline (CEL-223 lost five rounds to it).
+  - On iPhone PM the hand holding the phone is Pete's. Post him one line before the walk
+    ("QA is on your phone now, hands off until it says done") and one when it ends; a tap no
+    tool sent is his before it is a bug (CEL-223 traced an "Always allow" to one).
   - Read the app's own prints with `xcrun devicectl device process launch --console
     --terminate-existing --device <udid> <bundle>`, and write debug traces to stderr: a
     `print()` block-buffers off a terminal, so its lines arrive late or never.
