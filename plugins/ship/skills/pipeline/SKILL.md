@@ -745,7 +745,8 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   2026-10-14). A task that reads what another part of the app produces, a loop's brief or
   a tool's payload, quotes a real sample of it, never the storyboard's mock: one plan
   parsed a "Price" heading from a mock when the live brief says "Budget", and only QA
-  caught it (market-loops, 2026-10-15). The driver triages and edits the plan, and logs the reader's tally: `route.py log
+  caught it (market-loops, 2026-10-15). The driver triages and edits the plan, declining nits and
+  anything the spec doesn't ask for as REVIEW does, and logs the reader's tally: `route.py log
   repo=<repo> ship=<slug> review=wonder stage=plan real=<n> false=<n> out=<out-dir>` (`review=opus
   seconds=<n>` when Opus read in its place). Nothing goes back to Pete unless it changes what
   gets built. Then `route.py plan` (Engines). No task starts before the review lands,
@@ -933,7 +934,10 @@ he asks.
   The driver triages every finding from both
   — adversarial reviewers over-flag by design, and a finding both reached on their own is
   the strongest lead, never proof — checks each against the code, fixes what's real, puts judgment calls
-  on the card or in the `result:` line. The moment triage ends, before the first fix, one
+  on the card or in the `result:` line. A review makes the branch correct, not bigger
+  (Pete, 2026-11-01, from Theo's Sol loop): decline a nit (style, naming, a comment or doc
+  that isn't wrong) and anything the spec doesn't ask for, unless it's security, money or
+  data loss, and count them as `nits=<n>` on that reader's ledger row. The moment triage ends, before the first fix, one
   ledger row per reader, since the tally lives only in context and a compaction during the
   fixes loses it (cc-bridge logged both rows empty): `route.py log
   repo=<repo> ship=<slug> review=opus real=<n> false=<n> only=<n> seconds=<n>` and the same
@@ -1010,7 +1014,9 @@ he asks.
     (below). No stop, no cue. Call the Skill tool with `mattpocock-skills:pr` and rewrite the tracker PR's
     body in its shape: Summary (the smallest visual that shows the change), Evidence
     (before/after: the QA result and its shots, the test that went green), Merge Danger
-    (door and blast radius). The door is ship's call on every ship: **two-way** (a revert
+    (door and blast radius), and a last line per reader, `Reviewed: Wonder Full <n> fixed,
+    <n> declined, <n> wrong · Opus ...`, with each declined finding and why in a collapsed
+    list, so a reader's objection can't vanish in triage. The door is ship's call on every ship: **two-way** (a revert
     undoes it) lands now; **one-way** (it deletes or migrates data, sends something to people, or a
     revert can't undo it) waits for Pete's "merge main". A money path waits as its own reason
     whatever the door, so a PR can be "two-way, but a money path".

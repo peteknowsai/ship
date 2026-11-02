@@ -454,7 +454,8 @@ READ_ONLY = ('Read only. Edit no file, commit nothing, and run no command that w
              'Pace: in your first turn, read every file the brief names in one batch of parallel calls, and '
              'batch every later read and search the same way. How a dependency behaves is checked in its '
              'installed code; the web is only for a platform API with no code on disk. Report once each item '
-             'in the brief is checked, within about 25 tool rounds. The report is every real finding, most '
+             'in the brief is checked, within about 25 tool rounds. Report what would break, mislead or miss the spec; '
+             'leave out style, naming and comments that are not wrong. The report is every real finding, most '
              'severe first, at most two lines each, with no preamble and no summary of the plan, under 1,000 '
              'words.\n\n')
 
