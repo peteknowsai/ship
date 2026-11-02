@@ -565,8 +565,8 @@ into commits otherwise (incidents: Worktrees). Never build on main.
 - **Grill on the storyboard, never in chat.** Call the Skill tool with
   `mattpocock-skills:grilling` for how to ask: each round asks every question that's open
   now, numbered Q1, Q2…, each with your recommended answer and worded so "yes" takes it,
-  and recon answers the facts. The questions live under the frames, each naming the
-  frames it's about; the chat carries only the `needs input:` line (Pete, 2026-10-16: "I
+  and recon answers the facts. The questions live in the board beside their frames, each naming the
+  frames it's about (storyboard contract); the chat carries only the `needs input:` line (Pete, 2026-10-16: "I
   like my storyboards"). Nothing is asked before round 1: where an answer would change
   what to draw, draw your recommendation and ask under it.
 - **Recon runs on a subagent, synthesis stays with the driver.** Codebase
@@ -643,8 +643,8 @@ into commits otherwise (incidents: Worktrees). Never build on main.
      frames (Pete, 2026-10-12: "move away from the full interactive app"). Where a direction
      is genuinely open, draw it as two or three artboards of the same screen in an options
      row (`02-exploration-visual-designs`), never as prose options. The words on the page
-     are captions, one line under each frame saying what is new in it, and the round's
-     questions under the board. Recon, consults and the reuse audit go in one collapsed
+     are captions, one line under each frame saying what is new in it, and each of the round's
+     questions under the row it's about. Recon, consults and the reuse audit go in one collapsed
      block at the foot, for the record; they never sit above a frame. No TL;DR essay,
      no section per research finding, no fait accompli. `stage.sh <root> gate:1`, commit,
      fire the gate notification, `show.sh <root> <slug> storyboard <file>`, end the turn with `needs input:`
@@ -1227,7 +1227,7 @@ Render `reference/storyboard.html`, an artboard board: the page is the frames, l
 - **Captions** — one line under each artboard: what is new in it.
 - **The questions** — the round's grilling (DISCOVER): every question open now, Q1,
   Q2…, each naming its frames and carrying the pick you'd make, worded so "yes" takes
-  it. The ones a designer would bring, never a recommendation dressed as a question.
+  it. Numbered in page order, each sits right under the row of the first frame it names, and one about no frame sits at the top of the board; never a list at the foot (Pete, 2026-11-02). The ones a designer would bring, never a recommendation dressed as a question.
   They live on the page; chat never repeats them.
 - **For the record** — one collapsed block at the foot: recon, consults, reuse audit,
   surface liveness. Never above a frame.

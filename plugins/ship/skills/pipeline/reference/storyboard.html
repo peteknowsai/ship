@@ -36,8 +36,10 @@
   one frame works. Clicking an artboard's name opens it alone at full size.
   Round N: set data-round on <body> and the round in <title>, redraw in place, delete
   frames Pete killed (never grey them out). Questions are grilling's: every open one,
-  Q1, Q2…, each naming its frames, with your pick worded so "yes" takes it. Answered ones
-  go; new ones continue the numbers.
+  Q1, Q2…, each naming its frames, with your pick worded so "yes" takes it. Each sits right
+  under the row of the first frame it names, numbered in page order; one about no frame
+  goes at the top of the board. Never a list at the foot. Answered ones go; new ones
+  continue the numbers.
 -->
 <style>
   :root{--canvas:#e8e8ea;--ink:#1d1d1f;--mut:#6e6e73;--line:#d2d2d7;--accent:#0a66d8;--gap:56px;--pad:40px}
@@ -69,7 +71,7 @@
   figure.ab .cap{margin:8px 0 0;font-size:13px;color:var(--ink)}
 
   .notes{padding:0 var(--pad) 64px;max-width:880px}
-  .q{background:#fff;border-radius:10px;padding:12px 16px;margin:0 0 10px}
+  .q{background:#fff;border-radius:10px;padding:12px 16px;margin:14px 0 0;max-width:880px}
   .q p{margin:0}
   .q .on{color:var(--mut);font-size:13px}
   .q .pick{display:block;margin-top:4px;color:var(--mut);font-size:13px}
@@ -113,6 +115,8 @@
         <p class="cap">{{FRAME_3_WHAT_IS_NEW}}</p>
       </figure>
     </div>
+    <!-- This row's questions, right under its frames. "yes" takes every pick; Pete answers the rest by number. -->
+    <div class="q"><p><span class="tag">Q1</span>{{QUESTION_1}} <span class="on">· A3</span></p><span class="pick">I'd pick: <b>{{PICK_1}}</b></span></div>
   </section>
 
   <!-- An open call, drawn: sibling directions of one screen, no arrows. Drop when none. -->
@@ -128,13 +132,11 @@
         <p class="cap">{{OPTION_2_WHAT_IS_DIFFERENT}}</p>
       </figure>
     </div>
+    <div class="q"><p><span class="tag">Q2</span>{{QUESTION_2}} <span class="on">· B1, B2</span></p><span class="pick">I'd pick: <b>{{PICK_2}}</b></span></div>
   </section>
 </main>
 
 <section class="notes">
-  <!-- Every question open this round. "yes" takes every pick; Pete answers the rest by number. -->
-  <div class="q"><p><span class="tag">Q1</span>{{QUESTION_1}} <span class="on">· B1, B2</span></p><span class="pick">I'd pick: <b>{{PICK_1}}</b></span></div>
-  <div class="q"><p><span class="tag">Q2</span>{{QUESTION_2}} <span class="on">· A3</span></p><span class="pick">I'd pick: <b>{{PICK_2}}</b></span></div>
   <details>
     <summary>For the record</summary>
     <ul>
