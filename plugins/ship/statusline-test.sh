@@ -63,7 +63,7 @@ line2() { printf '{"model":{"display_name":"Opus 5.5"},"effort":{"level":"%s"}}'
 quota 1 1 12 435600 522000
 expect "both vendors, own resets"  "O 1% · F 1% ↻5d │ C 12% ↻6d" "$(line2)"
 expect "effort after model"        "🤖 Opus 5.5  ⚡high  🧠" "$(line2)"
-expect "xhigh is the ultra badge"  "⚡⚡⚡ultra" "$(line2 xhigh)"
+expect "xhigh reads as xhigh"  "⚡xhigh" "$(line2 xhigh)"
 quota 40 81 12 70000 522000
 expect "hotter bucket's reset"     "F 81% ↻19h" "$(line2)"
 quota 1 1 99 435600 361862

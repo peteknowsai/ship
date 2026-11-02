@@ -279,14 +279,9 @@ printf "\n"
 # Line 2 — phase (when in a ship), then the gauges + effort.
 [ -n "$phase" ] && printf "$(phase_c)%s$(rst)  " "$phase"
 [ -n "$model_name" ] && printf "$(c '38;5;183')🤖 %s$(rst)" "$model_name"
-# effort — reasoning tier. The harness exposes no real ultracode bit (it reports as
-# xhigh, same as plain extra-high). Pete never uses plain xhigh on Opus, so for him
-# xhigh ≡ ultracode — render it as the ultra badge: three rainbow ⚡. Other tiers plain.
-# ponytail: xhigh==ultracode is a deliberate convention, not detection — the only honest
-# proxy available. If plain xhigh ever gets used, this over-claims; swap the convention then.
-if [ "$effort" = "xhigh" ]; then
-  printf "  $(c '38;5;196')⚡$(c '38;5;220')⚡$(c '38;5;51')⚡$(rst)$(c '1;38;5;207')ultra$(rst)"
-elif [ -n "$effort" ]; then
+# effort — reasoning tier, as the harness names it. xhigh used to draw an "ultra" badge on the
+# guess that Pete only reached xhigh through ultracode; he uses plain xhigh now (2026-11-02).
+if [ -n "$effort" ]; then
   printf "  $(c '38;5;147')⚡%s$(rst)" "$effort"              # light purple
 fi
 [ -n "$model_name$effort" ] && printf "  "
