@@ -3,57 +3,69 @@
 # a check opens, clicks or captures shows on Pete's screen or touches his apps, logins and
 # permissions. Lume runs them headless, with no window and no VNC. Every borrow boots a fresh
 # clone of the base, so a ship never sees another's leftovers.
-#   mac-vm.sh borrow [--wait]      take a free slot and boot a fresh clone; prints SLOT=<n> IP=<ip>
+#   mac-vm.sh borrow [--wait]      take a free slot (--wait: up to 8 min) and boot a fresh clone; prints SLOT=<n> IP=<ip>
 #   mac-vm.sh run <n> <cmd>        a shell command in slot n as user lume (agent-desktop and node on PATH)
 #   mac-vm.sh tunnel <n> <port>    the VM's localhost:<port> reaches this Mac's localhost:<port>
-#   mac-vm.sh put <n> <path.app>   copy an app into the VM's ~/Applications; prints its path there
+#   mac-vm.sh put <n> <path.app>   quit and replace the app in the VM's ~/Applications; prints its path there
 #   mac-vm.sh shot <n> <out.png>   the VM's whole screen, saved on this Mac
 #   mac-vm.sh return <n>           stop and delete the clone, free the slot
 #   mac-vm.sh status               each slot's holder and when it last used it
 #   mac-vm.sh base                 rebuild the base from Apple's newest macOS (~30 min, a 20 GB download)
 #   mac-vm.sh grant                rerun only the base's last step, the offline one, after it failed
 #   mac-vm.sh --selftest           the slot bookkeeping, against a fake lume and ssh
-# Run it unsandboxed: it drives ~/.lume and ssh to the VMs' 192.168.64.x addresses.
+# Run it unsandboxed from the ship's worktree: the worktree is the slot's holder, and only the
+# holder can drive or return it. It drives ~/.lume and ssh to the VMs' 192.168.64.x addresses.
 set -euo pipefail
 self=$(cd "$(dirname "$0")" && pwd)/$(basename "$0")
 dir=${SHIP_MAC_DIR:-$HOME/.config/ship-mac}
 key=$dir/vm_key
 base=ship-mac-base
 slots=2              # Apple's macOS license allows two macOS VMs running on one Mac
-stale=$((2 * 3600))  # a slot unused this long, or whose worktree is gone, is free again
+stale=$((2 * 3600))  # a slot unused this long, or whose worktree is gone, can be taken again
 
 vm() { echo "ship-mac-$1"; }
-ipof() { lume get "$1" -f json 2>/dev/null | jq -r '(if type == "array" then .[0] else . end).ipAddress // empty'; }
-sshv() {  # sshv <vm> <args...>: one control connection per VM, so tunnels ride it and go with it
+info() { lume get "$1" -f json 2>/dev/null | jq -r "(if type == \"array\" then .[0] else . end).$2 // empty" 2>/dev/null; }
+ipof() { info "$1" ipAddress; }
+sshv() {  # sshv <vm> <args...>: one control connection per VM, kept until return, so tunnels ride it
   local name=$1; shift
   ssh -i "$key" -o IdentitiesOnly=yes -o BatchMode=yes -o HostKeyAlias=ship-mac -o CheckHostIP=no \
     -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$dir/known_hosts" -o ConnectTimeout=5 \
-    -o LogLevel=ERROR -o ControlMaster=auto -o ControlPath="$dir/$name.sock" -o ControlPersist=30m \
-    "lume@$(ipof "$name")" "$@"
+    -o LogLevel=ERROR -o ControlMaster=auto -o ControlPath="$dir/$name.sock" -o ControlPersist=yes \
+    -o ServerAliveInterval=15 -o ServerAliveCountMax=4 "lume@$(ipof "$name")" "$@"
 }
 close() { ssh -o ControlPath="$dir/$1.sock" -O exit x 2>/dev/null || true; }
 
 # A lease is a symlink whose target is "<worktree>|<epoch>": creating one is atomic, so two
-# ships can't take the same slot. ponytail: a reclaim racing a fresh borrow could drop it;
-# borrows are minutes apart, so a lock file waits until that happens.
+# ships can't take the same slot. ponytail: a reclaim racing a fresh borrow, or the holder's
+# refresh in the same second its lease turns two hours old, could drop one; a lock file waits
+# until that happens.
 holder() { git rev-parse --show-toplevel 2>/dev/null || pwd; }
 lease() { readlink "$dir/slots/$1" 2>/dev/null; }
+refresh() { ln -s "$2|$(date +%s)" "$dir/slots/$1.$$" && mv -f "$dir/slots/$1.$$" "$dir/slots/$1"; }  # a rename is atomic
 held() {
   local v; v=$(lease "$1") || return 1
   [ -d "${v%|*}" ] && [ $(( $(date +%s) - ${v##*|} )) -lt $stale ]
 }
 take() {
   mkdir -p "$dir/slots"
-  local n l
+  local n l v me; me=$(holder)
+  # A worktree that borrows again gets its own slot back, freshly cloned, not the other one too.
+  for n in $(seq 1 $slots); do
+    v=$(lease "$n") && [ "${v%|*}" = "$me" ] && { refresh "$n" "$me"; echo "$n"; return 0; }
+  done
   for n in $(seq 1 $slots); do
     l=$dir/slots/$n
     if [ -L "$l" ] && ! held "$n"; then mv "$l" "$l.stale.$$" 2>/dev/null && rm -f "$l.stale.$$"; fi
-    ln -s "$(holder)|$(date +%s)" "$l" 2>/dev/null && { echo "$n"; return 0; }
+    ln -s "$me|$(date +%s)" "$l" 2>/dev/null && { echo "$n"; return 0; }
   done
   return 1
 }
-touch_lease() { local v; v=$(lease "$1") && [ "${v%|*}" = "$(holder)" ] && ln -sfn "${v%|*}|$(date +%s)" "$dir/slots/$1" || true; }
-slot() { [[ "${1:-}" =~ ^[1-9]$ ]] && [ "$1" -le $slots ] || { echo "no slot '${1:-}'" >&2; exit 2; }; touch_lease "$1"; vm "$1"; }
+slot() {  # slot <n>: the caller's own slot, its lease refreshed; prints the VM's name
+  [[ "${1:-}" =~ ^[1-9]$ ]] && [ "$1" -le $slots ] || { echo "no slot '${1:-}'" >&2; exit 2; }
+  local v me; v=$(lease "$1") || v=; me=$(holder)
+  [ "${v%|*}" = "$me" ] || { echo "slot $1 isn't held from $me: $(status | sed -n "${1}p")" >&2; exit 2; }
+  refresh "$1" "$me"; vm "$1"
+}
 
 status() {
   local n v
@@ -63,54 +75,62 @@ status() {
   done
 }
 
-boot() {  # boot <vm>: headless, then wait for ssh and the logged-in desktop
-  local name=$1 i
-  lume run "$name" --display none --vnc disabled --detach >/dev/null
+boot() {  # boot <vm>: headless, then wait for ssh and the logged-in desktop. Called under if, so set -e
+  local name=$1 i  # is off here and each step returns on its own failure.
+  lume run "$name" --display none --vnc disabled --detach >/dev/null || return 1
   for i in $(seq 90); do [ -n "$(ipof "$name")" ] && sshv "$name" true 2>/dev/null && break; sleep 2; done
-  sshv "$name" 'for i in $(seq 60); do pgrep -qx Finder && exit 0; sleep 1; done; exit 1'
-  # A few captures in, macOS asks over the screen whether ssh may keep capturing it, and one Allow
-  # lasts the borrow. Its approvals file can't be seeded: replayd rewrites it and asks anyway.
-  sshv "$name" 'for i in $(seq 8); do agent-desktop screenshot --screen 0 /tmp/w.png >/dev/null 2>&1
+  sshv "$name" 'for i in $(seq 60); do pgrep -qx Finder && exit 0; sleep 1; done; exit 1' || return 1
+  # About ten seconds after the first capture, slower on a busy Mac, macOS asks over the screen
+  # whether ssh may keep capturing it, and one Allow lasts the borrow. Its approvals file can't be
+  # seeded: replayd rewrites it and asks anyway. The last capture checks agent-desktop runs.
+  sshv "$name" 'for i in $(seq 20); do agent-desktop screenshot --screen 0 /tmp/w.png >/dev/null 2>&1
     r=$(agent-desktop snapshot --app UserNotificationCenter -i --timeout-ms 1500 2>/dev/null |
       jq -r "[.. | objects | select(.role == \"button\" and .name == \"Allow\") | .ref_id][0] // empty")
-    [ -n "$r" ] && { agent-desktop click "$r" >/dev/null; break; }; sleep 2; done; rm -f /tmp/w.png'
+    [ -n "$r" ] && { agent-desktop click "$r" >/dev/null; break; }; sleep 2; done
+    [ -n "$r" ] || echo "no capture prompt came; if a shot shows one, click its Allow in UserNotificationCenter" >&2
+    agent-desktop screenshot --screen 0 /tmp/w.png >/dev/null; s=$?; rm -f /tmp/w.png; exit $s'
 }
 
+wipe() {  # wipe <vm>: its connection, then the VM. Lume's delete leaves a --detach VM running,
+  close "$1"; lume stop "$1" --force >/dev/null 2>&1 || true  # so only a stopped one is deleted.
+  case "$(info "$1" status)" in
+    ""|stopped) lume delete "$1" --force >/dev/null 2>&1 || true ;;
+    *) echo "$1 would not stop and is still running: lume stop $1 --force" >&2 ;;
+  esac
+}
 borrow() {
   local n waited=0
   until n=$(take); do
     [ "${1:-}" = --wait ] || { echo "both Mac VMs are out:" >&2; status >&2; exit 3; }
-    [ $waited -lt 1800 ] || { echo "no Mac VM came free in 30 min:" >&2; status >&2; exit 3; }
+    [ $waited -lt 480 ] || { echo "no Mac VM came free in 8 min:" >&2; status >&2; exit 3; }
     sleep 20; waited=$((waited + 20))
   done
-  local name; name=$(vm "$n")
-  close "$name"; lume stop "$name" --force >/dev/null 2>&1 || true; lume delete "$name" --force >/dev/null 2>&1 || true
+  local name o; name=$(vm "$n")
+  # A slot whose holder is gone or two hours idle still has its clone running: stop that too.
+  for o in $(seq 1 $slots); do [ "$o" = "$n" ] || [ ! -L "$dir/slots/$o" ] || held "$o" || give_back "$o"; done
+  wipe "$name"
   if ! { lume clone "$base" "$name" >/dev/null && boot "$name"; }; then
     give_back "$n"; echo "slot $n did not boot; it is free again" >&2; exit 1
   fi
   echo "SLOT=$n IP=$(ipof "$name")"
 }
-
-give_back() {
-  local name; name=$(vm "$1")
-  close "$name"; lume stop "$name" --force >/dev/null 2>&1 || true; lume delete "$name" --force >/dev/null 2>&1 || true
-  rm -f "$dir/slots/$1"
-}
+give_back() { wipe "$(vm "$1")"; rm -f "$dir/slots/$1"; }
 
 grant_offline() {  # the base's last step, on its stopped disk, where nothing running can write it back
   local whole rc=0
+  [ "$(info "$base" status)" = stopped ] || { echo "$base is running or missing; stop it first" >&2; return 1; }
   whole=$(hdiutil attach -imagekey diskimage-class=CRawDiskImage -nomount -nobrowse "$HOME/.lume/$base/disk.img" 2>/dev/null | awk 'NR==1{print $1}')
   [ -n "$whole" ] || { echo "could not attach the base's disk" >&2; return 1; }
   write_offline "$whole" || rc=$?
-  hdiutil detach "$whole" -force >/dev/null 2>&1 || true   # detached whatever write_offline did
+  hdiutil detach "$whole" -force >/dev/null 2>&1 || { echo "could not detach it: hdiutil detach $whole -force" >&2; rc=1; }
   return $rc
 }
-write_offline() {  # called under ||, where set -e is off, so every step is chained
-  local data mp
+write_offline() {  # called under ||, where set -e is off, so every step is one chain
+  local data mp lw
   # The disk holds several APFS containers; only the main one has the Data volume.
   data=$(diskutil apfs list -plist | python3 -c '
 import plistlib, sys
-w = sys.argv[1].replace("/dev/", "")
+w = sys.argv[1].replace("/dev/", "") + "s"
 for c in plistlib.loads(sys.stdin.buffer.read())["Containers"]:
     if any(s.get("DeviceIdentifier", "").startswith(w) for s in c.get("PhysicalStores", [])):
         for v in c["Volumes"]:
@@ -125,22 +145,25 @@ for c in plistlib.loads(sys.stdin.buffer.read())["Containers"]:
   # Setup Assistant's mini mode opened at every login on the Apple Account page. A login turns
   # MiniBuddyLaunch on when the key is missing, and setup turns it off once finished, as on Pete's
   # Mac; so it is written off, and the saved session that reopened Setup Assistant goes.
-  local lw="$mp/Users/lume/Library/Preferences/com.apple.loginwindow.plist"
+  lw="$mp/Users/lume/Library/Preferences/com.apple.loginwindow.plist" &&
   { [ -f "$lw" ] || plutil -create xml1 "$lw"; } && plutil -replace MiniBuddyLaunch -bool NO "$lw" &&
   { plutil -remove MiniBuddyLaunchCount "$lw" 2>/dev/null; true; } &&
-  rm -f "$mp/Users/lume/Library/Group Containers/group.com.apple.loginwindow.persistent-apps/persistantApps"
+  rm -f "$mp/Users/lume/Library/Group Containers/group.com.apple.loginwindow.persistent-apps/persistantApps" &&
+  diskutil unmount "$data" >/dev/null
 }
 req="X'FADE0C000000003C0000000100000006000000020000001D636F6D2E6170706C652E737368642D6B657967656E2D7772617070657200000000000003'"
 
 build_base() {
   local n
   for n in $(seq 1 $slots); do ! held "$n" || { echo "slot $n is out; the base waits until both are back" >&2; status >&2; exit 3; }; done
+  for n in $(seq 1 $slots); do give_back "$n"; done  # a stale slot's clone can still be running
   mkdir -p "$dir" && chmod 700 "$dir"
   [ -f "$key" ] || ssh-keygen -q -t ed25519 -N '' -C ship-mac -f "$key"
   rm -f "$dir/known_hosts"
-  lume stop "$base" --force >/dev/null 2>&1 || true; lume delete "$base" --force >/dev/null 2>&1 || true
+  wipe "$base"
   # --unattended writes Lume's lume/lume admin user, autologin and sshd onto the disk offline.
   lume create "$base" --ipsw latest --cpu 4 --memory 6GB --disk-size 80GB --unattended tahoe
+  trap 'close "$base"; lume stop "$base" --force >/dev/null 2>&1 || true' EXIT  # a failed build stops it
   lume run "$base" --display none --vnc disabled --detach >/dev/null
   local ip i; for i in $(seq 90); do ip=$(ipof "$base"); [ -n "$ip" ] && nc -z -G 2 "$ip" 22 2>/dev/null && break; sleep 2; done
   # The one password login: it installs the key, and provisioning turns password logins off.
@@ -175,7 +198,11 @@ sudo defaults write /Library/Preferences/com.apple.SetupAssistant LastSeenCloudP
 sudo sh -c 'printf "PasswordAuthentication no\nKbdInteractiveAuthentication no\n" > /etc/ssh/sshd_config.d/100-ship.conf'
 echo "base: macOS $v ($b), node $(node -v), agent-desktop $(agent-desktop version | jq -r .data.version)"
 EOF
-  close "$base"; lume stop "$base" >/dev/null
+  # Shut down from inside: lume stop powers off, and provisioning's last writes could be lost.
+  sshv "$base" 'sudo shutdown -h now' >/dev/null 2>&1 || true; close "$base"
+  for i in $(seq 60); do [ "$(info "$base" status)" = stopped ] && break; sleep 2; done
+  [ "$(info "$base" status)" = stopped ] || lume stop "$base" >/dev/null
+  trap - EXIT
   grant_offline
   echo "base ready"
 }
@@ -196,15 +223,23 @@ selftest() {
   check "a third borrow without --wait is refused" "$out" 3
   check "the borrow cloned the base into the slot" "$(grep -c '^clone ship-mac-base ship-mac-1$' "$t/lume.log")" 1
   check "status names each holder" "$(me c status | grep -c "slot [12]: $t/[ab],")" 2
+  me c run 1 true >/dev/null 2>&1 && out=0 || out=$?
+  check "another worktree can't drive a slot" "$out" 2
+  me c return 2 >/dev/null 2>&1 && out=0 || out=$?
+  check "another worktree can't return a slot" "$out" 2
+  check "the holder drives its slot" "$(me a run 1 true >/dev/null 2>&1 && echo yes)" yes
   me c base >/dev/null 2>&1 && out=0 || out=$?
   check "the base won't rebuild while a slot is out" "$out" 3
   rm -rf "$t/a"
   check "a slot whose worktree is gone is free again" "$(me c borrow)" "SLOT=1 IP=192.168.64.9"
+  check "borrowing again recycles your own slot" "$(me c borrow)" "SLOT=1 IP=192.168.64.9"
   ln -sfn "$t/b|$(( $(date +%s) - stale - 1 ))" "$t/cfg/slots/2"
   check "a slot unused past the limit is free" "$(me c status | sed -n 2p)" "slot 2: free"
+  me c borrow >/dev/null
+  check "a borrow stops the stale slot's clone" "$([ -L "$t/cfg/slots/2" ] || grep -c '^delete ship-mac-2 --force$' "$t/lume.log")" 2
   me c return 1
   check "return frees the slot" "$(me c status | sed -n 1p)" "slot 1: free"
-  check "return deletes the clone" "$(grep -c '^delete ship-mac-1 --force$' "$t/lume.log")" 3
+  check "every borrow and return deletes the old clone" "$(grep -c '^delete ship-mac-1 --force$' "$t/lume.log")" 5
   me c run 7 true >/dev/null 2>&1 && out=0 || out=$?
   check "a slot past the two is refused" "$out" 2
   [ $fail = 0 ] && echo "mac-vm.sh selftest ok" || exit 1
@@ -213,17 +248,19 @@ selftest() {
 case "${1:-}" in
   borrow) borrow "${2:-}" ;;
   run) name=$(slot "${2:-}"); shift 2; sshv "$name" "$@" ;;
-  tunnel) name=$(slot "${2:-}"); sshv "$name" true; ssh -o ControlPath="$dir/$name.sock" -O forward -R "$3:127.0.0.1:$3" x ;;
-  put) name=$(slot "${2:-}"); app=${3%/}
-       tar -C "$(dirname "$app")" -cf - "$(basename "$app")" | sshv "$name" 'mkdir -p ~/Applications && tar -C ~/Applications -xf -'
-       echo "/Users/lume/Applications/$(basename "$app")" ;;
-  shot) name=$(slot "${2:-}")
-        sshv "$name" 'f=/tmp/shot-$$.png; agent-desktop screenshot --screen 0 "$f" >/dev/null && cat "$f"; rm -f "$f"' > "$3"
-        [ -s "$3" ] || { echo "no screenshot" >&2; exit 1; } ;;
+  tunnel) name=$(slot "${2:-}"); port=${3:?usage: mac-vm.sh tunnel <n> <port>}
+          sshv "$name" true; ssh -o ControlPath="$dir/$name.sock" -O forward -R "$port:localhost:$port" x ;;
+  put) name=$(slot "${2:-}"); app=${3:?usage: mac-vm.sh put <n> <path.app>}; app=${app%/}; b=$(basename "$app")
+       tar -C "$(dirname "$app")" -cf - "$b" |
+         sshv "$name" "pkill -f '/Users/lume/Applications/${b//./[.]}/' && sleep 1; mkdir -p ~/Applications && rm -rf ~/Applications/'$b' && tar -C ~/Applications -xf -"
+       echo "/Users/lume/Applications/$b" ;;
+  shot) name=$(slot "${2:-}"); out=${3:?usage: mac-vm.sh shot <n> <out.png>}
+        sshv "$name" 'f=/tmp/shot-$$.png; agent-desktop screenshot --screen 0 "$f" >/dev/null && cat "$f"; rm -f "$f"' > "$out" || true
+        [ -s "$out" ] || { rm -f "$out"; echo "no screenshot" >&2; exit 1; } ;;
   return) slot "${2:-}" >/dev/null; give_back "$2" ;;
   status) status ;;
   base) build_base ;;
   grant) grant_offline && echo "base ready" ;;  # the base's last step alone, after a failure there
   --selftest) selftest ;;
-  *) sed -n '2,16p' "$self"; exit 2 ;;
+  *) sed -n '2,17p' "$self"; exit 2 ;;
 esac

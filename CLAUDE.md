@@ -13,7 +13,7 @@ reviews; its build mode is unused since 2026-10-24), `bash plugins/ship/hooks/sh
 the Convex dev database each worktree gets, `icon-check.py --selftest` the
 pre-flight's check that every page has a browser icon and a Home Screen icon, and
 `mac-vm.sh --selftest` the slot bookkeeping of the two headless Mac VMs ships borrow to walk a
-Mac app with agent-desktop (Lume; `mac-vm.sh base` rebuilds the base, ~30 min). The bare
+Mac app with agent-desktop (Lume; `mac-vm.sh base` rebuilds the base in ~30 min, run in the background). The bare
 `/ship` slash command is a *personal* command at `~/.claude/commands/ship.md` (a thin
 dispatcher to `ship:pipeline`) — plugin commands are always namespaced `plugin:command`,
 so a command in this repo would surface as the awkward `/ship:ship`. Don't add one back.
