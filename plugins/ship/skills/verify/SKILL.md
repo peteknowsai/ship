@@ -244,7 +244,11 @@ its origin, and the walk lost a round to "No alert by that id".
 - **API, CLI, script:** run the real commands; their output is the evidence. A server-side
   change no surface reaches before the merge (code a background worker runs): replay the
   reported case at data level, the changed function against a read-only copy of the real
-  data, before and after, and show both numbers.
+  data, before and after, and show both numbers. On Convex, `npx convex run --inline-query
+  '<code>'` evaluates a changed read on a deployment's real data, sandboxed and read-only,
+  with nothing pushed: the way to prove a query or index range while sibling worktrees hold
+  shared dev (eca-finder #297 checked its claim range on prod so). Copy out only the tables
+  the replay reads, never a whole export: prod holds people's details.
 
 Screenshots only at the beats that prove a step (start → action → result), as absolute
 paths under `<shots-root>/.ship-shots/<slug>/`; the agent-device diff and a page snapshot
