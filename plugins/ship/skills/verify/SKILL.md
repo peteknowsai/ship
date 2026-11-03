@@ -202,10 +202,16 @@ its origin, and the walk lost a round to "No alert by that id".
   - On iPhone PM the hand holding the phone is Pete's. Post him one line before the walk
     ("QA is on your phone now, hands off until it says done") and one when it ends; a tap no
     tool sent is his before it is a bug (CEL-223 traced an "Always allow" to one).
+  - A walk of anything that records on iPhone PM records Pete's room. Say so in the hands-off
+    line, keep each recording under a minute, and delete the test person before landing
+    (cells-app: `npm run prune -- --people --finish <clerk id>`): a 7-minute walk of the
+    Homebody walkie transcribed talk near his desk into the test person's showing.
   - Read the app's own prints with `xcrun devicectl device process launch --console
     --terminate-existing --device <udid> <bundle>`, and write debug traces to stderr: a
     `print()` block-buffers off a terminal, so its lines arrive late or never.
-  - Scroll a feed with `agent-device gesture pan <x> <y> <dx> <dy> <ms>` from mid-screen.
+  - Scroll a feed with `agent-device gesture pan <x> <y> <dx> <dy> <ms>` from mid-screen, in
+    points: the screenshot's pixels over the device's scale (402×874 on iPhone PM, a third of
+    its screenshot; showing-issues' first pan in pixels threw the deck off the screen).
     `scroll up` starts at the bottom edge and can land on the composer, and an open keyboard
     swallows it. After a pan, press only from a snapshot taken once the scroll has stopped
     (two snapshots a second apart that match): a ref read during momentum taps where the

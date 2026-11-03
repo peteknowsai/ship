@@ -25,6 +25,12 @@ process and skips the sizing judgment below. Anything else — bare `/ship <idea
 the auto-trigger — sizes itself. Every verb rides the same rails: stage 0's worktree
 off main via `wt`, never a primary checkout.
 
+**A claude.ai/share link as the argument** is Pete's own conversation: read it at once,
+headless, since WebFetch gets only the footer of a page that renders client-side. The
+chrome-devtools MCP (navigate, wait for "You said", take the text) or
+`chrome-headless-shell --headless --virtual-time-budget=15000 --dump-dom <url>` renders the
+whole chat (showing-issues asked Pete to paste it, then for his Chrome).
+
 **Pasted agent output as the argument** (another agent's report or completion message,
 not an idea): read it as "land what it made, and build the fixes it recommends", say so in
 one line up front, and size that.
@@ -939,7 +945,9 @@ he asks.
   **Wonder reads the same branch at the same time**: write that brief to a file and run
   `scripts/muse.py review <worktree> <brief> <out-dir>` in the background. Neither reader
   sees the other's findings. Muse out: Opus reads alone; say so in the `result:` line, never
-  wait on it.
+  wait on it. Both briefs name the HEAD sha they read, and no fix is committed until both
+  readers are back: card-quality-rank committed Wonder's fixes mid-read, and the Opus reader
+  reported its top finding as already fixed.
   The driver triages every finding from both
   — adversarial reviewers over-flag by design, and a finding both reached on their own is
   the strongest lead, never proof — checks each against the code, fixes what's real, puts judgment calls
@@ -1086,7 +1094,10 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
      When the guard still refuses git against the main checkout, leave its pull to the next
      session in it and say so in the `result:` line: the next fork branches from origin/main
      either way (peggy-qa, 2026-10-26).
-  2. `wt remove feature/<slug> -f` — frees the branch for `--delete-branch`.
+  2. `wt remove feature/<slug> -f` — frees the branch for `--delete-branch`. Then, from the
+     main checkout, `rm -rf <worktree>` once `git worktree list` no longer shows it: the
+     harness's `.claude/.cc-writes` keeps the folder alive (31 such stubs had piled up by
+     2026-11-03).
   3. `gh pr merge <#> --squash --delete-branch` — from the main checkout.
   4. `git pull --ff-only` (+ `git branch -D feature/<slug>` if a local branch
      lingers: a squash merge rewrites the commits, so `wt remove` and git both call the
