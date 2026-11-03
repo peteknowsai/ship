@@ -169,7 +169,7 @@ engine: tell him in one line and test in this session. `ship:verify`'s
 points among them (where the new piece is registered, exported, routed or called from),
 signatures, test cases, constraints. Call the Skill tool with
 `mattpocock-skills:writing-for-agents` once per run before the first brief. The driver
-reviews what comes back and runs the gates before anything is committed (never trust a
+reviews what comes back and runs the gates, scoped (contract: `gates:`), before anything is committed (never trust a
 "tests pass" claim from a worker), and owns git entirely. One writer per tree at a time.
 
 **Browser work runs on the chrome-devtools MCP** (`mcp__chrome-devtools__*`: headless,
@@ -251,7 +251,16 @@ facts. The workflow is ship's; the contract only says what this repo's commands 
 Every key is optional, and the default is what a repo with no contract gets:
 
 - **`gates:`** the commands that must pass: tests, typecheck, production build. Default:
-  whatever you can find. Gates, smokes and dev servers run with the Bash sandbox off: they
+  whatever you can find. **Full gates run at BUILD's pre-flight**, again at LAND's step 0
+  when the tree changed since, and after an absorb whose files overlap the branch's. Every other check, each
+  BUILD task and each TEST fix round, runs them **scoped**: the typecheck plus only the tests
+  the uncommitted change touches, by the contract's `scoped <cmd>` if it names one, else the
+  test runner's changed mode (`vitest run --changed`, `jest --onlyChanged`), else in full. Six
+  ships each running cells-app's full 3.5 minutes per task pushed the load past 150 and timed
+  out load-sensitive tests; the scoped run took 2 to 7 seconds on seven real changes and
+  caught every failing file the full run did on two planted bugs, 31 of 31 and 21 of 21
+  (2026-11-03). A scoped run that finds no tests for a diff with code in it is a miss to
+  check, not a pass: `vitest related` found none at all on cells-app's multi-project config. Gates, smokes and dev servers run with the Bash sandbox off: they
   bind ports and fetch fonts and packages by design, and under the sandbox they fail with
   `listen EPERM` or a fetch error that reads as a real red (CEL-147 lost a 7-minute suite
   to 27 of them). A multi-step gate run goes in a script file written with the Write tool,
@@ -837,7 +846,7 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   `~/.claude/skills/impeccable/reference/craft-floor.md` and honor its checks and bans,
   plus the three model defaults the storyboard contract bans.
 - **Before BUILD is done, a light pre-flight, so the QA run never opens a broken
-  page.** Run the gates and, for a framework with its own production build, that build;
+  page.** Run the gates in full and, for a framework with its own production build, that build;
   compare the key names in the worktree's env files with the main checkout's (and
   `.env.example`): a key main gained after the fork is missing here, and an agent that
   can't start reads as a product bug and costs a QA round. A repo with `ios:` or `mac:`
