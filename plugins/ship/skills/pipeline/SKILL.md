@@ -263,7 +263,10 @@ Every key is optional, and the default is what a repo with no contract gets:
   when the tree changed since, and after an absorb whose files overlap the branch's. Every other check, each
   BUILD task and each TEST fix round, runs them **scoped**: the typecheck plus only the tests
   the uncommitted change touches, by the contract's `scoped <cmd>` if it names one, else the
-  test runner's changed mode (`vitest run --changed`, `jest --onlyChanged`), else in full. Six
+  test runner's changed mode (`vitest run --changed`, `jest --onlyChanged`), else in full. The
+  runner picks the tests, never the driver: a gate script takes no list of test files. eca-finder's
+  v1 API ship named its files by hand and missed `tests/convex/catalogApi.test.ts`, which
+  `--changed` picks up on that diff, until pre-flight's full run went red (2026-11-03). Six
   ships each running cells-app's full 3.5 minutes per task pushed the load past 150 and timed
   out load-sensitive tests; the scoped run took 2 to 7 seconds on seven real changes and
   caught every failing file the full run did on two planted bugs, 31 of 31 and 21 of 21
@@ -494,7 +497,10 @@ own instructions put every branch in a worktree (handoff-readme stopped to weigh
 so a run that keeps working by absolute path while parked on main is invisible to Pete
 even though `.ship-stage` is being written faithfully in the worktree (he has had to ask
 mid-BUILD whether a run forked at all). Absolute-path driving is the *cross-repo*
-fallback only, where `EnterWorktree` can't take. Self-heal: notice mid-pipeline that
+fallback only, where `EnterWorktree` can't take. Once inside, Claude Code refuses any Bash
+command it can't prove stays in the worktree: a heredoc, a loop, or a program named by a
+variable (six refusals in eca-finder's v1 API ship). Write those with the Write tool into the
+job's tmp folder and run the file with `bash`. Self-heal: notice mid-pipeline that
 the session cwd isn't the worktree → `EnterWorktree({path})` right then; it works fine
 after the fact. `--no-cd` is load-bearing. A `.config/wt.toml` auto-provisions
 gitignored runtime files. With none, provision the worktree yourself before the first
