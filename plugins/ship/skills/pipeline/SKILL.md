@@ -936,7 +936,10 @@ he asks.
   main brought a lockfile, the workspace list, a schema or anything under `convex/`.
   Otherwise the typecheck alone: main's commits passed their own gates and touch nothing
   this branch does, and the typecheck catches an API they changed under it. A repo's
-  contract that says to run the gates after every rebase still wins.
+  contract that says to run the gates after every rebase still wins. An absorb that touched
+  the repo's `CLAUDE.md` or `AGENTS.md` can change the ship contract under a running ship:
+  reread it before the next step. eca-finder's #296 turned `live:` from a hand deploy into
+  merge-deploys mid-ship, and the old line would have raced a second production build.
 - **Freeze upstream while the QA run walks** — no merges or rebases until its result
   lands (incidents: Worktrees). Absorb upstream *before* a run, never during; the run's
   own fixes are the only edits.
@@ -1042,7 +1045,10 @@ he asks.
     (before/after: the QA result and its shots, the test that went green), Merge Danger
     (door and blast radius), and a last line per reader, `Reviewed: Wonder Full <n> fixed,
     <n> declined, <n> wrong · Opus ...`, with each declined finding and why in a collapsed
-    list, so a reader's objection can't vanish in triage. The door is ship's call on every ship: **two-way** (a revert
+    list, so a reader's objection can't vanish in triage. Take the counts from the reader's
+    ledger rows, which outlive a compaction (`grep '"ship": "<slug>"'
+    ~/.claude/ship-ledger.jsonl`): `false` is wrong, `nits` plus any real one left as a call
+    is declined, and the rest of `real` is fixed. The door is ship's call on every ship: **two-way** (a revert
     undoes it) lands now; **one-way** (it deletes or migrates data, sends something to people, or a
     revert can't undo it) waits for Pete's "merge main". A money path waits as its own reason
     whatever the door, so a PR can be "two-way, but a money path".
@@ -1106,7 +1112,8 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
   2. `wt remove feature/<slug> -f` — frees the branch for `--delete-branch`. Then, from the
      main checkout, `rm -rf <worktree>` once `git worktree list` no longer shows it: the
      harness's `.claude/.cc-writes` keeps the folder alive (31 such stubs had piled up by
-     2026-11-03).
+     2026-11-03). When the harness refuses because the folder is the session's own working
+     directory, leave it: `wt-sweep` removes an emptied one once nothing stands in it.
   3. `gh pr merge <#> --squash --delete-branch` — from the main checkout.
   4. `git pull --ff-only` (+ `git branch -D feature/<slug>` if a local branch
      lingers: a squash merge rewrites the commits, so `wt remove` and git both call the
