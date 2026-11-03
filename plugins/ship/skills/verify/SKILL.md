@@ -108,6 +108,12 @@ the Mac", the way a locked iPhone does; steps that capture nothing still run.
 
 ## 2. Write the QA script → run it → fix → rerun (≤ 3 fix rounds per failing step)
 
+**A diff that touches only docs gets a fact check in place of the app walk.** Every path,
+command, script, function, table and section the doc names exists and is tracked on the
+branch (`git ls-files`, not the disk), every constant it quotes matches the code, it renders
+on GitHub, and any mermaid in it parses. handoff-readme's check found a spec the README cited
+that existed only untracked in the main checkout.
+
 **Start from the repo's checks.** A repo keeps how it is proven in a project skill,
 `.claude/skills/checks/SKILL.md`: how to start it, sign in, walk each screen, and the pass
 lines it must meet. Read it first and build the QA script on it, so a run never rediscovers

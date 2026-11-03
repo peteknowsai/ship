@@ -68,7 +68,9 @@ What scales is the ceremony before TEST, and you size it, not Pete:
   land on a pass →
   `result:` line. No branch readers: REVIEW's two-lab read belongs to SELF-DIRECTED and
   GATED. A dab of `ponytail` (smallest diff), and `impeccable` for anything
-  visual. The first Pete hears of it is the links.
+  visual. The first Pete hears of it is the links. A diff that touches only docs has no
+  build input and no page: it skips the gates, pre-flight and app walk, and TEST is
+  verify's docs fact check instead.
 - **SELF-DIRECTED — real work with no taste question in it.** Write whatever
   machine-facing spec/plan *you* need to build it well, then build, run the full REVIEW
   machinery (the fresh-eyes review, then TEST's QA run — its `works` is the bar
@@ -487,7 +489,8 @@ only covers the launch tree, so its next ship starts a fresh session from the ma
 (CEL-128, 2026-10-17); if the cwd isn't
 inside the repo at all (a teardown by absolute path leaves it in `~` or a removed folder),
 `cd <main checkout>` first, since `EnterWorktree` refuses from there. In the session's primary repo, `EnterWorktree({path})`
-is required: the status line and FleetView read the session's cwd,
+is required, and it wins over a background session's default to skip EnterWorktree: Pete's
+own instructions put every branch in a worktree (handoff-readme stopped to weigh the two): the status line and FleetView read the session's cwd,
 so a run that keeps working by absolute path while parked on main is invisible to Pete
 even though `.ship-stage` is being written faithfully in the worktree (he has had to ask
 mid-BUILD whether a run forked at all). Absolute-path driving is the *cross-repo*
