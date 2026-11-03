@@ -301,7 +301,11 @@ folder; delete them before committing.
 
 **Prove something stays idle** (a spinner that must not appear, a message that must not
 come): `wait_for` on the failure text with the step's timeout (`timeout: 90000` for 90 s).
-A timeout is the pass; the text showing up is the fail. `sleep` is blocked.
+A timeout is the pass; the text showing up is the fail. `sleep` is blocked. When the step
+claims why something never shows, the walk can't tell that cause from another, so also run
+the code that decides it on the saved state with the cause and without, and show both:
+signup-status's closed deck pick never dealt, but only the deal's own `leftOf` (`[]`
+marked, `['Barracuda']` unmarked) told the mark apart from Jev's ranking.
 
 **Wait on the real thing.** A server: `scripts/listener.sh <port>` (in the pipeline skill's
 directory). A process: `pgrep -f <pattern>`, never `ps | grep`, which matches its own grep
