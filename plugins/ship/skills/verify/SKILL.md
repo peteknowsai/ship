@@ -275,10 +275,15 @@ merge unproven.
 
 ```
 VERDICT: works | broken | unverifiable
+UNWALKED: every step the run didn't walk itself, handed to Pete or skipped, or "none"
 EVIDENCE: ordered list of "<screenshot path or output> — <plain-language caption>"
 EXPECTED / OBSERVED: for every step that didn't pass
 TASTE: <0-3 short "looked off / couldn't confirm" notes, or "none">
 ```
+
+`works` needs `UNWALKED: none`; anything else is `unverifiable`. A compaction summary once
+carried "step 13 is Pete's" as settled, and the result put it under `works` as a footnote;
+the rig built for it found a real bug (yeoman-listing-readers, 2026-11-03).
 
 **Measure what a person feels.** On a change with a screen, after the walk passes, run
 these on each page it touched, and every pass line the repo's checks add:
@@ -359,7 +364,7 @@ leaves it alone.
 
 ## 6. Hand back proof
 
-Return to the caller: `VERDICT`, `EVIDENCE` (the ordered screenshot + caption storyboard),
+Return to the caller: `VERDICT`, `UNWALKED`, `EVIDENCE` (the ordered screenshot + caption storyboard),
 `TASTE` notes, and the crystallized spec path (or none). In ship they go on the review card:
 the storyboard becomes "Proof it works," the taste notes "Flagged." Pete reviews proof, not
 faith.

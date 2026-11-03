@@ -1310,7 +1310,8 @@ Render `reference/review-card.html` filled with the meta only — PM-framed, one
   says which: "Landed on main" with the live URL, or what it waits on, plus the
   branch-built native app when the ship made one (the IOS or MAC line: the device and
   bundle, or the .app path), so he can open what he's asked to try. The tracker PR
-  link is there for the record, but he shouldn't need it.
+  link is there for the record, but he shouldn't need it. Fill `PR_URL` from `gh pr view
+  <#> --json url -q .url`, never by hand: a typed one named the wrong owner for cells-app.
 
 ## Follow-ups — what we should do next
 

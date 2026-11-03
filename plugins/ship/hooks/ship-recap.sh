@@ -4,6 +4,7 @@
 # state from disk (marker, saved task list, done tasks, branch commits) instead of trusting
 # the summary. Silent outside a ship. `ship-recap.sh --selftest` is its check.
 
+plugin=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 recap() {
   local input sid ptr root stage branch route done_file base
   input=$(cat)
@@ -20,6 +21,8 @@ recap() {
   route="$root/.ship-route.json"; done_file="$root/.ship-done"
   echo "/ship recap after compaction, read from disk (trust it over the summary):"
   echo "- worktree $root, branch ${branch:-?}, stage $stage"
+  # A deploy mid-run adds a newer copy of ship; this session's text matches its own copy.
+  echo "- this session's ship skills: $plugin/skills (call the pipeline's scripts there, not the newest copy in the cache)"
   local tasks=""
   if [ -f "$route" ]; then
     tasks=$(jq -r --rawfile done <( [ -f "$done_file" ] && cat "$done_file" || true ) '
@@ -58,6 +61,7 @@ selftest() {
   echo b > b.txt; echo n > next-env.d.ts
   out=$(printf '{"session_id":"","cwd":"%s"}' "$tmp/repo" | recap)
   check() { if eval "$2"; then echo "  ok   $1"; else echo "  FAIL $1"; fails=$((fails+1)); fi; }
+  check 'names this session'"'"'s own skills folder' '[[ "$out" == *"ship skills: $plugin/skills ("* ]] && [ -d "$plugin/skills/pipeline/scripts" ]'
   check 'names the stage and branch' '[[ "$out" == *"branch feature/x, stage build:1:2"* ]]'
   check 'counts logged tasks and marks each' '[[ "$out" == *"1 of 2 tasks logged"* && "$out" == *"done Task 1: first"* && "$out" == *"todo Task 2: second"* ]]'
   check 'flags a fable task as possibly built and unchecked' '[[ "$out" == *"todo Task 2: second [fable]"* && "$out" == *"report is gone"* && "$out" != *"first [fable]"* ]]'
