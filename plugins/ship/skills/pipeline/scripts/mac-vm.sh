@@ -11,6 +11,7 @@
 #   mac-vm.sh return <n>           stop and delete the clone, free the slot
 #   mac-vm.sh status               each slot's holder and when it last used it
 #   mac-vm.sh base                 rebuild the base from Apple's newest macOS (~30 min, a 20 GB download)
+#   mac-vm.sh grant                rerun only the base's last step, the offline one, after it failed
 #   mac-vm.sh --selftest           the slot bookkeeping, against a fake lume and ssh
 # Run it unsandboxed: it drives ~/.lume and ssh to the VMs' 192.168.64.x addresses.
 set -euo pipefail
@@ -67,6 +68,12 @@ boot() {  # boot <vm>: headless, then wait for ssh and the logged-in desktop
   lume run "$name" --display none --vnc disabled --detach >/dev/null
   for i in $(seq 90); do [ -n "$(ipof "$name")" ] && sshv "$name" true 2>/dev/null && break; sleep 2; done
   sshv "$name" 'for i in $(seq 60); do pgrep -qx Finder && exit 0; sleep 1; done; exit 1'
+  # A few captures in, macOS asks over the screen whether ssh may keep capturing it, and one Allow
+  # lasts the borrow. Its approvals file can't be seeded: replayd rewrites it and asks anyway.
+  sshv "$name" 'for i in $(seq 8); do agent-desktop screenshot --screen 0 /tmp/w.png >/dev/null 2>&1
+    r=$(agent-desktop snapshot --app UserNotificationCenter -i --timeout-ms 1500 2>/dev/null |
+      jq -r "[.. | objects | select(.role == \"button\" and .name == \"Allow\") | .ref_id][0] // empty")
+    [ -n "$r" ] && { agent-desktop click "$r" >/dev/null; break; }; sleep 2; done; rm -f /tmp/w.png'
 }
 
 borrow() {
@@ -90,25 +97,40 @@ give_back() {
   rm -f "$dir/slots/$1"
 }
 
-grant_offline() {  # Accessibility and Screen Recording for whatever runs over ssh, written into the stopped base's TCC.db
-  local whole data mp
+grant_offline() {  # the base's last step, on its stopped disk, where nothing running can write it back
+  local whole rc=0
   whole=$(hdiutil attach -imagekey diskimage-class=CRawDiskImage -nomount -nobrowse "$HOME/.lume/$base/disk.img" 2>/dev/null | awk 'NR==1{print $1}')
-  trap 'hdiutil detach "$whole" -force >/dev/null 2>&1 || true' RETURN
+  [ -n "$whole" ] || { echo "could not attach the base's disk" >&2; return 1; }
+  write_offline "$whole" || rc=$?
+  hdiutil detach "$whole" -force >/dev/null 2>&1 || true   # detached whatever write_offline did
+  return $rc
+}
+write_offline() {  # called under ||, where set -e is off, so every step is chained
+  local data mp
+  # The disk holds several APFS containers; only the main one has the Data volume.
   data=$(diskutil apfs list -plist | python3 -c '
 import plistlib, sys
 w = sys.argv[1].replace("/dev/", "")
 for c in plistlib.loads(sys.stdin.buffer.read())["Containers"]:
     if any(s.get("DeviceIdentifier", "").startswith(w) for s in c.get("PhysicalStores", [])):
-        print(next(v["DeviceIdentifier"] for v in c["Volumes"] if "Data" in v.get("Roles", [])))' "$whole")
-  diskutil mount -mountOptions nobrowse "$data" >/dev/null
-  mp=$(diskutil info -plist "$data" | python3 -c 'import plistlib,sys; print(plistlib.loads(sys.stdin.buffer.read())["MountPoint"])')
+        for v in c["Volumes"]:
+            if "Data" in v.get("Roles", []): print(v["DeviceIdentifier"]); sys.exit()' "$1") && [ -n "$data" ] &&
+  diskutil mount -mountOptions nobrowse "$data" >/dev/null &&
+  mp=$(diskutil info -plist "$data" | python3 -c 'import plistlib,sys; print(plistlib.loads(sys.stdin.buffer.read())["MountPoint"])') &&
   # csreq: identifier "com.apple.sshd-keygen-wrapper" and anchor apple, the row macOS itself writes.
-  local req=X\'FADE0C000000003C0000000100000006000000020000001D636F6D2E6170706C652E737368642D6B657967656E2D7772617070657200000000000003\'
   sqlite3 "$mp/Library/Application Support/com.apple.TCC/TCC.db" "INSERT OR REPLACE INTO access
     (service, client, client_type, auth_value, auth_reason, auth_version, csreq, flags, last_reminded) VALUES
     ('kTCCServiceAccessibility', '/usr/libexec/sshd-keygen-wrapper', 1, 2, 4, 1, $req, 0, 4102444800),
-    ('kTCCServiceScreenCapture', '/usr/libexec/sshd-keygen-wrapper', 1, 2, 4, 1, $req, 0, 4102444800);"
+    ('kTCCServiceScreenCapture', '/usr/libexec/sshd-keygen-wrapper', 1, 2, 4, 1, $req, 0, 4102444800);" &&
+  # Setup Assistant's mini mode opened at every login on the Apple Account page. A login turns
+  # MiniBuddyLaunch on when the key is missing, and setup turns it off once finished, as on Pete's
+  # Mac; so it is written off, and the saved session that reopened Setup Assistant goes.
+  local lw="$mp/Users/lume/Library/Preferences/com.apple.loginwindow.plist"
+  { [ -f "$lw" ] || plutil -create xml1 "$lw"; } && plutil -replace MiniBuddyLaunch -bool NO "$lw" &&
+  { plutil -remove MiniBuddyLaunchCount "$lw" 2>/dev/null; true; } &&
+  rm -f "$mp/Users/lume/Library/Group Containers/group.com.apple.loginwindow.persistent-apps/persistantApps"
 }
+req="X'FADE0C000000003C0000000100000006000000020000001D636F6D2E6170706C652E737368642D6B657967656E2D7772617070657200000000000003'"
 
 build_base() {
   local n
@@ -201,6 +223,7 @@ case "${1:-}" in
   return) slot "${2:-}" >/dev/null; give_back "$2" ;;
   status) status ;;
   base) build_base ;;
+  grant) grant_offline && echo "base ready" ;;  # the base's last step alone, after a failure there
   --selftest) selftest ;;
-  *) sed -n '2,15p' "$self"; exit 2 ;;
+  *) sed -n '2,16p' "$self"; exit 2 ;;
 esac
