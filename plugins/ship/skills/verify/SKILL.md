@@ -286,8 +286,9 @@ the sandbox is the sandbox, never a red to fix.
 Run it in full before the first QA run, and again once after the last fix round, once its
 last edit is in: a sweep started before then reports on code that's gone. Between rounds,
 run it **scoped** to what the fix touched: the typecheck, plus the tests that cover the
-changed files (`vitest related <files> --run`, `jest --findRelatedTests <files>`, or a
-narrower scope the repo's contract names). In ship, the final full run can wait for
+changed files (the contract's `scoped` command, else `vitest run --changed` or `jest
+--onlyChanged`; `vitest related` found no tests at all on cells-app's multi-project config,
+so a scoped run that finds none for a code change is a miss to check, not a pass). In ship, the final full run can wait for
 LAND's step 0, which runs it when the tree changed since the last one. Stop the worktree's dev server
 before a production build (`next build` and `next dev` both write `.next`) and restart it
 after. In ship, BUILD's pre-flight is
