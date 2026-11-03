@@ -91,8 +91,20 @@ down mid-QA (2026-10-14). Never control the Mac's desktop.
 
 **A Mac app, through the repo's own rig.** In a repo whose contract has `mac:`, run it
 whenever the Mac app can see the change; it prints the MAC line. Drive the app the way the
-repo's checks skill says (its UI test fixtures, a live test against the branch server), never
-by desktop control, and launch it with `open -g` so it never takes Pete's screen. A rig's own
+repo's checks skill says (its UI test fixtures, a live test against the branch server). On
+Pete's Mac that is never desktop control, and the app launches with `open -g` so it never takes
+his screen. A step that needs the app's own screens (a click, a field, what a window shows) runs in
+a borrowed Mac VM, a clean headless Mac with none of his logins, apps or permission grants.
+`scripts/mac-vm.sh` in the pipeline skill runs it, unsandboxed:
+`borrow --wait` prints `SLOT=<n>`; build the branch's app against a localhost port of the
+worktree's server, never a `*.localhost` name on :80, which the VM can't take; `put <n> <app>`,
+`tunnel <n> <port>`, then drive it through `run <n> '<cmd>'` with agent-desktop: `open -g` the
+app, `agent-desktop snapshot --app <name> -i`, then `click` or `set-value` on the refs it prints
+and `shot <n> <png>` to see the whole screen. The VM's shell is zsh, so quote a ref as
+`"@${S}:e2"`: bare `$S:e2` is a zsh modifier. A web view's first snapshot can need
+`--timeout-ms 20000`. Never `osascript` there: its Automation prompt hangs the command.
+`return <n>` the moment the walk ends, pass or fail; a slot unused for two hours frees itself,
+and the next borrow boots a fresh clone. A rig's own
 windows are on his screen too, `orderBack` or not, until torn down: open them just before the
 steps that need them and tear them down right after (CEL-222's live-node test windows sat over
 his terminal until he asked). A window level under `.normal` hides them from CGWindowList,
