@@ -1027,7 +1027,7 @@ he asks.
   prompts, the camera, real scrolling and touch feel. Otherwise walk the simulator and say
   so on the card;
   a mobile-web build may add a simulator's Safari, never the phone), fixes what fails and
-  reruns, up to three fix rounds on any one failing step (a new bug each round is progress, and the `result:` line gives the count). No desktop control of the Mac. It walks the surface Pete
+  reruns, up to three fix rounds on any one failing step (a new bug each round is progress, and the `result:` line gives the count). No desktop control of Pete's Mac: a Mac app's screens are walked in a borrowed VM (verify, `scripts/mac-vm.sh`). It walks the surface Pete
   would open, signed in the way he would be, with real clicks, taps and keys, never events
   dispatched from a script (a right-click menu bug got past synthetic events twice). When
   getting past sign-in on the repo's test-auth path took a trick (Clerk's bot check, say),
