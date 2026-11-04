@@ -435,7 +435,8 @@ with the Read and Grep tools when the session has them, which it never checks; e
 file under the job's tmp directory. Any file edit the Edit and Write tools can't make
 goes the same way: Write the script to the job's tmp, then `bash <path>` or `python3
 <path>`. Never an inline heredoc, `sed -i` chain or loop first, not even once: one run
-hit the guard eight times reaching for them. A command on the main checkout (`cd <main> && git`,
+hit the guard eight times reaching for them. A wait needs no loop either: `gh pr checks <#>
+--watch` waits on a PR's checks. A command on the main checkout (`cd <main> && git`,
 `git -C <main>`) is refused while the session is in the worktree: run it after `ExitWorktree`
 at LAND, never from a script that hides it from the guard; LAND step 1 says what to do when
 there is no worktree to exit. Two runs lost 40 commands to split-and-retry, and two more
@@ -1137,7 +1138,8 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
   carries the folder it was taken in, so one from the worktree fails with ENOENT after
   teardown: take new ones from the main checkout for every post-landing check. Wait on a
   Vercel build with `vercel inspect <url> --wait --timeout <t>`, never `vercel ls` through
-  grep, which misses "Building". A CLI `--prod` deploy in a repo whose git integration also
+  grep, which misses "Building". Find a merge's build to wait on with `vercel ls -m
+  githubCommitSha=<full sha>`: a short one matches nothing. A CLI `--prod` deploy in a repo whose git integration also
   builds main starts a second production build about 30 s later, and that one ends up live:
   watch it too (eca-finder, 2026-10-26). A diff that touches nothing
   `live:` builds deploys nothing: skip the deploy and say so in the `result:` line, since a

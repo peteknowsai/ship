@@ -154,7 +154,10 @@ what he says mid-run changes the run.
 level on production-sized data, main's code against the branch's, and a slowdown toward
 the backend's limit is a failure (Convex stops a function at 1 s of execution). Loading
 one row per section took a catalog search from 2.1 s to 7 s past the gates and both
-reviewers; only this timing caught it.
+reviewers; only this timing caught it. Time it in the runtime it runs in: node ran
+eca-finder's Convex scan 10 to 15 times faster than Convex did (53 ms in node, over 1 s on
+prod), so a Convex function runs read-only through `convex run --inline-query` and its time
+comes from `convex logs --success --jsonl` (eca-finder's checks skill has the recipe).
 
 **Seed, then read it back.** Before the walk, read each seeded record back through the
 same backend and stage the app's server uses, and print which one. Two cells-app runs
