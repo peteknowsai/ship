@@ -107,15 +107,19 @@ def settings(src, app):
                            capture_output=True, text=True, env=clean_env())
         if not (r.returncode and "unknown option" in r.stderr):
             break
-    return check_settings(r.returncode, r.stdout, src)
+    return check_settings(r.returncode, r.stdout, r.stderr, src)
 
 
-def check_settings(code, text, src):
-    if code or not text.strip():
+def check_settings(code, text, err, src):
+    """A names-only list starts with a bare name; a values list starts NAME=..., and only a
+    multiline value's later lines lack the `=`. No settings at all prints to stderr only."""
+    if code:
         return None, f"couldn't read dev's settings from {src}"
-    bare = [l for l in text.splitlines() if l.strip() and "=" not in l]
-    if bare:
-        return None, f"dev's settings came back as names without values ({bare[0]} first)"
+    if not text.strip():
+        return ("", None) if "No environment variables" in err else (None, f"couldn't read dev's settings from {src}")
+    first = next(l for l in text.splitlines() if l.strip())
+    if "=" not in first or "Listed names only" in err:
+        return None, f"dev's settings came back as names without values ({first.strip()} first)"
     return text, None
 
 
@@ -152,7 +156,7 @@ def up(worktree, app_rel="."):
         return 0 if why.startswith("already") else 1
     # Read the settings before making the copy, so a failed read leaves nothing to expire.
     env_lines, why = settings(src, app)
-    if not env_lines:
+    if why:
         sys.exit(f"branch-db: {why}; no copy made")
     ref = f"dev/{slug(branch)}"
     r = subprocess.run(create_cmd(ref), cwd=app, capture_output=True, text=True, env=clean_env())
@@ -168,7 +172,8 @@ def up(worktree, app_rel="."):
         sys.exit(f"branch-db: couldn't read the new deployment from: {out[-400:]}")
     new = m.group(1)
     # Settings go straight from one deployment to the other, never through a file.
-    npx(["env", "set", "--force", "--deployment", new], app, input=env_lines)
+    if env_lines:
+        npx(["env", "set", "--force", "--deployment", new], app, input=env_lines)
     tmp = tempfile.mkdtemp(prefix="branch-db-")
     # `convex dev` rewrites the app's .env.local to the copy and adds a .gitignore when there
     # is none; put the env file back if the copy fails, so a rerun starts over.
@@ -267,9 +272,12 @@ def selftest():
         os.environ["CONVEX_DEPLOY_KEY"] = "prod:x|y"
         assert "CONVEX_DEPLOY_KEY" not in clean_env() and clean_env(A="1")["A"] == "1"
         del os.environ["CONVEX_DEPLOY_KEY"]
-        assert check_settings(0, "A=1\nB=two\n", "s")[0] == "A=1\nB=two\n"
-        assert "names without values (A first)" in check_settings(0, "A\nB\n", "s")[1]
-        assert check_settings(1, "A=1\n", "s")[0] is None and check_settings(0, " \n", "s")[0] is None
+        assert check_settings(0, "A=1\nB=two\n", "", "s") == ("A=1\nB=two\n", None)
+        pem = "KEY='-----BEGIN KEY-----\nabc\n-----END KEY-----'\nB=2\n"
+        assert check_settings(0, pem, "", "s") == (pem, None), "a multiline value passes"
+        assert "names without values (A first)" in check_settings(0, "A\nB\n", "", "s")[1]
+        assert check_settings(0, "", "No environment variables set", "s") == ("", None)
+        assert check_settings(1, "A=1\n", "", "s")[0] is None and check_settings(0, " \n", "", "s")[0] is None
         cmd = create_cmd("dev/x-1")
         assert cmd[3:5] == ["create", "dev/x-1"] and cmd.count("dev/x-1") == 1, cmd
         print("branch-db selftest: ok")

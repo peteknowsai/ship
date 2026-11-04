@@ -29,12 +29,16 @@ team=$(api "/v2/teams/$scope" | jq -r '.id // empty')
 [ -n "$team" ] || { echo "no Vercel team '$scope' for this login" >&2; exit 2; }
 tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
 bad=0
-say() { printf '  %-7s %s %s\n' "$1" "$2" "$3"; [ "$2" = "✗" ] && bad=1 && crossed=$((crossed + 1)); return 0; }
+say() {
+  printf '  %-7s %s %s\n' "$1" "$2" "$3"
+  case "$2" in "✗") bad=1; crossed=$((crossed + 1)) ;; "?") unchecked=$((unchecked + 1)) ;; esac
+  return 0
+}
 skip() { say "$1" "–" "unreleased: $2"; }
 
 for arg in "$@"; do
   project=${arg%:unreleased}; unreleased=; [ "$project" != "$arg" ] && unreleased=1
-  crossed=0
+  crossed=0; unchecked=0
   echo "$project${unreleased:+ (unreleased)}"
   info=$(api "/v9/projects/$project?teamId=$team")
   repo=$(jq -r '.link.repo // empty' <<<"$info"); branch=$(jq -r '.link.productionBranch // empty' <<<"$info")
@@ -71,7 +75,11 @@ for arg in "$@"; do
   # deploy key in ~/.config/<project>/convex-prod-deploy-key; skipped without them.
   dev_ref=$(printenv "CONVEX_DEV_$(tr '[:lower:]-' '[:upper:]_' <<<"$project")")
   prod_key="$HOME/.config/$project/convex-prod-deploy-key"
-  if [ -z "$unreleased" ] && [ -n "$dev_ref" ] && [ -f "$prod_key" ] && [ -n "${CONVEX_DIR:-}" ]; then
+  if [ -n "$unreleased" ]; then
+    skip convex "prod's settings not compared"
+  elif [ -z "$dev_ref" ] || [ ! -f "$prod_key" ] || [ -z "${CONVEX_DIR:-}" ]; then
+    say convex "?" "prod's settings not compared (needs CONVEX_DEV_<PROJECT>, the prod key file and CONVEX_DIR)"
+  else
     names() { (cd "$CONVEX_DIR/$project" 2>/dev/null || cd "$CONVEX_DIR"; env NODE_OPTIONS=--no-warnings "$@" npx convex env list 2>/dev/null | cut -d= -f1 | sort); }
     missing=$(comm -23 <(names CONVEX_DEPLOYMENT="$dev_ref") <(names CONVEX_DEPLOY_KEY="$(cat "$prod_key")") | tr '\n' ' ')
     [ -z "$missing" ] && say convex ✓ "prod has every setting dev has" || say convex ✗ "prod is missing: $missing"
@@ -92,6 +100,8 @@ for arg in "$@"; do
       *) say clerk "?" "$target key unreadable (stored as sensitive)" ;;
     esac
   done
-  [ "$crossed" = 0 ] && echo "  = $project clean" || echo "  = $project: $crossed crossed"
+  if [ "$crossed" != 0 ]; then echo "  = $project: $crossed crossed"
+  elif [ "$unchecked" != 0 ]; then echo "  = $project: nothing crossed, $unchecked unchecked"
+  else echo "  = $project clean"; fi
 done
 exit $bad

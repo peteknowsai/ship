@@ -256,8 +256,8 @@ if __name__ == '__main__':
         old = full_id(path, args[1])
         event = decide(args[2], old)
         append(path, event)
-        print(f"decisions: logged {event['id'][:8]}, superseding {old[:8]}")
         append(path, {'id': str(uuid.uuid4()), 'kind': 'supersede', 'supersedes': old,
                       'date': datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='seconds')})
+        print(f"decisions: logged {event['id'][:8]}, superseding {old[:8]}")
     else:
         sys.exit(__doc__)

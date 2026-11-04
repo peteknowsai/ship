@@ -243,7 +243,7 @@ def log(pairs):
         raise SystemExit(f"route log: task={row['task']} isn't a plan task (3, 3b or 5,6); "
                          "a reader's tally is review=<engine> real= false= nits=")
     if 'task' in row and 'review' not in row and 'note' not in row and row.get('repo') and row.get('ship'):
-        earlier = logged(row['repo'], row['ship'], str(row['task']))
+        earlier = logged(row['repo'], row['ship'], set(str(row['task']).split(',')))
         if earlier:
             raise SystemExit(f"route log: task {row['task']} of {row['ship']} is already logged ({earlier}); "
                              "log it again only with note=<why>")
@@ -282,8 +282,8 @@ def log(pairs):
     return row
 
 
-def logged(repo, ship, task):
-    """The timestamp of an earlier build row for this task, if there is one."""
+def logged(repo, ship, tasks):
+    """The timestamp of an earlier build row sharing any of these tasks, if there is one."""
     try:
         lines = open(ledger_path()).read().splitlines()
     except OSError:
@@ -293,7 +293,8 @@ def logged(repo, ship, task):
             r = json.loads(line)
         except ValueError:
             continue
-        if (r.get('repo'), r.get('ship'), str(r.get('task'))) == (repo, ship, task) and 'review' not in r:
+        if (r.get('repo'), r.get('ship')) == (repo, ship) and 'task' in r and 'review' not in r \
+                and tasks & set(str(r['task']).split(',')):
             return r.get('ts')
     return None
 
@@ -507,6 +508,13 @@ def selftest():
             again = str(error)
         check('a second row for one task is refused without a note', 'already logged' in again)
         check('with a note it goes in', log(['repo=ship', 'ship=dup', 'task=3', 'engine=opus', 'note=redo'])['note'] == 'redo')
+        log(['repo=ship', 'ship=dup', 'task=5,6', 'engine=opus'])
+        try:
+            log(['repo=ship', 'ship=dup', 'task=6', 'engine=opus'])
+            part = ''
+        except SystemExit as error:
+            part = str(error)
+        check('a task inside an earlier combined row is a repeat', 'already logged' in part)
         check('a review row with only above real is refused', bad)
         wrapped = os.path.join(tmp, 'wrapped')
         os.makedirs(wrapped)
