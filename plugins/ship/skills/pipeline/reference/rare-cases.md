@@ -32,11 +32,12 @@ where they differ.
   fallback.
 - A repo whose own land script merges the PR itself (cells-app's `scripts/land-pr.sh`,
   which rebases, gates, merges and smokes main): run it from the worktree in place of
-  steps 2 and 3, then tear down (`wt remove`, `git branch -D`, the marker).
+  steps 2 and 3, then tear down (`wt remove`, `git branch -D`, the marker). It runs
+  `smoke: main` itself, so LAND's own run of it is skipped: one paid smoke per landing.
 - **`land: direct`** replaces SKILL.md LAND's steps 0–4: from the worktree, `git fetch origin && git
-  rebase origin/main`, re-gate, `git push origin HEAD:main`, confirm main moved, then
+  rebase origin/main`, re-gate and smoke as step 0 says, `git push origin HEAD:main`, confirm main moved, then
   teardown and `git push origin --delete <branch>`.
-- **A `land: <command>`** replaces SKILL.md LAND's steps 0–4 the same way: sync with main, re-gate, run
+- **A `land: <command>`** replaces SKILL.md LAND's steps 0–4 the same way: sync with main, re-gate and smoke as step 0 says, run
   the contract's command from the worktree, confirm main moved (`git log -1 main`),
   then teardown from the main checkout as above. No PR is merged; a mirror remote is
   pushed only if the contract says so.
