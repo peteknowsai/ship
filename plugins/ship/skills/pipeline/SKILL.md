@@ -1077,10 +1077,12 @@ he asks.
   Codex hand-off Pete watched gets none; its record is the `result:` line, the PR body,
   and the thread link. `LANDING_STATUS` says "Tested · landing on main", or what it waits
   on. `show.sh … review <file> done` the landed base's copy with the `result:` (main's, or
-  for another base `git show origin/<base>:<path>` into the job's tmp, shots too) (closing the ship's other tabs),
+  for another base `git show origin/<base>:<path>` into the job's tmp from a script file, since
+  the guard refuses the redirect inline, shots too) (closing the ship's other tabs),
   or `show.sh … review` the worktree's with the park. It is the
-  record of what landed and the proof, not a gate, so Pete approving from a live walk
-  doesn't replace it (yonder-ideas-goals).
+  record of what landed and the proof, not a gate, so Pete approving the ship's own QA on a
+  live walk doesn't replace it (yonder-ideas-goals); only a Codex hand-off he watched goes
+  without one.
 - **What still waits for Pete's "merge main" after a pass**: a money path, a one-way
   door, and a change he said he wants to try or see first, the words of a copy change
   included (CEL-226). `stage.sh <root> gate:test`, post the links (and the
