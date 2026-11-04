@@ -198,7 +198,9 @@ its origin, and the walk lost a round to "No alert by that id".
   directory (else the worktree), never `/tmp`: a restart mid-QA wiped one. Screenshots and
   `take_snapshot` files go under `<shots-root>/.ship-shots/<slug>/` (below), because the
   chrome-devtools MCP refuses a path outside the session's workspace roots, the job's tmp
-  included. A print flow: headless `window.print()` stalls the browser, so
+  included, and a file it reads goes there too (a sign-in redeem script for
+  `evaluate_script`'s `sourcePath`). A copy or `sips` into it needs the Bash sandbox off (exit 13 otherwise); delete
+  a redeem file once it has run. A print flow: headless `window.print()` stalls the browser, so
   judge the printout with print-media emulation first and click Print last. A copy flow:
   headless Chrome refuses `navigator.clipboard.writeText`, so every Copy button reads
   "Failed to copy". That is the environment, not the app: before the real click, swap
