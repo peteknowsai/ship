@@ -246,7 +246,7 @@ selftest() {
   me c run 7 true >/dev/null 2>&1 && out=0 || out=$?
   check "a slot past the two is refused" "$out" 2
   me c view 2 >/dev/null
-  check "view opens any slot's screen, held or not" "$(grep -c '^attach ship-mac-2$' "$t/lume.log")" 1
+  check "view opens any slot's screen, held or not" "$(grep -c '^attach ship-mac-2 --display native$' "$t/lume.log")" 1
   me c view 3 >/dev/null 2>&1 && out=0 || out=$?
   check "view refuses a slot past the two" "$out" 2
   [ $fail = 0 ] && echo "mac-vm.sh selftest ok" || exit 1
@@ -266,7 +266,7 @@ case "${1:-}" in
         [ -s "$out" ] || { rm -f "$out"; echo "no screenshot" >&2; exit 1; } ;;
   return) slot "${2:-}" >/dev/null; give_back "$2" ;;
   status) status ;;
-  view) valid "${2:-}"; lume attach "$(vm "$2")" ;;  # closing or quitting Lume's viewer only hides it
+  view) valid "${2:-}"; lume attach "$(vm "$2")" --display native ;;  # no VNC to fall back on; closing or quitting the viewer only hides it
   base) build_base ;;
   grant) grant_offline && echo "base ready" ;;  # the base's last step alone, after a failure there
   --selftest) selftest ;;

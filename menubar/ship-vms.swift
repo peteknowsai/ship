@@ -36,13 +36,15 @@ if CommandLine.arguments.contains("--selftest") {
 let script = CommandLine.arguments.dropFirst().first
   ?? NSHomeDirectory() + "/Projects/ship/plugins/ship/skills/pipeline/scripts/mac-vm.sh"
 
-func vm(_ args: [String]) -> (ok: Bool, out: String) {
+func vm(_ args: [String], timeout: Double = 5) -> (ok: Bool, out: String) {
   let p = Process(), pipe = Pipe()
   p.executableURL = URL(fileURLWithPath: "/bin/bash")
   p.arguments = [script] + args
   p.standardOutput = pipe
   p.standardError = pipe
   do { try p.run() } catch { return (false, "\(error)") }
+  // A hung status would freeze the menu, Quit included, since KeepAlive sees it alive.
+  DispatchQueue.global().asyncAfter(deadline: .now() + timeout) { if p.isRunning { p.terminate() } }
   let out = String(decoding: pipe.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
   p.waitUntilExit()
   return (p.terminationStatus == 0, out)
@@ -88,7 +90,7 @@ final class Menu: NSObject, NSApplicationDelegate, NSMenuDelegate {
   @objc func open(_ row: NSMenuItem) {
     guard let n = row.representedObject as? String else { return }
     DispatchQueue.global().async {  // lume attach checks the VM's lock with lsof, up to 10 s
-      let r = vm(["view", n])
+      let r = vm(["view", n], timeout: 30)
       guard !r.ok else { return }
       DispatchQueue.main.async {
         let alert = NSAlert()
