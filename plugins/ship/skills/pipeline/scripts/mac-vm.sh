@@ -33,10 +33,12 @@ vm() { echo "ship-mac-$1"; }
 info() { lume get "$1" -f json 2>/dev/null | jq -r "(if type == \"array\" then .[0] else . end).$2 // empty" 2>/dev/null; }
 ipof() { info "$1" ipAddress; }
 sshv() {  # sshv <vm> <args...>: one control connection per VM, kept until return, so tunnels ride it
-  local name=$1 ip; shift
-  ip=$(ipof "$name"); [ -n "$ip" ] || { echo "$name isn't running" >&2; return 255; }
-  ssh -i "$key" -o IdentitiesOnly=yes -o BatchMode=yes -o HostKeyAlias=ship-mac -o CheckHostIP=no \
-    -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$dir/known_hosts" -o ConnectTimeout=5 \
+  local name=$1 ip alias=ship-mac kh=$dir/known_hosts strict=yes; shift
+  ip=$(ipof "$name" || true); [ -n "$ip" ] || { echo "$name isn't running" >&2; return 255; }
+  # Pete's VM keeps its host key across base rebuilds, which replace the clones' shared one.
+  [ "$name" = "$mine" ] && { alias=$mine; kh=$dir/known_hosts.mine; strict=accept-new; }
+  ssh -i "$key" -o IdentitiesOnly=yes -o BatchMode=yes -o HostKeyAlias="$alias" -o CheckHostIP=no \
+    -o StrictHostKeyChecking="$strict" -o UserKnownHostsFile="$kh" -o ConnectTimeout=5 \
     -o LogLevel=ERROR -o ControlMaster=auto -o ControlPath="$dir/$name.sock" -o ControlPersist=yes \
     -o ServerAliveInterval=15 -o ServerAliveCountMax=4 "lume@$ip" "$@"
 }
@@ -66,6 +68,9 @@ take() {
     ln -s "$me|$(date +%s)" "$l" 2>/dev/null && { echo "$n"; return 0; }
   done
   return 1
+}
+not_a_ship() {  # a tripwire, not a lock: any local process can still reach Pete's VM
+  [ ! -f "$(holder)/.ship-stage" ] || { echo "a ship never uses Pete's VM; borrow a slot instead" >&2; exit 2; }
 }
 valid() { [[ "${1:-}" =~ ^[1-9]$ ]] && [ "$1" -le $slots ] || { echo "no slot '${1:-}'" >&2; exit 2; }; }
 slot() {  # slot <n>: the caller's own slot, its lease refreshed; prints the VM's name
@@ -131,8 +136,9 @@ halt() {  # halt <vm>: shut down from inside, since lume stop powers off and a k
   return 1
 }
 mine_up() {  # the first start clones the base; every later one boots the same kept disk
+  local i
   case "$(info "$mine" status)" in
-    running) return 0 ;;
+    running) for i in $(seq 60); do sshv "$mine" true 2>/dev/null && return 0; sleep 2; done; return 1 ;;
     "") lume clone "$base" "$mine" >/dev/null || return 1 ;;
   esac
   boot "$mine"
@@ -242,7 +248,8 @@ selftest() {
 echo "\$@" >> $t/lume.log
 case "\$1" in  # a VM is made by clone, running from run, stopped by stop, gone after delete
   get) s=; [ -f $t/made.\$2 ] && s=\$(cat $t/state.\$2 2>/dev/null || echo stopped)
-       echo "{\\"ipAddress\\":\\"192.168.64.9\\",\\"status\\":\\"\$s\\"}" ;;
+       ip=; [ "\$s" = running ] && ip=192.168.64.9
+       echo "{\\"ipAddress\\":\\"\$ip\\",\\"status\\":\\"\$s\\"}" ;;
   clone) touch $t/made.\$3 ;;
   run) echo running > $t/state.\$2 ;;
   stop) echo stopped > $t/state.\$2 ;;
@@ -290,6 +297,13 @@ EOF
   check "by default ships share one slot" "$out" 3
   me b return 1; ts=
   check "Pete's VM shows as not made yet" "$(me c status | tail -1)" "mine: "
+  me c mine run true >/dev/null 2>&1 && out=0 || out=$?
+  check "a command in Pete's VM while it's off fails" "$out" 255
+  touch "$t/b/.ship-stage"; me b mine up >/dev/null 2>&1 && out=0 || out=$?
+  check "a ship's worktree can't start Pete's VM" "$out" 2
+  me b view mine >/dev/null 2>&1 && out=0 || out=$?
+  check "or open it" "$out" 2
+  rm "$t/b/.ship-stage"
   me c mine up >/dev/null; me c mine down; me c mine up >/dev/null
   check "Pete's VM is cloned from the base once, then kept" "$(grep -c '^clone ship-mac-base pete-mac$' "$t/lume.log")" 1
   check "and boots again on the same disk" "$(grep -c '^run pete-mac ' "$t/lume.log")" 2
@@ -315,10 +329,11 @@ case "${1:-}" in
   shot) name=$(slot "${2:-}"); capture "$name" "${3:?usage: mac-vm.sh shot <n> <out.png>}" ;;
   return) slot "${2:-}" >/dev/null; give_back "$2" ;;
   status) status ;;
-  view) if [ "${2:-}" = mine ]; then name=$mine; else valid "${2:-}"; name=$(vm "$2"); fi
+  view) if [ "${2:-}" = mine ]; then not_a_ship; name=$mine; else valid "${2:-}"; name=$(vm "$2"); fi
         lume attach "$name" --display native ;;  # no VNC to fall back on; closing or quitting the viewer only hides it
-  mine) case "${2:-}" in
-          up) mine_up ;;
+  mine) not_a_ship
+        case "${2:-}" in
+          up) mine_up || { echo "$mine did not come up" >&2; exit 1; } ;;
           down) [ "$(info "$mine" status)" != running ] || halt "$mine" || { echo "$mine did not shut down in 2 min" >&2; exit 1; } ;;
           run) shift 2; sshv "$mine" "$@" ;;
           shot) capture "$mine" "${3:?usage: mac-vm.sh mine shot <out.png>}" ;;

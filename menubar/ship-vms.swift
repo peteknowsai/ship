@@ -54,11 +54,20 @@ func vm(_ args: [String], timeout: Double = 5) -> (ok: Bool, out: String) {
   p.standardOutput = pipe
   p.standardError = pipe
   do { try p.run() } catch { return (false, "\(error)") }
-  // A hung status would freeze the menu, Quit included, since KeepAlive sees it alive.
-  DispatchQueue.global().asyncAfter(deadline: .now() + timeout) { if p.isRunning { p.terminate() } }
-  let out = String(decoding: pipe.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
-  p.waitUntilExit()
-  return (p.terminationStatus == 0, out)
+  // Read on another thread and give up at the timeout: a hung status would freeze the menu,
+  // Quit included, and a lume child can hold the pipe open after bash is killed.
+  final class Box: @unchecked Sendable { var out = "" }
+  let box = Box(), done = DispatchSemaphore(value: 0)
+  DispatchQueue.global().async {
+    box.out = String(decoding: pipe.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
+    p.waitUntilExit()
+    done.signal()
+  }
+  if done.wait(timeout: .now() + timeout) == .timedOut {
+    p.terminate()
+    return (false, "no answer in \(Int(timeout)) s")
+  }
+  return (p.terminationStatus == 0, box.out)
 }
 
 func status() -> (slots: [Slot], mine: String?) {
@@ -118,17 +127,17 @@ final class Menu: NSObject, NSApplicationDelegate, NSMenuDelegate {
   }
 
   // Runs mac-vm.sh off the main thread (lume attach checks the VM's lock with lsof, up to 10 s;
-  // a start boots for a minute or more), then `next` on success, and alerts on a failure.
+  // a start boots for one to six minutes), then `next` on success, and alerts on a failure.
   func run(_ args: [String], timeout: Double, doing: String? = nil, next: [String]? = nil) {
-    busy = doing
+    if let doing { busy = doing }  // only a start or shutdown owns the indicator
     DispatchQueue.global().async {
-      var r = vm(args, timeout: timeout)
-      if r.ok, let next { r = vm(next, timeout: 30) }
+      var step = args, r = vm(args, timeout: timeout)
+      if r.ok, let next { step = next; r = vm(next, timeout: 30) }
       DispatchQueue.main.async {
-        self.busy = nil
+        if doing != nil { self.busy = nil }
         guard !r.ok else { return }
         let alert = NSAlert()
-        alert.messageText = "mac-vm.sh \(args.joined(separator: " ")) failed"
+        alert.messageText = "mac-vm.sh \(step.joined(separator: " ")) failed"
         alert.informativeText = r.out
         NSApp.activate()
         alert.runModal()
@@ -140,8 +149,8 @@ final class Menu: NSObject, NSApplicationDelegate, NSMenuDelegate {
     if let n = row.representedObject as? String { run(["view", n], timeout: 30) }
   }
   @objc func openMine() { run(["view", "mine"], timeout: 30) }
-  @objc func startMine() { run(["mine", "up"], timeout: 600, doing: "Your Mac · starting…", next: ["view", "mine"]) }
-  @objc func stopMine() { run(["mine", "down"], timeout: 150, doing: "Your Mac · shutting down…") }
+  @objc func startMine() { run(["mine", "up"], timeout: 900, doing: "Your Mac · starting…", next: ["view", "mine"]) }
+  @objc func stopMine() { run(["mine", "down"], timeout: 240, doing: "Your Mac · shutting down…") }
 }
 
 let app = NSApplication.shared

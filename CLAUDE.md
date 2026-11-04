@@ -77,7 +77,8 @@ Take a page down by hand with `share.py stop <key>` (keys are in links.json).
 `menubar/ship-vms.swift` is Pete's menu bar item for the Mac VMs. Apple lets two run at once, so
 ships get one slot, always a fresh clone, and Pete gets one VM of his own, `pete-mac`, kept between
 uses with his Apple Account and apps in it. Agents drive his VM only through his `my-mac` skill
-(claude-home), never a ship, since his messages are on its screen. The icon counts the ship VMs in
+(claude-home), never a ship, since his messages are on its screen; `mine` refuses from a worktree
+with a `.ship-stage`, a tripwire for accidents rather than a lock. The icon counts the ship VMs in
 use, the menu lists the slot's holder from `mac-vm.sh status` and starts, opens or shuts down his
 VM (`mine up`, `view mine`, `mine down`), and a click on a held slot
 runs `mac-vm.sh view <n>`, which asks the VM's own headless `lume run` process to show its screen
