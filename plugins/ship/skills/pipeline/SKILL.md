@@ -321,7 +321,9 @@ reran a 90-second suite only to read the name tail had cut. A full run whose onl
   and prod deploy key are. It checks that dev and prod never cross: git link and
   production branch (`--production-branch <branch>` where it is not main), protection, the Convex deploy key on Production only, every dev
   Convex setting present on prod, Clerk `pk_live` on Production and `pk_test` elsewhere.
-  Ship runs it before TEST and before landing; a ✗ is ship's to fix, never Pete's.
+  A project with no production yet is passed as `<project>:unreleased`, which skips the
+  checks only a live app passes (the deploy key, `pk_live`, prod's settings). Ship runs it
+  before TEST and before landing; a ✗ is ship's to fix, never Pete's.
 - **`live:`** what landing on main deploys, and how to watch it. cells-app: "main is
   production; each touched pack's Vercel production build pushes its Convex functions,
   then the app." Default: nothing, and ship claims no deploy.
@@ -875,11 +877,12 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   builds the branch's app here once, before REVIEW: upstream churn alone can break a native
   build harness between PLAN and TEST (peggy-qa's bundle id moved into an xcconfig and its
   build patch refused every build), and that is BUILD's to fix, not TEST's. Then boot the app, confirm the
-  server on its port is this worktree's: `scripts/listener.sh <port>` waits for the
-  listener and prints its pid and the checkout it serves, walking up the parent processes
-  when a Next server's own cwd reads `/`: brief-and-home's
-  hashed port was already held by another checkout's server, its own died on EADDRINUSE
-  in a log nobody read, and the first smoke walked the wrong app). Another checkout's
+  server on its port is this worktree's: `scripts/listener.sh <port>` (in this skill's
+  directory) waits for the listener and prints its pid, its `cwd` and, for a node server,
+  the `bin` checkout whose node_modules it runs from; `bin` wins, since an app can move its
+  cwd (Eve's chdir pointed a worktree's server at main, CEL-119). On brief-and-home
+  the hashed port was already held by another checkout's server, its own died on EADDRINUSE
+  in a log nobody read, and the first smoke walked the wrong app. Another checkout's
   listener is never stopped, before or during a run: start this worktree's server on a
   free port (the contract's `dev:` says how; `PORT=<n>` by default) and read the port back
   from the repo's dev command for every link, smoke, test and app build after (CEL-120
@@ -902,7 +905,7 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   0 clean, 2 findings on stderr, 1 a file it couldn't read): fix each finding, or waive a
   deliberate one in place with its `impeccable-disable-line <rule> -- <why>` comment.
   It is free and mechanical, so the QA run never spends a round on a craft-floor miss.
-  Every web surface the feature touches also runs `scripts/icon-check.py <url>...` (same
+  Every web surface the feature touches also runs this skill's `scripts/icon-check.py <url>...` (same
   exit codes): it needs a browser icon and a 180px PNG Home Screen icon, since Pete opens
   apps by name from his phone and the launcher shows their icons (Pete, 2026-10-14). When one is
   missing, make it before landing in the app's own colors: the mark through impeccable as an
