@@ -1,8 +1,9 @@
 #!/bin/bash
 # mac-vm.sh: two macOS VMs that ships borrow to check a Mac app with agent-desktop, so nothing
 # a check opens, clicks or captures shows on Pete's screen or touches his apps, logins and
-# permissions. Lume runs them headless, with no window and no VNC. Every borrow boots a fresh
-# clone of the base, so a ship never sees another's leftovers.
+# permissions. Lume runs them headless, with no window and no VNC, until Pete opens one from his
+# menu bar (menubar/ in the ship repo). Every borrow boots a fresh clone of the base, so a ship
+# never sees another's leftovers.
 #   mac-vm.sh borrow [--wait]      take a free slot (--wait: up to 8 min) and boot a fresh clone; prints SLOT=<n> IP=<ip>
 #   mac-vm.sh run <n> <cmd>        a shell command in slot n as user lume (agent-desktop and node on PATH)
 #   mac-vm.sh tunnel <n> <port>    the VM's localhost:<port> reaches this Mac's localhost:<port>
@@ -10,6 +11,7 @@
 #   mac-vm.sh shot <n> <out.png>   the VM's whole screen, saved on this Mac
 #   mac-vm.sh return <n>           stop and delete the clone, free the slot
 #   mac-vm.sh status               each slot's holder and when it last used it
+#   mac-vm.sh view <n>             slot n's screen in a window on this Mac: Pete's menu bar click, never a ship
 #   mac-vm.sh base                 rebuild the base from Apple's newest macOS (~30 min, a 20 GB download)
 #   mac-vm.sh grant                rerun only the base's last step, the offline one, after it failed
 #   mac-vm.sh --selftest           the slot bookkeeping, against a fake lume and ssh
@@ -60,8 +62,9 @@ take() {
   done
   return 1
 }
+valid() { [[ "${1:-}" =~ ^[1-9]$ ]] && [ "$1" -le $slots ] || { echo "no slot '${1:-}'" >&2; exit 2; }; }
 slot() {  # slot <n>: the caller's own slot, its lease refreshed; prints the VM's name
-  [[ "${1:-}" =~ ^[1-9]$ ]] && [ "$1" -le $slots ] || { echo "no slot '${1:-}'" >&2; exit 2; }
+  valid "${1:-}"
   local v me; v=$(lease "$1") || v=; me=$(holder)
   [ "${v%|*}" = "$me" ] || { echo "slot $1 isn't held from $me: $(status | sed -n "${1}p")" >&2; exit 2; }
   refresh "$1" "$me"; vm "$1"
@@ -242,6 +245,10 @@ selftest() {
   check "every borrow and return deletes the old clone" "$(grep -c '^delete ship-mac-1 --force$' "$t/lume.log")" 5
   me c run 7 true >/dev/null 2>&1 && out=0 || out=$?
   check "a slot past the two is refused" "$out" 2
+  me c view 2 >/dev/null
+  check "view opens any slot's screen, held or not" "$(grep -c '^attach ship-mac-2$' "$t/lume.log")" 1
+  me c view 3 >/dev/null 2>&1 && out=0 || out=$?
+  check "view refuses a slot past the two" "$out" 2
   [ $fail = 0 ] && echo "mac-vm.sh selftest ok" || exit 1
 }
 
@@ -259,8 +266,9 @@ case "${1:-}" in
         [ -s "$out" ] || { rm -f "$out"; echo "no screenshot" >&2; exit 1; } ;;
   return) slot "${2:-}" >/dev/null; give_back "$2" ;;
   status) status ;;
+  view) valid "${2:-}"; lume attach "$(vm "$2")" ;;  # closing or quitting Lume's viewer only hides it
   base) build_base ;;
   grant) grant_offline && echo "base ready" ;;  # the base's last step alone, after a failure there
   --selftest) selftest ;;
-  *) sed -n '2,17p' "$self"; exit 2 ;;
+  *) sed -n '2,19p' "$self"; exit 2 ;;
 esac
