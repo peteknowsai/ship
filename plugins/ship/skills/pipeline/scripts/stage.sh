@@ -15,14 +15,15 @@ grep -qxF '.ship-*' "$common/info/exclude" 2>/dev/null || echo '.ship-*' >> "$co
 printf '%s' "$2" > "$root/.ship-stage"
 # land: a SELF-DIRECTED or GATED ship commits its review card before LAND removes the
 # worktree; warn when the branch adds none for its slug (thin-search needed a second PR).
-# Only those lanes run route.py plan, so .ship-route.json tells them from EXPRESS.
-if [ "$2" = land ] && [ -f "$root/.ship-route.json" ]; then
+# Every lane hears it: .ship-route.json once told EXPRESS apart, but yonder-ideas-goals
+# reached LAND without one and without a card, so the line itself says EXPRESS has none.
+if [ "$2" = land ]; then
   slug=$(git -C "$root" rev-parse --abbrev-ref HEAD); slug=${slug#*/}
   base=$(git -C "$root" rev-parse --abbrev-ref origin/HEAD 2>/dev/null) || base=origin/main
   key=$(printf '%s' "$slug" | grep -oE '^[a-z]+-[0-9]+' || true)  # cel-221: a card folder may carry just the key
   id=${key:-$slug}
   git -C "$root" diff --name-only "$base"...HEAD 2>/dev/null | grep -qE "review.*$id|$id.*review" ||
-    echo "warning: no review card for $slug on this branch; commit it now" >&2
+    echo "warning: no review card for $slug on this branch; a SELF-DIRECTED or GATED ship commits it now, Pete's live approval included (EXPRESS has none)" >&2
 fi
 # A session keeps the ship it loaded at startup; a long one can run on rules since fixed.
 here=$(cd "$(dirname "$0")/../../.." && pwd)

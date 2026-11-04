@@ -426,7 +426,9 @@ job's tmp or the worktree, or rides the background call's own output file.
 the file instead (`tsx --env-file=.env.local`, `node --env-file=.env.local`).
 
 **Shell inside a worktree session.** The harness refuses a command it can't tell stays
-in the worktree: `$(git …)` substitutions, `cd <dir> && git …`, a script wrapped in a
+in the worktree: `$(git …)` substitutions (`git merge-base` inside one too), a redirect of
+git's output (`git show <ref>:<path> > <file>`), a `git diff` on a computed path (conflict
+triage hits all three: run one plain git command per call), `cd <dir> && git …`, a script wrapped in a
 redirect and a chained `echo $?` or `tail` (start it bare with `run_in_background` and read
 its output file; CEL-229's land-pr call), loops or heredocs that
 name git, and read-only commands it misparses (a path segment named `source`, a zsh
@@ -1077,7 +1079,8 @@ he asks.
   on. `show.sh … review <file> done` the landed base's copy with the `result:` (main's, or
   for another base `git show origin/<base>:<path>` into the job's tmp, shots too) (closing the ship's other tabs),
   or `show.sh … review` the worktree's with the park. It is the
-  record of what landed and the proof, not a gate.
+  record of what landed and the proof, not a gate, so Pete approving from a live walk
+  doesn't replace it (yonder-ideas-goals).
 - **What still waits for Pete's "merge main" after a pass**: a money path, a one-way
   door, and a change he said he wants to try or see first, the words of a copy change
   included (CEL-226). `stage.sh <root> gate:test`, post the links (and the
