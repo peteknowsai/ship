@@ -34,8 +34,8 @@ for the worktree's own server, `scripts/listener.sh <port>` in the pipeline skil
 then one request to the URL, both with the Bash sandbox off (a sandboxed curl at localhost
 prints 000); for a remote URL, a curl loop up to a deadline, in a script file. Watch the dev
 log for errors, never a process grep, since a dev server can build for minutes before it
-listens. Then load each route the change added once before the walk: a dev server compiles a
-route on its first request, and CEL-192's first call to a new API route came back 401 while it
+listens. Then, on the worktree's dev server, GET each page and read route the change added once
+before the walk, never one that starts work: a dev server compiles a route on its first request, and CEL-192's first call to a new API route came back 401 while it
 compiled. Reuse that stack, never boot a second. A preview behind the host's login wall (Vercel protection) is reached with its
 automation bypass, never through Pete's browser, and the secret never sits in a tool call
 or a URL, where the transcript keeps it (chrome-devtools' `emulate` extraHttpHeaders would
@@ -82,8 +82,10 @@ on the network the phone is on (a VPN or tailnet name a simulator can't join). T
 iPhone PM's Safari by coordinates: `press` the address field, `fill` the URL, `press` the
 keyboard's Go key. `open <url>` doesn't navigate the open tab and `keyboard return` times
 out on the device (2026-10-14). A simulator check that only looks at a page runs headless,
-with no agent-device and no Simulator.app, which opens on Pete's screen: `xcrun simctl boot
-<udid>`, `xcrun simctl openurl <udid> <url>`, `xcrun simctl io <udid> screenshot <png>`. For a native app the phone is the real
+with no agent-device and no Simulator.app, which opens on Pete's screen, on a clone of its own
+(below): `xcrun simctl bootstatus <udid> -b` boots it and waits, `xcrun simctl openurl <udid>
+<url>`, then `xcrun simctl io <udid> screenshot <png>` until two shots a few seconds apart
+match, since Safari may still be loading. For a native app the phone is the real
 thing, so it is the default whenever `agent-device devices` lists it; otherwise a booted
 simulator. In a repo whose contract has `ios:`, run it whenever the app can see the change
 (its native code, or the server and APIs it calls): it builds the branch's own app, pointed
@@ -137,7 +139,7 @@ the Mac", the way a locked iPhone does; steps that capture nothing still run.
 ## 2. Write the QA script → run it → fix → rerun (≤ 3 fix rounds per failing step)
 
 **A diff of only tests, evals or test scripts** has no page: its own run, green, with no
-assertion, skip or threshold loosened, is the walk.
+assertion, skip or threshold loosened that the PR doesn't name with its reason, is the walk.
 
 **A diff that touches only docs gets a fact check in place of the app walk.** Every path,
 command, script, function, table and section the doc names exists and is tracked on the
@@ -175,8 +177,10 @@ before running, `QA: <n> steps on <surface> — <qa.md path>`, so Pete can watch
 what he says mid-run changes the run.
 
 **Pick cases that can fail.** A step that would pass on main's code proves nothing:
-- A fix's regression test runs once with the fix's source files put back to main's copy, and
-  goes red; quote that red in the evidence (CEL-100). A data fix is checked on a row main's
+- A fix's regression test runs once against main's copy of the fix's source files and goes
+  red: one script swaps them in (`git show origin/main:<path> > <path>`), runs the test and
+  restores them (`git checkout HEAD -- <path>`), outside any walk, since the swap hot-reloads
+  a running server; quote that red in the evidence (CEL-100). A data fix is checked on a row main's
   code gets wrong: every card live-label-rows first reached was labeled right by the old match.
 - A feature that returns a list gets one case where a large result is certain, and a small
   count there fails: homebody-onboarding's rental search found 1 of 6 real Denver homes, and
@@ -271,7 +275,8 @@ its origin, and the walk lost a round to "No alert by that id".
   - A fresh simulator clone asks for the mic, then the camera, mid-walk: decline unless the
     step needs them (cel-202).
   - A ref that reads `[covered]` (a SwiftUI `.sheet`'s controls) ignores `press` and `fill`
-    without an error: tap its coordinates in points from the screenshot, then snapshot to see
+    without an error: tap its coordinates in points, the screenshot's pixels over the device's
+    scale as for `gesture pan` below, then snapshot to see
     it took (CEL-135, CEL-193).
   - A phone another ship just released can still answer `DEVICE_IN_USE` for that ship's
     session handle: reuse it with `--session <that id>`, never close it, since it is theirs.
@@ -285,7 +290,7 @@ its origin, and the walk lost a round to "No alert by that id".
     tool sent is his before it is a bug (CEL-223 traced an "Always allow" to one).
   - A walk of anything that records on iPhone PM records Pete's room. Say so in the hands-off
     line, keep each recording under a minute, and delete the test person before landing
-    (cells-app: `npm run prune -- --people --finish <clerk id>`): a 7-minute walk of the
+    (cells-app: `PACK=<pack> npm run prune -- --people --finish <clerk id>`): a 7-minute walk of the
     Homebody walkie transcribed talk near his desk into the test person's showing.
   - Read the app's own prints with `xcrun devicectl device process launch --console
     --terminate-existing --device <udid> <bundle>`, and write debug traces to stderr: a
@@ -336,12 +341,15 @@ on it (a test, a script, a trace) before the next fix. Three fix rounds on the s
 failing step without a pass: stop, and hand the caller what keeps failing with its evidence. A run that never reached the feature (a model chose not
 to take the path under test) tested nothing: rerun it, never call it a fail; after two such
 misses, prove the route directly and feed one model session its exact input (CEL-60's voice
-model answered itself on 3 of 3 calls; CEL-241 spent 25 minutes on spoken calls). A model
+model answered itself on 3 of 3 calls; CEL-241 spent 25 minutes on spoken calls). That direct
+proof is the step's pass, and the natural misses go under TASTE with their count, so Pete sees
+how often real sessions skip the path. A model
 provider out of credit or down: check once more, use the repo's alternate billing where it has
 one, else the step is `unverifiable` with the provider's error (CEL-127, CEL-132, CEL-73). A
 step the pipeline proves at data level instead (its TEST: a path no person can trigger, real
 records that cost money or that test-auth can't seed, a walk the brief forbids) counts as
-walked that way, and its EVIDENCE line says so. Any other step you can't reach (a mic, a bot
+walked that way, along with the check of each screen that reads the result, and its EVIDENCE
+line says so. Any other step you can't reach (a mic, a bot
 check, a missing device, an auth wall with no test-auth path) makes the result
 `unverifiable`, naming the step, even when everything else passed. Never loop forever; never
 merge unproven.
@@ -388,7 +396,7 @@ signup-status's closed deck pick never dealt, but only the deal's own `leftOf` (
 marked, `['Barracuda']` unmarked) told the mark apart from Jev's ranking.
 
 **Wait on the real thing.** A server: `scripts/listener.sh <port>` (in the pipeline skill's
-directory). A process: `pgrep -f <pattern>`, never `ps | grep`, which matches its own grep
+directory), then one request, as in §1. A process: `pgrep -f <pattern>`, never `ps | grep`, which matches its own grep
 and reports a server that isn't there yet (CEL-169 ran its checks early that way). A reply to
 a request that starts agent work: snapshot once within about 30 s before a long `wait_for`, since
 the work can stop first on a confirm or approval card ("Allow Yonder to open this website?" held
