@@ -31,12 +31,25 @@ where they differ.
 - No GitHub remote → `wt merge` (squashes, ff's main, removes the worktree) is the
   fallback.
 - A repo whose own land script merges the PR itself (cells-app's `scripts/land-pr.sh`,
-  which merges main in, collapses the PR to one commit, runs the full gates on that tree,
-  squash-merges and smokes main): its gates are step 0's full gates, so step 0 there runs
-  only `smoke: branch` (and its other chores), never the suite a second time
-  (cel-268-email-approvals). Run it from the worktree in place of steps 2 and 3, then
-  tear down (`wt remove`, `git branch -D`, the marker). It runs `smoke: main` itself, so
-  LAND's own run of it is skipped: one paid smoke per landing.
+  which merges main into the pushed PR head, collapses it to one commit from the PR title
+  and the branch's commit messages, gates that tree by the paths the PR changes,
+  squash-merges and smokes main):
+  - Step 0 runs as written, absorb, `smoke: branch`, `stack:`, the Never-stack check and the
+    push included, except its full-suite runs (the tree-changed one and the overlap
+    re-gate): the script's gates stand in for those, so the suite never runs twice
+    (cel-268-email-approvals). Still run in step 0 what the script doesn't pick for this
+    diff: cells-app's land-pr runs no `mac:test`, so a `mac/` change runs it there, and it
+    runs `network:test` only for the PR's own `convex/` paths, so an absorb that brought
+    `convex/` changes runs that too.
+  - Push everything first (it lands the PR's pushed head), put the final evidence in a
+    commit message rather than only the PR body (its commit never reads the body), and stop
+    the worktree's dev server and any simulator before it runs, since its suite is
+    load-sensitive too.
+  - Run it from the worktree in place of steps 2 and 3, then tear down (`wt remove`,
+    `git branch -D`, the marker).
+  - When it prints its smoke line (cells-app: `main: <sha> serving, smoke ...`), LAND's own
+    `smoke: main` is skipped: one paid smoke per landing. A diff of only what never ships
+    gets no main smoke from it; say so in the `result:` line rather than claim one.
 - **`land: direct`** replaces SKILL.md LAND's steps 0–4: from the worktree, `git fetch origin && git
   rebase origin/main`, re-gate and smoke as step 0 says, `git push origin HEAD:main`, confirm main moved, then
   teardown and `git push origin --delete <branch>`.
