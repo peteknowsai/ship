@@ -31,9 +31,12 @@ where they differ.
 - No GitHub remote → `wt merge` (squashes, ff's main, removes the worktree) is the
   fallback.
 - A repo whose own land script merges the PR itself (cells-app's `scripts/land-pr.sh`,
-  which rebases, gates, merges and smokes main): run it from the worktree in place of
-  steps 2 and 3, then tear down (`wt remove`, `git branch -D`, the marker). It runs
-  `smoke: main` itself, so LAND's own run of it is skipped: one paid smoke per landing.
+  which merges main in, collapses the PR to one commit, runs the full gates on that tree,
+  squash-merges and smokes main): its gates are step 0's full gates, so step 0 there runs
+  only `smoke: branch` (and its other chores), never the suite a second time
+  (cel-268-email-approvals). Run it from the worktree in place of steps 2 and 3, then
+  tear down (`wt remove`, `git branch -D`, the marker). It runs `smoke: main` itself, so
+  LAND's own run of it is skipped: one paid smoke per landing.
 - **`land: direct`** replaces SKILL.md LAND's steps 0–4: from the worktree, `git fetch origin && git
   rebase origin/main`, re-gate and smoke as step 0 says, `git push origin HEAD:main`, confirm main moved, then
   teardown and `git push origin --delete <branch>`.

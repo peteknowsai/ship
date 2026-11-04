@@ -1109,7 +1109,8 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
      its own and see it merged clean before any gate or stop runs (CEL-140 sent the merge and
      the gates in parallel, and they ran on a half-merged tree), then re-gate by overlap (REVIEW). Two checks follow, each on its own condition. The
      full gates run once here if the tree changed since their last run (TEST's fix rounds run
-     scoped), with the worktree's dev server stopped and any simulator shut, since a loaded box
+     scoped), unless a land script the repo names runs them on the merged tree (cells-app's
+     `land-pr.sh`: Landing variants), with the worktree's dev server stopped and any simulator shut, since a loaded box
      turns a full suite's slow tests into timeouts that read as real red. `smoke: branch` runs
      once here, with the server back up, if the diff since the commit carrying its last result
      line touches what the app carries: anything but docs, tests, the review card and its shots,
