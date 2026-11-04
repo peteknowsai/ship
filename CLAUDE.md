@@ -72,6 +72,21 @@ Checks: `/usr/bin/python3 plugins/ship/skills/pipeline/scripts/share.py --selfte
 `share.py install <extension-id>` from this main checkout, so it outlives worktrees.
 Take a page down by hand with `share.py stop <key>` (keys are in links.json).
 
+## ship-vms — the Mac VMs in the menu bar
+
+`menubar/ship-vms.swift` is Pete's menu bar item for the two Mac VM slots: the icon counts the
+VMs in use, the menu lists each slot's holder from `mac-vm.sh status`, and a click on a held slot
+runs `mac-vm.sh view <n>`, which asks the VM's own headless `lume run` process to show its screen
+in a window. Closing or quitting that window only hides it; the VM keeps running. The catch: a
+viewed VM's Lume process then refuses to quit, so it holds up a logout or restart until its ship
+returns the slot (`lume stop ship-mac-<n>` ends it sooner, and the ship's walk with it). A click
+while the slot is still booting says the VM isn't running yet. Only Pete's click opens one: a
+ship never runs `view`, and nothing but that rule stops it. A launchd agent (`md.cells.ship-vms`, plist in
+`menubar/`) starts it at login and calls mac-vm.sh in THIS main checkout, so a script change goes
+live on the next click. A change to the Swift file goes live only after `bash menubar/install.sh`
+from main, which rebuilds `~/.local/bin/ship-vms` and restarts the agent;
+`~/.local/bin/ship-vms --selftest` is its check.
+
 ## Status line
 
 `plugins/ship/statusline.sh` is the one copy. Pete's `~/.claude/statusline.sh` is a symlink
