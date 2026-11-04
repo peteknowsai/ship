@@ -464,7 +464,9 @@ base branch.
 ship's branch, branch off main anyway, cherry-pick only the commits you need from it,
 and open the tracker PR against main. Its own rebase later finds those commits already
 there. A PR based on the other branch strands at landing whenever that branch
-hasn't landed first (incidents: Worktrees).
+hasn't landed first (incidents: Worktrees). Commits picked from an open ship bring its door
+with them: this one lands after it, and its Merge Danger says "lands after #N". eca-finder's
+#290 carried #291's one-way reminder sweep that way and nearly landed it on its own QA pass.
 
 **A card key in the idea (`CEL-103`) means look before forking:** `git branch -a --list
 '*<key>*'` and `gh pr list --state open --search <key>`. A hit whose worktree has no live
@@ -1101,7 +1103,9 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
      the smoke's result line in the commit that follows it so a later step can see it ran (`git restore next-env.d.ts` first: `next dev` rewrites it and the
      rebase refuses the dirty file), with the worktree's dev server stopped and any simulator shut first,
      since a loaded box turns a full suite's slow tests into timeouts that read as real red; run `stack:` once more; bring the `pr`-shaped body from TEST up to date with what actually
-     shipped (the squash commit takes it); `gh pr ready <#>`; confirm `gh pr view <#> --json mergeable`
+     shipped (the squash commit takes it); for each other open PR's branch, `git cherry HEAD
+     origin/<branch> origin/main` (a script file) prints `-` for each of its commits this branch
+     carries, and a hit lands after that PR ("Never stack"); `gh pr ready <#>`; confirm `gh pr view <#> --json mergeable`
      says `MERGEABLE`.
   1. Return to the main checkout (`ExitWorktree({action:"keep"})`). If it answers that no
      EnterWorktree session is active, run 2–4 by absolute path against the main checkout
