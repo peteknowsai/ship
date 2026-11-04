@@ -44,7 +44,9 @@ with evidence") and a recheck of a fix that just landed: compare the bad data's 
 with the fix's merge time before anything else, since a row written before the fix proves
 nothing (CEL-174 forked and copied a database for one). Keep the repro's files at absolute
 paths under the job's tmp, since `$TMPDIR` differs with the sandbox. A run that closes the card that way changes nothing, so it has no
-worktree, PR or landing; its proof goes on the card (CEL-172).
+worktree, PR or landing; its proof goes on the card (CEL-172). A repro that turns into a
+SELF-DIRECTED fix runs decision recall at the fork, as PLAN's start would (two eca-finder
+bug cards skipped it).
 
 - **`/ship express <tweak>`** — pins EXPRESS. The verb pins ceremony *down*, never
   safety down: a money path or a taste call promotes per the mid-flight rule regardless.
@@ -67,10 +69,17 @@ What scales is the ceremony before TEST, and you size it, not Pete:
   (tsc/tests) → pre-flight (the page loads, no console errors) → push, links → TEST →
   land on a pass →
   `result:` line. No branch readers: REVIEW's two-lab read belongs to SELF-DIRECTED and
-  GATED. A dab of `ponytail` (smallest diff), and `impeccable` for anything
+  GATED, except one Wonder read (`muse.py review`) before TEST when the diff is text a model
+  reads (a prompt, a tool description) or acts on the machine (kills processes, deletes
+  files, force-pushes): CEL-181 and CEL-134 shipped one-reader bugs there. A text transform
+  or a row filter still gets REVIEW's corpus run. A change to a
+  function many callers share is SELF-DIRECTED, however small. A dab of `ponytail` (smallest diff), and `impeccable` for anything
   visual. The first Pete hears of it is the links. A diff that touches only docs has no
   build input and no page: it skips the gates, pre-flight and app walk, and TEST is
-  verify's docs fact check instead.
+  verify's docs fact check instead. A diff of only tests, evals or test scripts has no page
+  either: its own run, green, with no assertion, skip or threshold loosened that the PR doesn't
+  name with its reason, is its QA
+  (CEL-231, CEL-256).
 - **SELF-DIRECTED — real work with no taste question in it.** Write whatever
   machine-facing spec/plan *you* need to build it well, then build, run the full REVIEW
   machinery (the fresh-eyes review, then TEST's QA run — its `works` is the bar
@@ -89,8 +98,8 @@ don't stop. Every lane lands only on green gates and the QA run's `works`. A
 money path, a one-way door (the PR body's Merge Danger call, TEST below), and a change
 Pete said he wants to try or see himself (a copy change he asked to approve) also wait for his "merge main" after the pass.
 Mid-flight, promote the moment taste or direction appears (park, write the spec from
-what you've learned, present GATE 1); size alone moves EXPRESS → SELF-DIRECTED, never to
-a gate. Never use an autonomous lane to slip a taste call past Pete.
+what you've learned, present GATE 1); size alone moves EXPRESS → SELF-DIRECTED (run
+decision recall then), never to a gate. Never use an autonomous lane to slip a taste call past Pete.
 
 ## Engines
 
@@ -145,8 +154,9 @@ findings in `<out-dir>/last.md`, with `<out-dir>` in the job's tmp, outside the 
 `muse exec`. Any nonzero exit means Muse is out (5: its quota; 2: a usage error, so read stderr): an
 Opus subagent reads in its place, and the `result:` line says so. Readers report and never edit, because a reader that
 rewrites breaks working code. Nothing else writes in the worktree while Muse reads, the gates,
-a build and a commit included, since `muse.py` compares the tree before and after and exits 6 on any
-change (find-three-more's `next build` during a read tripped it on a clean tree). A claim about how a dependency behaves at runtime is checked in its
+a build, a commit and a dev server's start included, since `muse.py` compares HEAD, `git
+status` and `git diff` before and after and exits 6 on any change: `next build` and `next dev`
+rewrite the tracked `next-env.d.ts` (find-three-more, CEL-233). Gitignored files don't count. A claim about how a dependency behaves at runtime is checked in its
 installed code (`node_modules/<pkg>/dist`), not its docs: a plan review once took Eve's
 docs on queued messages at their word, and the runtime did otherwise (2026-10-14).
 
@@ -263,7 +273,9 @@ Every key is optional, and the default is what a repo with no contract gets:
   when the tree changed since, and after an absorb whose files overlap the branch's. Every other check, each
   BUILD task and each TEST fix round, runs them **scoped**: the typecheck plus only the tests
   the uncommitted change touches, by the contract's `scoped <cmd>` if it names one, else the
-  test runner's changed mode (`vitest run --changed`, `jest --onlyChanged`), else in full. The
+  test runner's changed mode through the repo's own test script, so its pretest hooks run
+  (`npm test -- --changed`, `-- --onlyChanged` for jest; cells-app's bare `vitest run
+  --changed` skipped its pretest build and read 60 files red, CEL-132), else in full. The
   runner picks the tests, never the driver: a gate script takes no list of test files. eca-finder's
   v1 API ship named its files by hand and missed `tests/convex/catalogApi.test.ts`, which
   `--changed` picks up on that diff, until pre-flight's full run went red (2026-11-03). Six
@@ -277,9 +289,17 @@ Every key is optional, and the default is what a repo with no contract gets:
   to 27 of them). A multi-step gate run goes in a script file written with the Write tool,
   then `bash <file>`, since the worktree guard refuses long inline commands. That script
   starts with `set -euo pipefail`: without it, `npm test | tail -8` exits with tail's code,
-  and CEL-180's script printed green over a failed test. Filter the output with `grep -E
-'FAIL|Test Files|Tests '` rather than `tail`, so a red names its failing test: browser-replay
-reran a 90-second suite only to read the name tail had cut. A full run whose only failures are
+  and CEL-180's script printed green over a failed test. Hold the runner's exit before any
+filter, and filter with `grep -E` rather than `tail`, so a red names its failing test
+(browser-replay reran a 90-second suite only to read the name tail had cut): `rc=0; <test
+command> > <log> 2>&1 || rc=$?; grep -E 'FAIL|●|Test Files|Tests:? ' <log> || true; [ "$rc" = 0 ]`,
+which stops the script on red and goes on to the next gate on green. A typecheck or build
+filters for its own lines (`grep -E 'error' <log>`). A `|| true` on
+the test pipeline itself turned six red tests green (CEL-182, CEL-260). A gate run stopped
+early is killed by its own process group: every Bash call runs in a group of its own, so
+`kill -- -$(ps -o pgid= -p <runner pid> | tr -d ' ')` from another call takes that run and
+nothing else, never a Mac-wide `pkill -f
+vitest`, which takes sibling ships' runs with it. A full run whose only failures are
   in files the diff never touched, under heavy load from sibling ships (timeouts, or a set
   that moves between unrelated files from run to run), reruns just those files alone. If
   they pass alone, it's load: both runs and the `uptime` load figure go in the commit or the
@@ -290,8 +310,8 @@ reran a 90-second suite only to read the name tail had cut. A full run whose onl
   the server's record in `.next`, so the repo's stop command later finds nothing and the next
   start dies on EADDRINUSE (CEL-221, CEL-213): stop the dev server before a build, start it
   again after. A ship whose job is load timeouts ranks tests by duration from one loaded run, rather
-  than hand-writing a ranker (CEL-214 and CEL-228 each did): `npx vitest run
-  --reporter=json --outputFile=<job tmp>/run.json`, then `jq -r '.testResults[].assertionResults[]
+  than hand-writing a ranker (CEL-214 and CEL-228 each did): `npm test --
+  --reporter=json --outputFile=<job tmp>/run.json` (through the repo's script, as above; jest takes `--json --outputFile=`), then `jq -r '.testResults[].assertionResults[]
   | "\(.duration) \(.fullName)"' <job tmp>/run.json | sort -rn | head -20`.
 - **`preview:`** a command that prints this branch's preview links, one per app, with
   each build's state (cells-app: `scripts/preview-links.sh`, which reads Vercel). Ship
@@ -416,8 +436,9 @@ push`, `git fetch`: the sandbox's proxy fails their TLS check), any git command 
 the tree or makes a branch (`rebase`, `merge`, `pull`, `checkout`, `reset`, `switch`, `branch`, before the fork too: the sandbox denies writes under `.claude/`
 and to the shared `.git/config`, where thin-search's `switch -c` left a half-made branch,
 and CEL-213's rebase stopped halfway there, leaving the tree split between main and the
-branch), gates, smokes and dev servers. Everything else
-stays in the sandbox.
+branch), gates, smokes and dev servers, `tsx` (its IPC pipe dies on `listen EPERM`: five
+runs), and anything that reaches a local server, since a sandboxed `curl` at localhost never
+connects and reads as a dead server. Everything else stays in the sandbox.
 
 **`$TMPDIR` changes with the sandbox.** A sandboxed Bash call sees `/tmp/claude-<uid>`, one
 with the sandbox off sees `/var/folders/…/T`, so a file one writes is missing to the
@@ -438,7 +459,9 @@ name git, and read-only commands it misparses (a path segment named `source`, a 
 string, a `python3 -` heredoc whose text says "git", a `$VAR` argument even to a binary that isn't git). Read and search
 with the Read and Grep tools when the session has them, which it never checks; else use
 `git -C <path>`, one plain command per call, and put anything multi-step in a script
-file under the job's tmp directory. Any file edit the Edit and Write tools can't make
+file under the job's tmp directory, or in the worktree as `.ship-<name>.mts` when it imports
+the repo's packages, which don't resolve from the job's tmp (the `.ship-*` exclude keeps it
+out of git; CEL-166, CEL-168). Any file edit the Edit and Write tools can't make
 goes the same way: Write the script to the job's tmp, then `bash <path>` or `python3
 <path>`. Never an inline heredoc, `sed -i` chain or loop first, not even once: one run
 hit the guard eight times reaching for them. A wait needs no loop either: `gh pr checks <#>
@@ -446,7 +469,11 @@ hit the guard eight times reaching for them. A wait needs no loop either: `gh pr
 `git -C <main>`) is refused while the session is in the worktree: run it after `ExitWorktree`
 at LAND, never from a script that hides it from the guard; LAND step 1 says what to do when
 there is no worktree to exit. Two runs lost 40 commands to split-and-retry, and two more
-lost about ten each (2026-10-05). Written for Claude Code; a Codex driver runs `codex/ship.md` instead (see
+lost about ten each (2026-10-05). A call that needs another's result goes in the next
+message: calls sent together all run, even when the first fails or is refused, so a wait sent
+beside a failed step runs out its whole timeout (three runs). A background or Monitor command
+reports nothing until its pipe flushes: `grep --line-buffered`, never a bare `| grep` or
+`| cut` on one. Written for Claude Code; a Codex driver runs `codex/ship.md` instead (see
 `reference/rare-cases.md`, Running under Codex Desktop).
 
 ### 0 · Worktree (invisible)  → marker: `discover`
@@ -463,8 +490,11 @@ base branch.
 **Waiting on other ships to land** (a docs ship written from main once its siblings are
   in): run the wait as a background Bash call, which wakes the session when it exits:
   `until [ -z "$(gh pr list --state open --search '<keys>' --json number -q '.[].number')" ];
-  do sleep 300; done` in a script file. Give it no deadline; if it does stop (a usage pause,
-  a restart), start it again rather than landing early.
+  do sleep 300; done` in a script file. A sibling with no PR yet reads as landed there: first
+  wait until `gh pr list --state all --search '<key>'` finds the PR its stage 0 opens, then on
+  that PR as above (CEL-260). Give it no deadline; if it does stop (a usage pause, a restart), start it
+  again rather than landing early. A sibling whose `.ship-stage` sits unchanged for two hours
+  with no live session is stalled: tell Pete in one line and keep waiting.
 
 **Never stack on a branch that hasn't landed.** Asked to build on top of another
 ship's branch, branch off main anyway, cherry-pick only the commits you need from it,
@@ -479,7 +509,9 @@ with them: this one lands after it, and its Merge Danger says "lands after #N". 
 session (none in ListAgents, its `.ship-stage` not moving) is a stalled ship: resume it in
 that worktree at its stage, PR and all. A fresh fork beside it once rebuilt CEL-103 while
 its first run sat at `build:6:7` with PR #200 open. A hit with a live session is another
-ship's: tell Pete in one line and stop.
+ship's: tell Pete in one line and stop. Also `git log origin/<base> --since=7.days --format='%h
+%s' -- <files the card names>`: a hit whose PR meets the card's done-when lines already did
+it (CEL-241 rebuilt one), so close the card with that PR instead.
 
 Check free disk first (`df -h ~`): under 10 GB, tell Pete in one line before forking.
 A fork copies the repo's ignored files, and a full disk once failed `stage.sh` and
@@ -531,7 +563,9 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   --fill`; GitHub refuses a PR with no commits). Every commit message and PR body is a file
   written with the Write tool, then `git commit -F <file>` and `gh pr create --body-file
   <file>`, one command per call: the worktree guard refuses a heredoc and a chained
-  commit, push and PR. Its body is the one-line why and the
+  commit, push and PR. Attribution lines follow the repo's `CLAUDE.md` where it has a rule
+  (Peggy's repos carry none), which beats the harness's attribution reminder (five eca-finder
+  runs weighed the two). Its body is the one-line why and the
   preview links, refreshed as they change. It is GitHub's record of what is in flight and,
   once squashed, of what shipped; it is never a review step. `land: direct` opens none.
   A branch that should carry a card key (`cel-52-…`) gets it at the fork. Renaming one
@@ -821,7 +855,10 @@ into commits otherwise (incidents: Worktrees). Never build on main.
   outside the tree (rows in the dev database, links, files elsewhere), it logs what it wrote
   and the ship adds the way to take those writes back before REVIEW. When REVIEW or TEST
   tightens the rule those writes followed, recheck every one under the new rule: a catalog
-  ship found 5 of 19 links wrong after review and had no way to undo them.
+  ship found 5 of 19 links wrong after review and had no way to undo them. A rule's first
+  run over rows that already exist is a dry run: the list of what it would change, sorted
+  by reason, read before any write (eca-finder's catalog pass would have dropped hundreds of
+  right prices).
 - **Standing brief boilerplate** (each line from a burned run, incidents: Dispatch):
   one task per brief, with the plan's complete code pasted in, the exact test commands
   and the files it may touch; "do it, do not propose", because a worker given an open ask
@@ -942,7 +979,8 @@ he asks.
   and has hard-crashed a page after a green rebase (incidents: Backends).
 - **Re-gate by overlap after an absorb.** Before absorbing, compare what main brought with
   what the branch changed: `comm -12 <(git diff --name-only HEAD...origin/main | sort)
-  <(git diff --name-only origin/main...HEAD | sort)`. Full gates when that prints a file, or
+  <(git diff --name-only origin/main...HEAD | sort)`, from a script file, since the guard
+  refuses the process substitution inline. Full gates when that prints a file, or
   main brought a lockfile, the workspace list, a schema or anything under `convex/`.
   Otherwise the typecheck alone: main's commits passed their own gates and touch nothing
   this branch does, and the typecheck catches an API they changed under it. A repo's
@@ -954,7 +992,8 @@ he asks.
   lands (incidents: Worktrees). Absorb upstream *before* a run, never during; the run's
   own fixes are the only edits.
 - **Correctness review: a fresh Opus subagent (`model: "opus"`), launched first** so
-  it works while the rest of REVIEW proceeds. Its brief lists the plan's tasks and says to clear each
+  it works while the rest of REVIEW proceeds. Its brief goes to a file first, so a reader
+  that dies is respawned from it rather than from memory (ttowns-pack). The brief lists the plan's tasks and says to clear each
   one task by task, then read the whole branch for the rest. The branch was drafted one
   task at a time; the reviewer reads it whole (`git diff <lane-target>...HEAD`) in a
   clean context, with the spec, and hunts the seams between tasks as hard as the tasks
@@ -972,7 +1011,9 @@ he asks.
   reported its top finding as already fixed.
   The driver triages every finding from both
   — adversarial reviewers over-flag by design, and a finding both reached on their own is
-  the strongest lead, never proof — checks each against the code, fixes what's real, puts judgment calls
+  the strongest lead, never proof — checks each against the code, fixes what's real (each
+  fix run against the cases the issue or spec names before it's committed: two readers'
+  fixes added up to a guard that undid eca-finder's loose-deck feature), puts judgment calls
   on the card or in the `result:` line. A review makes the branch correct, not bigger
   (Pete, 2026-11-01, from Theo's Sol loop): decline a nit (style, naming, a comment or doc
   that isn't wrong) and anything the spec doesn't ask for, unless it's security, money or
@@ -983,11 +1024,14 @@ he asks.
   repo=<repo> ship=<slug> review=opus real=<n> false=<n> only=<n> seconds=<n>` and the same
   with `review=wonder` (`out=<out-dir>` in place of `seconds`), where `only` counts the real
   findings the other reader missed.
-- **A text transform runs over the real corpus.** A change to anything that rewrites text
-  (a name cleaner, a parser, a formatter) runs over the whole of the dev data it will see,
-  and the driver reads the before-and-after diff, not only the hand-picked test cases:
-  eca-finder's name cleaner passed review and its tests, then a run over all 9,373 dev
-  catalog names found four mangles nobody had imagined.
+- **A text transform or a row filter runs over the real corpus, on every lane, EXPRESS
+  included.** A change to anything that rewrites text (a name cleaner, a parser, a
+  formatter) runs over the whole of the dev data it will see, and the driver reads the
+  before-and-after diff, not only the hand-picked test cases: eca-finder's name cleaner
+  passed review and its tests, then a run over all 9,373 dev catalog names found four
+  mangles nobody had imagined. A filter's diff is what its consumer returns before and
+  after, and a loosened one also meets made-up inputs it must still refuse (eca-finder's
+  adult-class-names and price-evidence).
 - **Design against the storyboard is the QA run's to judge**: the script carries a step
   per frame the change built and the craft floor
   (`~/.claude/skills/impeccable/reference/craft-floor.md`), and a gap is a failure like
@@ -998,7 +1042,9 @@ he asks.
   look whenever he likes; it never holds the ship. Boot the dev server detached, from the worktree root by absolute path (`cd <worktree> &&`
   first: the shell keeps the last `cd`, and one into `packs/homebody` started `npm run dev`
   in the wrong folder), never through a bounded pipe (`nohup <dev>
-  > dev.log 2>&1 &`, then curl-probe — a `| head -50` has SIGPIPE'd a server mid-verify)
+  > dev.log 2>&1 &`, then wait with this skill's `scripts/listener.sh <port>` and load the URL once with the
+  sandbox off, since a port can listen before the app answers — a `| head
+  -50` has SIGPIPE'd a server mid-verify)
   and `show.sh <root> <slug> test <url>` the URL it printed (`preview` for a preview link). A feature behind an auth gate needs its test-auth path
   working on both, or it 403s and reads as broken (incidents: Backends). Never run a
   production deploy to let him review, and never tell him to "go look at the live site".
@@ -1015,7 +1061,9 @@ he asks.
   `scripts/stage.sh <shots-root> exclude`, which writes no marker. Copy anything the
   presented card references somewhere durable before teardown, or the card 404s its
   own proof (incidents: Worktrees), then delete `<shots-root>/.ship-shots/<slug>/`,
-  which teardown doesn't remove unless it sits in the worktree.
+  which teardown doesn't remove unless it sits in the worktree. An EXPRESS ship keeps it,
+  since its `result:` line names those shots; when `<shots-root>` is the worktree, it moves
+  them to the main checkout's `.ship-shots/<slug>/` before teardown and names those.
 - **Before the QA run, check the wiring.** Run the contract's `stack:` (a ✗ is yours to
   fix first), and look at what landing will change in the backend: a change that
   **removes or renames** a backend function or table lands in two passes, first the app
@@ -1056,7 +1104,11 @@ he asks.
     (before/after: the QA result and its shots, the test that went green), Merge Danger
     (door and blast radius), and a last line per reader, `Reviewed: Wonder Full <n> fixed,
     <n> declined, <n> wrong · Opus ...`, with each declined finding and why in a collapsed
-    list, so a reader's objection can't vanish in triage. Take the counts from the reader's
+    list, so a reader's objection can't vanish in triage. Every number in the body, or in a
+    comment posted anywhere, comes from recorded output, rechecked before posting and after a
+    compaction (eca-finder's catalog pass posted two wrong ones from memory), and an image
+    committed on the branch links by commit (`blob/<sha>/<path>?raw=true`), since `--delete-branch` kills a branch
+    link. Take the counts from the reader's
     ledger rows, which outlive a compaction (`grep '"ship": "<slug>"'
     ~/.claude/ship-ledger.jsonl`): `false` is wrong, `nits` plus any real one left as a call
     is declined, and the rest of `real` is fixed. The door is ship's call on every ship: **two-way** (a revert
@@ -1066,7 +1118,7 @@ he asks.
   - **`broken` after three fix rounds on one step, or `unverifiable`: park.** End the turn with
     `needs input:` ("test: <feature> — couldn't prove it works: <reason>") and hand Pete
     the result and evidence. A step the run couldn't reach (a mic, a bot check, a device
-    it couldn't open) makes the result partial, and partial is `unverifiable`, never a
+    it couldn't open) and didn't prove at data level (below) makes the result partial, and partial is `unverifiable`, never a
     footnote on a landing. Three ships went to Pete with a known gap and he found it in
     minutes ("this should have been tested before you sent it").
 - **Render the review card** (SELF-DIRECTED and GATED; an EXPRESS ship has none, and its
@@ -1108,14 +1160,23 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
 - **Land — `land: pr` (the default), from the MAIN CHECKOUT, teardown first** (incidents: Worktrees — both orderings that deviate have stranded ships):
   0. Pre-flight *from the worktree*: release what the run started from inside it (a QA-run
      directory's own teardown, its containers, a simulator it cloned), since removing the
-     worktree first orphans them (peggy-qa's `qa-run.sh remove`); delete any test data the run kept for itself (cells-app:
-     a `--keep` smoke person, `npm run prune -- --people --finish <id>`, which refuses unless the
-     worktree's env is that pack's; else delete the person through their own account, as the
-     checks skill says) while the worktree's
-     server still answers, since the cleanup needs it and Clerk's test instance caps at 100
-     people; then `stage.sh <root> land`, then `git fetch origin`; if main moved, absorb it in a call of
+     worktree first orphans them (peggy-qa's `qa-run.sh remove`); delete any test data the run
+     kept for itself, the way the checks skill says, while the worktree's server still
+     answers, since the cleanup needs it and Clerk's test instance caps at 100 people.
+     In cells-app that is the person a recording walk used, and the one a rerun below records
+     with once it ends (verify's iPhone bullets: `PACK=<pack> npm run prune -- --people --finish
+     <clerk id>`, which sweeps the stage's other stale people too, 5
+     to 20 minutes over four runs); leave the rest to main's restart after landing, which
+     prunes a landed worktree's people with its stage once they've been idle 30 minutes
+     (CEL-168). Then `stage.sh <root> land`, then `git fetch origin`; if main moved, absorb it in a call of
      its own and see it merged clean before any gate or stop runs (CEL-140 sent the merge and
-     the gates in parallel, and they ran on a half-merged tree), then re-gate by overlap (REVIEW). Two checks follow, each on its own condition. The
+     the gates in parallel, and they ran on a half-merged tree), then re-gate by overlap
+     (REVIEW). An absorb whose files overlap what the QA run walked or measured reruns those
+     steps on the merged tree: the worktree's server restarted on it, or, for a walk that ran on
+     a preview, a push and its new build;
+     one whose overlap is only tests, or import lines that still name the same code, keeps the
+     pass, and the PR says so
+     (drop-per-activity-round, live-search-waits). Two checks follow, each on its own condition. The
      full gates run once here if the tree changed since their last run (TEST's fix rounds run
      scoped), unless a land script the repo names gates the merged tree (cells-app's `land-pr.sh`,
      which stands in for the overlap re-gate too; Landing variants names what still runs
@@ -1132,37 +1193,46 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
      it on that reading). Put the smoke's result line in the commit that follows it (`git
      restore next-env.d.ts` first: `next dev` rewrites it and the rebase refuses the dirty
      file), and push everything step 0 committed; run `stack:` once more; bring the `pr`-shaped body from TEST up to date with what actually
-     shipped (the squash commit takes it); for each other open PR's branch, `git cherry HEAD
+     shipped (the squash commit takes it); stop the worktree's dev server now that nothing
+     needs it, from the worktree with the repo's stop command (cells-app: `scripts/dev.sh
+     --stop`), then `listener.sh <port> 1` must find nothing (a server it still finds
+     naming this worktree stops by its process group: a stop command stops nothing once a
+     build wiped its record), all from the worktree, since from the main checkout the stop command finds main's (cells-skin stopped
+     main's :3000); for each other open PR's branch, `git cherry HEAD
      origin/<branch> origin/main` (a script file) prints `-` for each of its commits this branch
      carries, and a hit lands after that PR ("Never stack"); `gh pr ready <#>`; confirm `gh pr view <#> --json mergeable`
-     says `MERGEABLE`.
+     says `MERGEABLE`. Those and the merge go through GitHub's GraphQL limit, which sibling
+     ships on one token run out while `gh api rate_limit` still shows budget: the REST forms
+     are in incidents: GitHub (six eca-finder runs waited out a reset).
   1. Return to the main checkout (`ExitWorktree({action:"keep"})`). Every command against main
      runs after this, never from a job-tmp script while the session still sits in the
      worktree, whatever an older note says (a session launched inside its worktree can't
      leave: Landing variants). Main's pull is step 4, and a server main runs locally restarts
      after it (cells-app's is `smoke: main`, `local-pack.sh <pack> --restart`, after the
-     deploy watch), so both serve what landed (#294 had put them before the merge). If it answers that no
-     EnterWorktree session is active, run 2–4 by absolute path against the main checkout
-     instead (`wt -C <main> remove … -D`, `gh pr merge <#> -R <owner/repo> …`), then `cd <main
-     checkout>` so the next ship's `EnterWorktree` can take, and `git pull --ff-only` there.
+     deploy watch), so both serve what landed (#294 had put them before the merge). Steps 2–4
+     name the main checkout in every command: the shell can still sit in
+     the worktree after `ExitWorktree` succeeds, or in the removed folder after `wt remove`
+     (CEL-233, CEL-217, swain-intro-prequel). If it answers that no EnterWorktree session is
+     active, `cd <main checkout>` after step 4, so the next ship's `EnterWorktree` can take.
      When the guard still refuses git against the main checkout, leave its pull to the next
      session in it and say so in the `result:` line: the next fork branches from origin/main
      either way (peggy-qa, 2026-10-26).
-  2. `wt remove feature/<slug> -f` — frees the branch for `--delete-branch`. Then, from the
+  2. `wt -C <main> remove feature/<slug> -f` — frees the branch for `--delete-branch`. Then, from the
      main checkout, `rm -rf <worktree>` once `git worktree list` no longer shows it: the
      harness's `.claude/.cc-writes` keeps the folder alive (31 such stubs had piled up by
      2026-11-03). When the harness refuses because the folder is the session's own working
      directory, leave it: `wt-sweep` removes an emptied one once nothing stands in it.
-  3. `gh pr merge <#> --squash --delete-branch` — from the main checkout.
-  4. `git pull --ff-only` (+ `git branch -D feature/<slug>` if a local branch
+  3. `gh pr merge <#> -R <owner/repo> --squash --delete-branch`, from the main checkout,
+     since `--delete-branch` deletes the local branch too.
+  4. `git -C <main> pull --ff-only` (+ `git -C <main> branch -D feature/<slug>` if a local branch
      lingers: a squash merge rewrites the commits, so `wt remove` and git both call the
      branch unmerged and keep it, and only `-D` takes it). Dirty main checkout (another session's work) → skip the local ff
      and run any deploy from a throwaway worktree pinned to `origin/main`.
   - A worktree ship didn't create, a session launched inside its worktree, a repo with
     no GitHub remote, a repo whose contract names its own script for landing a PR (cells-app's
     `scripts/land-pr.sh`), or `land:` other than `pr`: `reference/rare-cases.md`, Landing variants.
-  - Then `rm -f .ship-stage .ship-route.json` and `rm -f ~/.claude/ship-active/$CLAUDE_CODE_SESSION_ID`,
-    **stop the review dev server**, remove the branch app `ios:` installed, by the udid and
+  - Then `rm -f .ship-stage .ship-route.json` and `rm -f ~/.claude/ship-active/$CLAUDE_CODE_SESSION_ID`
+    (the worktree's dev server stopped in step 0), remove the branch app `ios:` installed, by the udid and
     bundle on its IOS line (`xcrun devicectl device uninstall app --device <udid>
     <bundle>`, or `xcrun simctl uninstall <udid> <bundle>`; only that bundle, never the
     real app; a phone that isn't connected gets one line saying so), unless the line says
@@ -1178,7 +1248,8 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
   teardown: take new ones from the main checkout for every post-landing check. Wait on a
   Vercel build with `vercel inspect <url> --wait --timeout <t>`, never `vercel ls` through
   grep, which misses "Building". Find a merge's build to wait on with `vercel ls -m
-  githubCommitSha=<full sha>`: a short one matches nothing. A CLI `--prod` deploy in a repo whose git integration also
+  githubCommitSha=<full sha>`: a short one matches nothing. Send `vercel ls` to a file in the
+  job's tmp, never into `| head`, which aborts it (SIGABRT, two eca-finder runs). A CLI `--prod` deploy in a repo whose git integration also
   builds main starts a second production build about 30 s later, and that one ends up live:
   watch it too (eca-finder, 2026-10-26). A diff that touches nothing
   `live:` builds deploys nothing: skip the deploy and say so in the `result:` line, since a
@@ -1210,11 +1281,16 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
   so TEST proves that path at data level (verify: API, CLI, script). A change no person
   can trigger (a race, a background worker, a third party mid-call) is verified at data
   level, every case on the branch's backend, plus a browser check of any screen that reads
-  the result, and that is `works`, not partial. When that screen can only be reached by
+  the result, and that is `works`, not partial. The same holds for a state whose real
+  records cost money to reach or that test-auth can't reach with the right rows, and for a
+  walk the brief forbids (an eca-finder live search writes catalog rows): the product's own
+  functions over the real records, then the screen, and the card says which steps went
+  that way (four eca-finder runs). When that screen can only be reached by
   seeding model output, a render test of the real component with the result's real shape
   counts as the screen check. A change to a prompt is proven by replay: run the
   same saved model inputs through main's prompt and the branch's, a few times each, and
-  quote both results (CEL-170: main showed the bug in 1 of 2, the branch in 0 of 2). After the merge,
+  quote both results (CEL-170: main showed the bug in 1 of 2, the branch in 0 of 2). An
+  empty reply or a fallback counts as a failed run, never a skip (swain-true-lines). After the merge,
   restart it once it is idle, never with a job in flight, which the restart would fail, and
   say so in `result:` rather than "nothing deploys". The contract's `worker:` line names
   the restart command and the idle check; a repo with such a process and no line gets one
@@ -1349,7 +1425,8 @@ Render `reference/review-card.html` filled with the meta only — PM-framed, one
   section entirely; never pad it.
 - **Where it is** — the live links landing deployed (the contract's `live:`), or the
   preview links and localhost when the ship parked. The verdict line (`LANDING_STATUS`)
-  says which: "Landed on main" with the live URL, or what it waits on, plus the
+  says which: "Tested · landing on main" with the live URL it will serve, since the card is
+  committed before the merge, or what it waits on, plus the
   branch-built native app when the ship made one (the IOS or MAC line: the device and
   bundle, or the .app path), so he can open what he's asked to try. The tracker PR
   link is there for the record, but he shouldn't need it. Fill `PR_URL` from `gh pr view
@@ -1377,7 +1454,8 @@ Sort each one, and give it one plain line on why it's worth doing (Talking to Pe
   Never a column that means work in flight (cells-app's Building): that is a live session's.
 
   Pete says "file them" (or names which) and each lands in its column with the why
-  written on it and a link back to this PR. A repo with no `board:` gets the list only.
+  written on it and a link back to this PR. One that rests on a measurement carries it,
+  pasted or at a durable path: the job's tmp goes with the job (CEL-218). A repo with no `board:` gets the list only.
 
 They go on the review card under "What we should do next", and when there is no card,
 under the `result:` line as a numbered list. Ship fixes found in its own RETRO go to the
