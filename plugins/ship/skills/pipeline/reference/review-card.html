@@ -54,7 +54,7 @@
 <body>
 <div class="wrap">
   <h1>Review: {{FEATURE}}</h1>
-  <p class="sub">What shipped, in plain terms. Glance, then answer in your agent session — merge, or call a change.</p>
+  <p class="sub">What shipped, in plain terms.</p>
 
   <div class="card shipped">
     <h2>What you got</h2>
@@ -84,7 +84,7 @@
   <div class="card">
     <h2>Verifier flagged / suggested</h2>
     <ul>{{FLAGGED_ITEMS}}</ul>
-    <p style="margin:10px 0 0;font-size:14px;color:var(--slate)">Reports, not work — say fix now / backlog / ignore.</p>
+    <p style="margin:10px 0 0;font-size:14px;color:var(--slate)">Reports, not work: say fix now, backlog or ignore.</p>
   </div>
 
   <div class="card">
@@ -93,7 +93,7 @@
   </div>
 
   <!-- ALSO WORTH BUILDING: build-worthy things deliberately left out of THIS round. Include
-       only if there are real candidates (most rounds have none) — else delete this whole card.
+       only if there are real candidates (most rounds have none), else delete this whole card.
        Each .cand: what it is + one plain line on why it's worth doing + its kind and place:
        "Quick ship", or "Ticket · <column>" from the repo's board: (SKILL.md: Follow-ups;
        cells-app: Ready, Backlog or Icebox).
