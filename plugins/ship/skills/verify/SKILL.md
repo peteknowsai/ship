@@ -146,7 +146,11 @@ put". Cover every acceptance criterion, every frame the change built (a visible 
 its frame is a failure), the edges the spec names, and a clean console. Start at least
 one walk the way a person most naturally would, from nothing, not from seeded state: the
 walkie-visit QA only walked showings at a seeded home, and Pete's first try, a showing at
-a new address, hit a path nobody had built. Post one line
+a new address, hit a path nobody had built. A step that sets by hand a state the feature
+claims to reach on its own (a stage, a status, a phase) comes after one that proves the
+feature writes it: run the loop, read the field back. swain-ideas moved its captains' stage
+with a setter, and every real captain stayed on the first one, since the code knew only
+Homebody's stages. Post one line
 before running, `QA: <n> steps on <surface> — <qa.md path>`, so Pete can watch and steer;
 what he says mid-run changes the run.
 
