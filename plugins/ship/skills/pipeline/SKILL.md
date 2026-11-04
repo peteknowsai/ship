@@ -330,8 +330,8 @@ reran a 90-second suite only to read the name tail had cut. A full run whose onl
   runs it only on that word, never as part of landing, and watches what `live:` names.
   Without it, landing is the release wherever main deploys.
 - **`smoke:`** the repo's automated end-to-end smoke, in two halves. `branch <cmd>` runs
-  against the worktree's own server once, in BUILD's pre-flight, and again only if the tree
-  changed before landing (LAND's step 0); never per milestone push or per task, because a
+  against the worktree's own server once, in BUILD's pre-flight, and again only if what the
+  app carries changed before landing (LAND's step 0); never per milestone push or per task, because a
   smoke can cost real model calls (cells-app's: about 12 bot turns, about 13 cents). Close the
   QA's browser pages and stop the branch's phone app first: their polling slowed a Swain reply
   past the smoke's 120 s wait, and the rerun with them closed passed (swain-goals-skills). `main <cmd>`
@@ -1065,9 +1065,13 @@ he asks.
     footnote on a landing. Three ships went to Pete with a known gap and he found it in
     minutes ("this should have been tested before you sent it").
 - **Render the review card** (SELF-DIRECTED and GATED; an EXPRESS ship has none, and its
-  `result:` line carries the proof shots' paths) from `reference/review-card.html` (contract below) to the
-  docs home as soon as the result is in, and commit it on the branch, with the proof
-  shots it shows copied beside it, before LAND's step 0: LAND removes the worktree. A
+  `result:` line carries the proof shots' paths) from `reference/review-card.html` (contract below) into the
+  docs home beside the repo's earlier cards (cells-app: `specs/qa/<date>-<slug>/review.html`;
+  a repo with none yet: `<docs home>/reviews/<slug>.html`) as soon as the result is in, and
+  commit it on the branch, with the proof shots it shows copied beside it in one Bash call,
+  sandbox off, every path written out (a worktree session's guard refused a `sips` path built
+  from a shell variable, and `sips` writes a temp file the sandbox denies:
+  homebody-feed-beats), before LAND's step 0: LAND removes the worktree. A
   Codex hand-off Pete watched gets none; its record is the `result:` line, the PR body,
   and the thread link. `LANDING_STATUS` says "Tested · landing on main", or what it waits
   on. `show.sh … review <file> done` the landed base's copy with the `result:` (main's, or
@@ -1103,8 +1107,12 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
      server still answers, since the cleanup needs it and Clerk's test instance caps at 100
      people; then `stage.sh <root> land`, then `git fetch origin`; if main moved, absorb it in a call of
      its own and see it merged clean before any gate or stop runs (CEL-140 sent the merge and
-     the gates in parallel, and they ran on a half-merged tree), then re-gate by overlap (REVIEW) + push; and if the tree changed since the last full gates and
-     `smoke: branch` (TEST's fix rounds run scoped), run both once here, else skip them, and put
+     the gates in parallel, and they ran on a half-merged tree), then re-gate by overlap (REVIEW) + push; if the tree changed since the last full gates
+     (TEST's fix rounds run scoped), run them once here, and `smoke: branch` too when the diff
+     since its last run touches what the app carries (one only to docs, tests, the review card
+     or its shots doesn't), else skip them. That smoke is a first run of code the last one
+     never saw, not a rerun: a repo's "no reruns" (cells-app's, Pete 2026-10-02) is about
+     main's smoke and a red one (homebody-feed-beats skipped it on that reading). Put
      the smoke's result line in the commit that follows it so a later step can see it ran (`git restore next-env.d.ts` first: `next dev` rewrites it and the
      rebase refuses the dirty file), with the worktree's dev server stopped and any simulator shut first,
      since a loaded box turns a full suite's slow tests into timeouts that read as real red; run `stack:` once more; bring the `pr`-shaped body from TEST up to date with what actually
@@ -1112,10 +1120,11 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
      origin/<branch> origin/main` (a script file) prints `-` for each of its commits this branch
      carries, and a hit lands after that PR ("Never stack"); `gh pr ready <#>`; confirm `gh pr view <#> --json mergeable`
      says `MERGEABLE`.
-  1. Return to the main checkout (`ExitWorktree({action:"keep"})`), and run what main needs
-     (its pull, a local server's restart such as cells-app's `local-pack.sh <pack> --restart`)
-     from there, before step 2's `wt remove`: this order wins over any older note that touches
-     main from a job-tmp script while the session sits in the worktree. If it answers that no
+  1. Return to the main checkout (`ExitWorktree({action:"keep"})`). Every command against main
+     runs after this, never from a job-tmp script while the session still sits in the
+     worktree, whatever an older note says. Main's pull is step 4 and its server's restart is
+     `smoke: main` after the deploy watch (cells-app's `local-pack.sh <pack> --restart`), both
+     after the merge so they serve what landed (#294 had put them before it). If it answers that no
      EnterWorktree session is active, run 2–4 by absolute path against the main checkout
      instead (`wt -C <main> remove … -D`, `gh pr merge <#> -R <owner/repo> …`), then `cd <main
      checkout>` so the next ship's `EnterWorktree` can take, and `git pull --ff-only` there.
