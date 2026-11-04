@@ -1097,7 +1097,9 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
   0. Pre-flight *from the worktree*: release what the run started from inside it (a QA-run
      directory's own teardown, its containers, a simulator it cloned), since removing the
      worktree first orphans them (peggy-qa's `qa-run.sh remove`); delete any test data the run kept for itself (cells-app:
-     a `--keep` smoke person, `npm run prune -- --people --finish <id>`) while the worktree's
+     a `--keep` smoke person, `npm run prune -- --people --finish <id>`, which refuses unless the
+     worktree's env is that pack's; else delete the person through their own account, as the
+     checks skill says) while the worktree's
      server still answers, since the cleanup needs it and Clerk's test instance caps at 100
      people; then `stage.sh <root> land`, then `git fetch origin`; if main moved, absorb it in a call of
      its own and see it merged clean before any gate or stop runs (CEL-140 sent the merge and
@@ -1110,7 +1112,10 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
      origin/<branch> origin/main` (a script file) prints `-` for each of its commits this branch
      carries, and a hit lands after that PR ("Never stack"); `gh pr ready <#>`; confirm `gh pr view <#> --json mergeable`
      says `MERGEABLE`.
-  1. Return to the main checkout (`ExitWorktree({action:"keep"})`). If it answers that no
+  1. Return to the main checkout (`ExitWorktree({action:"keep"})`), and run what main needs
+     (its pull, a local server's restart such as cells-app's `local-pack.sh <pack> --restart`)
+     from there, before step 2's `wt remove`: this order wins over any older note that touches
+     main from a job-tmp script while the session sits in the worktree. If it answers that no
      EnterWorktree session is active, run 2–4 by absolute path against the main checkout
      instead (`wt -C <main> remove … -D`, `gh pr merge <#> -R <owner/repo> …`), then `cd <main
      checkout>` so the next ship's `EnterWorktree` can take, and `git pull --ff-only` there.
