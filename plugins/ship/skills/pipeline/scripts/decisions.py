@@ -15,7 +15,7 @@ named from the origin remote, else from the main checkout's folder; a repo that 
 remote keeps the folder-named log, merged in on first use and left as <folder>.jsonl.merged (a run lost its log, 2026-10-13). The format is the
 one gstack's decision store used, so its history migrated as is.
 
-`relevant` asks route.py's decision model (SubQ, else Jev) to score every active decision
+`relevant` asks Jev, through route.py, to score every active decision
 against the idea in one request, because the newest five hide the old call that
 settles the thing being changed. Any failure falls back to `recent`, so recall never
 blocks a run.

@@ -23,10 +23,9 @@ shows as engine=opus, routed=driver.
 
 Opus 5.5 only (Pete, 2026-10-24): the driver builds every task in its own loop, so `plan`
 ranks nothing. The difficulty ranker that split tasks across Opus, Wonder and Sonnet is in
-git history (`git log -S ask_scores`). decisions.py still asks SubQ, else Jev, through
-`decide` below.
+git history (`git log -S ask_scores`). decisions.py still asks Jev through `decide` below.
 
-Keys: SUBQ_API_KEY else keychain service "subq"; TYPESAFE_API_KEY else keychain "typesafe".
+Key: TYPESAFE_API_KEY else keychain service "typesafe".
 The ledger is ~/.claude/ship-ledger.jsonl, or SHIP_LEDGER.
 """
 import datetime
@@ -43,20 +42,15 @@ import urllib.request
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # quota.py is a sibling, whoever imports us
 import quota  # noqa: E402
 
-# Decision models, asked in order: the same /v1/systemone shape, so one call fits both.
-# SubQ answers at most 16 questions a request; Jev reads 64k tokens, SubQ 384k.
-DECIDERS = [
-    {'name': 'SubQ', 'url': 'https://api.subq.ai/v1/systemone', 'model': 'subq-snap-preview',
-     'env': 'SUBQ_API_KEY', 'keychain': 'subq', 'questions': 16},
-    {'name': 'Jev', 'url': 'https://api.typesafe.ai/v1/systemone', 'model': 'jev-latest',
-     'env': 'TYPESAFE_API_KEY', 'keychain': 'typesafe', 'questions': 1000},
-]
+# The decision model: TypeSafe's newest Jev. SubQ is out (Pete, 2026-11-03: "all jev").
+JEV = {'url': 'https://api.typesafe.ai/v1/systemone', 'model': 'jev-latest',
+       'env': 'TYPESAFE_API_KEY', 'keychain': 'typesafe'}
 # Old ledger rows keep their pool; only opus and driver build since 2026-10-24, and fable
 # until FABLE_UNTIL: Pete's window to use the week's Fable quota before it resets (2026-10-28).
 FABLE_UNTIL = datetime.datetime(2026, 10, 29, 18, tzinfo=datetime.timezone.utc)
 POOL = {'opus': 'anthropic', 'driver': 'anthropic', 'wonder': 'muse', 'sonnet': 'anthropic',
         'fable': 'fable', 'astra': 'openai', 'sol': 'openai', 'spark': 'muse'}
-# Jev, the smaller window, takes 64k tokens per request, and pasted text runs near 3
+# Jev takes 64k tokens per request, and pasted text runs near 3
 # characters a token, so a request packs items until text plus questions reach this.
 REQUEST_CHARS = 120_000
 QUESTION_CHARS = 800
@@ -137,22 +131,22 @@ def parse_tasks(text):
     return tasks
 
 
-def api_key(decider):
-    key = os.environ.get(decider['env'])
+def api_key():
+    key = os.environ.get(JEV['env'])
     if key is not None or os.environ.get('ROUTE_NO_KEYCHAIN'):
         return key or None
     try:
-        return subprocess.check_output(['security', 'find-generic-password', '-s', decider['keychain'], '-w'],
+        return subprocess.check_output(['security', 'find-generic-password', '-s', JEV['keychain'], '-w'],
                                        text=True, stderr=subprocess.DEVNULL).strip() or None
     except (OSError, subprocess.CalledProcessError):
         return None
 
 
-def batches(items, cost, most):
-    """Split items so each request stays under REQUEST_CHARS and `most` questions."""
+def batches(items, cost):
+    """Split items so each request stays under REQUEST_CHARS."""
     batch, size = [], 0
     for item in items:
-        if batch and (size + cost(item) > REQUEST_CHARS or len(batch) == most):
+        if batch and size + cost(item) > REQUEST_CHARS:
             yield batch
             batch, size = [], 0
         batch.append(item)
@@ -162,32 +156,27 @@ def batches(items, cost, most):
 
 
 def decide(items, build, cost=lambda item: QUESTION_CHARS):
-    """Ask the first decision model that answers about every item; build(batch) gives one
-    request's (state, questions). Returns (answers by question name, model). Raises when
-    none answers."""
-    failures = []
-    for decider in DECIDERS:
-        key = api_key(decider)
-        if not key:
-            failures.append(f"{decider['name']}: no key (env {decider['env']} or keychain \"{decider['keychain']}\")")
-            continue
-        try:
-            answers, model = {}, None
-            for batch in batches(items, cost, decider['questions']):
-                state, questions = build(batch)
-                body = json.dumps({'model': decider['model'], 'state': state, 'questions': questions}).encode()
-                request = urllib.request.Request(decider['url'], body, {'Authorization': f'Bearer {key}',
-                                                                        'Content-Type': 'application/json'})
-                with urllib.request.urlopen(request, timeout=30) as response:
-                    reply = json.load(response)
-                answers.update(reply['answers'])
-                model = model or reply.get('model') or decider['model']
-            return answers, model
-        except Exception as error:
-            why = 'out of credits; tell Pete now' if '402' in str(error) else f'{type(error).__name__}: {error}'
-            failures.append(f"{decider['name']}: {why}")
-            print(f"route: {decider['name']} failed ({why})", file=sys.stderr)
-    raise RuntimeError('; '.join(failures))
+    """Ask Jev about every item; build(batch) gives one request's (state, questions).
+    Returns (answers by question name, model). Raises when Jev doesn't answer."""
+    key = api_key()
+    if not key:
+        raise RuntimeError(f"Jev: no key (env {JEV['env']} or keychain \"{JEV['keychain']}\")")
+    answers, model = {}, None
+    try:
+        for batch in batches(items, cost):
+            state, questions = build(batch)
+            body = json.dumps({'model': JEV['model'], 'state': state, 'questions': questions}).encode()
+            request = urllib.request.Request(JEV['url'], body, {'Authorization': f'Bearer {key}',
+                                                                'Content-Type': 'application/json'})
+            with urllib.request.urlopen(request, timeout=30) as response:
+                reply = json.load(response)
+            answers.update(reply['answers'])
+            model = model or reply.get('model') or JEV['model']
+    except Exception as error:
+        why = 'out of credits; tell Pete now' if '402' in str(error) else f'{type(error).__name__}: {error}'
+        print(f'route: Jev failed ({why})', file=sys.stderr)
+        raise RuntimeError(f'Jev: {why}') from error
+    return answers, model
 
 
 def plan(path, now=None):
@@ -371,7 +360,7 @@ def selftest():
                              ''.join(f'### Task {n}: t\n\n```md\n### Task 99: an example inside a fence\n```\n\n'
                                      for n in range(1, 6)))
         check('a fenced heading and "### Task list" are not tasks', len(plan(few)['tasks']) == 5)
-        sizes, urls = [], []
+        sizes, urls, models, broke = [], [], [], []
 
         class Reply:
             def __init__(self, body):
@@ -388,22 +377,31 @@ def selftest():
 
         def fake(request, timeout):
             urls.append(request.full_url)
-            if 'subq' in request.full_url:
+            sent = json.loads(request.data)
+            models.append(sent['model'])
+            if broke:
                 raise urllib.error.HTTPError(request.full_url, 402, 'Payment Required', {}, None)
-            asked = json.loads(request.data)['questions']
-            sizes.append(len(asked))
-            return Reply(json.dumps({'model': 'jev-test', 'answers': {k: {'score': 1} for k in asked}}).encode())
+            sizes.append(len(sent['questions']))
+            return Reply(json.dumps({'model': 'jev-test', 'answers': {k: {'score': 1} for k in sent['questions']}}).encode())
         real = urllib.request.urlopen
         urllib.request.urlopen = fake
-        os.environ.update(SUBQ_API_KEY='k', TYPESAFE_API_KEY='k', ROUTE_NO_KEYCHAIN='1')
+        os.environ.update(TYPESAFE_API_KEY='k', ROUTE_NO_KEYCHAIN='1')
+        ask = lambda b: ({}, {f'q{i}': {} for i in b})  # noqa: E731
         try:
-            answers, model = decide(list(range(40)), lambda b: ({}, {f'q{i}': {} for i in b}))
-            subq_sizes = [n for n in batches(list(range(40)), lambda i: 1, DECIDERS[0]['questions'])]
+            answers, model = decide(list(range(40)), ask)
+            decide(list(range(3)), ask, lambda i: REQUEST_CHARS // 2 + 1)
+            broke.append(True)
+            try:
+                decide([0], ask)
+                credits = ''
+            except RuntimeError as error:
+                credits = str(error)
         finally:
             urllib.request.urlopen = real
-        check('SubQ asks at most 16 questions a request', [len(b) for b in subq_sizes] == [16, 16, 8])
-        check('a SubQ 402 falls through to Jev, which answers everything',
-              'subq' in urls[0] and model == 'jev-test' and len(answers) == 40 and sizes == [40])
+        check('jev-latest at TypeSafe answers every item, a new request each REQUEST_CHARS',
+              set(urls) == {JEV['url']} and set(models) == {'jev-latest'} and model == 'jev-test'
+              and len(answers) == 40 and sizes == [40, 1, 1, 1])
+        check('a Jev 402 raises and says to tell Pete', 'out of credits; tell Pete now' in credits)
         log(['repo=ship', 'task=2', 'engine=fable', 'score=3.4', 'seconds=300', 'fix_rounds=1', 'gates_first_pass=false'])
         open(ledger_path(), 'a').write('{"half a line\n')
         log(['repo=ship', 'task=1', 'engine=astra', 'score=0.8', 'seconds=120', 'fix_rounds=0', 'gates_first_pass=True'])
