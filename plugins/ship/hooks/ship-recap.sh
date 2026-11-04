@@ -74,9 +74,11 @@ selftest() {
   check 'flags a fable task as possibly built and unchecked' '[[ "$out" == *"todo Task 2: second [fable]"* && "$out" == *"report is gone"* && "$out" != *"first [fable]"* ]]'
   check 'lists the branch commits and uncommitted files, not ship files' '[[ "$out" == *"task 1 lands"* && "$out" == *"b.txt"* && "$out" != *".ship-done"* ]]'
   check 'marks build churn as noise, and only that' '[[ "$out" == *"next-env.d.ts (build noise"* && "$out" != *"b.txt (build"* ]]'
-  mkdir -p "$tmp/cache/abc123/skills"
+  mkdir -p "$tmp/cache/abc123"; cp -R "$plugin/skills" "$tmp/cache/abc123/skills"
+  printf '\n## A section the update added\nnew rule\n' >> "$tmp/cache/abc123/skills/pipeline/SKILL.md"
   printf '{"plugins":{"ship@ship":[{"installPath":"%s"}]}}' "$tmp/cache/abc123" > "$tmp/installed.json"
   out=$(printf '{"session_id":"","cwd":"%s"}' "$tmp/repo" | SHIP_INSTALLED="$tmp/installed.json" recap)
+  check 'and lists what changed, file then section' '[[ "$out" == *"   pipeline/SKILL.md"* && "$out" == *"     ## A section the update added"* ]]'
   check 'after an update, names the copy stage.sh moves the session to' '[[ "$out" == *"-> abc123): its skills are $tmp/cache/abc123/skills"* && "$out" != *"this session'"'"'s ship skills"* ]]'
   printf '1\n2\n' > .ship-done
   out=$(printf '{"session_id":"","cwd":"%s"}' "$tmp/repo" | recap)

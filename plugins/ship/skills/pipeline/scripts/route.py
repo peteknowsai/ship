@@ -174,8 +174,9 @@ def decide(items, build, cost=lambda item: QUESTION_CHARS):
             answers.update(reply['answers'])
             model = model or reply.get('model') or JEV['model']
     except Exception as error:
-        why = ('out of credits; tell Pete now' if '402' in str(error) else
-               f"key rejected (env {JEV['env']} or keychain \"{JEV['keychain']}\")" if '401' in str(error) else
+        code = getattr(error, 'code', None)  # an HTTPError's status
+        why = ('out of credits; tell Pete now' if code == 402 else
+               f"key rejected (env {JEV['env']} or keychain \"{JEV['keychain']}\")" if code == 401 else
                f'{type(error).__name__}: {error}')
         print(f'route: Jev failed ({why})', file=sys.stderr)
         raise RuntimeError(f'Jev: {why}') from error
