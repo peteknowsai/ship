@@ -103,7 +103,13 @@ port of the worktree's server, never a `*.localhost` name on :80, which the VM c
 agent-desktop: `open -g` the app, `agent-desktop snapshot --app <name> -i`, then `click` or
 `set-value` on a ref exactly as the snapshot's `ref_id` prints it (`click @s2r8zyd7kmosvb:e9`),
 and `shot <n> <png>` to see the whole screen. A web view's first
-snapshot can need `--timeout-ms 20000`. Never `osascript` there: its Automation prompt hangs
+snapshot can need `--timeout-ms 20000`. In a web view, `type` needs `--headed` (physical input)
+and `press return --app <App> --headed` submits; a ref `click` that fails there, `--headed` too,
+or lands on a row whose one AX button swallows a nested "more" button, goes by coordinates:
+`mouse-click --headed --xy <x>,<y>` in points, half the shot's pixels (1920x1440 shots, scale 2).
+The app's first-run banners (Login Item Added, its notifications ask) sit over the top-right for
+the walk: `dismiss-all-notifications` is refused by policy, and `dismiss-notification <i>` from
+`list-notifications` needs `--expected-title`. Never `osascript` there: its Automation prompt hangs
 the command. `return <n>` the moment the walk ends, pass or fail: an abandoned VM keeps running,
 and only after two idle hours can another ship's borrow take its slot and delete it. A rig's own
 windows are on his screen too, `orderBack` or not, until torn down: open them just before the
