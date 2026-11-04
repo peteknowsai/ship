@@ -38,9 +38,12 @@ where they differ.
     push included, except its full-suite runs (the tree-changed one and the overlap
     re-gate): the script's gates stand in for those, so the suite never runs twice
     (cel-268-email-approvals). Still run in step 0 what the script doesn't pick for this
-    diff: cells-app's land-pr runs no `mac:test`, so a `mac/` change runs it there, and it
-    runs `network:test` only for the PR's own `convex/` paths, so an absorb that brought
-    `convex/` changes runs that too.
+    diff: cells-app's land-pr runs no `mac:test`, so a `mac/` change runs it there. It runs
+    the network gates (`network:typecheck`, `network:test`) only when the PR's own diff has
+    a `convex/`, `convex-core/` or `packs/*/convex/` path, which misses a `lib/` file
+    convex-core imports (#398 landed `network:typecheck` red that way, and its test runs
+    under `network:test`). So step 0 runs both when the branch changes code with no such
+    path, or an absorb brought one, and never on a diff of only what never ships.
   - Push everything first (it lands the PR's pushed head), put the final evidence in a
     commit message rather than only the PR body (its commit never reads the body), and stop
     the worktree's dev server and any simulator before it runs, since its suite is
