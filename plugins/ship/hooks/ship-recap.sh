@@ -21,8 +21,14 @@ recap() {
   route="$root/.ship-route.json"; done_file="$root/.ship-done"
   echo "/ship recap after compaction, read from disk (trust it over the summary):"
   echo "- worktree $root, branch ${branch:-?}, stage $stage"
-  # A deploy mid-run adds a newer copy of ship; this session's text matches its own copy.
-  echo "- this session's ship skills: $plugin/skills (call the pipeline's scripts there, not the newest copy in the cache)"
+  # A deploy mid-run installs a newer copy of ship. stage.sh moves a session onto it, so the
+  # recap names the same copy stage.sh would, never the one the session started on.
+  local new; new=$(jq -r '.plugins["ship@ship"][0].installPath // empty' "${SHIP_INSTALLED:-$HOME/.claude/plugins/installed_plugins.json}" 2>/dev/null || true)
+  if [ -n "$new" ] && [ -d "$new/skills" ] && [ "$(basename "$new")" != "$(basename "$plugin")" ]; then
+    echo "- ship was updated since this session started ($(basename "$plugin") -> $(basename "$new")): its skills are $new/skills; reread its pipeline SKILL.md for this stage and call scripts there, since the newer rules win"
+  else
+    echo "- this session's ship skills: $plugin/skills (call the pipeline's scripts there)"
+  fi
   local tasks=""
   if [ -f "$route" ]; then
     tasks=$(jq -r --rawfile done <( [ -f "$done_file" ] && cat "$done_file" || true ) '
@@ -59,7 +65,7 @@ selftest() {
   echo 'build:1:2' > .ship-stage; printf '1\n' > .ship-done
   echo '{"plan":"/p/plan.md","tasks":[{"n":1,"label":"1","title":"Task 1: first"},{"n":2,"label":"2","title":"Task 2: second","engine":"fable"}]}' > .ship-route.json
   echo b > b.txt; echo n > next-env.d.ts
-  out=$(printf '{"session_id":"","cwd":"%s"}' "$tmp/repo" | recap)
+  out=$(printf '{"session_id":"","cwd":"%s"}' "$tmp/repo" | SHIP_INSTALLED=/nonexistent recap)
   check() { if eval "$2"; then echo "  ok   $1"; else echo "  FAIL $1"; fails=$((fails+1)); fi; }
   check 'names this session'"'"'s own skills folder' '[[ "$out" == *"ship skills: $plugin/skills ("* ]] && [ -d "$plugin/skills/pipeline/scripts" ]'
   check 'names the stage and branch' '[[ "$out" == *"branch feature/x, stage build:1:2"* ]]'
@@ -67,6 +73,10 @@ selftest() {
   check 'flags a fable task as possibly built and unchecked' '[[ "$out" == *"todo Task 2: second [fable]"* && "$out" == *"report is gone"* && "$out" != *"first [fable]"* ]]'
   check 'lists the branch commits and uncommitted files, not ship files' '[[ "$out" == *"task 1 lands"* && "$out" == *"b.txt"* && "$out" != *".ship-done"* ]]'
   check 'marks build churn as noise, and only that' '[[ "$out" == *"next-env.d.ts (build noise"* && "$out" != *"b.txt (build"* ]]'
+  mkdir -p "$tmp/cache/abc123/skills"
+  printf '{"plugins":{"ship@ship":[{"installPath":"%s"}]}}' "$tmp/cache/abc123" > "$tmp/installed.json"
+  out=$(printf '{"session_id":"","cwd":"%s"}' "$tmp/repo" | SHIP_INSTALLED="$tmp/installed.json" recap)
+  check 'after an update, names the copy stage.sh moves the session to' '[[ "$out" == *"-> abc123): its skills are $tmp/cache/abc123/skills"* && "$out" != *"this session'"'"'s ship skills"* ]]'
   printf '1\n2\n' > .ship-done
   out=$(printf '{"session_id":"","cwd":"%s"}' "$tmp/repo" | recap)
   check 'no fable warning once its task is logged' '[[ "$out" == *"done Task 2: second [fable]"* && "$out" != *"report is gone"* ]]'

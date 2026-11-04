@@ -332,7 +332,9 @@ reran a 90-second suite only to read the name tail had cut. A full run whose onl
 - **`smoke:`** the repo's automated end-to-end smoke, in two halves. `branch <cmd>` runs
   against the worktree's own server once, in BUILD's pre-flight, and again only if the tree
   changed before landing (LAND's step 0); never per milestone push or per task, because a
-  smoke can cost real model calls (cells-app's: about 12 bot turns, about 13 cents). `main <cmd>`
+  smoke can cost real model calls (cells-app's: about 12 bot turns, about 13 cents). Close the
+  QA's browser pages and stop the branch's phone app first: their polling slowed a Swain reply
+  past the smoke's 120 s wait, and the rerun with them closed passed (swain-goals-skills). `main <cmd>`
   runs once per landing, after the deploy watch, against what landing put live, or main's
   own server where main deploys nothing (cells-app: `local-pack.sh --restart` smokes main on
   localhost). It is the one check that sees ships together: each branch was tested alone,
@@ -969,7 +971,8 @@ he asks.
   on the card or in the `result:` line. A review makes the branch correct, not bigger
   (Pete, 2026-11-01, from Theo's Sol loop): decline a nit (style, naming, a comment or doc
   that isn't wrong) and anything the spec doesn't ask for, unless it's security, money or
-  data loss, and count them as `nits=<n>` on that reader's ledger row. The moment triage ends, before the first fix, one
+  data loss, and count them as `nits=<n>` on that reader's ledger row. The moment triage ends, both readers back and
+  their overlap sorted (a row logged before the second reader returns gets `only` and real/false wrong), before the first fix, one
   ledger row per reader, since the tally lives only in context and a compaction during the
   fixes loses it (cc-bridge logged both rows empty): `route.py log
   repo=<repo> ship=<slug> review=opus real=<n> false=<n> only=<n> seconds=<n>` and the same
