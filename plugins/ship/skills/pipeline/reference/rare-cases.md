@@ -13,7 +13,8 @@ where they differ.
   ~/.claude/ship-active/$CLAUDE_CODE_SESSION_ID`, and narrate the fork the moment you
   create it (`forked feature/<slug> off main @ <path>`).
 - Screenshots: `<shots-root>` is the session's launch directory, which teardown does
-  not remove, so delete `<shots-root>/.ship-shots/<slug>/` yourself after landing.
+  not remove, so delete `<shots-root>/.ship-shots/<slug>/` yourself after landing, unless the ship is
+  EXPRESS, whose `result:` line names them.
 
 ## Landing variants
 

@@ -30,9 +30,13 @@ concluding "looks right" is exactly the failure this skill exists to prevent.
 The running app is **already up** — in ship's TEST the target is the branch's preview link
 when ship built one (the host, database and sign-in Pete will test), else the worktree's dev
 server, booted for you; standalone, boot it first and note the URL. Ready means the URL answers:
-poll it with curl up to a deadline and watch the dev log for errors, never a process grep,
-since a dev server can build for minutes before it listens. Reuse that stack, never
-boot a second. A preview behind the host's login wall (Vercel protection) is reached with its
+for the worktree's own server, `scripts/listener.sh <port>` in the pipeline skill's directory,
+then one request to the URL, both with the Bash sandbox off (a sandboxed curl at localhost
+prints 000); for a remote URL, a curl loop up to a deadline, in a script file. Watch the dev
+log for errors, never a process grep, since a dev server can build for minutes before it
+listens. Then load each route the change added once before the walk: a dev server compiles a
+route on its first request, and CEL-192's first call to a new API route came back 401 while it
+compiled. Reuse that stack, never boot a second. A preview behind the host's login wall (Vercel protection) is reached with its
 automation bypass, never through Pete's browser, and the secret never sits in a tool call
 or a URL, where the transcript keeps it (chrome-devtools' `emulate` extraHttpHeaders would
 put it there). Let the CLI read it and set the cookie: `vercel curl / --deployment <host> --
@@ -63,7 +67,10 @@ where the host is small (two starts at once ran an 8 GB Docker VM out of memory)
 
 **The seeded account is the QA run's alone while it walks.** Never invite Pete to poke at
 the app on the same seeded user mid-run — his concurrent clicks read as bugs. Seed a second
-user for his hands-on look, or wait for the result.
+user for his hands-on look, or wait for the result. The run's own other pages count too:
+before a step that reads or clears what's unread, send every other page signed in as that
+person to `about:blank`, since an open page marks replies read as they arrive (yonder-skin's
+phone showed no unread dot for three tries while a web page sat on the chat).
 
 **iOS, through agent-device: a native app on Pete's own iPhone ("iPhone PM") or an Xcode
 simulator, and mobile web only ever in a simulator.** A web app is tested in the browser,
@@ -74,7 +81,9 @@ whose Safari is never used (Pete, 2026-10-05), unless Pete asks for it or the fe
 on the network the phone is on (a VPN or tailnet name a simulator can't join). Then drive
 iPhone PM's Safari by coordinates: `press` the address field, `fill` the URL, `press` the
 keyboard's Go key. `open <url>` doesn't navigate the open tab and `keyboard return` times
-out on the device (2026-10-14). For a native app the phone is the real
+out on the device (2026-10-14). A simulator check that only looks at a page runs headless,
+with no agent-device and no Simulator.app, which opens on Pete's screen: `xcrun simctl boot
+<udid>`, `xcrun simctl openurl <udid> <url>`, `xcrun simctl io <udid> screenshot <png>`. For a native app the phone is the real
 thing, so it is the default whenever `agent-device devices` lists it; otherwise a booted
 simulator. In a repo whose contract has `ios:`, run it whenever the app can see the change
 (its native code, or the server and APIs it calls): it builds the branch's own app, pointed
@@ -127,6 +136,9 @@ the Mac", the way a locked iPhone does; steps that capture nothing still run.
 
 ## 2. Write the QA script → run it → fix → rerun (≤ 3 fix rounds per failing step)
 
+**A diff of only tests, evals or test scripts** has no page: its own run, green, with no
+assertion, skip or threshold loosened, is the walk.
+
 **A diff that touches only docs gets a fact check in place of the app walk.** Every path,
 command, script, function, table and section the doc names exists and is tracked on the
 branch (`git ls-files`, not the disk), every constant it quotes matches the code, it renders
@@ -149,7 +161,9 @@ STORYBOARD (a GATED ship's frames and `~/.claude/skills/impeccable/reference/cra
 or none). Then numbered steps, each one thing a person does and what they should see:
 "4. Scroll up slowly past the first page of history → the message you were reading stays
 put". Cover every acceptance criterion, every frame the change built (a visible gap from
-its frame is a failure), the edges the spec names, and a clean console. Start at least
+its frame is a failure), the edges the spec names, and a clean console. A changed helper's callers, and theirs, decide
+which screens the script walks: eca-finder-193 planned a page that renders none of the helpers
+it changed. Start at least
 one walk the way a person most naturally would, from nothing, not from seeded state: the
 walkie-visit QA only walked showings at a seeded home, and Pete's first try, a showing at
 a new address, hit a path nobody had built. A step that sets by hand a state the feature
@@ -160,6 +174,22 @@ Homebody's stages. Post one line
 before running, `QA: <n> steps on <surface> — <qa.md path>`, so Pete can watch and steer;
 what he says mid-run changes the run.
 
+**Pick cases that can fail.** A step that would pass on main's code proves nothing:
+- A fix's regression test runs once with the fix's source files put back to main's copy, and
+  goes red; quote that red in the evidence (CEL-100). A data fix is checked on a row main's
+  code gets wrong: every card live-label-rows first reached was labeled right by the old match.
+- A feature that returns a list gets one case where a large result is certain, and a small
+  count there fails: homebody-onboarding's rental search found 1 of 6 real Denver homes, and
+  the small-town walks read the same gap as a thin market.
+- Removing an element walks the other jobs it did: homebody-skin's disc behind the phone face
+  also caught taps and hid scrolled text.
+- A CSS rule is proven by computed style on the real element (`evaluate_script` with
+  `getComputedStyle`), never by a test that greps the stylesheet: yonder-skin's underline
+  passed one and read `none` on the page, beaten by a more specific rule.
+- On a shared backend, the job a step counts is one this run started: read back its starter
+  and the deployment it ran on (live-label-rows' guest joined a search another session had
+  begun a minute earlier, on other code).
+
 **Time the hot path.** A change to a query or endpoint a page waits on gets timed at data
 level on production-sized data, main's code against the branch's, and a slowdown toward
 the backend's limit is a failure (Convex stops a function at 1 s of execution). Loading
@@ -167,7 +197,10 @@ one row per section took a catalog search from 2.1 s to 7 s past the gates and b
 reviewers; only this timing caught it. Time it in the runtime it runs in: node ran
 eca-finder's Convex scan 10 to 15 times faster than Convex did (53 ms in node, over 1 s on
 prod), so a Convex function runs read-only through `convex run --inline-query` and its time
-comes from `convex logs --success --jsonl` (eca-finder's checks skill has the recipe).
+comes from `convex logs --success --jsonl` (eca-finder's checks skill has the recipe). A memory claim is timed the same way: five or more
+runs of main and the branch, interleaved, and a peak confirmed with the heap capped
+(`--max-old-space-size`); CEL-113's one max-RSS reading showed a 0.4 GB rise that was GC
+timing, and the peak had gone down.
 
 **Seed, then read it back.** Before the walk, read each seeded record back through the
 same backend and stage the app's server uses, and print which one. Two cells-app runs
@@ -181,7 +214,11 @@ its origin, and the walk lost a round to "No alert by that id".
   script-fired event passes where a real right-click or drag fails. `emulate` covers the
   390px layout and dark mode (a screenshot right after a viewport change can come back blank
   with the DOM fine: take it again before calling it a bug); `handle_dialog` answers a native prompt. Check the console and
-  failed requests as you go. On a long page, `take_snapshot` with a `filePath` and grep
+  failed requests as you go. A desktop walk starts with `resize_page` at 1440x900, since the
+  default page is narrower (CEL-184 opened in its overlay layout). A proof shot waits for a known row's text first, since one taken
+  right after `navigate_page` catches the loading frame (a `.jpg` path saves as `.jpeg`). After
+  an edit mid-walk, judge the step again from a fresh load: a hot reload of the open page reads
+  as a bug. On a long page, `take_snapshot` with a `filePath` and grep
   the file for the uid you need, rather than reading the whole tree back each time. A form
   that starts paid work (a model, a tier, a run): set its cost fields first and submit with
   its button, never Enter in a field, which submits with whatever defaults are left. Where
@@ -226,6 +263,16 @@ its origin, and the walk lost a round to "No alert by that id".
     INTERRUPTED" means another session holds it: `pgrep -fl 'xcodebuild.*AgentDeviceRunner'`
     shows the device id and the owner pid in the xctestrun name. Ask that session
     (ListAgents) or test in a simulator, and say which in the result (2026-10-14).
+  - On a loaded Mac `open` can hang: give it `--timeout 300000` rather than retrying, since
+    each retry restarts the shared daemon a sibling ship may be using. After one hang, check
+    the phone once with `xcrun devicectl device process launch --device <udid> <bundle>`, then
+    test in a simulator and say so (CEL-192, CEL-193). An XCTest passcode or Enable UI
+    Automation prompt on the phone is Pete's to answer: park the step with `needs input:`.
+  - A fresh simulator clone asks for the mic, then the camera, mid-walk: decline unless the
+    step needs them (cel-202).
+  - A ref that reads `[covered]` (a SwiftUI `.sheet`'s controls) ignores `press` and `fill`
+    without an error: tap its coordinates in points from the screenshot, then snapshot to see
+    it took (CEL-135, CEL-193).
   - A phone another ship just released can still answer `DEVICE_IN_USE` for that ship's
     session handle: reuse it with `--session <that id>`, never close it, since it is theirs.
   - Never `press` a ref you didn't just read back from a snapshot. An empty or stale one
@@ -286,8 +333,16 @@ started the way §1 says, the old one stopped first and the URL polled until it 
 every step the fix could touch. The same step failing twice means the
 last fix was a guess: call the Skill tool with `mattpocock-skills:diagnosing-bugs` and get a loop that goes red
 on it (a test, a script, a trace) before the next fix. Three fix rounds on the same
-failing step without a pass: stop, and hand the caller what keeps failing with its evidence. A step you can't reach (a
-mic, a bot check, a missing device, an auth wall with no test-auth path) makes the result
+failing step without a pass: stop, and hand the caller what keeps failing with its evidence. A run that never reached the feature (a model chose not
+to take the path under test) tested nothing: rerun it, never call it a fail; after two such
+misses, prove the route directly and feed one model session its exact input (CEL-60's voice
+model answered itself on 3 of 3 calls; CEL-241 spent 25 minutes on spoken calls). A model
+provider out of credit or down: check once more, use the repo's alternate billing where it has
+one, else the step is `unverifiable` with the provider's error (CEL-127, CEL-132, CEL-73). A
+step the pipeline proves at data level instead (its TEST: a path no person can trigger, real
+records that cost money or that test-auth can't seed, a walk the brief forbids) counts as
+walked that way, and its EVIDENCE line says so. Any other step you can't reach (a mic, a bot
+check, a missing device, an auth wall with no test-auth path) makes the result
 `unverifiable`, naming the step, even when everything else passed. Never loop forever; never
 merge unproven.
 
@@ -337,7 +392,11 @@ directory). A process: `pgrep -f <pattern>`, never `ps | grep`, which matches it
 and reports a server that isn't there yet (CEL-169 ran its checks early that way). A reply to
 a request that starts agent work: snapshot once within about 30 s before a long `wait_for`, since
 the work can stop first on a confirm or approval card ("Allow Yonder to open this website?" held
-yonder-parity's wait 280 s).
+yonder-parity's wait 280 s). Keep each `wait_for` under about 110 s and repeat it: past the
+harness's ~120 s it moves to the background and still holds the page, so the next snapshot or
+click queues behind it (CEL-149). On a long page, poll for the text with `evaluate_script`
+instead, since `wait_for` prints the whole snapshot each call (homebody-skin's Settings ran
+700 lines).
 
 ## 3. Regression sweep — you run the codified checks; fix red directly
 
@@ -347,8 +406,9 @@ the sandbox is the sandbox, never a red to fix.
 Run it in full before the first QA run, and again once after the last fix round, once its
 last edit is in: a sweep started before then reports on code that's gone. Between rounds,
 run it **scoped** to what the fix touched: the typecheck, plus the tests that cover the
-changed files (the contract's `scoped` command, else `vitest run --changed` or `jest
---onlyChanged`; `vitest related` found no tests at all on cells-app's multi-project config,
+changed files (the contract's `scoped` command, else the runner's changed mode through the
+repo's test script so its pretest hooks run, `npm test -- --changed` or `-- --onlyChanged` for
+jest; `vitest related` found no tests at all on cells-app's multi-project config,
 so a scoped run that finds none for a code change is a miss to check, not a pass). In ship, the final full run can wait for
 LAND's step 0, which runs it when the tree changed since the last one. Stop the worktree's dev server
 before a production build (`next build` and `next dev` both write `.next`) and restart it

@@ -111,9 +111,11 @@ These are facts, not process — the process lives in SKILL.md.
   limit refuses while `gh api rate_limit` still shows budget (six eca-finder runs, 2026-10-29).
   The REST forms: `gh api repos/<o>/<r>/pulls -f head=<branch> -f base=main -f title=<t> -F
   body=@<file> -F draft=true` to open, `gh api -X PATCH repos/<o>/<r>/pulls/<n> -F
-  body=@<file>` to edit, `gh api repos/<o>/<r>/pulls/<n> -q .mergeable` (null means GitHub is
-  still working it out: ask again), `gh api -X PUT repos/<o>/<r>/pulls/<n>/merge -f
-  merge_method=squash -f sha=<head>` to merge, then `git push origin --delete <branch>`.
+  body=@<file>` to edit, `gh api repos/<o>/<r>/pulls/<n> -q .mergeable_state` (`clean`, or `unstable` with only
+  optional checks red, merges; `unknown` means GitHub is still working it out: ask again),
+  `gh api -X PUT repos/<o>/<r>/pulls/<n>/merge -f merge_method=squash -f sha=<head> -f
+  commit_title='<title> (#<n>)' -F commit_message=@<body file>` to merge, so the squash commit
+  takes the PR body, then `git push origin --delete <branch>`.
   Taking a PR out of draft has no REST form: wait on `gh pr ready` and retry it.
 - **A background `git push` can hang on a credential prompt** no one sees.
   `GIT_TERMINAL_PROMPT=0 timeout 90 git push` fails fast instead (eca-finder, 2026-10-29).

@@ -71,12 +71,14 @@ What scales is the ceremony before TEST, and you size it, not Pete:
   `result:` line. No branch readers: REVIEW's two-lab read belongs to SELF-DIRECTED and
   GATED, except one Wonder read (`muse.py review`) before TEST when the diff is text a model
   reads (a prompt, a tool description) or acts on the machine (kills processes, deletes
-  files, force-pushes): CEL-181 and CEL-134 shipped one-reader bugs there. A change to a
+  files, force-pushes): CEL-181 and CEL-134 shipped one-reader bugs there. A text transform
+  or a row filter still gets REVIEW's corpus run. A change to a
   function many callers share is SELF-DIRECTED, however small. A dab of `ponytail` (smallest diff), and `impeccable` for anything
   visual. The first Pete hears of it is the links. A diff that touches only docs has no
   build input and no page: it skips the gates, pre-flight and app walk, and TEST is
   verify's docs fact check instead. A diff of only tests, evals or test scripts has no page
-  either: its own run, green, is its QA (CEL-231, CEL-256).
+  either: its own run, green, with no assertion, skip or threshold loosened, is its QA
+  (CEL-231, CEL-256).
 - **SELF-DIRECTED — real work with no taste question in it.** Write whatever
   machine-facing spec/plan *you* need to build it well, then build, run the full REVIEW
   machinery (the fresh-eyes review, then TEST's QA run — its `works` is the bar
@@ -288,10 +290,13 @@ Every key is optional, and the default is what a repo with no contract gets:
   starts with `set -euo pipefail`: without it, `npm test | tail -8` exits with tail's code,
   and CEL-180's script printed green over a failed test. Hold the runner's exit before any
 filter, and filter with `grep -E` rather than `tail`, so a red names its failing test
-(browser-replay reran a 90-second suite only to read the name tail had cut): `rc=0; npm test
-> <log> 2>&1 || rc=$?; grep -E 'FAIL|Test Files|Tests ' <log> || true; exit $rc`. A `|| true` on
+(browser-replay reran a 90-second suite only to read the name tail had cut): `rc=0; <gate
+command> > <log> 2>&1 || rc=$?; grep -E 'FAIL|●|Test Files|Tests:? ' <log> || true; [ "$rc" = 0 ]`,
+which stops the script on red and goes on to the next gate on green. A `|| true` on
 the test pipeline itself turned six red tests green (CEL-182, CEL-260). A gate run stopped
-early is killed by its own process group (`kill -- -<pgid>`), never a Mac-wide `pkill -f
+early is killed by its own process group: every Bash call runs in a group of its own, so
+`kill -- -$(ps -o pgid= -p <runner pid> | tr -d ' ')` from another call takes that run and
+nothing else, never a Mac-wide `pkill -f
 vitest`, which takes sibling ships' runs with it. A full run whose only failures are
   in files the diff never touched, under heavy load from sibling ships (timeouts, or a set
   that moves between unrelated files from run to run), reruns just those files alone. If
@@ -303,8 +308,8 @@ vitest`, which takes sibling ships' runs with it. A full run whose only failures
   the server's record in `.next`, so the repo's stop command later finds nothing and the next
   start dies on EADDRINUSE (CEL-221, CEL-213): stop the dev server before a build, start it
   again after. A ship whose job is load timeouts ranks tests by duration from one loaded run, rather
-  than hand-writing a ranker (CEL-214 and CEL-228 each did): `npx vitest run
-  --reporter=json --outputFile=<job tmp>/run.json`, then `jq -r '.testResults[].assertionResults[]
+  than hand-writing a ranker (CEL-214 and CEL-228 each did): `npm test --
+  --reporter=json --outputFile=<job tmp>/run.json` (through the repo's script, as above), then `jq -r '.testResults[].assertionResults[]
   | "\(.duration) \(.fullName)"' <job tmp>/run.json | sort -rn | head -20`.
 - **`preview:`** a command that prints this branch's preview links, one per app, with
   each build's state (cells-app: `scripts/preview-links.sh`, which reads Vercel). Ship
@@ -482,9 +487,10 @@ base branch.
   in): run the wait as a background Bash call, which wakes the session when it exits:
   `until [ -z "$(gh pr list --state open --search '<keys>' --json number -q '.[].number')" ];
   do sleep 300; done` in a script file. A sibling with no PR yet reads as landed there, so
-  wait on its worktree instead, until its `.ship-stage` is gone (CEL-260). Give it no
-  deadline; if it does stop (a usage pause, a restart), start it again rather than landing
-  early.
+  wait on its worktree instead: until `git worktree list` shows it, then until its `.ship-stage`
+  is gone (CEL-260). Give it no deadline; if it does stop (a usage pause, a restart), start it
+  again rather than landing early. A sibling whose `.ship-stage` sits unchanged for two hours
+  with no live session is stalled: tell Pete in one line and keep waiting.
 
 **Never stack on a branch that hasn't landed.** Asked to build on top of another
 ship's branch, branch off main anyway, cherry-pick only the commits you need from it,
@@ -499,7 +505,7 @@ with them: this one lands after it, and its Merge Danger says "lands after #N". 
 session (none in ListAgents, its `.ship-stage` not moving) is a stalled ship: resume it in
 that worktree at its stage, PR and all. A fresh fork beside it once rebuilt CEL-103 while
 its first run sat at `build:6:7` with PR #200 open. A hit with a live session is another
-ship's: tell Pete in one line and stop. Also `git log origin/main --since=7.days --format='%h
+ship's: tell Pete in one line and stop. Also `git log origin/<base> --since=7.days --format='%h
 %s' -- <files the card names>`: a hit whose PR meets the card's done-when lines already did
 it (CEL-241 rebuilt one), so close the card with that PR instead.
 
@@ -1031,7 +1037,8 @@ he asks.
   look whenever he likes; it never holds the ship. Boot the dev server detached, from the worktree root by absolute path (`cd <worktree> &&`
   first: the shell keeps the last `cd`, and one into `packs/homebody` started `npm run dev`
   in the wrong folder), never through a bounded pipe (`nohup <dev>
-  > dev.log 2>&1 &`, then wait with this skill's `scripts/listener.sh <port>` — a `| head
+  > dev.log 2>&1 &`, then wait with this skill's `scripts/listener.sh <port>` and load the URL once with the
+  sandbox off, since a port can listen before the app answers — a `| head
   -50` has SIGPIPE'd a server mid-verify)
   and `show.sh <root> <slug> test <url>` the URL it printed (`preview` for a preview link). A feature behind an auth gate needs its test-auth path
   working on both, or it 403s and reads as broken (incidents: Backends). Never run a
@@ -1050,7 +1057,8 @@ he asks.
   presented card references somewhere durable before teardown, or the card 404s its
   own proof (incidents: Worktrees), then delete `<shots-root>/.ship-shots/<slug>/`,
   which teardown doesn't remove unless it sits in the worktree. An EXPRESS ship keeps it,
-  since its `result:` line names those shots.
+  since its `result:` line names those shots; when `<shots-root>` is the worktree, it moves
+  them to the main checkout's `.ship-shots/<slug>/` before teardown and names those.
 - **Before the QA run, check the wiring.** Run the contract's `stack:` (a ✗ is yours to
   fix first), and look at what landing will change in the backend: a change that
   **removes or renames** a backend function or table lands in two passes, first the app
@@ -1094,7 +1102,7 @@ he asks.
     list, so a reader's objection can't vanish in triage. Every number in the body, or in a
     comment posted anywhere, comes from recorded output, rechecked before posting and after a
     compaction (eca-finder's catalog pass posted two wrong ones from memory), and an image
-    links by commit (`blob/<sha>/<path>?raw=true`), since `--delete-branch` kills a branch
+    committed on the branch links by commit (`blob/<sha>/<path>?raw=true`), since `--delete-branch` kills a branch
     link. Take the counts from the reader's
     ledger rows, which outlive a compaction (`grep '"ship": "<slug>"'
     ~/.claude/ship-ledger.jsonl`): `false` is wrong, `nits` plus any real one left as a call
@@ -1105,7 +1113,7 @@ he asks.
   - **`broken` after three fix rounds on one step, or `unverifiable`: park.** End the turn with
     `needs input:` ("test: <feature> — couldn't prove it works: <reason>") and hand Pete
     the result and evidence. A step the run couldn't reach (a mic, a bot check, a device
-    it couldn't open) makes the result partial, and partial is `unverifiable`, never a
+    it couldn't open) and didn't prove at data level (below) makes the result partial, and partial is `unverifiable`, never a
     footnote on a landing. Three ships went to Pete with a known gap and he found it in
     minutes ("this should have been tested before you sent it").
 - **Render the review card** (SELF-DIRECTED and GATED; an EXPRESS ship has none, and its
@@ -1150,13 +1158,17 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
      worktree first orphans them (peggy-qa's `qa-run.sh remove`); delete any test data the run
      kept for itself, the way the checks skill says, while the worktree's server still
      answers, since the cleanup needs it and Clerk's test instance caps at 100 people.
-     cells-app needs nothing here: main's restart after landing prunes a landed worktree's
-     people with its stage (CEL-168), and `--people --finish` sweeps every stale person on
-     the stage too, 5 to 20 minutes (four runs). Then `stage.sh <root> land`, then `git fetch origin`; if main moved, absorb it in a call of
+     In cells-app that is the person a recording walk used (verify's iPhone bullets: `npm run
+     prune -- --people --finish <clerk id>`, which sweeps the stage's other stale people too, 5
+     to 20 minutes over four runs); leave the rest to main's restart after landing, which
+     prunes a landed worktree's people with its stage once they've been idle 30 minutes
+     (CEL-168). Then `stage.sh <root> land`, then `git fetch origin`; if main moved, absorb it in a call of
      its own and see it merged clean before any gate or stop runs (CEL-140 sent the merge and
      the gates in parallel, and they ran on a half-merged tree), then re-gate by overlap
      (REVIEW). An absorb whose files overlap what the QA run walked or measured reruns those
-     steps; one that touched only imports and tests keeps the pass, and the PR says so
+     steps on a target built from the merged tree (a preview, once step 0's push has built);
+     one whose overlap is only tests, or import lines that still name the same code, keeps the
+     pass, and the PR says so
      (drop-per-activity-round, live-search-waits). Two checks follow, each on its own condition. The
      full gates run once here if the tree changed since their last run (TEST's fix rounds run
      scoped), unless a land script the repo names gates the merged tree (cells-app's `land-pr.sh`,
@@ -1174,9 +1186,11 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
      it on that reading). Put the smoke's result line in the commit that follows it (`git
      restore next-env.d.ts` first: `next dev` rewrites it and the rebase refuses the dirty
      file), and push everything step 0 committed; run `stack:` once more; bring the `pr`-shaped body from TEST up to date with what actually
-     shipped (the squash commit takes it); stop the worktree's dev server, by the pid
-     `listener.sh` printed, now that nothing needs it, since from the main checkout the stop
-     command finds main's (cells-skin stopped main's :3000); for each other open PR's branch, `git cherry HEAD
+     shipped (the squash commit takes it); stop the worktree's dev server now that nothing
+     needs it, from the worktree with the repo's stop command (cells-app: `scripts/dev.sh
+     --stop`), else by its process group once `listener.sh <port>`, run again, names this
+     worktree, since from the main checkout the stop command finds main's (cells-skin stopped
+     main's :3000); for each other open PR's branch, `git cherry HEAD
      origin/<branch> origin/main` (a script file) prints `-` for each of its commits this branch
      carries, and a hit lands after that PR ("Never stack"); `gh pr ready <#>`; confirm `gh pr view <#> --json mergeable`
      says `MERGEABLE`. Those and the merge go through GitHub's GraphQL limit, which sibling
@@ -1187,22 +1201,21 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
      worktree, whatever an older note says (a session launched inside its worktree can't
      leave: Landing variants). Main's pull is step 4, and a server main runs locally restarts
      after it (cells-app's is `smoke: main`, `local-pack.sh <pack> --restart`, after the
-     deploy watch), so both serve what landed (#294 had put them before the merge). Run 2–4
-     by absolute path against the main checkout every time (`wt -C <main> remove …`, `gh pr
-     merge <#> -R <owner/repo> …`, `git -C <main> pull --ff-only`): the shell can still sit in
+     deploy watch), so both serve what landed (#294 had put them before the merge). Steps 2–4
+     name the main checkout in every command: the shell can still sit in
      the worktree after `ExitWorktree` succeeds, or in the removed folder after `wt remove`
      (CEL-233, CEL-217, swain-intro-prequel). If it answers that no EnterWorktree session is
      active, `cd <main checkout>` after step 4, so the next ship's `EnterWorktree` can take.
      When the guard still refuses git against the main checkout, leave its pull to the next
      session in it and say so in the `result:` line: the next fork branches from origin/main
      either way (peggy-qa, 2026-10-26).
-  2. `wt remove feature/<slug> -f` — frees the branch for `--delete-branch`. Then, from the
+  2. `wt -C <main> remove feature/<slug> -f` — frees the branch for `--delete-branch`. Then, from the
      main checkout, `rm -rf <worktree>` once `git worktree list` no longer shows it: the
      harness's `.claude/.cc-writes` keeps the folder alive (31 such stubs had piled up by
      2026-11-03). When the harness refuses because the folder is the session's own working
      directory, leave it: `wt-sweep` removes an emptied one once nothing stands in it.
-  3. `gh pr merge <#> --squash --delete-branch` — from the main checkout.
-  4. `git pull --ff-only` (+ `git branch -D feature/<slug>` if a local branch
+  3. `gh pr merge <#> -R <owner/repo> --squash --delete-branch`.
+  4. `git -C <main> pull --ff-only` (+ `git -C <main> branch -D feature/<slug>` if a local branch
      lingers: a squash merge rewrites the commits, so `wt remove` and git both call the
      branch unmerged and keep it, and only `-D` takes it). Dirty main checkout (another session's work) → skip the local ff
      and run any deploy from a throwaway worktree pinned to `origin/main`.
@@ -1226,8 +1239,8 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
   teardown: take new ones from the main checkout for every post-landing check. Wait on a
   Vercel build with `vercel inspect <url> --wait --timeout <t>`, never `vercel ls` through
   grep, which misses "Building". Find a merge's build to wait on with `vercel ls -m
-  githubCommitSha=<full sha>`: a short one matches nothing. Send `vercel ls` to a file, never
-  a pipe, which aborts it (SIGABRT, two eca-finder runs). A CLI `--prod` deploy in a repo whose git integration also
+  githubCommitSha=<full sha>`: a short one matches nothing. Send `vercel ls` to a file in the
+  job's tmp, never into `| head`, which aborts it (SIGABRT, two eca-finder runs). A CLI `--prod` deploy in a repo whose git integration also
   builds main starts a second production build about 30 s later, and that one ends up live:
   watch it too (eca-finder, 2026-10-26). A diff that touches nothing
   `live:` builds deploys nothing: skip the deploy and say so in the `result:` line, since a
