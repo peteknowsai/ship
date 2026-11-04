@@ -50,9 +50,10 @@ JEV = {'url': 'https://api.typesafe.ai/v1/systemone', 'model': 'jev-latest',
 FABLE_UNTIL = datetime.datetime(2026, 10, 29, 18, tzinfo=datetime.timezone.utc)
 POOL = {'opus': 'anthropic', 'driver': 'anthropic', 'wonder': 'muse', 'sonnet': 'anthropic',
         'fable': 'fable', 'astra': 'openai', 'sol': 'openai', 'spark': 'muse'}
-# Jev takes 64k tokens per request, and pasted text runs near 3
-# characters a token, so a request packs items until text plus questions reach this.
-REQUEST_CHARS = 120_000
+# Jev takes 64k tokens per request but only 32k for the state plus any one question
+# (docs.typesafe.ai/models), and dense text runs 2.5 characters a token, so a request
+# packs items until text plus questions reach this. 442 decisions take about 10 requests.
+REQUEST_CHARS = 60_000
 QUESTION_CHARS = 800
 
 
@@ -389,19 +390,22 @@ def selftest():
         ask = lambda b: ({}, {f'q{i}': {} for i in b})  # noqa: E731
         try:
             answers, model = decide(list(range(40)), ask)
-            decide(list(range(3)), ask, lambda i: REQUEST_CHARS // 2 + 1)
+            split, _ = decide(list(range(3)), ask, lambda i: REQUEST_CHARS // 2 + 1)
             broke.append(True)
-            try:
-                decide([0], ask)
-                credits = ''
-            except RuntimeError as error:
-                credits = str(error)
+            failures = []
+            for key in ('k', ''):
+                os.environ['TYPESAFE_API_KEY'] = key
+                try:
+                    decide([0], ask)
+                except RuntimeError as error:
+                    failures.append(str(error))
         finally:
             urllib.request.urlopen = real
         check('jev-latest at TypeSafe answers every item, a new request each REQUEST_CHARS',
-              set(urls) == {JEV['url']} and set(models) == {'jev-latest'} and model == 'jev-test'
-              and len(answers) == 40 and sizes == [40, 1, 1, 1])
-        check('a Jev 402 raises and says to tell Pete', 'out of credits; tell Pete now' in credits)
+              set(urls) == {'https://api.typesafe.ai/v1/systemone'} and set(models) == {'jev-latest'}
+              and model == 'jev-test' and len(answers) == 40 and sizes == [40, 1, 1, 1] and len(split) == 3)
+        check('a Jev 402 raises and says to tell Pete; no key raises too, so recall falls back',
+              len(failures) == 2 and 'out of credits; tell Pete now' in failures[0] and 'no key' in failures[1])
         log(['repo=ship', 'task=2', 'engine=fable', 'score=3.4', 'seconds=300', 'fix_rounds=1', 'gates_first_pass=false'])
         open(ledger_path(), 'a').write('{"half a line\n')
         log(['repo=ship', 'task=1', 'engine=astra', 'score=0.8', 'seconds=120', 'fix_rounds=0', 'gates_first_pass=True'])
