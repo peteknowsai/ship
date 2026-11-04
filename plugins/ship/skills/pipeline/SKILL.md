@@ -1113,7 +1113,10 @@ Mechanics only: nothing is reviewed here. Merge, watch it go live, tidy up.
      which stands in for the overlap re-gate too; Landing variants names what still runs
      here), with the worktree's dev server stopped and any simulator shut, since a loaded box
      turns a full suite's slow tests into timeouts that read as real red. `smoke: branch` runs
-     once here, with the server back up, if the diff since the commit carrying its last result
+     once here, with the server back up on the app the smoke drives (a QA of another app
+     leaves its link and keys behind: ttowns-civic-feed's worktree kept the ttowns pack's
+     `.vercel` link and token, and every Homebody turn failed on a Blob 403; copy back what
+     the main checkout has), if the diff since the commit carrying its last result
      line touches what the app carries: anything but docs, tests, the review card and its shots,
      or the repo's own skip rule where it has one (cells-app's `scripts/lib/smoke-skip.sh`).
      That is a first smoke of code the last one never saw: a repo's "no reruns" (cells-app's,

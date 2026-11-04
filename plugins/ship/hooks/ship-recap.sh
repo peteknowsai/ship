@@ -25,7 +25,8 @@ recap() {
   # recap names the same copy stage.sh would, never the one the session started on.
   local new; new=$(jq -r '.plugins["ship@ship"][0].installPath // empty' "${SHIP_INSTALLED:-$HOME/.claude/plugins/installed_plugins.json}" 2>/dev/null || true)
   if [ -n "$new" ] && [ -d "$new/skills" ] && [ "$(basename "$new")" != "$(basename "$plugin")" ]; then
-    echo "- ship was updated since this session started ($(basename "$plugin") -> $(basename "$new")): its skills are $new/skills; reread its pipeline SKILL.md for this stage and call scripts there, since the newer rules win"
+    echo "- ship was updated since this session started ($(basename "$plugin") -> $(basename "$new")): its skills are $new/skills; reread what changed, below by file and section, and call scripts there, since the newer rules win"
+    [ -f "$new/skills/pipeline/scripts/what-changed.sh" ] && bash "$new/skills/pipeline/scripts/what-changed.sh" "$plugin" "$new" 2>/dev/null | sed 's/^/ /'
   else
     echo "- this session's ship skills: $plugin/skills (call the pipeline's scripts there)"
   fi
