@@ -12,8 +12,8 @@ reviews; its build mode is unused since 2026-10-24), `bash plugins/ship/hooks/sh
 --selftest` the recap a ship prints into its context after each compaction, `branch-db.py --selftest` the copy of
 the Convex dev database each worktree gets, `icon-check.py --selftest` the
 pre-flight's check that every page has a browser icon and a Home Screen icon, and
-`mac-vm.sh --selftest` the slot bookkeeping of the two headless Mac VMs ships borrow to walk a
-Mac app with agent-desktop (Lume; `mac-vm.sh base` rebuilds the base in ~30 min, run in the background). The bare
+`mac-vm.sh --selftest` the bookkeeping of the headless Mac VM ships borrow to walk a
+Mac app with agent-desktop, and of Pete's own kept VM beside it (Lume; `mac-vm.sh base` rebuilds the base in ~30 min, run in the background). The bare
 `/ship` slash command is a *personal* command at `~/.claude/commands/ship.md` (a thin
 dispatcher to `ship:pipeline`) — plugin commands are always namespaced `plugin:command`,
 so a command in this repo would surface as the awkward `/ship:ship`. Don't add one back.
@@ -74,12 +74,18 @@ Take a page down by hand with `share.py stop <key>` (keys are in links.json).
 
 ## ship-vms — the Mac VMs in the menu bar
 
-`menubar/ship-vms.swift` is Pete's menu bar item for the two Mac VM slots: the icon counts the
-VMs in use, the menu lists each slot's holder from `mac-vm.sh status`, and a click on a held slot
+`menubar/ship-vms.swift` is Pete's menu bar item for the Mac VMs. Apple lets two run at once, so
+ships get one slot, always a fresh clone, and Pete gets one VM of his own, `pete-mac`, kept between
+uses with his Apple Account and apps in it. Agents drive his VM only through his `my-mac` skill
+(claude-home), never a ship, since his messages are on its screen; `mine` refuses from a worktree
+with a `.ship-stage`, a tripwire for accidents rather than a lock. The icon counts the ship VMs in
+use, the menu lists the slot's holder from `mac-vm.sh status` and starts, opens or shuts down his
+VM (`mine up`, `view mine`, `mine down`), and a click on a held slot
 runs `mac-vm.sh view <n>`, which asks the VM's own headless `lume run` process to show its screen
 in a window. Closing or quitting that window only hides it; the VM keeps running. The catch: a
 viewed VM's Lume process then refuses to quit, so it holds up a logout or restart until its ship
-returns the slot (`lume stop ship-mac-<n>` ends it sooner, and the ship's walk with it). A click
+returns the slot or Pete shuts his VM down (`lume stop ship-mac-<n>` ends a ship's sooner, and its
+walk with it). A click
 while the slot is still booting says the VM isn't running yet. Only Pete's click opens one: a
 ship never runs `view`, and nothing but that rule stops it. A launchd agent (`md.cells.ship-vms`, plist in
 `menubar/`) starts it at login and calls mac-vm.sh in THIS main checkout, so a script change goes
