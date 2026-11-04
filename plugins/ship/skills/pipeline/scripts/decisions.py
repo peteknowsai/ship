@@ -216,13 +216,22 @@ def selftest():
             os.chdir(here)
             del os.environ['SHIP_DECISIONS']
         check('--file reads the JSON from a file', payload(['log', '--file', reply]) == ['log', open(reply).read()])
+        try:
+            payload(['log', '--file', os.path.join(tmp, 'absent.json')])
+            missing = ''
+        except SystemExit as error:
+            missing = str(error)
+        check('a missing --file exits with one line', "can't read it" in missing)
     print(f'decisions self-test: {fails} failed')
     return fails == 0
 
 
 def payload(args):
     if len(args) >= 2 and args[-2] == '--file':
-        return args[:-2] + [open(args[-1]).read()]
+        try:
+            return args[:-2] + [open(args[-1]).read()]
+        except OSError as error:
+            raise SystemExit(f"decisions: --file {args[-1]}: can't read it ({error.strerror})")
     return args
 
 
@@ -239,11 +248,15 @@ if __name__ == '__main__':
             sys.exit('decisions: recent takes a positive count')
         print(recent(store(), int(args[1]) if len(args) == 2 else 5))
     elif len(args) == 2 and args[0] == 'log':
-        append(store(), decide(args[1]))
+        event = decide(args[1])
+        append(store(), event)
+        print(f"decisions: logged {event['id'][:8]}")
     elif len(args) == 3 and args[0] == 'supersede':
         path = store()
         old = full_id(path, args[1])
-        append(path, decide(args[2], old))
+        event = decide(args[2], old)
+        append(path, event)
+        print(f"decisions: logged {event['id'][:8]}, superseding {old[:8]}")
         append(path, {'id': str(uuid.uuid4()), 'kind': 'supersede', 'supersedes': old,
                       'date': datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='seconds')})
     else:

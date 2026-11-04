@@ -239,6 +239,14 @@ def log(pairs):
     if 'review' in row and isinstance(row.get('owned'), int) and isinstance(row.get('real'), int) \
             and row['owned'] > row['real']:
         raise SystemExit(f"route log: owned={row['owned']} is more than real={row['real']}")
+    if 'task' in row and not re.fullmatch(r'\d+[a-z]?(,\d+[a-z]?)*', str(row['task'])):
+        raise SystemExit(f"route log: task={row['task']} isn't a plan task (3, 3b or 5,6); "
+                         "a reader's tally is review=<engine> real= false= nits=")
+    if 'task' in row and 'review' not in row and 'note' not in row and row.get('repo') and row.get('ship'):
+        earlier = logged(row['repo'], row['ship'], str(row['task']))
+        if earlier:
+            raise SystemExit(f"route log: task {row['task']} of {row['ship']} is already logged ({earlier}); "
+                             "log it again only with note=<why>")
     out = row.pop('out', None)  # a wrapper's out-dir: its `seconds` file is the run's own wall time
     if out and 'seconds' not in row:
         try:
@@ -272,6 +280,22 @@ def log(pairs):
     if 'review' not in row and 'task' in row:
         mark_build(os.getcwd(), task=row['task'])
     return row
+
+
+def logged(repo, ship, task):
+    """The timestamp of an earlier build row for this task, if there is one."""
+    try:
+        lines = open(ledger_path()).read().splitlines()
+    except OSError:
+        return None
+    for line in lines:
+        try:
+            r = json.loads(line)
+        except ValueError:
+            continue
+        if (r.get('repo'), r.get('ship'), str(r.get('task'))) == (repo, ship, task) and 'review' not in r:
+            return r.get('ts')
+    return None
 
 
 def band(score):
@@ -468,6 +492,21 @@ def selftest():
         finally:
             os.chdir(here)
         check('a combined task=5,6 counts two', open(stage).read() == 'build:5:9')
+        refused = []
+        for pairs in (['repo=ship', 'ship=dup', 'task=review', 'engine=opus'],
+                      ['repo=ship', 'ship=dup', 'task=3', 'engine=opus']):
+            try:
+                log(pairs)
+            except SystemExit as error:
+                refused.append(str(error))
+        check('task=review is refused, pointing at review=', len(refused) == 1 and 'review=<engine>' in refused[0])
+        try:
+            log(['repo=ship', 'ship=dup', 'task=3', 'engine=opus'])
+            again = ''
+        except SystemExit as error:
+            again = str(error)
+        check('a second row for one task is refused without a note', 'already logged' in again)
+        check('with a note it goes in', log(['repo=ship', 'ship=dup', 'task=3', 'engine=opus', 'note=redo'])['note'] == 'redo')
         check('a review row with only above real is refused', bad)
         wrapped = os.path.join(tmp, 'wrapped')
         os.makedirs(wrapped)

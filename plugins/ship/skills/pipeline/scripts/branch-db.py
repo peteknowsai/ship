@@ -98,6 +98,27 @@ def npx(args, cwd, input=None, env=None):
     return r.stdout + r.stderr
 
 
+def settings(src, app):
+    """dev's settings as NAME=value lines, or (None, why). Under an agent (AI_AGENT, CLAUDECODE)
+    the CLI lists names only unless asked for values (convex 1.48); a CLI older than the flag
+    has no agent check, so it is asked again without one."""
+    for flags in (["--include-values"], []):
+        r = subprocess.run(["npx", "convex", "env", "list", *flags, "--deployment", src], cwd=app,
+                           capture_output=True, text=True, env=clean_env())
+        if not (r.returncode and "unknown option" in r.stderr):
+            break
+    return check_settings(r.returncode, r.stdout, src)
+
+
+def check_settings(code, text, src):
+    if code or not text.strip():
+        return None, f"couldn't read dev's settings from {src}"
+    bare = [l for l in text.splitlines() if l.strip() and "=" not in l]
+    if bare:
+        return None, f"dev's settings came back as names without values ({bare[0]} first)"
+    return text, None
+
+
 def create_cmd(ref):
     return ["npx", "convex", "deployment", "create", ref, "--type", "dev", "--expiration", EXPIRY]
 
@@ -129,6 +150,10 @@ def up(worktree, app_rel="."):
     if not src:
         print(f"branch-db: {why}")
         return 0 if why.startswith("already") else 1
+    # Read the settings before making the copy, so a failed read leaves nothing to expire.
+    env_lines, why = settings(src, app)
+    if not env_lines:
+        sys.exit(f"branch-db: {why}; no copy made")
     ref = f"dev/{slug(branch)}"
     r = subprocess.run(create_cmd(ref), cwd=app, capture_output=True, text=True, env=clean_env())
     if r.returncode and "exist" in (r.stdout + r.stderr).lower():
@@ -143,11 +168,7 @@ def up(worktree, app_rel="."):
         sys.exit(f"branch-db: couldn't read the new deployment from: {out[-400:]}")
     new = m.group(1)
     # Settings go straight from one deployment to the other, never through a file.
-    lst = subprocess.run(["npx", "convex", "env", "list", "--deployment", src], cwd=app,
-                         capture_output=True, text=True, env=clean_env())
-    if lst.returncode or not lst.stdout.strip():
-        sys.exit(f"branch-db: couldn't read dev's settings from {src}; the copy {new} is left to expire")
-    npx(["env", "set", "--force", "--deployment", new], app, input=lst.stdout)
+    npx(["env", "set", "--force", "--deployment", new], app, input=env_lines)
     tmp = tempfile.mkdtemp(prefix="branch-db-")
     # `convex dev` rewrites the app's .env.local to the copy and adds a .gitignore when there
     # is none; put the env file back if the copy fails, so a rerun starts over.
@@ -246,6 +267,9 @@ def selftest():
         os.environ["CONVEX_DEPLOY_KEY"] = "prod:x|y"
         assert "CONVEX_DEPLOY_KEY" not in clean_env() and clean_env(A="1")["A"] == "1"
         del os.environ["CONVEX_DEPLOY_KEY"]
+        assert check_settings(0, "A=1\nB=two\n", "s")[0] == "A=1\nB=two\n"
+        assert "names without values (A first)" in check_settings(0, "A\nB\n", "s")[1]
+        assert check_settings(1, "A=1\n", "s")[0] is None and check_settings(0, " \n", "s")[0] is None
         cmd = create_cmd("dev/x-1")
         assert cmd[3:5] == ["create", "dev/x-1"] and cmd.count("dev/x-1") == 1, cmd
         print("branch-db selftest: ok")
