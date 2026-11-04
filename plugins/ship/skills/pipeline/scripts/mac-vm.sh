@@ -1,9 +1,10 @@
 #!/bin/bash
-# mac-vm.sh: two macOS VMs that ships borrow to check a Mac app with agent-desktop, so nothing
-# a check opens, clicks or captures shows on Pete's screen or touches his apps, logins and
-# permissions. Lume runs them headless, with no window and no VNC, until Pete opens one from his
-# menu bar (menubar/ in the ship repo). Every borrow boots a fresh clone of the base, so a ship
-# never sees another's leftovers.
+# mac-vm.sh: a macOS VM that ships borrow to check a Mac app with agent-desktop, so nothing a
+# check opens, clicks or captures shows on Pete's screen or touches his apps, logins and
+# permissions, and Pete's own VM beside it. Lume runs them headless, with no window and no VNC,
+# until Pete opens one from his menu bar (menubar/ in the ship repo). Every borrow boots a fresh
+# clone of the base, so a ship never sees another's leftovers. Pete's VM is kept: it holds his
+# Apple Account and apps, and agents drive it only through his my-mac skill, never a ship.
 #   mac-vm.sh borrow [--wait]      take a free slot (--wait: up to 8 min) and boot a fresh clone; prints SLOT=<n> IP=<ip>
 #   mac-vm.sh run <n> <cmd>        a shell command in slot n as user lume (agent-desktop and node on PATH)
 #   mac-vm.sh tunnel <n> <port>    the VM's localhost:<port> reaches this Mac's localhost:<port>
@@ -11,7 +12,9 @@
 #   mac-vm.sh shot <n> <out.png>   the VM's whole screen, saved on this Mac
 #   mac-vm.sh return <n>           stop and delete the clone, free the slot
 #   mac-vm.sh status               each slot's holder and when it last used it
-#   mac-vm.sh view <n>             slot n's screen in a window on this Mac: Pete's menu bar click, never a ship
+#   mac-vm.sh view <n>|mine        that VM's screen in a window on this Mac: Pete's menu bar click, never a ship
+#   mac-vm.sh mine up|down         start Pete's VM (the first start clones the base), or shut it down cleanly
+#   mac-vm.sh mine run <cmd>       a shell command in Pete's VM; mine shot <out.png> its whole screen
 #   mac-vm.sh base                 rebuild the base from Apple's newest macOS (~30 min, a 20 GB download)
 #   mac-vm.sh grant                rerun only the base's last step, the offline one, after it failed
 #   mac-vm.sh --selftest           the slot bookkeeping, against a fake lume and ssh
@@ -22,18 +25,20 @@ self=$(cd "$(dirname "$0")" && pwd)/$(basename "$0")
 dir=${SHIP_MAC_DIR:-$HOME/.config/ship-mac}
 key=$dir/vm_key
 base=ship-mac-base
-slots=2              # Apple's macOS license allows two macOS VMs running on one Mac
+slots=${SHIP_MAC_SLOTS:-1}  # Apple allows two macOS VMs running on one Mac, and Virtualization
+mine=pete-mac               # enforces it: one for ships, one Pete's own, kept between uses
 stale=$((2 * 3600))  # a slot unused this long, or whose worktree is gone, can be taken again
 
 vm() { echo "ship-mac-$1"; }
 info() { lume get "$1" -f json 2>/dev/null | jq -r "(if type == \"array\" then .[0] else . end).$2 // empty" 2>/dev/null; }
 ipof() { info "$1" ipAddress; }
 sshv() {  # sshv <vm> <args...>: one control connection per VM, kept until return, so tunnels ride it
-  local name=$1; shift
+  local name=$1 ip; shift
+  ip=$(ipof "$name"); [ -n "$ip" ] || { echo "$name isn't running" >&2; return 255; }
   ssh -i "$key" -o IdentitiesOnly=yes -o BatchMode=yes -o HostKeyAlias=ship-mac -o CheckHostIP=no \
     -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$dir/known_hosts" -o ConnectTimeout=5 \
     -o LogLevel=ERROR -o ControlMaster=auto -o ControlPath="$dir/$name.sock" -o ControlPersist=yes \
-    -o ServerAliveInterval=15 -o ServerAliveCountMax=4 "lume@$(ipof "$name")" "$@"
+    -o ServerAliveInterval=15 -o ServerAliveCountMax=4 "lume@$ip" "$@"
 }
 close() { ssh -o ControlPath="$dir/$1.sock" -O exit x 2>/dev/null || true; }
 
@@ -76,6 +81,7 @@ status() {
     if held "$n"; then v=$(lease "$n"); echo "slot $n: ${v%|*}, last used $(( ($(date +%s) - ${v##*|}) / 60 )) min ago"
     else echo "slot $n: free"; fi
   done
+  echo "mine: $(info "$mine" status || true)"
 }
 
 boot() {  # boot <vm>: headless, then wait for ssh and the logged-in desktop. Called under if, so set -e
@@ -104,7 +110,7 @@ wipe() {  # wipe <vm>: its connection, then the VM. Lume's delete leaves a --det
 borrow() {
   local n waited=0
   until n=$(take); do
-    [ "${1:-}" = --wait ] || { echo "both Mac VMs are out:" >&2; status >&2; exit 3; }
+    [ "${1:-}" = --wait ] || { echo "every ship Mac VM is out:" >&2; status >&2; exit 3; }
     [ $waited -lt 480 ] || { echo "no Mac VM came free in 8 min:" >&2; status >&2; exit 3; }
     sleep 20; waited=$((waited + 20))
   done
@@ -118,11 +124,29 @@ borrow() {
   echo "SLOT=$n IP=$(ipof "$name")"
 }
 give_back() { wipe "$(vm "$1")"; rm -f "$dir/slots/$1"; }
+halt() {  # halt <vm>: shut down from inside, since lume stop powers off and a kept disk loses writes
+  local i
+  sshv "$1" 'sudo shutdown -h now' >/dev/null 2>&1 || true; close "$1"
+  for i in $(seq 60); do [ "$(info "$1" status)" = stopped ] && return 0; sleep 2; done
+  return 1
+}
+mine_up() {  # the first start clones the base; every later one boots the same kept disk
+  case "$(info "$mine" status)" in
+    running) return 0 ;;
+    "") lume clone "$base" "$mine" >/dev/null || return 1 ;;
+  esac
+  boot "$mine"
+}
+capture() {  # capture <vm> <out.png>: its whole screen, saved on this Mac
+  sshv "$1" 'f=/tmp/shot-$$.png; agent-desktop screenshot --screen 0 "$f" >/dev/null && cat "$f"; rm -f "$f"' > "$2" || true
+  [ -s "$2" ] || { rm -f "$2"; echo "no screenshot" >&2; exit 1; }
+}
 
 grant_offline() {  # the base's last step, on its stopped disk, where nothing running can write it back
   local whole rc=0
   [ "$(info "$base" status)" = stopped ] || { echo "$base is running or missing; stop it first" >&2; return 1; }
-  whole=$(hdiutil attach -imagekey diskimage-class=CRawDiskImage -nomount -nobrowse "$HOME/.lume/$base/disk.img" 2>/dev/null | awk 'NR==1{print $1}')
+  whole=$(hdiutil attach -imagekey diskimage-class=CRawDiskImage -nomount -nobrowse "$HOME/.lume/$base/disk.img" 2>/dev/null |
+    awk '$2 == "GUID_partition_scheme" {print $1; exit}')  # its lines come in any order
   [ -n "$whole" ] || { echo "could not attach the base's disk" >&2; return 1; }
   write_offline "$whole" || rc=$?
   hdiutil detach "$whole" -force >/dev/null 2>&1 || { echo "could not detach it: hdiutil detach $whole -force" >&2; rc=1; }
@@ -144,7 +168,8 @@ for c in plistlib.loads(sys.stdin.buffer.read())["Containers"]:
   sqlite3 "$mp/Library/Application Support/com.apple.TCC/TCC.db" "INSERT OR REPLACE INTO access
     (service, client, client_type, auth_value, auth_reason, auth_version, csreq, flags, last_reminded) VALUES
     ('kTCCServiceAccessibility', '/usr/libexec/sshd-keygen-wrapper', 1, 2, 4, 1, $req, 0, 4102444800),
-    ('kTCCServiceScreenCapture', '/usr/libexec/sshd-keygen-wrapper', 1, 2, 4, 1, $req, 0, 4102444800);" &&
+    ('kTCCServiceScreenCapture', '/usr/libexec/sshd-keygen-wrapper', 1, 2, 4, 1, $req, 0, 4102444800),
+    ('kTCCServiceSystemPolicyAllFiles', '/usr/libexec/sshd-keygen-wrapper', 1, 2, 4, 1, $req, 0, 4102444800);" &&
   # Setup Assistant's mini mode opened at every login on the Apple Account page. A login turns
   # MiniBuddyLaunch on when the key is missing, and setup turns it off once finished, as on Pete's
   # Mac; so it is written off, and the saved session that reopened Setup Assistant goes.
@@ -158,7 +183,8 @@ req="X'FADE0C000000003C0000000100000006000000020000001D636F6D2E6170706C652E73736
 
 build_base() {
   local n
-  for n in $(seq 1 $slots); do ! held "$n" || { echo "slot $n is out; the base waits until both are back" >&2; status >&2; exit 3; }; done
+  for n in $(seq 1 $slots); do ! held "$n" || { echo "slot $n is out; the base waits until it is back" >&2; status >&2; exit 3; }; done
+  [ "$(info "$mine" status)" != running ] || { echo "Pete's VM is running, and the base would be a third: mine down first" >&2; exit 3; }
   for n in $(seq 1 $slots); do give_back "$n"; done  # a stale slot's clone can still be running
   mkdir -p "$dir" && chmod 700 "$dir"
   [ -f "$key" ] || ssh-keygen -q -t ed25519 -N '' -C ship-mac -f "$key"
@@ -202,9 +228,7 @@ sudo sh -c 'printf "PasswordAuthentication no\nKbdInteractiveAuthentication no\n
 echo "base: macOS $v ($b), node $(node -v), agent-desktop $(agent-desktop version | jq -r .data.version)"
 EOF
   # Shut down from inside: lume stop powers off, and provisioning's last writes could be lost.
-  sshv "$base" 'sudo shutdown -h now' >/dev/null 2>&1 || true; close "$base"
-  for i in $(seq 60); do [ "$(info "$base" status)" = stopped ] && break; sleep 2; done
-  [ "$(info "$base" status)" = stopped ] || lume stop "$base" >/dev/null
+  halt "$base" || lume stop "$base" >/dev/null
   trap - EXIT
   grant_offline
   echo "base ready"
@@ -213,11 +237,23 @@ EOF
 selftest() {
   t=$(cd "$(mktemp -d)" && pwd -P); trap 'rm -rf "$t"' EXIT
   mkdir -p "$t/bin" "$t/cfg"
-  printf '#!/bin/sh\necho "$@" >> %s/lume.log\n[ "$1" = get ] && echo "{\\"ipAddress\\":\\"192.168.64.9\\"}"\nexit 0\n' "$t" > "$t/bin/lume"
-  printf '#!/bin/sh\nexit 0\n' > "$t/bin/ssh"
+  cat > "$t/bin/lume" <<EOF
+#!/bin/sh
+echo "\$@" >> $t/lume.log
+case "\$1" in  # a VM is made by clone, running from run, stopped by stop, gone after delete
+  get) s=; [ -f $t/made.\$2 ] && s=\$(cat $t/state.\$2 2>/dev/null || echo stopped)
+       echo "{\\"ipAddress\\":\\"192.168.64.9\\",\\"status\\":\\"\$s\\"}" ;;
+  clone) touch $t/made.\$3 ;;
+  run) echo running > $t/state.\$2 ;;
+  stop) echo stopped > $t/state.\$2 ;;
+  delete) rm -f $t/made.\$2 $t/state.\$2 ;;
+esac
+exit 0
+EOF
+  printf '#!/bin/sh\ncase "$*" in *shutdown*) echo stopped > %s/state.pete-mac ;; esac\nexit 0\n' "$t" > "$t/bin/ssh"
   chmod +x "$t/bin/lume" "$t/bin/ssh"
   for w in a b c; do git init -q "$t/$w"; done
-  me() { (cd "$t/$1" && SHIP_MAC_DIR=$t/cfg PATH="$t/bin:$PATH" bash "$self" "${@:2}"); }
+  me() { (cd "$t/$1" && SHIP_MAC_SLOTS=${ts:-2} SHIP_MAC_DIR=$t/cfg PATH="$t/bin:$PATH" bash "$self" "${@:2}"); }
   local fail=0 out
   check() { if [ "$2" = "$3" ]; then echo "ok   $1"; else echo "FAIL $1: got '$2', want '$3'"; fail=1; fi; }
   check "first borrow gets slot 1" "$(me a borrow)" "SLOT=1 IP=192.168.64.9"
@@ -249,6 +285,21 @@ selftest() {
   check "view opens any slot's screen, held or not" "$(grep -c '^attach ship-mac-2 --display native$' "$t/lume.log")" 1
   me c view 3 >/dev/null 2>&1 && out=0 || out=$?
   check "view refuses a slot past the two" "$out" 2
+  ts=1; me b borrow >/dev/null
+  me c borrow >/dev/null 2>&1 && out=0 || out=$?
+  check "by default ships share one slot" "$out" 3
+  me b return 1; ts=
+  check "Pete's VM shows as not made yet" "$(me c status | tail -1)" "mine: "
+  me c mine up >/dev/null; me c mine down; me c mine up >/dev/null
+  check "Pete's VM is cloned from the base once, then kept" "$(grep -c '^clone ship-mac-base pete-mac$' "$t/lume.log")" 1
+  check "and boots again on the same disk" "$(grep -c '^run pete-mac ' "$t/lume.log")" 2
+  check "status shows it running" "$(me c status | tail -1)" "mine: running"
+  me c base >/dev/null 2>&1 && out=0 || out=$?
+  check "the base won't build beside Pete's running VM" "$out" 3
+  me b borrow >/dev/null; me b return 1
+  check "no borrow or return touches Pete's VM" "$(grep -c -E '^(delete|stop) pete-mac' "$t/lume.log")" 0
+  me c view mine >/dev/null
+  check "view mine opens Pete's VM" "$(grep -c '^attach pete-mac --display native$' "$t/lume.log")" 1
   [ $fail = 0 ] && echo "mac-vm.sh selftest ok" || exit 1
 }
 
@@ -261,14 +312,20 @@ case "${1:-}" in
        tar -C "$(dirname "$app")" -cf - "$b" |
          sshv "$name" "pkill -f '/Users/lume/Applications/${b//./[.]}/' && sleep 1; mkdir -p ~/Applications && rm -rf ~/Applications/'$b' && tar -C ~/Applications -xf -"
        echo "/Users/lume/Applications/$b" ;;
-  shot) name=$(slot "${2:-}"); out=${3:?usage: mac-vm.sh shot <n> <out.png>}
-        sshv "$name" 'f=/tmp/shot-$$.png; agent-desktop screenshot --screen 0 "$f" >/dev/null && cat "$f"; rm -f "$f"' > "$out" || true
-        [ -s "$out" ] || { rm -f "$out"; echo "no screenshot" >&2; exit 1; } ;;
+  shot) name=$(slot "${2:-}"); capture "$name" "${3:?usage: mac-vm.sh shot <n> <out.png>}" ;;
   return) slot "${2:-}" >/dev/null; give_back "$2" ;;
   status) status ;;
-  view) valid "${2:-}"; lume attach "$(vm "$2")" --display native ;;  # no VNC to fall back on; closing or quitting the viewer only hides it
+  view) if [ "${2:-}" = mine ]; then name=$mine; else valid "${2:-}"; name=$(vm "$2"); fi
+        lume attach "$name" --display native ;;  # no VNC to fall back on; closing or quitting the viewer only hides it
+  mine) case "${2:-}" in
+          up) mine_up ;;
+          down) [ "$(info "$mine" status)" != running ] || halt "$mine" || { echo "$mine did not shut down in 2 min" >&2; exit 1; } ;;
+          run) shift 2; sshv "$mine" "$@" ;;
+          shot) capture "$mine" "${3:?usage: mac-vm.sh mine shot <out.png>}" ;;
+          *) echo "usage: mac-vm.sh mine up|down|run <cmd>|shot <out.png>" >&2; exit 2 ;;
+        esac ;;
   base) build_base ;;
   grant) grant_offline && echo "base ready" ;;  # the base's last step alone, after a failure there
   --selftest) selftest ;;
-  *) sed -n '2,19p' "$self"; exit 2 ;;
+  *) sed -n '2,22p' "$self"; exit 2 ;;
 esac
