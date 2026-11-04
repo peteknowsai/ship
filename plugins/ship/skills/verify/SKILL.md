@@ -329,7 +329,10 @@ marked, `['Barracuda']` unmarked) told the mark apart from Jev's ranking.
 
 **Wait on the real thing.** A server: `scripts/listener.sh <port>` (in the pipeline skill's
 directory). A process: `pgrep -f <pattern>`, never `ps | grep`, which matches its own grep
-and reports a server that isn't there yet (CEL-169 ran its checks early that way).
+and reports a server that isn't there yet (CEL-169 ran its checks early that way). A reply to
+a request that starts agent work: snapshot once within about 30 s before a long `wait_for`, since
+the work can stop first on a confirm or approval card ("Allow Yonder to open this website?" held
+yonder-parity's wait 280 s).
 
 ## 3. Regression sweep — you run the codified checks; fix red directly
 
