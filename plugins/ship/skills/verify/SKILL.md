@@ -277,7 +277,12 @@ found it again in the bot panel). A chat with a bot: the old thread keeps what t
 believed before the fix ("I can't move it"), so rerun in a fresh conversation, and check
 each sent message shows in the thread before waiting on a reply. One typed while the chat
 reads "Connecting..." can vanish, which is a finding, not a retype. Re-run the gates scoped (§3), push a fix under `convex/` to the BACKEND (`npx convex dev --once`),
-and rerun the failed steps plus
+and put the target on the fix before the rerun: a preview needs the branch pushed and its
+new build ready on the same alias; a target that builds the fixed code only at start (a
+container, a snapshot, a production build, or what the repo's docs say its dev server
+builds once, like cells-app's `lib/` into `lib/dist`) is rebuilt from the fixed tree and
+started the way §1 says, the old one stopped first and the URL polled until it answers
+(catalogue-soul reran against the old `lib/dist` for a round). Then rerun the failed steps plus
 every step the fix could touch. The same step failing twice means the
 last fix was a guess: call the Skill tool with `mattpocock-skills:diagnosing-bugs` and get a loop that goes red
 on it (a test, a script, a trace) before the next fix. Three fix rounds on the same
