@@ -174,7 +174,10 @@ def decide(items, build, cost=lambda item: QUESTION_CHARS):
             answers.update(reply['answers'])
             model = model or reply.get('model') or JEV['model']
     except Exception as error:
-        why = 'out of credits; tell Pete now' if '402' in str(error) else f'{type(error).__name__}: {error}'
+        code = getattr(error, 'code', None)  # an HTTPError's status
+        why = ('out of credits; tell Pete now' if code == 402 else
+               f"key rejected (env {JEV['env']} or keychain \"{JEV['keychain']}\")" if code == 401 else
+               f'{type(error).__name__}: {error}')
         print(f'route: Jev failed ({why})', file=sys.stderr)
         raise RuntimeError(f'Jev: {why}') from error
     return answers, model
@@ -381,7 +384,7 @@ def selftest():
             sent = json.loads(request.data)
             models.append(sent['model'])
             if broke:
-                raise urllib.error.HTTPError(request.full_url, 402, 'Payment Required', {}, None)
+                raise urllib.error.HTTPError(request.full_url, broke[-1], 'refused', {}, None)
             sizes.append(len(sent['questions']))
             return Reply(json.dumps({'model': 'jev-test', 'answers': {k: {'score': 1} for k in sent['questions']}}).encode())
         real = urllib.request.urlopen
@@ -391,9 +394,9 @@ def selftest():
         try:
             answers, model = decide(list(range(40)), ask)
             split, _ = decide(list(range(3)), ask, lambda i: REQUEST_CHARS // 2 + 1)
-            broke.append(True)
             failures = []
-            for key in ('k', ''):
+            for key, code in (('k', 402), ('k', 401), ('', 0)):
+                broke.append(code)
                 os.environ['TYPESAFE_API_KEY'] = key
                 try:
                     decide([0], ask)
@@ -404,8 +407,9 @@ def selftest():
         check('jev-latest at TypeSafe answers every item, a new request each REQUEST_CHARS',
               set(urls) == {'https://api.typesafe.ai/v1/systemone'} and set(models) == {'jev-latest'}
               and model == 'jev-test' and len(answers) == 40 and sizes == [40, 1, 1, 1] and len(split) == 3)
-        check('a Jev 402 raises and says to tell Pete; no key raises too, so recall falls back',
-              len(failures) == 2 and 'out of credits; tell Pete now' in failures[0] and 'no key' in failures[1])
+        check('a Jev 402 says to tell Pete, a 401 names where the key came from, no key raises too',
+              len(failures) == 3 and 'out of credits; tell Pete now' in failures[0]
+              and 'key rejected (env TYPESAFE_API_KEY or keychain "typesafe")' in failures[1] and 'no key' in failures[2])
         log(['repo=ship', 'task=2', 'engine=fable', 'score=3.4', 'seconds=300', 'fix_rounds=1', 'gates_first_pass=false'])
         open(ledger_path(), 'a').write('{"half a line\n')
         log(['repo=ship', 'task=1', 'engine=astra', 'score=0.8', 'seconds=120', 'fix_rounds=0', 'gates_first_pass=True'])
