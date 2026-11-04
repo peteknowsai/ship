@@ -1,7 +1,9 @@
 #!/bin/bash
 # stack-check: is this app's Vercel + Convex + Clerk wiring split cleanly into dev and prod?
 # Reads each Vercel project and flags anything crossed. Values are never printed.
-#   usage: stack-check.sh --scope <team> [--production-branch <branch>] <project> [<project>...]
+#   usage: stack-check.sh --scope <team> [--production-branch <branch>] <project>[:unreleased] ...
+# A project marked :unreleased has no production yet, so the checks only a live app can pass
+# (the Production deploy key, pk_live, prod's Convex settings) print as skipped, not crossed.
 # Checks, per project:
 #   git      linked to a repo, production branch main (or --production-branch, for a repo
 #            that builds production from a release branch)
@@ -27,10 +29,17 @@ team=$(api "/v2/teams/$scope" | jq -r '.id // empty')
 [ -n "$team" ] || { echo "no Vercel team '$scope' for this login" >&2; exit 2; }
 tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
 bad=0
-say() { printf '  %-7s %s %s\n' "$1" "$2" "$3"; [ "$2" = "✗" ] && bad=1; return 0; }
+say() {
+  printf '  %-7s %s %s\n' "$1" "$2" "$3"
+  case "$2" in "✗") bad=1; crossed=$((crossed + 1)) ;; "?") unchecked=$((unchecked + 1)) ;; esac
+  return 0
+}
+skip() { say "$1" "–" "unreleased: $2"; }
 
-for project in "$@"; do
-  echo "$project"
+for arg in "$@"; do
+  project=${arg%:unreleased}; unreleased=; [ "$project" != "$arg" ] && unreleased=1
+  crossed=0; unchecked=0
+  echo "$project${unreleased:+ (unreleased)}"
   info=$(api "/v9/projects/$project?teamId=$team")
   repo=$(jq -r '.link.repo // empty' <<<"$info"); branch=$(jq -r '.link.productionBranch // empty' <<<"$info")
   if [ -z "$repo" ]; then say git ✗ "not linked to a repo: a push deploys nothing, and a plain vercel deploy lands on production"
@@ -56,7 +65,7 @@ for project in "$@"; do
   key=$(targets_of CONVEX_DEPLOY_KEY)
   case "$key" in
     production) say convex ✓ "deploy key on Production only" ;;
-    "") say convex ✗ "no CONVEX_DEPLOY_KEY on Production: the production build cannot push functions" ;;
+    "") [ -n "$unreleased" ] && skip convex "no Production deploy key yet" || say convex ✗ "no CONVEX_DEPLOY_KEY on Production: the production build cannot push functions" ;;
     *) say convex ✗ "CONVEX_DEPLOY_KEY on $key: only Production may hold it" ;;
   esac
 
@@ -66,7 +75,11 @@ for project in "$@"; do
   # deploy key in ~/.config/<project>/convex-prod-deploy-key; skipped without them.
   dev_ref=$(printenv "CONVEX_DEV_$(tr '[:lower:]-' '[:upper:]_' <<<"$project")")
   prod_key="$HOME/.config/$project/convex-prod-deploy-key"
-  if [ -n "$dev_ref" ] && [ -f "$prod_key" ] && [ -n "${CONVEX_DIR:-}" ]; then
+  if [ -n "$unreleased" ]; then
+    skip convex "prod's settings not compared"
+  elif [ -z "$dev_ref" ] || [ ! -f "$prod_key" ] || [ -z "${CONVEX_DIR:-}" ]; then
+    say convex "?" "prod's settings not compared (needs CONVEX_DEV_<PROJECT>, the prod key file and CONVEX_DIR)"
+  else
     names() { (cd "$CONVEX_DIR/$project" 2>/dev/null || cd "$CONVEX_DIR"; env NODE_OPTIONS=--no-warnings "$@" npx convex env list 2>/dev/null | cut -d= -f1 | sort); }
     missing=$(comm -23 <(names CONVEX_DEPLOYMENT="$dev_ref") <(names CONVEX_DEPLOY_KEY="$(cat "$prod_key")") | tr '\n' ' ')
     [ -z "$missing" ] && say convex ✓ "prod has every setting dev has" || say convex ✗ "prod is missing: $missing"
@@ -77,6 +90,9 @@ for project in "$@"; do
     vercel env pull "$file" --environment "$target" --project "$project" --scope "$scope" --yes >/dev/null 2>&1
     pk=$(grep -E '^NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=' "$file" 2>/dev/null | cut -d= -f2- | tr -d '"')
     want=pk_test_; [ "$target" = production ] && want=pk_live_
+    if [ -n "$unreleased" ] && [ "$target" = production ] && [ "${pk:0:8}" != pk_live_ ]; then
+      skip clerk "Production not on live Clerk yet"; continue
+    fi
     case "$pk" in
       "") say clerk ✗ "$target has no Clerk publishable key" ;;
       "$want"*) say clerk ✓ "$target on ${want%_}" ;;
@@ -84,5 +100,8 @@ for project in "$@"; do
       *) say clerk "?" "$target key unreadable (stored as sensitive)" ;;
     esac
   done
+  if [ "$crossed" != 0 ]; then echo "  = $project: $crossed crossed"
+  elif [ "$unchecked" != 0 ]; then echo "  = $project: nothing crossed, $unchecked unchecked"
+  else echo "  = $project clean"; fi
 done
 exit $bad

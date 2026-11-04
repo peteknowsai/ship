@@ -1,17 +1,26 @@
 #!/bin/bash
 # listener.sh <port> [seconds]: wait for a server to listen on <port> (default 300 s: under
 # load cells-app's dev took about 4 minutes to open its port, CEL-175), then
-# print "pid <pid> cwd <dir>": the checkout it serves. A Next server's own cwd reads "/",
-# so it walks up the parent processes to the first real one. Exit 1 if nothing listens.
+# print "pid <pid> cwd <dir> [bin <dir>]": the checkout it serves. A Next server's own cwd
+# reads "/", so it walks up the parent processes to the first real one. bin is the checkout
+# whose node_modules the nearest parent runs from (`.../node_modules/.bin/next`); trust it over
+# cwd, which an app can move (Eve chdirs into the main checkout's agent folder, CEL-119).
+# Only an absolute path names it: a relative ./node_modules prints no bin.
+# Exit 1 if nothing listens.
 # listener.sh --selftest
 set -u
 if [ "${1:-}" = --selftest ]; then
   dir=$(mktemp -d); port=$((20000 + RANDOM % 20000))
-  (cd "$dir" && exec python3 -m http.server "$port" --bind 127.0.0.1 >/dev/null 2>&1) & server=$!
-  trap 'kill $server 2>/dev/null; rm -rf "$dir"' EXIT
+  mkdir -p "$dir/my app/node_modules/.bin"  # a space in the checkout's path survives
+  printf 'python3 -m http.server "$1" --bind 127.0.0.1\n' > "$dir/my app/node_modules/.bin/serve"
+  (cd "$dir" && exec bash "$dir/my app/node_modules/.bin/serve" "$port" >/dev/null 2>&1) & server=$!
+  trap 'pkill -P $server 2>/dev/null; kill $server 2>/dev/null; rm -rf "$dir"' EXIT
   got=$("$0" "$port" 10)
   real=$(cd "$dir" && pwd -P)
-  case "$got" in *"cwd $real") echo "listener self-test: 0 failed" ;; *) echo "listener self-test: 1 failed ($got)"; exit 1 ;; esac
+  case "$got" in
+    *"cwd $real bin $dir/my app"|*"cwd $real bin $real/my app") echo "listener self-test: 0 failed" ;;
+    *) echo "listener self-test: 1 failed ($got)"; exit 1 ;;
+  esac
   "$0" 1 1 >/dev/null 2>&1 && { echo "listener self-test: an empty port should fail"; exit 1; }
   exit 0
 fi
@@ -29,4 +38,19 @@ while :; do
   p=$(ps -o ppid= -p "$p" | tr -d ' ')
   [ -z "$p" ] || [ "$p" -le 1 ] && { cwd=/; break; }
 done
-echo "pid $pid cwd $cwd"
+bin=; q=$pid
+while [ -n "$q" ] && [ "$q" -gt 1 ]; do
+  c=$(ps -o command= -p "$q" 2>/dev/null)
+  case "$c" in
+    */node_modules/*)
+      pre=${c%%/node_modules/*}
+      case "$pre" in
+        *" /"*) bin="/${pre##* /}" ;;  # the path after the last " /", so a space inside it survives
+        /*) bin=$pre ;;
+        *) bin= ;;  # a relative ./node_modules says nothing a moved cwd can't spoil
+      esac
+      break ;;
+  esac
+  q=$(ps -o ppid= -p "$q" | tr -d ' ')
+done
+echo "pid $pid cwd $cwd${bin:+ bin $bin}"
