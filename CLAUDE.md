@@ -1,13 +1,14 @@
 # ship — the /ship plugin repo
 
 The Claude Code plugin behind `/ship` (marketplace `peteknowsai/ship`). Skills live in
-`plugins/ship/skills/` (`pipeline` is /ship itself, plus `verify`). Ship's `codex exec`
-wrapper is `plugins/ship/skills/pipeline/scripts/astra.sh`, used only when Pete asks to
-test in Codex, and `astra.sh --selftest` is its check;
-`route.py --selftest` checks the task counter and build ledger,
-`codex-handoff.py --selftest` the TEST hand-off to Pete's Codex app, and
-`decisions.py --selftest` the per-repo decision log, `muse.py --selftest` the Muse Code wrapper (Wonder Full's read-only plan and branch
-reviews; its build mode is unused since 2026-10-24), `bash plugins/ship/hooks/ship-recap.sh
+`plugins/ship/skills/` (`pipeline` is /ship itself, plus `verify`); the pipeline's rare
+shapes, contract keys, card rules and reader briefs sit in its `reference/`.
+`route.py --selftest` checks the task counter and build ledger (`route.py gate` records
+each check, `log` fills a task's time and first pass from them, `readers` refuses a landing
+until both branch readers are logged),
+`decisions.py --selftest` the per-repo decision log (`decisions.py stale` lists calls that
+give a retired engine a ship job), `muse.py --selftest` the Muse Code wrapper (Wonder Full's
+read-only plan and branch reviews), `bash plugins/ship/hooks/ship-recap.sh
 --selftest` the recap a ship prints into its context after each compaction, `branch-db.py --selftest` the copy of
 the Convex dev database each worktree gets, `icon-check.py --selftest` the
 pre-flight's check that every page has a browser icon and a Home Screen icon,
@@ -18,17 +19,6 @@ Mac app with agent-desktop, and of Pete's own kept VM beside it (Lume; `mac-vm.s
 `/ship` slash command is a *personal* command at `~/.claude/commands/ship.md` (a thin
 dispatcher to `ship:pipeline`) — plugin commands are always namespaced `plugin:command`,
 so a command in this repo would surface as the awkward `/ship:ship`. Don't add one back.
-
-## shipboard — board.cells.md
-
-`board/shipboard.mjs` renders the cross-repo departure board (merge queue, worktree
-stages, deploy health, field guide) and puts it to the `shipboard` R2 bucket (PKAI
-account). A launchd agent (`md.cells.shipboard`, plist copy in `board/`) runs it every
-60s from THIS main checkout — script edits go live on the next tick after merge, no
-deploy step. `board/worker/` is the `board.cells.md` Worker (R2 + index fallback);
-redeploy only when the worker itself changes (`npx wrangler deploy` in that dir).
-Add a repo to the board by extending `REPOS` at the top of the script.
-`node board/shipboard.mjs --dry` renders to /tmp/shipboard.html without uploading.
 
 ## ship-tabs — Chrome tab groups
 
@@ -100,11 +90,10 @@ from main, which rebuilds `~/.local/bin/ship-vms` and restarts the agent;
 to it in THIS main checkout, so a merge goes live on the next refresh with no deploy step.
 Line 1 is where you are: ship stage, else `📁 repo  main` in the main checkout (amber `⚠`
 when it's off main) or `🌳 repo ⎇ branch` in a linked worktree; `🚢 N` counts worktrees
-with a live `.ship-stage`. Line 2 is model, effort, context, then quota by vendor:
-`O 2% · F 2% ↻5d │ C 80% ↻4d`. O and F come from Anthropic's OAuth usage endpoint (token
-from the Keychain entry under `$USER`); C comes from ChatGPT's `wham/usage` with the token
-in `~/.codex/auth.json`, and shows the credit balance (`C 58k`) instead of 100% while
-credits remain, green until it drops under 10k, then red. Gray numbers with a trailing `?` mean that cache is over 30 minutes old,
+with a live `.ship-stage`, and `✋ N wait on you · oldest 3d` counts those whose marker is a
+`gate:*` stop. Line 2 is model, effort, context, then Anthropic quota, `O 2% · F 2% ↻5d`,
+from its OAuth usage endpoint (token from the Keychain entry under `$USER`). Gray numbers
+with a trailing `?` mean that cache is over 30 minutes old,
 so a dead token can't pass off old numbers as live. `bash plugins/ship/statusline-test.sh`
 is its check.
 
@@ -139,6 +128,10 @@ the text they loaded at startup — only new sessions get the change.
 - Every change rides a `wt` worktree off main, however small — same rails /ship itself uses.
 - Skill authoring discipline (pressure-test first) comes from skill-creator / superpowers
   writing-skills — this repo adds no workflow of its own.
+- **The pipeline skill stays under 1,000 lines.** It loads whole on every run. A lesson from
+  one run goes to `reference/incidents.md` first; a second run hitting it earns a line in
+  the skill. A rule only some ships need sits in a reference file behind a pointer that
+  names the case that sends a run there.
 - **Retros come by message, not GitHub issues** (Pete, 2026-10-05). Every finished run sends
   this repo's maintainer session, named `ship`, a retro on how it used ship (`ship retro
   from <repo>/<slug>:`), or writes it to `~/.claude/ship-retro/` when no `ship` session is

@@ -19,20 +19,20 @@ It's opinionated. Built for a hands-off, PM-style workflow: you stay in your lan
   | try it | open the app | — |
 
   "Show" brings that page's tab to the front (the newest of the preview and localhost for "open the app"). "Lock it" and "go" send those words as if you typed them, and the buttons hide until the turn they start ends. Reactions to a storyboard round still get typed, and "merge main" never gets a button. Since a lone digit in an empty prompt presses a button, a reply that is just `2` answers the gate.
-- **Stage-aware status line.** Which ship, what phase (`designing → planning → building → reviewing`), ships-in-flight and how many of them wait on you (`✋ 2 wait on you · oldest 3d`), your context + weekly budget, effort level. A bold banner when the ship you're in needs you.
+- **Stage-aware status line.** Which ship, what phase (`designing → planning → building → reviewing → testing → landing`), ships-in-flight and how many of them wait on you (`✋ 2 wait on you · oldest 3d`), your context + weekly budget, effort level. A bold banner when the ship you're in needs you.
 - **Opus 5.5 writes; two labs read.** The main session builds every task in its own loop. Muse Wonder Full reads the plan before BUILD, and Wonder and a fresh Opus subagent both read the branch at REVIEW, since a reader from the lab that wrote the code shares its blind spots. `scripts/route.py` keeps the ledger: each task's time and first-pass gates, filled from the clock and `route.py gate` runs, and each reader's real and false finds (`route.py report`).
-- **Ship tests it as Pete would, and a pass lands it.** TEST invokes the bundled `verify` skill: the session writes a QA script and runs it itself, in a browser through chrome-devtools and on iOS through agent-device (Pete's iPhone, or an Xcode simulator), fixes what fails and reruns, and its `works` lands the branch without waiting on Pete. Money paths, and changes Pete asked to try himself, still wait for his "merge main".
+- **Ship tests it as Pete would, and a pass lands it.** TEST invokes the bundled `verify` skill: the session writes a QA script and runs it itself, in a browser through chrome-devtools and on iOS through agent-device (Pete's iPhone, or an Xcode simulator), fixes what fails and reruns, and its `works` lands the branch without waiting on Pete. Money paths, one-way doors and changes Pete asked to try himself still wait for his "merge main".
 
 ## What's in the plugin
 
 - `skills/pipeline` — the pipeline playbook, its scripts, and the storyboard / plan-card / review-card templates.
-- `skills/verify` — fresh read-only verification against the running app before merge.
+- `skills/verify` — the QA run: writes a QA script, walks the running app the way Pete would, fixes what fails and reruns; its iPhone, Mac and browser extras load only when a repo needs them.
 - `hooks/` — the gate desktop-notification hook, and the gate-buttons mod (`register.ts`, a Claude Code mod; `claude plugin test plugins/ship` runs its tests).
 - `statusline.sh` — the stage-aware status line, with Anthropic quota.
 
 ## Requires
 
-Declared as plugin `dependencies` (Claude Code will prompt/handle them): **superpowers**, **ponytail**, **worktrunk** (`wt`), and **mattpocock-skills** (`pr` for the PR body and its merge-danger call, `diagnosing-bugs` for a finding that comes back, `writing-for-agents` for briefs; install it from Matt's own marketplace, `claude plugin marketplace add mattpocock/skills`, since the official one lags). Optional but recommended: **impeccable** (the craft floor, and its detector in BUILD's pre-flight) and the **image-gen** skill (imagery inside a frame) for the discovery stage — without them, the storyboard is drawn from the product's stylesheet alone, still fine.
+Declared as plugin `dependencies` (Claude Code will prompt/handle them): **superpowers**, **ponytail**, **worktrunk** (`wt`), and **mattpocock-skills** (`pr` for the PR body and its merge-danger call, `diagnosing-bugs` for a finding that comes back, `writing-for-agents` for briefs; install it from Matt's own marketplace, `claude plugin marketplace add mattpocock/skills`, since the official one lags). Optional but recommended: **impeccable** (the craft floor, and its detector in BUILD's pre-flight) for the discovery stage — without it, the storyboard is drawn from the product's stylesheet alone, still fine.
 
 ## Your standing stack stays personal
 
