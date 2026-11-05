@@ -2,32 +2,36 @@
 """Count a plan's BUILD tasks, and keep the ledger that judges how each was built.
 
   route.py plan <plan.md>        list the plan's tasks; JSON on stdout, a table on stderr
+  route.py gate <cmd> [args...]  run one gate command and record whether it passed
   route.py log key=value ...     append one task's outcome to the ledger
 Inside a ship, `plan` moves the stage marker to build:0:<tasks> and each `log` counts one
 task done, so the status line reaches BUILD without the driver remembering to say so.
-`plan` also saves the task list to .ship-route.json beside the marker, and `log task=<n>`
-fills that task's `routed` engine from it, so a task the driver handed to a subagent
-shows as engine=opus, routed=driver.
-  route.py log review=<opus|wonder> real=<n> false=<n> only=<n> seconds=<n> ...
-                                 append one REVIEW reader's tally for the ship: findings
-                                 that were real, false alarms, and real ones another
-                                 reader missed; it never counts as a BUILD task
+`plan` saves the task list to .ship-route.json beside the marker and starts the clock;
+each task row then fills what the driver didn't pass, never a guess:
+  seconds           wall time since the last `plan` or task `log`
+  gates_first_pass  whether the first `gate` run since then passed
+  fix_rounds        how many `gate` runs since then failed
+So commit the task, then log it, and run each check as one `gate` call (the scoped gate
+script is one command), so a red run is one fix round. Review and recall rows leave the
+clock alone.
+  route.py log review=<opus|wonder> stage=<plan|branch> real=<n> false=<n> only=<n> ...
+                                 append one reader's tally for the ship: findings that
+                                 were real, false alarms, and real ones another reader
+                                 missed; it never counts as a BUILD task
   route.py log recall=<shown> used=<n> ...
                                  append how many of the decisions `decisions.py relevant`
                                  showed the ship it actually used; never a BUILD task
-  route.py report                the ledger as a table by engine and difficulty, by
-                                 pool, then the reviewers'
-  route.py reader                the model that reads the branch at REVIEW (opus)
+  route.py readers repo=<r> ship=<s>
+                                 exit 0 once both branch readers are logged for the ship
+                                 (a wonder row whose note starts "out" counts, for Muse
+                                 being down); exit 1 naming the missing one
+  route.py report                the ledger as a table by engine, then the readers'
   route.py --selftest
 
 Opus 5.5 only (Pete, 2026-10-24): the driver builds every task in its own loop, so `plan`
-ranks nothing. The difficulty ranker that split tasks across Opus, Wonder and Sonnet is in
-git history (`git log -S ask_scores`). decisions.py still asks Jev through `decide` below.
-
-Key: TYPESAFE_API_KEY else keychain service "typesafe".
+ranks nothing. The Fable window and the pools are in git history (`git log -S FABLE_UNTIL`).
 The ledger is ~/.claude/ship-ledger.jsonl, or SHIP_LEDGER.
 """
-import datetime
 import json
 import os
 import re
@@ -35,23 +39,6 @@ import subprocess
 import sys
 import tempfile
 import time
-import urllib.error
-import urllib.request
-
-
-# The decision model: TypeSafe's newest Jev. SubQ is out (Pete, 2026-11-03: "all jev").
-JEV = {'url': 'https://api.typesafe.ai/v1/systemone', 'model': 'jev-latest',
-       'env': 'TYPESAFE_API_KEY', 'keychain': 'typesafe'}
-# Old ledger rows keep their pool; only opus and driver build since 2026-10-24, and fable
-# until FABLE_UNTIL: Pete's window to use the week's Fable quota before it resets (2026-10-28).
-FABLE_UNTIL = datetime.datetime(2026, 10, 29, 18, tzinfo=datetime.timezone.utc)
-POOL = {'opus': 'anthropic', 'driver': 'anthropic', 'wonder': 'muse', 'sonnet': 'anthropic',
-        'fable': 'fable', 'astra': 'openai', 'sol': 'openai', 'spark': 'muse'}
-# Jev takes 64k tokens per request but only 32k for the state plus any one question
-# (docs.typesafe.ai/models), and dense text runs 2.5 characters a token, so a request
-# packs items until text plus questions reach this. 442 decisions take about 10 requests.
-REQUEST_CHARS = 60_000
-QUESTION_CHARS = 800
 
 
 def ledger_path():
@@ -77,9 +64,9 @@ def stage_marker(start):
     return None
 
 
-def route_file(start):
+def beside_marker(start, name):
     marker = stage_marker(start)
-    return marker and os.path.join(os.path.dirname(marker), '.ship-route.json')
+    return marker and os.path.join(os.path.dirname(marker), name)
 
 
 def mark_build(start, task=None, total=None):
@@ -129,55 +116,19 @@ def parse_tasks(text):
     return tasks
 
 
-def api_key():
-    key = os.environ.get(JEV['env'])
-    if key is not None or os.environ.get('ROUTE_NO_KEYCHAIN'):
-        return key or None
+def read_route(path):
     try:
-        return subprocess.check_output(['security', 'find-generic-password', '-s', JEV['keychain'], '-w'],
-                                       text=True, stderr=subprocess.DEVNULL).strip() or None
-    except (OSError, subprocess.CalledProcessError):
+        return json.load(open(path))
+    except (OSError, ValueError):
         return None
 
 
-def batches(items, cost):
-    """Split items so each request stays under REQUEST_CHARS."""
-    batch, size = [], 0
-    for item in items:
-        if batch and size + cost(item) > REQUEST_CHARS:
-            yield batch
-            batch, size = [], 0
-        batch.append(item)
-        size += cost(item)
-    if batch:
-        yield batch
-
-
-def decide(items, build, cost=lambda item: QUESTION_CHARS):
-    """Ask Jev about every item; build(batch) gives one request's (state, questions).
-    Returns (answers by question name, model). Raises when Jev doesn't answer."""
-    key = api_key()
-    if not key:
-        raise RuntimeError(f"Jev: no key (env {JEV['env']} or keychain \"{JEV['keychain']}\")")
-    answers, model = {}, None
+def write_route(path, data):
     try:
-        for batch in batches(items, cost):
-            state, questions = build(batch)
-            body = json.dumps({'model': JEV['model'], 'state': state, 'questions': questions}).encode()
-            request = urllib.request.Request(JEV['url'], body, {'Authorization': f'Bearer {key}',
-                                                                'Content-Type': 'application/json'})
-            with urllib.request.urlopen(request, timeout=30) as response:
-                reply = json.load(response)
-            answers.update(reply['answers'])
-            model = model or reply.get('model') or JEV['model']
-    except Exception as error:
-        code = getattr(error, 'code', None)  # an HTTPError's status
-        why = ('out of credits; tell Pete now' if code == 402 else
-               f"key rejected (env {JEV['env']} or keychain \"{JEV['keychain']}\")" if code == 401 else
-               f'{type(error).__name__}: {error}')
-        print(f'route: Jev failed ({why})', file=sys.stderr)
-        raise RuntimeError(f'Jev: {why}') from error
-    return answers, model
+        with open(path, 'w') as f:
+            json.dump(data, f)
+    except OSError as error:  # the table on stdout still carries the tasks
+        print(f'route: could not save {path}: {error}', file=sys.stderr)
 
 
 def plan(path, now=None):
@@ -188,26 +139,59 @@ def plan(path, now=None):
     if not tasks:
         raise SystemExit(f'route: no "### Task" headings in {path}')
     where = os.path.dirname(os.path.abspath(path))
-    fable = (now or datetime.datetime.now(datetime.timezone.utc)) < FABLE_UNTIL
-    out, routable = [], 0
-    for t in tasks:  # in the window, every other routable task goes to Fable: half each (Pete, 2026-10-28)
-        engine = 'driver'
-        if fable and not re.search(r'\((driver|inline)\)', t['title']):
-            engine = 'fable' if routable % 2 == 0 else 'driver'
-            routable += 1
-        out.append({'n': t['n'], 'label': t['label'], 'title': t['title'], 'engine': engine})
+    out = [{'n': t['n'], 'label': t['label'], 'title': t['title']} for t in tasks]
     for row in out:
         print(f"{row['label']:4} {row['title'][:80]}", file=sys.stderr)
     result = {'plan': os.path.abspath(path), 'tasks': out}  # ship-recap.sh names it after a compaction
-    saved = route_file(where)
+    saved = beside_marker(where, '.ship-route.json')
     if saved:
-        try:
-            with open(saved, 'w') as f:
-                json.dump(result, f)
-        except OSError as error:  # the table on stdout still carries the tasks
-            print(f'route: could not save {saved}: {error}', file=sys.stderr)
+        old = read_route(saved) or {}
+        write_route(saved, {**result, 'anchor': old.get('anchor') or int(now or time.time())})
     mark_build(where, total=len(tasks))
     return result
+
+
+def gate(argv, start=None):
+    """Run one gate command with its output passing through, record the result beside the
+    marker, and return its exit code."""
+    if not argv:
+        raise SystemExit('route gate: give the gate command, e.g. route.py gate bash gates.sh')
+    try:
+        code = subprocess.call(argv)
+    except OSError as error:
+        print(f'route gate: {argv[0]}: {error.strerror}', file=sys.stderr)
+        code = 127
+    runs = beside_marker(start or os.getcwd(), '.ship-gates')
+    if runs:
+        with open(runs, 'a') as f:
+            f.write(json.dumps({'ts': int(time.time()), 'ok': code == 0, 'cmd': ' '.join(argv)[:200]}) + '\n')
+    return code
+
+
+def fill_task(row, start, now=None):
+    """Fill seconds, gates_first_pass and fix_rounds from the clock and the gate runs since
+    the last task row (or `plan`), then restart the clock. Values passed on the command line win."""
+    saved = beside_marker(start, '.ship-route.json')
+    route = saved and read_route(saved)
+    if not route or not route.get('anchor'):
+        return
+    anchor, now = route['anchor'], int(now or time.time())
+    if now > anchor:
+        row.setdefault('seconds', now - anchor)
+    runs_file = beside_marker(start, '.ship-gates')
+    runs = []
+    if runs_file and os.path.isfile(runs_file):
+        for line in open(runs_file).read().splitlines():
+            try:
+                run = json.loads(line)
+            except ValueError:
+                continue
+            if isinstance(run.get('ts'), int) and run['ts'] > anchor:
+                runs.append(run)
+    if runs:
+        row.setdefault('gates_first_pass', bool(runs[0].get('ok')))
+        row.setdefault('fix_rounds', sum(1 for r in runs if not r.get('ok')))
+    write_route(saved, {**route, 'anchor': max(now, anchor)})
 
 
 def coerce(value):
@@ -221,24 +205,27 @@ def coerce(value):
     return value
 
 
-def log(pairs):
-    if not pairs:
-        raise SystemExit('route log: nothing to log; pass key=value pairs')
-    row = {'ts': time.strftime('%Y-%m-%dT%H:%M:%S')}
+def pairs_to_row(pairs, cmd):
+    row = {}
     for pair in pairs:
         key, sep, value = pair.partition('=')
         if not sep:
-            raise SystemExit(f'route log: "{pair}" is not key=value')
+            raise SystemExit(f'route {cmd}: "{pair}" is not key=value')
         row[key] = coerce(value)
-    if 'review' in row and isinstance(row.get('only'), int) and isinstance(row.get('real'), int) \
-            and row['only'] > row['real']:
-        raise SystemExit(f"route log: only={row['only']} is more than real={row['real']}")
-    if 'review' in row and isinstance(row.get('owned'), int) and isinstance(row.get('real'), int) \
-            and row['owned'] > row['real']:
-        raise SystemExit(f"route log: owned={row['owned']} is more than real={row['real']}")
+    return row
+
+
+def log(pairs):
+    if not pairs:
+        raise SystemExit('route log: nothing to log; pass key=value pairs')
+    row = {'ts': time.strftime('%Y-%m-%dT%H:%M:%S'), **pairs_to_row(pairs, 'log')}
+    for part in ('only', 'owned'):
+        if 'review' in row and isinstance(row.get(part), int) and isinstance(row.get('real'), int) \
+                and row[part] > row['real']:
+            raise SystemExit(f"route log: {part}={row[part]} is more than real={row['real']}")
     if 'task' in row and not re.fullmatch(r'\d+[a-z]?(,\d+[a-z]?)*', str(row['task'])):
         raise SystemExit(f"route log: task={row['task']} isn't a plan task (3, 3b or 5,6); "
-                         "a reader's tally is review=<engine> real= false= nits=")
+                         "a reader's tally is review=<engine> stage=<plan|branch> real= false= nits=")
     if 'task' in row and 'review' not in row and 'note' not in row and row.get('repo') and row.get('ship'):
         earlier = logged(row['repo'], row['ship'], set(str(row['task']).split(',')))
         if earlier:
@@ -250,71 +237,65 @@ def log(pairs):
             row['seconds'] = int(open(os.path.join(str(out), 'seconds')).read().strip())
         except (OSError, ValueError):
             print(f'route log: no seconds file in {out}, so seconds is left out', file=sys.stderr)
-    saved = route_file(os.getcwd())
-    picked = None
-    if saved and os.path.isfile(saved) and 'task' in row:
-        try:
-            saved_tasks = json.load(open(saved))['tasks']  # task=3b finds its label, task=4 its number
-            picked = ({t['label']: t for t in saved_tasks if t.get('label')}.get(str(row['task']))
-                      or {t['n']: t for t in saved_tasks}.get(row['task']))
-        except (OSError, ValueError, KeyError, TypeError):
-            pass  # a broken route file costs the fill, never the row
-    if row.get('engine') in POOL:
-        row.setdefault('pool', POOL[row['engine']])
-    if picked:
-        if picked.get('score') is not None:  # routes saved before 10-24 carry a score
-            row.setdefault('score', picked['score'])
-        row.setdefault('routed', picked['engine'])
-    elif 'task' in row and 'routed' not in row and row.get('engine') != 'driver':  # EXPRESS routes nothing
-        print('route log: no saved route for this task here, so routed is not filled '
-              '(run log from the ship worktree)', file=sys.stderr)
+    task_row = 'task' in row and 'review' not in row
+    if task_row:
+        fill_task(row, os.getcwd(), os.environ.get('ROUTE_NOW'))
     try:
         with open(ledger_path(), 'a') as ledger:
             ledger.write(json.dumps(row) + '\n')
     except PermissionError:  # Claude Code's Bash sandbox can't write ~/.claude: CEL-74 lost four rows to it
         raise SystemExit(f'route log: no write access to {ledger_path()}, so nothing was logged. '
                          'Run this same command again with the Bash sandbox off.')
-    if 'review' not in row and 'task' in row:
+    if task_row:
         mark_build(os.getcwd(), task=row['task'])
     return row
 
 
+def rows():
+    out = []
+    try:
+        for line in open(ledger_path()):
+            try:
+                out.append(json.loads(line))
+            except ValueError:
+                pass  # a half-written line from a concurrent ship; the rest still counts
+    except FileNotFoundError:
+        pass
+    return out
+
+
 def logged(repo, ship, tasks):
     """The timestamp of an earlier build row sharing any of these tasks, if there is one."""
-    try:
-        lines = open(ledger_path()).read().splitlines()
-    except OSError:
-        return None
-    for line in lines:
-        try:
-            r = json.loads(line)
-        except ValueError:
-            continue
+    for r in rows():
         if (r.get('repo'), r.get('ship')) == (repo, ship) and 'task' in r and 'review' not in r \
                 and tasks & set(str(r['task']).split(',')):
             return r.get('ts')
     return None
 
 
-def band(score):
-    if not isinstance(score, (int, float)):
-        return 'unscored'
-    return 'easy <1.5' if score < 1.5 else 'mid <2.5' if score < 2.5 else 'hard 2.5+'
+def readers(pairs):
+    """Exit 0 once the ship's ledger holds both branch readers, else 1 naming what's missing."""
+    want = pairs_to_row(pairs, 'readers')
+    if not want.get('repo') or not want.get('ship'):
+        raise SystemExit('route readers: give repo=<repo> ship=<slug>')
+    seen = {r['review'] for r in rows() if (r.get('repo'), r.get('ship')) == (want['repo'], want['ship'])
+            and r.get('review') in ('wonder', 'opus') and r.get('stage') == 'branch'}
+    missing = [name for name in ('wonder', 'opus') if name not in seen]
+    if missing:
+        print(f"route readers: {want['ship']} has no {' or '.join(missing)} branch row; log the read "
+              "(review=<reader> stage=branch real= false= nits=) before landing, or "
+              "review=wonder stage=branch note=out:<exit> when Muse was down", file=sys.stderr)
+        return 1
+    print(f"route readers: {want['ship']} has both branch readers logged", file=sys.stderr)
+    return 0
 
 
 def report():
-    rows = []
-    try:
-        for line in open(ledger_path()):
-            try:
-                rows.append(json.loads(line))
-            except ValueError:
-                pass  # a half-written line from a concurrent ship; the rest still counts
-    except FileNotFoundError:
-        pass
-    reviews = [r for r in rows if 'review' in r]
-    recalls = [r for r in rows if 'recall' in r]
-    rows = [r for r in rows if 'review' not in r and 'recall' not in r]
+    everything = rows()
+    reviews = [r for r in everything if 'review' in r]
+    recalls = [r for r in everything if 'recall' in r]
+    tasks = [r for r in everything if 'review' not in r and 'recall' not in r]
+
     def mean(group, key):
         values = [r[key] for r in group if isinstance(r.get(key), (int, float)) and not isinstance(r[key], bool)]
         return f'{sum(values) / len(values):.1f}' if values else '-'
@@ -323,23 +304,17 @@ def report():
         passed = [r['gates_first_pass'] for r in group if isinstance(r.get('gates_first_pass'), bool)]
         return f'{100 * sum(passed) // len(passed)}%' if passed else '-'
     groups = {}
-    for row in rows:
-        groups.setdefault((row.get('engine', '?'), band(row.get('score'))), []).append(row)
-    lines = [f"{'engine':7} {'difficulty':10} {'tasks':>5} {'first pass':>10} {'fix rounds':>10} {'minutes':>8}"]
-    for (engine, difficulty), group in sorted(groups.items()):
+    for row in tasks:
+        groups.setdefault(row.get('engine', '?'), []).append(row)
+    lines = [f"{'engine':7} {'tasks':>5} {'timed':>5} {'first pass':>10} {'fix rounds':>10} {'minutes':>8}"]
+    for engine, group in sorted(groups.items()):
         minutes = mean(group, 'seconds')
         minutes = minutes if minutes == '-' else f'{float(minutes) / 60:.1f}'
-        lines.append(f"{engine:7} {difficulty:10} {len(group):>5} {first_pass(group):>10} "
+        timed = sum(1 for r in group if isinstance(r.get('seconds'), (int, float)))
+        lines.append(f"{engine:7} {len(group):>5} {timed:>5} {first_pass(group):>10} "
                      f"{mean(group, 'fix_rounds'):>10} {minutes:>8}")
-    by_pool = {}  # rows logged before pools existed derive theirs from the engine
-    for row in rows:
-        by_pool.setdefault(row.get('pool') or POOL.get(row.get('engine')) or '-', []).append(row)
-    if by_pool:
-        lines += ['', f"{'pool':9} {'tasks':>5} {'first pass':>10} {'fix rounds':>10}"]
-        for name, group in sorted(by_pool.items()):
-            lines.append(f"{name:9} {len(group):>5} {first_pass(group):>10} {mean(group, 'fix_rounds'):>10}")
     if reviews:
-        lines += ['', f"{'reviewer':8} {'ships':>5} {'real':>5} {'false':>5} {'only it':>7} {'owned':>5} {'minutes':>8}"]
+        lines += ['', f"{'reader':8} {'ships':>5} {'real':>5} {'false':>5} {'only it':>7} {'owned':>5} {'minutes':>8}"]
         for name in sorted({r['review'] for r in reviews}):
             group = [r for r in reviews if r['review'] == name]
             total = lambda key: sum(r[key] for r in group if isinstance(r.get(key), int) and not isinstance(r[key], bool))
@@ -364,98 +339,97 @@ def selftest():
         print(f"  {'ok  ' if ok else 'FAIL'} {name}")
         fails += 0 if ok else 1
 
-    os.environ.pop('CLAUDE_CODE_SESSION_ID', None)  # never touch the live run's marker
+    def refused(fn, *args):
+        try:
+            fn(*args)
+        except SystemExit as error:
+            return str(error)
+        return ''
+
+    # Never touch the live run's marker: gates run this from inside a ship's worktree, where a
+    # task row logged from the cwd counted eight tasks done on the ship-review run (2026-11-05).
+    os.environ.pop('CLAUDE_CODE_SESSION_ID', None)
+    here = os.getcwd()
+
+    def ship_state():
+        marker = stage_marker(here)
+        return marker and [open(os.path.join(os.path.dirname(marker), f)).read() if os.path.exists(
+            os.path.join(os.path.dirname(marker), f)) else None for f in ('.ship-stage', '.ship-done', '.ship-gates')]
+    before = ship_state()
     with tempfile.TemporaryDirectory() as tmp:
-        plan_md = os.path.join(tmp, 'plan.md')
-        titles = ['Task 1: docs', 'Task 2: hard socket', 'Task 3: glue (driver)', 'Task 4: medium wiring',
-                  'Task 5: easy rename', 'Task 6: auth boundary', 'Task 7: small test', 'Task 8: mid state',
-                  'Task 9: one file']
-        open(plan_md, 'w').write('# Plan\n\n' + ''.join(f'### {t}\n\nbody {i}\n\n' for i, t in enumerate(titles)))
+        plain = os.path.join(tmp, 'plain')
+        os.makedirs(plain)
+        os.chdir(plain)
         os.environ['SHIP_LEDGER'] = os.path.join(tmp, 'ledger.jsonl')
-        after = FABLE_UNTIL + datetime.timedelta(seconds=1)
-        burn = plan(plan_md, now=FABLE_UNTIL - datetime.timedelta(seconds=1))
-        check('before FABLE_UNTIL every other routable task is fable, and (driver) stays the driver\'s',
-              [t['engine'] for t in burn['tasks']] == ['fable', 'driver', 'driver', 'fable', 'driver',
-                                                       'fable', 'driver', 'fable', 'driver'])
-        result = plan(plan_md, now=after)
-        check('after it every task is the driver\'s, (driver) or not, and nothing is scored; the plan path is saved',
-              result['plan'] == os.path.abspath(plan_md) and [t['engine'] for t in result['tasks']] == ['driver'] * 9
-              and not any('score' in t for t in result['tasks']))
+        plan_md = os.path.join(tmp, 'plan.md')
+        open(plan_md, 'w').write('# Plan\n\n' + ''.join(f'### Task {n}: t{n}\n\nbody\n\n' for n in range(1, 10)))
+        result = plan(plan_md)
+        check('plan lists every task and saves the plan path; nothing is routed or scored',
+              result['plan'] == os.path.abspath(plan_md) and len(result['tasks']) == 9
+              and not any('engine' in t or 'score' in t for t in result['tasks']))
         few = os.path.join(tmp, 'few.md')
         open(few, 'w').write('### Task list\n\nan overview, not a task\n\n' +
                              ''.join(f'### Task {n}: t\n\n```md\n### Task 99: an example inside a fence\n```\n\n'
                                      for n in range(1, 6)))
         check('a fenced heading and "### Task list" are not tasks', len(plan(few)['tasks']) == 5)
-        sizes, urls, models, broke = [], [], [], []
+        gaps = parse_tasks('### Task 1: a\n\nx\n\n### Task 3: b\n\ny\n')
+        check('tasks keep the numbers the plan gives them', [t['n'] for t in gaps] == [1, 3])
+        split = parse_tasks('### Task 3a: one half\n\nx\n\n### Task 3b: other half\n\ny\n\n### Task 4: z\n\nz\n')
+        check('split tasks 3a and 3b are tasks, each with its own number and label',
+              [(t['n'], t['label']) for t in split] == [(3, '3a'), (4, '3b'), (5, '4')])
 
-        class Reply:
-            def __init__(self, body):
-                self.body = body
-
-            def __enter__(self):
-                return self
-
-            def __exit__(self, *_):
-                return False
-
-            def read(self):
-                return self.body
-
-        def fake(request, timeout):
-            urls.append(request.full_url)
-            sent = json.loads(request.data)
-            models.append(sent['model'])
-            if broke:
-                raise urllib.error.HTTPError(request.full_url, broke[-1], 'refused', {}, None)
-            sizes.append(len(sent['questions']))
-            return Reply(json.dumps({'model': 'jev-test', 'answers': {k: {'score': 1} for k in sent['questions']}}).encode())
-        real = urllib.request.urlopen
-        urllib.request.urlopen = fake
-        os.environ.update(TYPESAFE_API_KEY='k', ROUTE_NO_KEYCHAIN='1')
-        ask = lambda b: ({}, {f'q{i}': {} for i in b})  # noqa: E731
-        try:
-            answers, model = decide(list(range(40)), ask)
-            split, _ = decide(list(range(3)), ask, lambda i: REQUEST_CHARS // 2 + 1)
-            failures = []
-            for key, code in (('k', 402), ('k', 401), ('', 0)):
-                broke.append(code)
-                os.environ['TYPESAFE_API_KEY'] = key
-                try:
-                    decide([0], ask)
-                except RuntimeError as error:
-                    failures.append(str(error))
-        finally:
-            urllib.request.urlopen = real
-        check('jev-latest at TypeSafe answers every item, a new request each REQUEST_CHARS',
-              set(urls) == {'https://api.typesafe.ai/v1/systemone'} and set(models) == {'jev-latest'}
-              and model == 'jev-test' and len(answers) == 40 and sizes == [40, 1, 1, 1] and len(split) == 3)
-        check('a Jev 402 says to tell Pete, a 401 names where the key came from, no key raises too',
-              len(failures) == 3 and 'out of credits; tell Pete now' in failures[0]
-              and 'key rejected (env TYPESAFE_API_KEY or keychain "typesafe")' in failures[1] and 'no key' in failures[2])
-        log(['repo=ship', 'task=2', 'engine=fable', 'score=3.4', 'seconds=300', 'fix_rounds=1', 'gates_first_pass=false'])
+        log(['repo=ship', 'task=2', 'engine=opus', 'seconds=300', 'fix_rounds=1', 'gates_first_pass=false'])
         open(ledger_path(), 'a').write('{"half a line\n')
-        log(['repo=ship', 'task=1', 'engine=astra', 'score=0.8', 'seconds=120', 'fix_rounds=0', 'gates_first_pass=True'])
-        sol = log(['repo=ship', 'task=9', 'engine=sol', 'score=1.2', 'fix_rounds=2', 'gates_first_pass=True'])
-        old = log(['repo=ship', 'task=7', 'engine=haiku', 'score=1.0'])
-        check('log engine=sol fills pool=openai; an engine outside the map logs no pool',
-              sol['pool'] == 'openai' and 'pool' not in old)
-        log(['repo=ship', 'review=sol', 'real=2', 'false=3', 'only=1', 'owned=1', 'seconds=120'])
-        log(['repo=ship', 'review=sol', 'real=1', 'false=0', 'only=0', 'seconds=60'])
+        log(['repo=ship', 'task=1', 'engine=driver', 'seconds=120', 'fix_rounds=0', 'gates_first_pass=True'])
+        log(['repo=ship', 'review=wonder', 'stage=branch', 'real=2', 'false=3', 'only=1', 'owned=1', 'seconds=120'])
+        log(['repo=ship', 'review=wonder', 'stage=plan', 'real=1', 'false=0', 'only=0', 'seconds=60'])
+        open(ledger_path(), 'a').write(json.dumps({'repo': 'ship', 'task': 4, 'engine': 'sonnet', 'pool': 'anthropic',
+                                                   'score': 2.1, 'routed': 'sonnet', 'fix_rounds': 2}) + '\n')
         table = report()
-        check('the ledger reports by engine and difficulty, past a broken line',
-              'fable   hard 2.5+      1         0%        1.0      5.0' in table and
-              'astra   easy <1.5      1       100%' in table)
-        check('and by pool, deriving the pool from the engine for older rows',
-              'openai        2       100%        1.0' in table and 'fable         1         0%        1.0' in table
-              and '-             1' in table)
-        check('reviewers get their own table, outside the BUILD one',
-              'sol          2     3     3       1     1      1.5' in table and 'sol      unscored' not in table)
+        check('an old row with pool, score and routed still reports under its engine',
+              'sonnet      1     0          -        2.0        -' in table)
+        check('the ledger reports by engine, past a broken line',
+              'opus        1     1         0%        1.0      5.0' in table and 'driver      1     1       100%' in table)
+        check('readers get their own table, outside the BUILD one',
+              'wonder       2     3     3       1     1      1.5' in table)
         log(['repo=ship', 'ship=a', 'recall=6', 'used=2'])
         log(['repo=ship', 'ship=b', 'recall=6', 'used=0'])
-        recalled = report()
         check('recall rows get one line and never join the BUILD table',
-              'decision recall: 2 ships used 2 of 12 shown (16%); 1 used none' in recalled
-              and recalled.count('?') == table.count('?'))
+              'decision recall: 2 ships used 2 of 12 shown (16%); 1 used none' in report())
+        check('task=review is refused, pointing at review=',
+              'review=<engine>' in refused(log, ['repo=ship', 'ship=dup', 'task=review', 'engine=opus']))
+        check('a review row with only above real is refused',
+              'more than real' in refused(log, ['review=opus', 'real=5', 'only=7']))
+        log(['repo=ship', 'ship=dup', 'task=3', 'engine=driver'])
+        check('a second row for one task is refused without a note',
+              'already logged' in refused(log, ['repo=ship', 'ship=dup', 'task=3', 'engine=driver']))
+        check('with a note it goes in',
+              log(['repo=ship', 'ship=dup', 'task=3', 'engine=driver', 'note=redo'])['note'] == 'redo')
+        log(['repo=ship', 'ship=dup', 'task=5,6', 'engine=driver'])
+        check('a task inside an earlier combined row is a repeat',
+              'already logged' in refused(log, ['repo=ship', 'ship=dup', 'task=6', 'engine=driver']))
+        wrapped = os.path.join(tmp, 'wrapped')
+        os.makedirs(wrapped)
+        open(os.path.join(wrapped, 'seconds'), 'w').write('412\n')
+        timed = log(['repo=ship', 'review=wonder', 'stage=branch', 'real=1', f'out={wrapped}'])
+        check('out=<dir> fills seconds from the wrapper and keeps out of the row',
+              timed.get('seconds') == 412 and 'out' not in timed)
+
+        # readers: both branch rows, or a wonder row marked out
+        check('readers refuses a ship with no branch rows, naming both',
+              readers(['repo=ship', 'ship=r']) == 1)
+        log(['repo=ship', 'ship=r', 'review=wonder', 'stage=plan', 'real=1'])
+        log(['repo=ship', 'ship=r', 'review=wonder', 'stage=branch', 'real=1'])
+        check('a plan row does not count, and one branch reader is not enough',
+              readers(['repo=ship', 'ship=r']) == 1)
+        log(['repo=ship', 'ship=r', 'review=opus', 'stage=branch', 'real=2'])
+        check('both branch readers logged pass', readers(['repo=ship', 'ship=r']) == 0)
+        log(['repo=ship', 'ship=m', 'review=wonder', 'stage=branch', 'note=out:5'])
+        log(['repo=ship', 'ship=m', 'review=opus', 'stage=branch', 'real=3'])
+        check('a wonder row marked out counts when Muse was down', readers(['repo=ship', 'ship=m']) == 0)
+        check('readers needs repo and ship', 'repo=' in refused(readers, ['ship=m']))
+
+        # a ship: marker, plan, gate runs, logs, on a clock the test sets
         repo = os.path.join(tmp, 'repo')
         subprocess.run(['git', 'init', '-q', repo], check=True)
         stage = os.path.join(repo, '.ship-stage')
@@ -463,98 +437,64 @@ def selftest():
         os.makedirs(os.path.join(repo, 'specs'))
         shipped = os.path.join(repo, 'specs', 'plan.md')
         open(shipped, 'w').write(open(plan_md).read())
-        plan(shipped)
-        check('routing moves the marker to build:0:9', open(stage).read() == 'build:0:9')
-        open(stage, 'w').write('plan')
-        plan(shipped, now=after)
-        here = os.getcwd()
+
+        def gate_at(at, ok):
+            open(os.path.join(repo, '.ship-gates'), 'a').write(json.dumps({'ts': at, 'ok': ok}) + '\n')
+
+        def at(t, pairs):
+            os.environ['ROUTE_NOW'] = str(t)
+            try:
+                return log(pairs)
+            finally:
+                del os.environ['ROUTE_NOW']
+
+        t0 = 1_900_000_000
+        plan(shipped, now=t0)
+        check('plan moves the marker to build:0:9 and starts the clock',
+              open(stage).read() == 'build:0:9' and read_route(os.path.join(repo, '.ship-route.json'))['anchor'] == t0)
+        gate_at(t0 + 100, False)
+        gate_at(t0 + 200, True)
         os.chdir(repo)
         try:
-            row = log(['task=2', 'engine=opus'])
-            moved = log(['task=1', 'engine=opus'])
-            missing = log(['task=42', 'engine=astra'])
-            log(['task=2', 'engine=opus', 'note=fix round'])
+            one = at(t0 + 300, ['task=1', 'engine=driver'])
+            at(t0 + 350, ['repo=ship', 'ship=clock', 'review=opus', 'stage=branch', 'real=1'])
+            gate_at(t0 + 400, True)
+            two = at(t0 + 500, ['task=2', 'engine=driver', 'seconds=7'])
+            three = at(t0 + 560, ['task=3', 'engine=driver'])
+            log(['task=2', 'engine=driver', 'note=fix round'])
             plan(shipped)
-        finally:
-            os.chdir(here)
-        check('distinct logged tasks count done, a re-log counts once, a re-route keeps the count',
-              open(stage).read() == 'build:3:9')
-        os.chdir(repo)
-        try:
             log(['task=5,6', 'engine=opus'])
-            try:
-                log(['review=fable', 'real=5', 'only=7'])
-                bad = False
-            except SystemExit:
-                bad = True
+            code = gate([sys.executable, '-c', 'import sys; sys.exit(3)'])
         finally:
-            os.chdir(here)
-        check('a combined task=5,6 counts two', open(stage).read() == 'build:5:9')
-        refused = []
-        for pairs in (['repo=ship', 'ship=dup', 'task=review', 'engine=opus'],
-                      ['repo=ship', 'ship=dup', 'task=3', 'engine=opus']):
-            try:
-                log(pairs)
-            except SystemExit as error:
-                refused.append(str(error))
-        check('task=review is refused, pointing at review=', len(refused) == 1 and 'review=<engine>' in refused[0])
-        try:
-            log(['repo=ship', 'ship=dup', 'task=3', 'engine=opus'])
-            again = ''
-        except SystemExit as error:
-            again = str(error)
-        check('a second row for one task is refused without a note', 'already logged' in again)
-        check('with a note it goes in', log(['repo=ship', 'ship=dup', 'task=3', 'engine=opus', 'note=redo'])['note'] == 'redo')
-        log(['repo=ship', 'ship=dup', 'task=5,6', 'engine=opus'])
-        try:
-            log(['repo=ship', 'ship=dup', 'task=6', 'engine=opus'])
-            part = ''
-        except SystemExit as error:
-            part = str(error)
-        check('a task inside an earlier combined row is a repeat', 'already logged' in part)
-        check('a review row with only above real is refused', bad)
-        wrapped = os.path.join(tmp, 'wrapped')
-        os.makedirs(wrapped)
-        open(os.path.join(wrapped, 'seconds'), 'w').write('412\n')
-        timed = log(['repo=ship', 'task=8', 'engine=astra', f'out={wrapped}'])
-        check('out=<dir> fills seconds from the wrapper and keeps out of the row',
-              timed.get('seconds') == 412 and 'out' not in timed)
+            os.chdir(plain)
+        check('log fills seconds from the clock, and first pass and fix rounds from the gate runs',
+              one.get('seconds') == 300 and one.get('gates_first_pass') is False and one.get('fix_rounds') == 1)
+        check('a value on the command line wins; a review row in between leaves the clock alone',
+              two.get('seconds') == 7 and two.get('gates_first_pass') is True and two.get('fix_rounds') == 0)
+        check('the next task times from the last task row, and no gate runs leaves first pass out',
+              three.get('seconds') == 60 and 'gates_first_pass' not in three)
+        check('a re-plan keeps the clock', read_route(os.path.join(repo, '.ship-route.json'))['anchor'] >= t0 + 560)
+        check('distinct logged tasks count done, a re-log counts once, a re-route keeps the count, 5,6 counts two',
+              open(stage).read() == 'build:5:9')
+        last = open(os.path.join(repo, '.ship-gates')).read().splitlines()[-1]
+        check('gate returns the command\'s exit code and records the run beside the marker',
+              code == 3 and json.loads(last)['ok'] is False)
         locked = os.path.join(tmp, 'locked')
         os.makedirs(locked)
         os.chmod(locked, 0o500)
         os.environ['SHIP_LEDGER'], kept = os.path.join(locked, 'ledger.jsonl'), os.environ['SHIP_LEDGER']
         try:
-            log(['repo=ship', 'task=1', 'engine=opus'])
-            said = ''
-        except SystemExit as stop:
-            said = str(stop)
+            said = refused(log, ['repo=ship', 'review=opus', 'real=1'])
         finally:
             os.environ['SHIP_LEDGER'] = kept
             os.chmod(locked, 0o700)
         check('a ledger it cannot write says to rerun with the sandbox off', 'sandbox off' in said)
-        check('log fills routed=driver from the saved plan, and a subagent\'s task shows engine=opus',
-              row.get('routed') == 'driver' and row['engine'] == 'opus' and 'score' not in row)
-        check('an unknown task logs unfilled', moved.get('routed') == 'driver' and 'routed' not in missing)
-        gaps = os.path.join(tmp, 'gaps.md')
-        open(gaps, 'w').write('### Task 1: a\n\nx\n\n### Task 3: b\n\ny\n')
-        check('tasks keep the numbers the plan gives them', [t['n'] for t in parse_tasks(open(gaps).read())] == [1, 3])
-        split = parse_tasks('### Task 3a: one half\n\nx\n\n### Task 3b: other half\n\ny\n\n### Task 4: z\n\nz\n')
-        check('split tasks 3a and 3b are tasks, each with its own number and label',
-              [(t['n'], t['label']) for t in split] == [(3, '3a'), (4, '3b'), (5, '4')])
-        json.dump({'tasks': [{'n': 3, 'label': '3a', 'score': 1, 'engine': 'wonder'},
-                             {'n': 4, 'label': '3b', 'score': 2, 'engine': 'fable'},
-                             {'n': 5, 'label': '4', 'score': 3, 'engine': 'opus'}]},
-                  open(os.path.join(repo, '.ship-route.json'), 'w'))
-        os.chdir(repo)
-        try:
-            by_label, plain = log(['task=3b', 'engine=fable']), log(['task=4', 'engine=opus'])
-        finally:
-            os.chdir(here)
-        check('log finds task=3b by its label, and task=4 is the plan\'s Task 4, not 3b',
-              by_label.get('routed') == 'fable' and plain.get('routed') == 'opus')
         os.remove(stage)
         plan(shipped)
         check('outside a ship no marker appears', not os.path.exists(stage))
+        os.chdir(here)
+        check('a ship the self-test runs inside keeps its marker, its done list and its gate runs',
+              ship_state() == before)
     print(f'route self-test: {fails} failed')
     return fails == 0
 
@@ -565,11 +505,13 @@ if __name__ == '__main__':
         sys.exit(0 if selftest() else 1)
     if len(args) == 2 and args[0] == 'plan':
         print(json.dumps(plan(args[1]), indent=1))
+    elif args and args[0] == 'gate':
+        sys.exit(gate(args[1:]))
     elif args and args[0] == 'log':
         log(args[1:])
+    elif args and args[0] == 'readers':
+        sys.exit(readers(args[1:]))
     elif args == ['report']:
         print(report())
-    elif args == ['reader']:  # the Claude model that reads the branch at REVIEW
-        print('opus')
     else:
         sys.exit(__doc__)
