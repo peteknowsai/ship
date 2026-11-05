@@ -1,0 +1,704 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>🎨 ship-review · storyboard r1</title>
+<!-- /ship GATE 1 storyboard from reference/storyboard.html. Ship has no product sheet, so
+     the frames are diagrams styled by assets/ship-review.css. -->
+<style>
+  :root{--canvas:#e8e8ea;--ink:#1d1d1f;--mut:#6e6e73;--line:#d2d2d7;--accent:#0a66d8;--gap:56px;--pad:40px}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--canvas);color:var(--ink);
+    font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+  .bar{position:sticky;top:0;left:0;z-index:2;display:flex;justify-content:space-between;align-items:center;
+    gap:16px;padding:10px var(--pad);background:#fff;border-bottom:1px solid var(--line)}
+  .bar b{font-size:15px}
+  .bar .mut{color:var(--mut);margin-left:8px}
+  .zoom{display:flex;align-items:center;gap:4px;color:var(--mut);font-variant-numeric:tabular-nums}
+  .zoom button{font:inherit;border:1px solid var(--line);background:#fff;border-radius:6px;padding:2px 10px;cursor:pointer}
+  .zoom span{min-width:44px;text-align:center}
+
+  .board{padding:28px var(--pad) 8px;min-width:100%}
+  .flow{margin:0 0 44px}
+  .flow h2{font-size:13px;font-weight:600;color:var(--mut);margin:0 0 12px}
+  .boards{display:flex;flex-wrap:wrap;gap:36px var(--gap);align-items:flex-start}
+  figure.ab{margin:0;position:relative;flex:none}
+  .flow:not(.options) figure.ab + figure.ab::before{content:"→";position:absolute;left:calc(var(--gap) / -2 - 8px);
+    top:calc(var(--stage-h, 200px) / 2 + 22px);color:var(--mut);font-size:18px}
+  figure.ab .name{display:block;font-size:12px;color:var(--mut);margin:0 0 6px;cursor:zoom-in;white-space:nowrap}
+  figure.ab .name:hover{color:var(--accent)}
+  .tag{display:inline-block;font-weight:700;color:#fff;background:var(--ink);border-radius:4px;padding:0 6px;margin-right:6px;font-variant-numeric:tabular-nums}
+  [data-same] .tag{background:var(--mut)}
+  figure.ab:target .stage{outline:3px solid var(--accent);outline-offset:4px}
+  figure.ab .stage{overflow:hidden;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.08),0 6px 20px rgba(0,0,0,.08)}
+  figure.ab iframe{display:block;border:0;transform-origin:0 0;background:#fff}
+  figure.ab .cap{margin:8px 0 0;font-size:13px;color:var(--ink);max-width:640px}
+
+  .notes{padding:0 var(--pad) 64px;max-width:880px}
+  .q{background:#fff;border-radius:10px;padding:12px 16px;margin:14px 0 0;max-width:880px}
+  .q p{margin:0}
+  .q .on{color:var(--mut);font-size:13px}
+  .q .pick{display:block;margin-top:4px;color:var(--mut);font-size:13px}
+  .q .pick b{color:var(--ink)}
+  details{margin-top:24px;color:var(--mut);font-size:13px}
+  summary{cursor:pointer}
+  dialog{border:0;padding:0;background:transparent;max-width:none;max-height:none}
+  dialog::backdrop{background:rgba(20,20,22,.72)}
+  dialog .name{color:#fff;font-size:13px;margin:0 0 8px}
+  dialog .box{overflow:hidden;background:#fff;border-radius:6px}
+  dialog iframe{display:block;border:0;transform-origin:0 0}
+  .peek{position:fixed;inset:0;margin:auto;z-index:3;pointer-events:none;overflow:hidden;background:#fff;
+    border-radius:6px;box-shadow:0 12px 48px rgba(0,0,0,.35)}
+  .peek iframe{display:block;border:0;transform-origin:0 0}
+</style>
+</head>
+<body data-round="1">
+<header class="bar">
+  <div><b>ship, top to bottom</b><span class="mut">storyboard · round <span data-round-no>1</span> · feature/ship-review</span></div>
+  <div class="zoom"><button data-z="out" title="Zoom out (-)">−</button><button data-z="fit" title="Fit (1)">Fit</button>
+    <span data-z-label>100%</span><button data-z="in" title="Zoom in (+)">+</button><button data-z="full" title="Actual size (0)">1:1</button></div>
+</header>
+
+<main class="board">
+  <section class="flow">
+    <h2>A · The main skill, today and after</h2>
+    <div class="boards">
+      <figure class="ab" data-mount="A1">
+        <span class="name">Today</span><div class="stage"></div>
+        <p class="cap">1,540 lines and 2.2 times its September size, mostly one rule per failed run.</p>
+      </figure>
+      <figure class="ab" data-mount="A2">
+        <span class="name">After, in the order a run needs it</span><div class="stage"></div>
+        <p class="cap">About 900 lines. Each stage holds its own steps, and every stop sits in one list.</p>
+      </figure>
+      <figure class="ab" data-mount="A3">
+        <span class="name">Where the rest goes</span><div class="stage"></div>
+        <p class="cap">Rare repo shapes and card rules move behind pointers; dead history goes.</p>
+      </figure>
+    </div>
+    <div class="q"><p><span class="tag">Q1</span>Cut the main skill to about 900 lines this way, losing no rule a run uses? Stories shrink to the rule and a ticket key, and rare repo shapes and card rules move to reference files and templates. <span class="on">· A2, A3</span></p><span class="pick">I'd pick: <b>yes</b></span></div>
+    <div class="q"><p><span class="tag">Q2</span>From here on, should a retro finding go to incidents.md first, with only a second run hitting it earning a line in the skill, and the skill held under 1,000 lines? <span class="on">· A1</span></p><span class="pick">I'd pick: <b>yes. 71 retros grew it 2.2 times, and #230's one sandbox list still drew four more.</b></span></div>
+  </section>
+
+  <section class="flow">
+    <h2>B · Places the skill says two things</h2>
+    <div class="boards">
+      <figure class="ab" data-mount="B1">
+        <span class="name">Fourteen contradictions, each with one answer</span><div class="stage"></div>
+        <p class="cap">Every row today makes two runs behave two ways. The right column is what I'd write.</p>
+      </figure>
+    </div>
+    <div class="q"><p><span class="tag">Q3</span>Take the right-hand answer on all fourteen? <span class="on">· B1</span></p><span class="pick">I'd pick: <b>yes</b></span></div>
+  </section>
+
+  <section class="flow">
+    <h2>C · Where a run stops for you</h2>
+    <div class="boards">
+      <figure class="ab" data-mount="C1">
+        <span class="name">Today</span><div class="stage"></div>
+        <p class="cap">The top says "two gates". Runs actually stop in nine ways, spread over six sections.</p>
+      </figure>
+      <figure class="ab" data-mount="C2">
+        <span class="name">After</span><div class="stage"></div>
+        <p class="cap">One list in the skill, each stop with what you see and the word that moves it.</p>
+      </figure>
+    </div>
+    <div class="q"><p><span class="tag">Q4</span>Should a money path always wait for your "merge main", even in a repo set to merge on its own? Today `land: auto` lets it through. <span class="on">· C2</span></p><span class="pick">I'd pick: <b>yes</b></span></div>
+  </section>
+
+  <section class="flow">
+    <h2>D · Landing a PR</h2>
+    <div class="boards">
+      <figure class="ab" data-mount="D1">
+        <span class="name">Today</span><div class="stage"></div>
+        <p class="cap">It merges on "mergeable" alone, with the worktree already gone.</p>
+      </figure>
+      <figure class="ab" data-mount="D2">
+        <span class="name">After</span><div class="stage"></div>
+        <p class="cap">The PR's own checks must be green, the worktree comes off after the merge, and a live break is reverted first.</p>
+      </figure>
+    </div>
+    <div class="q"><p><span class="tag">Q5</span>Merge only once the PR's own checks are green too, and take the worktree off after the merge rather than before? <span class="on">· D2</span></p><span class="pick">I'd pick: <b>yes. This morning's #302 removed its tree, then the merge refused.</b></span></div>
+    <div class="q"><p><span class="tag">Q6</span>When a landing goes live broken, with its pages answering 404 or the smoke check red, should ship revert the merge first and then fix on a new branch? A build that just fails leaves the old one live, so that case keeps fixing forward. <span class="on">· D2</span></p><span class="pick">I'd pick: <b>yes</b></span></div>
+  </section>
+
+  <section class="flow options">
+    <h2>E · Who tests the work · pick one</h2>
+    <div class="boards">
+      <figure class="ab" data-mount="E1">
+        <span class="name">Today: the builder writes the cases after the build</span><div class="stage"></div>
+        <p class="cap">Fast and it fixes in one pass, but the cases are picked by whoever wrote the code.</p>
+      </figure>
+      <figure class="ab" data-mount="E2">
+        <span class="name">A fresh tester walks it</span><div class="stage"></div>
+        <p class="cap">Independent, at the cost the #156 bake-off measured. It loses the context the fixes need.</p>
+      </figure>
+      <figure class="ab" data-mount="E3">
+        <span class="name">The builder walks cases fixed at PLAN</span><div class="stage"></div>
+        <p class="cap">The cases come from the spec before any code exists, and the builder still walks and fixes.</p>
+      </figure>
+    </div>
+    <div class="q"><p><span class="tag">Q7</span>Who picks the QA cases? Wonder's outside read flagged that the builder chooses them after seeing its own code. <span class="on">· E1, E2, E3</span></p><span class="pick">I'd pick: <b>E3</b></span></div>
+  </section>
+
+  <section class="flow">
+    <h2>F · The status line</h2>
+    <div class="boards">
+      <figure class="ab" data-mount="F1">
+        <span class="name">Today</span><div class="stage"></div>
+        <p class="cap">It counts live ships, but not the ones waiting on you. Two cells-app PRs have waited since 10-17 and 10-18.</p>
+      </figure>
+      <figure class="ab" data-mount="F2">
+        <span class="name">After</span><div class="stage"></div>
+        <p class="cap">It counts the ships waiting on you, with how long the oldest has waited.</p>
+      </figure>
+    </div>
+    <div class="q"><p><span class="tag">Q8</span>Should the status line say how many ships wait on you, and for how long? <span class="on">· F2</span></p><span class="pick">I'd pick: <b>yes</b></span></div>
+  </section>
+
+  <section class="flow">
+    <h2>G · The record: reviews, the build log, decision recall</h2>
+    <div class="boards">
+      <figure class="ab" data-mount="G1">
+        <span class="name">Both branch reviewers earn their seat</span><div class="stage"></div>
+        <p class="cap">Each finds about a third of what the other misses. No change.</p>
+      </figure>
+      <figure class="ab" data-mount="G2">
+        <span class="name">Fable vs Opus, the report owed since 10-29</span><div class="stage"></div>
+        <p class="cap">Fable's lead is mostly how each logs its checks. Opus-only stands.</p>
+      </figure>
+      <figure class="ab" data-mount="G3">
+        <span class="name">The build log has holes</span><div class="stage"></div>
+        <p class="cap">The rules for filling it are prose, so runs skip them.</p>
+      </figure>
+      <figure class="ab" data-mount="G4">
+        <span class="name">Decision recall</span><div class="stage"></div>
+        <p class="cap">Recall shows ships 108 settled calls and they use 10. Today it served three dead router calls as settled.</p>
+      </figure>
+    </div>
+    <div class="q"><p><span class="tag">Q9</span>Should route.py take over the build log? It would time each task from its commits, count a check as passed when the commit's checks are green, and refuse to land a ship until both reviewers are logged. <span class="on">· G3</span></p><span class="pick">I'd pick: <b>yes</b></span></div>
+    <div class="q"><p><span class="tag">Q10</span>Should decision recall run only on design ships, where re-asking you is the cost, with decisions.py flagging any call that names a retired engine? I would also retire the six stale engine calls in cells-app's log. <span class="on">· G4</span></p><span class="pick">I'd pick: <b>yes</b></span></div>
+  </section>
+
+  <section class="flow">
+    <h2>H · The QA skill and each repo's checks file</h2>
+    <div class="boards">
+      <figure class="ab" data-mount="H1">
+        <span class="name">verify today</span><div class="stage"></div>
+        <p class="cap">A third of it is iPhone, Mac and browser detail that a web-only run reads anyway.</p>
+      </figure>
+      <figure class="ab" data-mount="H2">
+        <span class="name">verify after</span><div class="stage"></div>
+        <p class="cap">The web path stays in the skill. Each device's rules load only when the repo has that device.</p>
+      </figure>
+      <figure class="ab" data-mount="H3">
+        <span class="name">cells-app's checks file</span><div class="stage"></div>
+        <p class="cap">At 595 lines it is bigger than verify itself, because every lesson is appended and none is ever replaced.</p>
+      </figure>
+    </div>
+    <div class="q"><p><span class="tag">Q11</span>Split verify into the web path plus one reference file each for iPhone, Mac and browser extras? <span class="on">· H2</span></p><span class="pick">I'd pick: <b>yes</b></span></div>
+    <div class="q"><p><span class="tag">Q12</span>Should a checks file keep one line per lesson? A new lesson would replace the old one, and verify would prune any file over its cap. I'd trim cells-app's to about 150 lines in a PR of its own. <span class="on">· H3</span></p><span class="pick">I'd pick: <b>yes</b></span></div>
+  </section>
+
+  <section class="flow">
+    <h2>I · Code that goes</h2>
+    <div class="boards">
+      <figure class="ab" data-mount="I1">
+        <span class="name">About 2,000 lines nothing runs</span><div class="stage"></div>
+        <p class="cap">Codex, Fable's window and old design pages. Every live feature keeps working.</p>
+      </figure>
+      <figure class="ab" data-mount="I2">
+        <span class="name">board.cells.md</span><div class="stage"></div>
+        <p class="cap">The board still serves a page, but nothing has updated it in 9 weeks.</p>
+      </figure>
+    </div>
+    <div class="q"><p><span class="tag">Q13</span>Delete the Codex and Fable code outright? Git history keeps it if you ever renew. <span class="on">· I1</span></p><span class="pick">I'd pick: <b>yes</b></span></div>
+    <div class="q"><p><span class="tag">Q14</span>Take the shipboard down? That means deleting board/ and tearing down its Worker, R2 bucket and DNS record on PKAI. <span class="on">· I2</span></p><span class="pick">I'd pick: <b>yes. Nobody has looked at it since it stopped.</b></span></div>
+  </section>
+</main>
+
+<section class="notes">
+  <details>
+    <summary>For the record</summary>
+    <ul>
+      <li>Recon came from four read-only Opus readers, covering the main skill, verify, the scripts and surfaces, and two months of the build log, decision logs and memory. Wonder Full read a frozen copy of main at b21e46a from outside and raised 31 findings. Every claim on this board was checked against main at 7e170ff.</li>
+      <li>Already done today, outside this ship:
+        <ul>
+          <li>The quota check is gone: groom's rule went in claude-home #3, and quota.py was deleted in ship #304 to #306.</li>
+          <li>The three stale router calls in ship's decision log are retired, with one current engines call in their place.</li>
+        </ul>
+      </li>
+      <li>Considered and not proposed:
+        <ul>
+          <li>Scaling reviews down for small ships. The log says plan review finds about 15 real issues per read, and each branch reader finds a third the other misses.</li>
+          <li>Dropping the icon check from pre-flight. You settled that on 2026-10-14.</li>
+          <li>Removing the Share button. Five docs have been shared, the last on 11-03.</li>
+          <li>Dropping the review card on self-directed ships. You review that card instead of the diff.</li>
+        </ul>
+      </li>
+      <li>Small fixes that ride along with no question:
+        <ul>
+          <li>Shell self-tests will make their temp folders under $TMPDIR, so they pass inside the sandbox.</li>
+          <li>decisions.py gets a way to retire several calls with one replacement. Today a supersede logs one copy per old call, and I appended two redact rows by hand.</li>
+          <li>The `worker:` contract key gets defined.</li>
+          <li>The bypass secret never goes into qa.md.</li>
+          <li>The dev server starts before Wonder's read, never during it.</li>
+        </ul>
+      </li>
+      <li>Leftovers on your Mac with nothing reading them:
+        <ul>
+          <li>~/.config/ship/opus-weekly-cap and ~/.config/ship/no-codex</li>
+          <li>~/.claude/codex-usage-cache.json</li>
+          <li>about 28 old plugin cache folders</li>
+        </ul>
+        I'll list them in the result and delete nothing without your word.</li>
+    </ul>
+  </details>
+</section>
+<dialog></dialog>
+
+<!-- ============ ARTBOARDS ============ -->
+<template data-frame="A1" data-w="620" data-h="600">
+  <link rel="stylesheet" href="assets/ship-review.css">
+  <div class="fr">
+    <h3>pipeline/SKILL.md today</h3>
+    <p class="sub"><span class="big">1,540</span> lines · 19,826 words · read whole on every run</p>
+    <div class="bars">
+      <span>4 · TEST, with REVIEW inside</span><span class="b hot" style="width:100%"></span><span class="v">198</span>
+      <span>5 · LAND</span><span class="b hot" style="width:76%"></span><span class="v">150</span>
+      <span>0 · Worktree</span><span class="b hot" style="width:75%"></span><span class="v">148</span>
+      <span>3 · BUILD</span><span class="b" style="width:67%"></span><span class="v">133</span>
+      <span>Engines</span><span class="b" style="width:66%"></span><span class="v">131</span>
+      <span>Repo contract</span><span class="b" style="width:65%"></span><span class="v">129</span>
+      <span>1 · DISCOVER</span><span class="b" style="width:61%"></span><span class="v">120</span>
+      <span>Card rules</span><span class="b" style="width:42%"></span><span class="v">83</span>
+      <span>Sizing, verbs</span><span class="b" style="width:41%"></span><span class="v">81</span>
+      <span>2 · PLAN</span><span class="b" style="width:37%"></span><span class="v">73</span>
+      <span>Shell and sandbox</span><span class="b" style="width:30%"></span><span class="v">60</span>
+    </div>
+    <p class="mut" style="margin:0">and nine smaller sections, 234 lines between them</p>
+    <div class="two">
+      <div>
+        <div class="spark"><i style="height:30px"></i><i style="height:32px"></i><i style="height:38px"></i><i style="height:39px"></i><i style="height:41px"></i><i style="height:58px"></i><i style="height:56px"></i><i style="height:57px"></i><i class="now" style="height:64px"></i></div>
+        <div class="spark-l"><span>9-14</span><span></span><span></span><span>10-5</span><span></span><span>10-19</span><span></span><span>11-2</span><span>now</span></div>
+      </div>
+      <ul class="tight">
+        <li>about 140 lines are stories, not rules</li>
+        <li>about 60 lines describe things that no longer run</li>
+        <li>25 rules are said two to four times</li>
+        <li>71 retro PRs since 10-05</li>
+      </ul>
+    </div>
+  </div>
+</template>
+
+<template data-frame="A2" data-w="620" data-h="600">
+  <link rel="stylesheet" href="assets/ship-review.css">
+  <div class="fr">
+    <h3>The same skill, about 900 lines</h3>
+    <table>
+      <tr><th>Section</th><th>Holds</th><th class="n">Lines</th></tr>
+      <tr><td>What ship is</td><td>scope law, which skills it overrides</td><td class="n">25</td></tr>
+      <tr><td>Verbs and sizing</td><td>express, self-directed, design; the gate test</td><td class="n">60</td></tr>
+      <tr><td>Talking to you</td><td>only ship's own parts: prefixes, jargon list, the branch tail</td><td class="n">20</td></tr>
+      <tr><td>Working rules</td><td>the guard, the sandbox, tmp, background waits</td><td class="n">35</td></tr>
+      <tr><td>Engines and reviewers</td><td>Opus writes, Wonder and Opus read</td><td class="n">50</td></tr>
+      <tr><td>Repo contract</td><td>one line per key; detail in contract.md</td><td class="n">45</td></tr>
+      <tr><td>0 · Fork</td><td>cheap checks first, then the worktree</td><td class="n">80</td></tr>
+      <tr><td>1 · DISCOVER</td><td>storyboard rounds, lock</td><td class="n">85</td></tr>
+      <tr><td>2 · PLAN</td><td>plan, its review, the plan card</td><td class="n">55</td></tr>
+      <tr><td>3 · BUILD</td><td>tasks, commits, pre-flight</td><td class="n">95</td></tr>
+      <tr><td>4 · REVIEW</td><td>both readers, triage</td><td class="n">55</td></tr>
+      <tr><td>5 · TEST</td><td>hand-off to verify, verdicts</td><td class="n">85</td></tr>
+      <tr><td>6 · LAND</td><td>merge, deploy watch, teardown</td><td class="n">105</td></tr>
+      <tr><td>7 · RETRO</td><td>retro, follow-ups</td><td class="n">45</td></tr>
+      <tr><td>Every stop</td><td>row C, in one place</td><td class="n">25</td></tr>
+    </table>
+  </div>
+</template>
+
+<template data-frame="A3" data-w="620" data-h="600">
+  <link rel="stylesheet" href="assets/ship-review.css">
+  <div class="fr">
+    <h3>pipeline/reference/</h3>
+<div class="tree"><span class="add">+ contract.md              every contract key in full</span>
+<span class="add">+ plan-review-brief.md     the plan reviewer's checklist</span>
+<span class="add">+ branch-review-brief.md   the branch reviewers' brief</span>
+  rare-cases.md
+<span class="add">    + backends other than a copied database</span>
+<span class="add">    + native app repos, the locked phone</span>
+<span class="add">    + the integration lane, long-running workers</span>
+  incidents.md
+<span class="cut">    − 75 lines of Codex, Astra and Sol history</span>
+<span class="add">    + commands the worktree guard misreads</span>
+  storyboard.html · go-card.html · review-card.html
+<span class="add">    each holds its own rules; the skill points at it</span>
+<span class="add">    review card gains the "where it is" links slot</span></div>
+    <p class="note">Every move keeps its rule; it only changes where the agent reads it. A pointer names the case that sends the agent there, like "a repo whose contract has <code>ios:</code>".</p>
+  </div>
+</template>
+
+<template data-frame="B1" data-w="1040" data-h="680">
+  <link rel="stylesheet" href="assets/ship-review.css">
+  <div class="fr">
+    <h3>Fourteen places the skill says two things</h3>
+    <table>
+      <tr><th>About</th><th>One place says</th><th>Another says</th><th>After</th></tr>
+      <tr><td>Codex</td><td>it's off, tell you in a line</td><td>hand "test in codex" to your Codex app</td><td>off, one line</td></tr>
+      <tr><td>Cards</td><td>self-directed ships render no cards</td><td>every self-directed ship gets a review card</td><td>no plan card; the review card stays</td></tr>
+      <tr><td>Stops</td><td>self-directed has zero stops</td><td>money, one-way doors and try-it wait</td><td>one list of stops, row C</td></tr>
+      <tr><td>Plan card</td><td>storyboard first; a card with no calls is shown</td><td>template puts the work list first, and drops an empty card</td><td>storyboard first; shown, not waited on</td></tr>
+      <tr><td>Review card</td><td>must carry the live or preview links</td><td>template has no slot for them</td><td>add the slot</td></tr>
+      <tr><td>Smoke check</td><td>once, no reruns</td><td>one rerun on a third-party network error</td><td>one rerun on a network error only</td></tr>
+      <tr><td>After pulling main</td><td>typecheck alone if no file overlaps</td><td>full run before the first QA run</td><td>full run before QA when the tree changed</td></tr>
+      <tr><td>Stage names</td><td>the heading says TEST</td><td>ten lines point at a REVIEW stage</td><td>REVIEW gets its own heading</td></tr>
+      <tr><td>The fork</td><td>fork before anything else</td><td>check for a duplicate card, a landed fix, free disk first</td><td>the read-only checks first; seconds</td></tr>
+      <tr><td>Wonder's read</td><td>nothing writes in the tree meanwhile</td><td>TEST starts dev servers meanwhile</td><td>server up before the read starts</td></tr>
+      <tr><td>Preview secret</td><td>never in a tool call</td><td>written into qa.md and the tester brief</td><td>qa.md says "protected", never the value</td></tr>
+      <tr><td>Where LAND runs</td><td>from the main checkout</td><td>step 0 from the worktree</td><td>step 0 in the worktree, then main</td></tr>
+      <tr><td><code>worker:</code></td><td>LAND restarts it after a merge</td><td>the contract never defines it</td><td>define it</td></tr>
+      <tr><td>Locked iPhone</td><td>park, or prove on the phone</td><td>fall back to a simulator</td><td>simulator, unless the change needs the phone</td></tr>
+    </table>
+  </div>
+</template>
+
+<template data-frame="C1" data-w="700" data-h="600">
+  <link rel="stylesheet" href="assets/ship-review.css">
+  <div class="fr">
+    <h3>"Two gates, both his"</h3>
+    <p class="sub">what the skill's top says; runs actually stop for these</p>
+    <table>
+      <tr><th>Stop</th><th>Written in</th></tr>
+      <tr><td>Storyboard lock</td><td>DISCOVER</td></tr>
+      <tr><td>Plan card that asks you something</td><td>PLAN</td></tr>
+      <tr><td>A step only your login can do</td><td>PLAN, Engines</td></tr>
+      <tr><td>Money path</td><td>Sizing, principles, TEST, contract</td></tr>
+      <tr><td>One-way door</td><td>Sizing, TEST</td></tr>
+      <tr><td>A change you said you'd try</td><td>Sizing, TEST</td></tr>
+      <tr><td>QA couldn't prove a step</td><td>TEST, verify</td></tr>
+      <tr><td>Locked iPhone or Mac</td><td>TEST, verify</td></tr>
+      <tr><td class="cut">Codex hand-off</td><td class="cut">TEST, gate signals</td></tr>
+    </table>
+    <p class="note warn">And the contract's <code>land: auto</code> lands money paths with no wait.</p>
+  </div>
+</template>
+
+<template data-frame="C2" data-w="700" data-h="600">
+  <link rel="stylesheet" href="assets/ship-review.css">
+  <div class="fr">
+    <h3>Every stop, one list</h3>
+    <table>
+      <tr><th>Stop</th><th>You see</th><th>You say</th></tr>
+      <tr><td>Storyboard round</td><td>✋ storyboard? and the page</td><td>reactions, or "lock it"</td></tr>
+      <tr><td>Plan card with a call</td><td>✋ go? and the card</td><td>"go", or the call</td></tr>
+      <tr><td>Your login</td><td>needs input, the exact step</td><td>"done"</td></tr>
+      <tr><td>Money path, any repo</td><td>✋ try it, then merge main?</td><td>"merge main"</td></tr>
+      <tr><td>One-way door</td><td>✋ try it, then merge main?</td><td>"merge main"</td></tr>
+      <tr><td>You said you'd try it</td><td>✋ try it, then merge main?</td><td>"merge main"</td></tr>
+      <tr><td>QA couldn't prove a step</td><td>needs input, the step and why</td><td>do it, or "land anyway"</td></tr>
+    </table>
+    <p class="note">A locked phone stops nothing: the simulator walks it unless the change needs the phone itself.</p>
+  </div>
+</template>
+
+<template data-frame="D1" data-w="520" data-h="560">
+  <link rel="stylesheet" href="assets/ship-review.css">
+  <div class="fr">
+    <h3>LAND today</h3>
+    <div class="flow">
+      <div class="step"><b>Gates green in the worktree</b></div><div class="arrow">↓</div>
+      <div class="step"><b>GitHub says "mergeable"</b><span class="mut">CI checks never read</span></div><div class="arrow">↓</div>
+      <div class="step bad"><b>Worktree removed</b><span class="mut">before the merge</span></div><div class="arrow">↓</div>
+      <div class="step"><b>Squash merge</b><span class="mut">refused? no tree left to fix in</span></div><div class="arrow">↓</div>
+      <div class="step"><b>Watch the deploy</b><span class="mut">red: always fix forward</span></div>
+    </div>
+  </div>
+</template>
+
+<template data-frame="D2" data-w="520" data-h="560">
+  <link rel="stylesheet" href="assets/ship-review.css">
+  <div class="fr">
+    <h3>LAND after</h3>
+    <div class="flow">
+      <div class="step"><b>Gates green in the worktree</b></div><div class="arrow">↓</div>
+      <div class="step good"><b>Mergeable, and the PR's checks green</b><span class="mut"><code>gh pr checks</code>, no red</span></div><div class="arrow">↓</div>
+      <div class="step"><b>Squash merge</b></div><div class="arrow">↓</div>
+      <div class="step good"><b>Then the worktree comes off</b></div><div class="arrow">↓</div>
+      <div class="step"><b>Watch the deploy</b><span class="mut">build failed: old one stays live, fix forward<br>live but broken: revert first, then fix</span></div>
+    </div>
+  </div>
+</template>
+
+<template data-frame="E1" data-w="520" data-h="440">
+  <link rel="stylesheet" href="assets/ship-review.css">
+  <div class="fr">
+    <h3>Builder picks the cases, after</h3>
+    <div class="flow">
+      <div class="step"><b>PLAN</b><span class="mut">tasks and test files</span></div><div class="arrow">↓</div>
+      <div class="step"><b>BUILD</b><span class="mut">the main session writes the code</span></div><div class="arrow">↓</div>
+      <div class="step bad"><b>TEST writes qa.md</b><span class="mut">the same session, knowing the code</span></div><div class="arrow">↓</div>
+      <div class="step"><b>Walk, fix, rerun</b><span class="mut">up to 3 rounds</span></div>
+    </div>
+  </div>
+</template>
+
+<template data-frame="E2" data-w="520" data-h="440">
+  <link rel="stylesheet" href="assets/ship-review.css">
+  <div class="fr">
+    <h3>A fresh tester walks it</h3>
+    <div class="flow">
+      <div class="step"><b>BUILD</b><span class="mut">the main session</span></div><div class="arrow">↓</div>
+      <div class="step"><b>A new Opus subagent</b><span class="mut">gets the spec, writes and walks qa.md</span></div><div class="arrow">↓</div>
+      <div class="step bad"><b>Hands back a summary</b><span class="mut">the main session fixes from it, blind</span></div>
+    </div>
+    <p class="note">The iphone-chat-tail run lost six rounds this way before #156 moved testing back in.</p>
+  </div>
+</template>
+
+<template data-frame="E3" data-w="520" data-h="440">
+  <link rel="stylesheet" href="assets/ship-review.css">
+  <div class="fr">
+    <h3>Cases fixed at PLAN</h3>
+    <div class="flow">
+      <div class="step good"><b>PLAN writes qa.md's cases</b><span class="mut">from the spec, before any code</span></div><div class="arrow">↓</div>
+      <div class="step"><b>BUILD</b><span class="mut">the main session</span></div><div class="arrow">↓</div>
+      <div class="step"><b>TEST walks them as written</b><span class="mut">adds cases, never drops one</span></div><div class="arrow">↓</div>
+      <div class="step"><b>Walk, fix, rerun</b><span class="mut">same session, full context</span></div>
+    </div>
+  </div>
+</template>
+
+<template data-frame="F1" data-w="1000" data-h="110">
+  <div class="term" style="font:14px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace;background:#1e1e1e;color:#d4d4d4;height:100%;padding:16px 20px;margin:0">
+    <div>🌳 cells-app ⎇ feature/cel-284-carpool  <span style="color:#7f848e">🚢 6</span></div>
+    <div><span style="color:#7f848e">Opus 5.5 · high · ctx 38%</span>   <span style="color:#98c379">O 41%</span> · <span style="color:#98c379">F 2%</span> <span style="color:#7f848e">↻2d</span></div>
+  </div>
+</template>
+
+<template data-frame="F2" data-w="1000" data-h="110">
+  <div class="term" style="font:14px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace;background:#1e1e1e;color:#d4d4d4;height:100%;padding:16px 20px;margin:0">
+    <div>🌳 cells-app ⎇ feature/cel-284-carpool  <span style="color:#7f848e">🚢 6</span>  <span style="color:#f0a020;font-weight:700">✋ 3 wait on you · oldest 19d</span></div>
+    <div><span style="color:#7f848e">Opus 5.5 · high · ctx 38%</span>   <span style="color:#98c379">O 41%</span> · <span style="color:#98c379">F 2%</span> <span style="color:#7f848e">↻2d</span></div>
+  </div>
+</template>
+
+<template data-frame="G1" data-w="560" data-h="460">
+  <link rel="stylesheet" href="assets/ship-review.css">
+  <div class="fr">
+    <h3>On the 59 ships both read</h3>
+    <div class="two">
+      <div class="stat"><div class="big">243</div>real finds only Wonder made</div>
+      <div class="stat"><div class="big">233</div>real finds only Opus made</div>
+    </div>
+    <p class="mut">of about 747 distinct finds. Drop either reader and a third goes unseen.</p>
+    <table>
+      <tr><th>Reader</th><th class="n">Ships</th><th class="n">Real</th><th class="n">False</th></tr>
+      <tr><td>Wonder, the plan</td><td class="n">56</td><td class="n">840</td><td class="n">6%</td></tr>
+      <tr><td>Wonder, the branch</td><td class="n">73</td><td class="n">630</td><td class="n">13%</td></tr>
+      <tr><td>Opus, the branch</td><td class="n">89</td><td class="n">685</td><td class="n">8%</td></tr>
+    </table>
+  </div>
+</template>
+
+<template data-frame="G2" data-w="560" data-h="460">
+  <link rel="stylesheet" href="assets/ship-review.css">
+  <div class="fr">
+    <h3>Passed checks the first time</h3>
+    <table>
+      <tr><th>When</th><th class="n">Fable</th><th class="n">Opus, main session</th></tr>
+      <tr><td>Before 10-24</td><td class="n">98% of 431</td><td class="n">81% of 290</td></tr>
+      <tr><td>Window, same ships</td><td class="n">93% of 46</td><td class="n">61% of 59</td></tr>
+      <tr><td>Since 10-29</td><td class="n">none built</td><td class="n">50% of 328</td></tr>
+    </table>
+    <p>A subagent hands back work it already got passing, so its row hides its own fix rounds. The main session logs every red typecheck on the way. The gap is mostly how each one logs.</p>
+    <p class="note">My read: keep Opus-only. Q9's commit-time count would make a fair test if you ever want Fable back.</p>
+  </div>
+</template>
+
+<template data-frame="G3" data-w="560" data-h="460">
+  <link rel="stylesheet" href="assets/ship-review.css">
+  <div class="fr">
+    <h3>Since 10-24</h3>
+    <div class="stat"><div class="big">546 of 580</div>build rows have no time</div>
+    <div class="stat"><div class="big">22 of 80</div>reviewed ships logged one reviewer</div>
+    <div class="stat"><div class="big">4 times</div>the skill's rule for logging reviewers was rewritten (#275, #281, #286, #293)</div>
+  </div>
+</template>
+
+<template data-frame="G4" data-w="560" data-h="460">
+  <link rel="stylesheet" href="assets/ship-review.css">
+  <div class="fr">
+    <h3>What recall showed, and what ships used</h3>
+    <div class="two">
+      <div class="stat"><div class="big">10 / 108</div>calls shown were used</div>
+      <div class="stat"><div class="big">17 / 24</div>ships used none</div>
+    </div>
+    <ul class="tight">
+      <li>4 of the 10 uses came from one design ship, cells-skin</li>
+      <li>cells-app's log holds 442 active calls; 94 are about one finished ship</li>
+      <li>six of them still route builds to Fable or Astra</li>
+    </ul>
+  </div>
+</template>
+
+<template data-frame="H1" data-w="560" data-h="480">
+  <link rel="stylesheet" href="assets/ship-review.css">
+  <div class="fr">
+    <h3>verify/SKILL.md</h3>
+    <p class="sub"><span class="big">461</span> lines · 6,153 words</p>
+    <div class="bars">
+      <span>iPhone and simulator</span><span class="b hot" style="width:100%"></span><span class="v">1,085</span>
+      <span>Mac VM</span><span class="b hot" style="width:50%"></span><span class="v">538</span>
+      <span>Browser extras</span><span class="b hot" style="width:30%"></span><span class="v">330</span>
+      <span>Web path, the rest</span><span class="b" style="width:100%"></span><span class="v">4,200</span>
+    </div>
+    <p class="mut">words. The first three load on every run, web-only ones included.</p>
+    <p class="cut">reference/codex.md · 1,523 words, nothing calls it</p>
+  </div>
+</template>
+
+<template data-frame="H2" data-w="560" data-h="480">
+  <link rel="stylesheet" href="assets/ship-review.css">
+  <div class="fr">
+    <h3>verify after</h3>
+<div class="tree">  SKILL.md                about 4,000 words
+<span class="add">+ reference/ios.md        when the contract has ios:</span>
+<span class="add">+ reference/mac.md        when the contract has mac:</span>
+<span class="add">+ reference/browser.md    protected previews, print, a terminal UI</span>
+<span class="cut">− reference/codex.md</span>
+  reference/checks-template.md
+<span class="add">    one line per lesson, a noise table</span></div>
+    <p class="note">The iPhone file settles the locked-phone and Safari answers as it moves. The repo-specific rules go to that repo's checks file.</p>
+  </div>
+</template>
+
+<template data-frame="H3" data-w="560" data-h="480">
+  <link rel="stylesheet" href="assets/ship-review.css">
+  <div class="fr">
+    <h3>cells-app .claude/skills/checks</h3>
+    <div class="two">
+      <div class="stat"><div class="big cut">595</div>lines, against its own 80-line cap</div>
+      <div class="stat"><div class="big">253</div>lines of dated lessons, 36 in 17 days</div>
+    </div>
+    <ul class="tight">
+      <li>one sign-in trick written three times, one redeem file five</li>
+      <li>two lessons disagree on where screenshots go</li>
+      <li>eca-finder's is 108 lines, cc-bridge's 60</li>
+    </ul>
+  </div>
+</template>
+
+<template data-frame="I1" data-w="640" data-h="560">
+  <link rel="stylesheet" href="assets/ship-review.css">
+  <div class="fr">
+    <h3>Deleted</h3>
+<div class="tree"><span class="cut">− astra.sh, codex-handoff.py, codex/            </span> <span class="mut">1,008</span>
+<span class="cut">  build-codex.py, test-codex.py, .codex-plugin/</span>
+<span class="cut">  verify/reference/codex.md</span>
+<span class="cut">− board/                                        </span> <span class="mut">  379</span>
+<span class="cut">− pipeline/design/*.html                        </span> <span class="mut">  343</span>
+<span class="cut">− muse.py build and usage cache                 </span> <span class="mut">   90</span>
+<span class="cut">− statusline.sh Codex gauge and its test        </span> <span class="mut">   80</span>
+<span class="cut">− route.py Fable window, pools, reader          </span> <span class="mut">   65</span>
+<span class="cut">− Codex and Fable bits in recap, notify, buttons</span> <span class="mut">   20</span></div>
+    <p class="note">The status line, gate buttons, tabs, Share button and menu bar VMs stay as they are. Every self-test is rerun on the branch.</p>
+  </div>
+</template>
+
+<template data-frame="I2" data-w="520" data-h="560">
+  <link rel="stylesheet" href="assets/ship-review.css">
+  <div class="fr">
+    <h3>The shipboard</h3>
+    <div class="stat"><div class="big">9 weeks</div>since board/ last changed</div>
+    <ul class="tight">
+      <li>its launchd job isn't installed, so nothing uploads</li>
+      <li>board.cells.md still answers 200 with the old page</li>
+      <li>its repo list leaves out cells-app</li>
+      <li>its field guide still describes an "all-sol" split</li>
+    </ul>
+    <p class="note">Taking it down deletes board/ and the Worker, R2 bucket and DNS record on PKAI. This repo's CLAUDE.md drops its section.</p>
+  </div>
+</template>
+
+<script>
+// Mount every <template data-frame> into the artboard that names it, all at one zoom.
+(function () {
+  const templates = new Map([...document.querySelectorAll('template[data-frame]')].map((t) => [t.dataset.frame, t]));
+  const base = location.href.split('#')[0];
+  const frame = (t) => {
+    const f = document.createElement('iframe');
+    f.width = Number(t.dataset.w || 1280); f.height = Number(t.dataset.h || 800); f.title = t.dataset.frame;
+    f.srcdoc = '<!doctype html><html><head><meta charset="utf-8"><base href="' + base + '"></head><body>' + t.innerHTML + '</body></html>';
+    return f;
+  };
+  const boards = [];
+  for (const fig of document.querySelectorAll('figure.ab[data-mount]')) {
+    const code = fig.dataset.mount, tag = document.createElement('span');
+    tag.className = 'tag'; tag.textContent = code;
+    fig.id = code; fig.querySelector('.name').prepend(tag);
+    const t = templates.get(code);
+    if (!t) continue;
+    const f = frame(t);
+    fig.querySelector('.stage').append(f);
+    boards.push({ fig, f, w: +f.width, h: +f.height });
+    fig.querySelector('.name').addEventListener('click', () => enlarge(t, fig.querySelector('.name').textContent));
+    const stage = fig.querySelector('.stage');
+    let timer, peek;
+    stage.addEventListener('mouseenter', () => {
+      timer = setTimeout(() => { peek = sized(t, 'peek'); document.body.append(peek); }, 250);
+    });
+    stage.addEventListener('mouseleave', () => { clearTimeout(timer); peek?.remove(); peek = null; });
+  }
+
+  const dlg = document.querySelector('dialog');
+  function sized(t, cls) {
+    const f = frame(t), w = +f.width, h = +f.height, s = Math.min(1, (innerWidth - 80) / w, (innerHeight - 100) / h);
+    f.style.transform = 'scale(' + s + ')';
+    const box = document.createElement('div');
+    box.className = cls; box.style.width = w * s + 'px'; box.style.height = h * s + 'px';
+    box.append(f);
+    return box;
+  }
+  function enlarge(t, name) {
+    const box = sized(t, 'box');
+    const label = document.createElement('p');
+    label.className = 'name'; label.textContent = name;
+    dlg.replaceChildren(label, box); dlg.showModal();
+  }
+  dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
+
+  let z = 1;
+  const zLabel = document.querySelector('[data-z-label]');
+  function zoom(v) {
+    z = Math.max(0.1, Math.min(1, v));
+    for (const b of boards) {
+      b.f.style.transform = 'scale(' + z + ')';
+      const st = b.fig.querySelector('.stage');
+      st.style.width = b.w * z + 'px'; st.style.height = b.h * z + 'px';
+      b.fig.style.width = Math.max(b.w * z, 160) + 'px';
+      b.fig.style.setProperty('--stage-h', b.h * z + 'px');
+    }
+    zLabel.textContent = Math.round(z * 100) + '%';
+  }
+  function fit() {
+    if (!boards.length) return zoom(1);
+    const h = Math.max(...boards.map((b) => b.h)), w = Math.max(...boards.map((b) => b.w));
+    zoom(Math.max(0.3, Math.min(1, (innerHeight - 200) / h, (innerWidth - 80) / w)));
+  }
+  const act = { in: () => zoom(z + 0.1), out: () => zoom(z - 0.1), fit, full: () => zoom(1) };
+  document.querySelector('.zoom').addEventListener('click', (e) => act[e.target.dataset.z]?.());
+  addEventListener('keydown', (e) => {
+    const k = { '+': 'in', '=': 'in', '-': 'out', '1': 'fit', '0': 'full' }[e.key];
+    if (k && !e.metaKey && !e.ctrlKey) act[k]();
+  });
+  fit();
+  const hit = /^#[A-Z]\d+$/.test(location.hash) && document.getElementById(location.hash.slice(1));
+  if (hit) hit.scrollIntoView({ block: 'center', inline: 'center' });
+
+  const r = document.body.dataset.round, el = document.querySelector('[data-round-no]');
+  if (r && el) el.textContent = r;
+})();
+</script>
+</body>
+</html>
