@@ -11,7 +11,7 @@
 sends `usage/changed` after each turn, so a build runs a serve session: initialize, initialized,
 session/start, turn/start with the brief, then frames until turn/completed. Every usage report,
 and a final `usage/read`, rewrites ~/.claude/muse-usage-cache.json (or SHIP_QUOTA_MUSE), which
-quota.py reads for the `muse` pool.
+`muse.py usage` prints.
 
 <out-dir> gets events.jsonl (every frame), last.md (the last finalAnswer message, else the last agentMessage), stderr.txt and
 home/, the serve's HOME: a shadow of the real home, every entry linked back except the skill
@@ -36,9 +36,7 @@ import sys
 import tempfile
 import time
 import uuid
-
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import quota  # noqa: E402
+from datetime import datetime, timezone
 
 STARTUP = float(os.environ.get('MUSE_STARTUP') or 60)
 IDLE = float(os.environ.get('MUSE_IDLE') or 900)
@@ -71,7 +69,7 @@ def read_cache(path=None):
 
 
 def write_cache(data):
-    """Temp file and rename, so quota.py never reads half a file."""
+    """Temp file and rename, so a reader never sees half a file."""
     path = cache_path()
     os.makedirs(os.path.dirname(path), exist_ok=True)
     fd, tmp = tempfile.mkstemp(dir=os.path.dirname(path), prefix='.muse-usage-')
@@ -98,7 +96,7 @@ def mark_exhausted(detail):
     window = dict(data.get('window') or {}, usedPercent=100, resetsAtMs=reset)
     window.setdefault('windowDurationMins', 300)
     data.update(window=window, observedAtMs=now_ms, exhausted=detail)
-    data.setdefault('weekly', {'usedPercent': 100, 'resetsAtMs': reset})  # quota.py needs a weekly block
+    data.setdefault('weekly', {'usedPercent': 100, 'resetsAtMs': reset})
     write_cache(data)
     return reset
 
@@ -260,7 +258,8 @@ def build(worktree, brief, out, model):
     if error.get('quota'):
         reset = mark_exhausted(error['quota'])
         print(f"muse: quota hit ({error['quota'].get('limitKind')}), resets "
-              f"{quota.iso(reset / 1000)}; pool marked exhausted in {cache_path()}")
+              f"{datetime.fromtimestamp(reset / 1000, timezone.utc).isoformat(timespec='seconds')}; "
+              f"marked exhausted in {cache_path()}")
         return 5
     raise Exit(1, f"turn {done.get('terminal')}: {error.get('message') or done.get('reason') or 'no error given'}"
                   f'. See {out}/events.jsonl')

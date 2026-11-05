@@ -17,7 +17,6 @@ shows as engine=opus, routed=driver.
                                  showed the ship it actually used; never a BUILD task
   route.py report                the ledger as a table by engine and difficulty, by
                                  pool, then the reviewers'
-  route.py quota                 the pools, one line each (quota.py --table)
   route.py reader                the model that reads the branch at REVIEW (opus)
   route.py --selftest
 
@@ -39,8 +38,6 @@ import time
 import urllib.error
 import urllib.request
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # quota.py is a sibling, whoever imports us
-import quota  # noqa: E402
 
 # The decision model: TypeSafe's newest Jev. SubQ is out (Pete, 2026-11-03: "all jev").
 JEV = {'url': 'https://api.typesafe.ai/v1/systemone', 'model': 'jev-latest',
@@ -574,7 +571,5 @@ if __name__ == '__main__':
         print(report())
     elif args == ['reader']:  # the Claude model that reads the branch at REVIEW
         print('opus')
-    elif args == ['quota']:
-        print(quota.table())
     else:
         sys.exit(__doc__)
