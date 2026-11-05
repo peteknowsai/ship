@@ -2,6 +2,8 @@
 # what-changed.sh <old-copy> <new-copy>: the skill files that differ between two installed ship
 # copies and, under each Markdown one, the sections its changed lines sit in, so a session told
 # ship was updated rereads those instead of diffing by hand (ttowns-civic-feed, 2026-11-04).
+# Each heading carries its line in the new copy, so the Read tool opens the section there;
+# a computed `sed -n "${a},${b}p"` is refused by the worktree guard (cel-280).
 # what-changed.sh --selftest
 set -u
 
@@ -16,7 +18,7 @@ sections() {  # the heading over each line of $2 that differs from $1, once each
     awk 'NR == FNR { at[$1] = 1; next }
          /^(```|~~~)/ { f = !f }
          !f && /^#+ / { h = substr($0, 1, 72); hn = FNR }
-         FNR in at && !seen[hn]++ { print "    " (hn ? h : "(before the first heading)") }' - "$2"
+         FNR in at && !seen[hn]++ { print "    " (hn ? h " (line " hn ")" : "(before the first heading)") }' - "$2"
   awk 'NR == FNR { have[$0] = 1; next } !have[$0] { print "    gone: " substr($0, 1, 72) }' \
     <(heads "$2") <(heads "$1")
 }
@@ -52,19 +54,19 @@ if [ "${1:-}" = --selftest ]; then
   out=$(changes "$t/a" "$t/b")
   under() { printf "%s\n" "$out" | awk -v f="  $1" '$0 == f { on = 1; next } on && /^    / { print; next } { on = 0 }'; }
   ok 'a changed SKILL.md is listed with only the section that changed' \
-     '[ "$(under pipeline/SKILL.md)" = "    ### 5 · LAND" ]'
+     '[ "$(under pipeline/SKILL.md)" = "    ### 5 · LAND (line 7)" ]'
   ok 'an identical file is not listed' '! printf "%s" "$out" | grep -q "verify/SKILL.md"'
   ok 'a new and a removed file are named as such' \
      'printf "%s" "$out" | grep -qx "  new: pipeline/added.sh" && printf "%s" "$out" | grep -qx "  gone: pipeline/gone.md"'
   ok 'a line above every heading and a new heading both show, each once' \
-     '[ "$(under verify/notes.md)" = "$(printf "    (before the first heading)\n    ## B")" ]'
+     '[ "$(under verify/notes.md)" = "$(printf "    (before the first heading)\n    ## B (line 5)")" ]'
   ok 'a deletion inside a section names it, a fenced # line is no heading, a deleted section is gone' \
-     '[ "$(under verify/edits.md)" = "$(printf "    ## Keep\n    ## Notes\n    ## Notes\n    gone: ## Old")" ]'
-  ok 'deleting line 1 names what now starts the file' '[ "$(under verify/top.md)" = "    ## S" ]'
+     '[ "$(under verify/edits.md)" = "$(printf "    ## Keep (line 1)\n    ## Notes (line 7)\n    ## Notes (line 9)\n    gone: ## Old")" ]'
+  ok 'deleting line 1 names what now starts the file' '[ "$(under verify/top.md)" = "    ## S (line 1)" ]'
   ok 'two identical copies print nothing' '[ -z "$(changes "$t/a" "$t/a")" ]'
   [ $fail = 0 ] && echo "what-changed self-test: 0 failed" || { echo "what-changed self-test: failed"; exit 1; }
   exit 0
 fi
 
-[ $# -eq 2 ] && [ -d "$1/skills" ] && [ -d "$2/skills" ] || { sed -n '2,5p' "$0" >&2; exit 2; }
+[ $# -eq 2 ] && [ -d "$1/skills" ] && [ -d "$2/skills" ] || { sed -n '2,7p' "$0" >&2; exit 2; }
 changes "$1" "$2"

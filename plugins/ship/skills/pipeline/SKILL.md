@@ -675,7 +675,8 @@ or no GitHub remote: `reference/rare-cases.md`, Landing variants.
      id>`, 5 to 20 minutes, after which main's restart prunes the rest).
    - `stage.sh <root> land`, `git fetch origin`; if main moved, absorb it in a call of its own
      and see it merged clean before any gate (CEL-140 gated a half-merged tree). An absorb
-     whose files overlap what the QA run walked or measured reruns those steps on the merged
+     whose files (`git diff --name-only HEAD...origin/main` after the fetch and before the
+     absorb, one plain call, right for a merge or a rebase) overlap what the QA run walked or measured reruns those steps on the merged
      tree (the server restarted on it, or a preview's new build); an overlap of only tests,
      or imports that still name the same code, keeps the pass, and the PR says so.
    - The full gates once, if the tree changed since their last full run, with the dev server
