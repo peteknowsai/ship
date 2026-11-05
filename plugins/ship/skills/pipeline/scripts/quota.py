@@ -30,18 +30,9 @@ from datetime import datetime, timezone
 DAY = 86400
 STALE = 30 * 60  # the status line's own staleness rule
 EMPTY = 95
-OPUS_WEEKLY_CAP = 70  # the default; Pete's number in ~/.config/ship/opus-weekly-cap wins
-
-
-def opus_weekly_cap():
-    """Pete tunes how much of the week Opus may build with (2026-10-21: "I can use more of
-    Opus, I just need it to last"): one number in a file, else the default."""
-    path = os.environ.get('SHIP_OPUS_CAP') or os.path.expanduser('~/.config/ship/opus-weekly-cap')
-    try:
-        return float(open(path).read().split()[0])
-    except (OSError, ValueError, IndexError):
-        return OPUS_WEEKLY_CAP
-OPUS_SESSION_CAP = 85
+# No "Opus blocked" flag: Opus writes all code since 2026-10-24, so nothing routes around it,
+# and a flat cap read as a stop sign stalled /groom at 94% an hour before the week reset
+# (2026-11-05). Pacing is the caller's: groom compares used% with the share of the window gone.
 UNKNOWN_USED, UNKNOWN_DAYS = 50, 3.5
 WEEK, FIVE_HOURS = 7 * DAY, 5 * 3600
 
@@ -130,12 +121,11 @@ def anthropic_pools(t):
     session = None
     if 'session' in found:
         session, _ = roll(*found['session'], FIVE_HOURS, t)
-    session_full = (session or 0) >= OPUS_SESSION_CAP  # blocks Opus even when the weekly is unknown
     if 'weekly_all' in found:
         used, reset = roll(*found['weekly_all'], WEEK, t)
-        opus = pool(used, reset, t, session=session, opus_blocked=used >= opus_weekly_cap() or session_full)
+        opus = pool(used, reset, t, session=session)
     else:
-        opus = unknown(why or 'no weekly_all limit', session=session, opus_blocked=session_full)
+        opus = unknown(why or 'no weekly_all limit', session=session)
     if 'fable' in found:
         fable = halve(pool(*roll(*found['fable'], WEEK, t), t))
     else:
@@ -175,7 +165,7 @@ def pools():
         found['anthropic'], found['fable'] = anthropic_pools(t)
     except Exception as error:
         why = f'usage-cache.json unparseable: {type(error).__name__}'
-        found['anthropic'] = unknown(why, session=None, opus_blocked=False)
+        found['anthropic'] = unknown(why, session=None)
         found['fable'] = halve(unknown(why))
     for name, read, label, extra in (('openai', openai_pool, 'codex-usage-cache.json', {}),
                                      ('muse', muse_pool, 'muse-usage-cache.json', {'window': None})):
@@ -193,7 +183,6 @@ def table(found=None):
         flags = [f"session {p['session']:.0f}%"] if p.get('session') is not None else []
         flags += [f"5h {p['window']:.0f}%"] if p.get('window') is not None else []
         flags += ['EMPTY'] if p['empty'] else []
-        flags += ['opus blocked'] if p.get('opus_blocked') else []
         flags += [f"unknown: {p['note']}"] if not p['known'] else []
         lines.append(f"{name:9} {p['used']:>5.0f} {p['unused']:>7.0f} {p['rate']:>9.1f}  {when}"
                      + (f"  ({', '.join(flags)})" if flags else ''))
@@ -204,7 +193,6 @@ def table(found=None):
 
 def selftest():
     fails = 0
-    os.environ['SHIP_OPUS_CAP'] = os.devnull  # never Pete's real cap file: the default 70 is what's tested
 
     def check(name, ok):
         nonlocal fails
@@ -256,25 +244,9 @@ def selftest():
         check('50% used with 1 day spares 50', pools()['anthropic']['rate'] == 50)
         claude(50, 0.1)
         check('0.1 days to reset uses the 0.25 floor: 50% spares 200', pools()['anthropic']['rate'] == 200)
-        claude(70, 3)
-        check('Opus blocked at weekly 70', pools()['anthropic']['opus_blocked'] is True)
-        claude(69, 3, session=85)
-        check('Opus blocked at session 85', pools()['anthropic']['opus_blocked'] is True)
-        claude(69, 3, session=84)
-        check('Opus free at weekly 69 and session 84', pools()['anthropic']['opus_blocked'] is False)
-        capfile = os.path.join(tmp, 'opus-cap')
-        open(capfile, 'w').write('92\n')
-        os.environ['SHIP_OPUS_CAP'] = capfile
-        claude(80, 3)
-        free80 = pools()['anthropic']['opus_blocked'] is False
-        claude(92, 3)
-        blocked92 = pools()['anthropic']['opus_blocked'] is True
-        open(capfile, 'w').write('not a number')
-        claude(80, 3)
-        fallback = pools()['anthropic']['opus_blocked'] is True
-        os.environ['SHIP_OPUS_CAP'] = os.devnull
-        check('a cap file of 92 frees Opus at 80 and blocks it at 92; a bad file falls back to 70',
-              free80 and blocked92 and fallback)
+        claude(94, 0.05, session=90)
+        check('94% an hour before the reset prints no stop flag, only the numbers',
+              'blocked' not in table() and 'opus_blocked' not in pools()['anthropic'])
         claude(10, 6, fable=95)
         check('Fable at 95 is empty', pools()['fable']['empty'] is True)
         muse(20, 99, t - 60)
@@ -298,7 +270,7 @@ def selftest():
         check('the table prints a line per pool', len(table(a).splitlines()) == 5)
         write('anthropic', {'limits': [{'kind': 'session', 'percent': 99, 'resets_at': iso(t + 3600)}]})
         a = pools()['anthropic']
-        check('session 99 blocks Opus with the weekly unknown', a['known'] is False and a['opus_blocked'] is True)
+        check('session 99 still reads with the weekly unknown', a['known'] is False and a['session'] == 99)
         claude(10, 6, session=90)
         broken = json.load(open(files['anthropic']))
         broken['limits'][1]['percent'] = 'unavailable'
@@ -318,8 +290,8 @@ def selftest():
         check('a non-numeric percent, an overflowing reset and a bad Muse field each read unknown, never raise',
               crashed is None and not p['anthropic']['known'] and not p['openai']['known'] and not p['muse']['known']
               and 'weekly_all' in p['anthropic']['note'])
-        check('one bad Anthropic field keeps the rest: session 90 still blocks Opus, Fable still known',
-              crashed is None and p['anthropic']['opus_blocked'] is True and p['fable']['known'] is True)
+        check('one bad Anthropic field keeps the rest: session 90 still reads, Fable still known',
+              crashed is None and p['anthropic']['session'] == 90 and p['fable']['known'] is True)
 
     print(f'quota self-test: {fails} failed')
     return fails == 0
