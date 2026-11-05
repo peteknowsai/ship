@@ -17,6 +17,7 @@ case "$stage" in
   gate:1*) what="GATE 1 — storyboard" ;;
   gate:2*) what="GATE 2 — go" ;;
   gate:test*) what="try it, then merge main?" ;;
+  gate:input*) what="needs you" ;;
   *) exit 0 ;;
 esac
 

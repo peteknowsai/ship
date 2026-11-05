@@ -77,6 +77,7 @@ git_branch=""
 git_root=""
 is_linked=0
 ships_count=0
+waiting_count=0; waiting_oldest=""
 repo_name=$(basename "$current_dir")
 if git rev-parse --git-dir >/dev/null 2>&1; then
   # --show-current prints nothing (and succeeds) on a detached HEAD, so fall back by hand
@@ -87,9 +88,16 @@ if git rev-parse --git-dir >/dev/null 2>&1; then
   { read -r gd; read -r gcd; } < <(git rev-parse --path-format=absolute --git-dir --git-common-dir 2>/dev/null)
   [ -n "$gd" ] && [ "$gd" != "$gcd" ] && is_linked=1
   wt_list=$(git worktree list 2>/dev/null)
-  # ships in flight = linked worktrees carrying a live .ship-stage (landed ones are done)
+  # ships in flight = linked worktrees carrying a live .ship-stage (landed ones are done);
+  # the ones parked on a gate:* marker wait on Pete, and the oldest marker says for how long
   while read -r wt; do
-    [ -f "$wt/.ship-stage" ] && ! grep -q landed "$wt/.ship-stage" 2>/dev/null && ships_count=$((ships_count + 1))
+    [ -f "$wt/.ship-stage" ] && ! grep -q landed "$wt/.ship-stage" 2>/dev/null || continue
+    ships_count=$((ships_count + 1))
+    if grep -q '^gate:' "$wt/.ship-stage" 2>/dev/null; then
+      waiting_count=$((waiting_count + 1))
+      m=$(stat -f %m "$wt/.ship-stage" 2>/dev/null)
+      [ -n "$m" ] && { [ -z "$waiting_oldest" ] || [ "$m" -lt "$waiting_oldest" ]; } && waiting_oldest=$m
+    fi
   done < <(printf '%s\n' "$wt_list" | tail -n +2 | awk '{print $1}')
   # canonical repo name = basename of the main (first) worktree, so a worktree shows
   # "homezero", not the long redundant "homezero.feature-x"
@@ -205,6 +213,7 @@ if [ -n "$ship_stage" ]; then
     gate:1*) printf "$(gate_c)✋ %s — storyboard?$(rst)" "$ship_slug"; is_gate=1; phase="$(stage_bar design)" ;;
     gate:2*) printf "$(gate_c)✋ %s — go?$(rst)" "$ship_slug"; is_gate=1; phase="$(stage_bar plan)" ;;
     gate:test*) printf "$(gate_c)✋ %s — try it, then merge main?$(rst)" "$ship_slug"; is_gate=1; phase="$(stage_bar test)" ;;
+    gate:input*) printf "$(gate_c)✋ %s — needs you$(rst)" "$ship_slug"; is_gate=1 ;;
     test*)   printf "$(ship_c)🧪 %s — testing$(rst)" "$ship_slug"; phase="$(stage_bar test)" ;;
     discover*) printf "$(ship_c)🚢 %s$(rst)" "$ship_slug"; phase="$(stage_bar design)" ;;
     plan*)     printf "$(ship_c)🚢 %s$(rst)" "$ship_slug"; phase="$(stage_bar plan)" ;;
@@ -230,6 +239,12 @@ fi
 # ships in flight — orientation; hidden at a gate
 if [ "$is_gate" -eq 0 ] && [ "$ships_count" -ge 1 ]; then
   printf "  $(c '38;5;80')🚢 %d$(rst)" "$ships_count"
+fi
+# ships parked on Pete, any repo's worktrees this checkout knows: how many, and the oldest wait
+if [ "$waiting_count" -ge 1 ]; then
+  waited=$(( $(date +%s) - ${waiting_oldest:-$(date +%s)} ))
+  if [ "$waited" -ge 86400 ]; then age="$((waited / 86400))d"; else age="$((waited / 3600))h"; fi
+  printf "  $(gate_c)✋ %d wait on you · oldest %s$(rst)" "$waiting_count" "$age"
 fi
 printf "\n"
 
