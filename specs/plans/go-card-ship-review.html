@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>📋 ship-review · plan</title>
+<style>
+  :root{--page:#f5f5f7;--card:#fff;--ink:#1d1d1f;--slate:#515154;--mut:#86868b;
+    --line:#e3e3e8;--amber:#c8892b;--grn:#3f7d4e;--red:#b4543a;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--page);color:var(--ink);
+    font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    -webkit-font-smoothing:antialiased;padding:40px 20px}
+  .wrap{max-width:680px;margin:0 auto}
+  h1{font-size:34px;line-height:1.1;margin:6px 0 2px;font-weight:600}
+  .sub{color:var(--slate);margin:0 0 22px;font-size:15px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin:14px 0}
+  .card h2{margin:0 0 10px;text-transform:uppercase;color:var(--mut);
+    font-weight:700;font-size:12px;letter-spacing:.14em}
+  .scope{font-size:18px;line-height:1.4;margin:0}
+  ul{margin:6px 0 0;padding-left:18px} li{margin:5px 0}
+  .cut li{color:var(--slate)}
+  .risk{font-weight:600;font-size:14px}
+  .board{position:relative;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--page)}
+  .board iframe{display:block;border:0;width:1240px;height:1400px;transform:scale(.5);transform-origin:0 0;pointer-events:none}
+  .board a.open{position:absolute;right:10px;bottom:10px;font-size:13px;background:var(--card);
+    border:1px solid var(--line);border-radius:6px;padding:3px 10px;color:var(--ink);text-decoration:none}
+  ol.punch{margin:6px 0 0;padding-left:22px} ol.punch li{margin:6px 0}
+  .go{text-align:center;font-size:20px;margin:24px 0 6px;font-weight:600}
+  .foot{color:var(--mut);font-size:13px;margin-top:18px;text-align:center}
+  code{background:#ececf0;border-radius:5px;padding:1px 6px;font-size:13px;font-family:ui-monospace,Menlo,monospace}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>The plan</h1>
+  <p class="sub">The storyboard you locked, and what gets built from it.</p>
+
+  <div class="card">
+    <h2>The storyboard</h2>
+    <div class="board" style="height:700px">
+      <iframe src="../designs/2026-11-05-ship-review.html" title="locked storyboard"></iframe>
+      <a class="open" href="../designs/2026-11-05-ship-review.html">open it</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>What gets built</h2>
+    <p class="scope">Every pick on the board, in one PR, plus one cells-app PR and the shipboard teardown after the merge.</p>
+    <ol class="punch">
+      <li>The Codex, Fable-window and shipboard code goes, about 2,000 lines.</li>
+      <li>route.py times each task from its commits and won't let a ship land until both reviewers are logged.</li>
+      <li>decisions.py retires several old calls with one new one and flags calls that name a retired engine. Recall runs on design ships only.</li>
+      <li>The status line counts the ships waiting on you and how long the oldest has waited.</li>
+      <li>verify keeps the web path. iPhone, Mac and browser extras move to their own files, and checks files keep one line per lesson.</li>
+      <li>QA cases are written at PLAN from the spec. TEST walks them and may only add.</li>
+      <li>The main skill is rewritten to about 900 lines in run order, with the fourteen contradictions settled and every stop in one list.</li>
+      <li>LAND checks the PR's CI, merges before the worktree comes off, and reverts a live break first. Money paths always wait for "merge main".</li>
+      <li>This repo's CLAUDE.md gets the line budget: a retro finding goes to incidents.md first.</li>
+      <li>cells-app's checks file is trimmed to about 150 lines in its own PR, and its stale engine calls are retired.</li>
+      <li>After the merge, the shipboard's Worker, R2 bucket and DNS record come down.</li>
+    </ol>
+  </div>
+
+  <div class="card cut">
+    <h2>Ponytail cut</h2>
+    <ul>
+      <li>A script that writes the PR body and review card from the QA result. Wonder suggested it, and it wasn't on the board.</li>
+      <li>Scaling reviews down for small ships. The log says both reviewers earn their read.</li>
+      <li>One shared helper for the five scripts that find the stage marker. It saves 20 lines and fixes no bug.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>Your call</h2>
+    <p style="margin:0">No calls. The storyboard settled everything.</p>
+  </div>
+
+  <div class="card">
+    <h2>Risk</h2>
+    <p class="risk" style="color:var(--amber)">Medium</p>
+    <p style="margin:4px 0 0;font-size:14px;color:var(--slate)">Every ship runs this text, so a dropped rule would come back as a repeat failure. The QA run audits every rule in the old skill against the new one, and both reviewers read for lost rules.</p>
+  </div>
+
+  <p class="foot">Storyboard: <code>specs/designs/2026-11-05-ship-review.html</code> · the execution plan is written now and you never read it</p>
+</div>
+</body>
+</html>
