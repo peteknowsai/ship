@@ -28,7 +28,9 @@ concluding "looks right" is exactly the failure this skill exists to prevent.
 **Read a reference when its case is in the run:**
 - `reference/ios.md` when the contract has `ios:`, or the spec or storyboard says mobile
   web: the phone, simulators, Safari, and a locked phone.
-- `reference/mac.md` when the contract has `mac:`: the borrowed Mac VM and the lock check.
+- `reference/mac.md` when the contract has `mac:`, or the walk drives a rig on the Mac (a
+  Chrome extension, a live-node rig): the borrowed Mac VM, the lock check, and a rig's
+  windows, its Chrome for Testing and what the checks file keeps of it.
 - `reference/browser.md` when the target is a protected preview, chrome-devtools is missing,
   or the walk prints, copies, drives a browser on another box, or runs a terminal UI.
 

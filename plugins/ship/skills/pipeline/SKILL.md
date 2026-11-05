@@ -28,7 +28,8 @@ Next; Cloudflare keeps DNS, R2 and its Workers): never re-ask it. The repo's own
 outside the canon.
 
 `reference/incidents.md` holds environment facts from real failed runs: read its section
-before merges, teardowns, deploys, or debugging a dispatch or a refused command.
+before merges, teardowns, deploys, a dev-server restart, a background push, a host's first
+push, a storyboard opened in Safari, or debugging a dispatch or a refused command.
 
 **Not ship's job:** phasing (the scope law); superpowers' `brainstorming`, on any lane
 (ship's DISCOVER replaces it), and `executing-plans`; strict TDD outside money paths, where
@@ -60,7 +61,9 @@ against main first, posting one line that it is doing so, and forks only once a 
 is known. That covers a brief that may end in no code ("if it's gone or not ours, close it
 with evidence") and a recheck of a fix that just landed: compare the bad data's timestamps
 with the fix's merge time first, since a row written before the fix proves nothing (CEL-174
-forked and copied a database for one). Keep the repro's files at absolute paths under the
+forked and copied a database for one). A card whose dated repros on main predate every change
+to the cause files (`git log origin/main --since=<repro date> -- <files>` prints nothing) is
+reproduced already: recheck it by code, and repro live only when that code moved (cel-283). Keep the repro's files at absolute paths under the
 job's tmp. A run that closes the card that way has no worktree, PR or landing; its proof goes
 on the card (CEL-172).
 
@@ -79,10 +82,11 @@ nothing lands untested. What scales is the ceremony before TEST, and you size it
   however small. A dab of `ponytail` (smallest diff), `impeccable` for anything visual. A
   diff of only docs skips the gates, pre-flight and app walk: TEST is verify's docs fact
   check. A diff of only tests, evals or test scripts is proven by its own green run, with
-  nothing loosened that the PR doesn't name (CEL-231, CEL-256).
+  nothing loosened that the PR doesn't name (CEL-231, CEL-256). The first Pete hears of an
+  EXPRESS ship is its links.
 - **SELF-DIRECTED: real work with no taste question in it.** Write the machine-facing plan
-  you need, then build, run REVIEW's two readers and TEST, land, `result:`. No stops and no
-  plan card; the review card is the record.
+  you need, then build, run REVIEW's two readers and TEST, land, `result:`. No stops before
+  TEST and no plan card; the review card is the record.
 - **GATED: Pete's taste or direction is in play.** A new user-facing surface, visual
   identity, a product tradeoff, ambiguous scope, a money path.
 
@@ -109,7 +113,8 @@ the PR body's first lines. Messages between sessions are exempt.
 - **Every stage flip posts one line**: the goal, the stage, what's next. Again after a
   compaction or a side job; five runs had him asking "where are we?".
 - **FleetView reads the session.** Pete names it `ship:<slug>` at spawn. Status lines ride
-  with the next tool call (`🔨 build 4/5 · <slug>`). A turn that stops for him ends with a
+  with the next tool call (`🔨 build 4/5 · <slug>`) and say where the work stands, never
+  the last command run. A turn that stops for him ends with a
   `needs input:` line (the row goes to awaiting input); a landing ends with `result:`
   (completed). Both end with `branch <branch> · worktree <path>` (`detached@<short-sha>`
   before a branch exists), which catches the cross-repo case. Keep those prefixes and the
@@ -199,7 +204,8 @@ brief says to assume the writer was wrong at every seam. Wonder runs as `scripts
 review <worktree> <brief> <out-dir>`, a background Bash call: read-only, findings in
 `<out-dir>/last.md`, `<out-dir>` in the job's tmp (muse.py refuses one inside the worktree).
 Any nonzero exit means Muse is out (5: its quota, with the reset; 2: a usage error, so read
-stderr; 6: the tree changed under it): a fresh Opus subagent takes Wonder's brief, its row
+stderr; 6: the tree changed under it), and so does exit 0 with `last.md` missing or empty,
+which is never a clean read (incidents: Dispatch): a fresh Opus subagent takes Wonder's brief, its row
 is `review=opus … note=for:wonder` so the ledger never credits Wonder with it, and `result:`
 says so. Nothing writes in the worktree while Muse reads, the gates, a build, a
 commit and a dev server's start included: `next build` and `next dev` rewrite the tracked
@@ -406,7 +412,8 @@ one with uncommitted work, one a live session holds (wt's 💬), or one under tw
 - **Rounds**: Pete reacts by code; "yes" takes every pick on the page. Redraw in place in the
   same file, bump the round in its `<title>` and `data-round`, delete a killed frame and never
   reuse its code, drop answered questions and continue the numbers, re-`show.sh`, and stop
-  again. Push back where taste warrants it.
+  again. Push back where taste warrants it. Asked to show it on his phone: rare-cases, which
+  never serves the repo root.
 - **Lock = gate 1** ("lock it", "this is it", "yes"): commit the storyboard as it stands.
   Every frame in it ships and nothing else does. Log the direction (Working rules), then PLAN.
 - **Smaller shapes.** A trivial visual change may collapse to one frame and one confirm,
@@ -463,7 +470,8 @@ one with uncommitted work, one a live session holds (wt's 💬), or one under tw
   `build:0:<M>` itself.
 - **Push at every milestone and hand Pete the links.** After a commit, push. With a per-push
   `preview:`, run it once the builds settle, never blocking the next task, and post one line
-  per app with what changed and what to try; on demand, post the localhost. A failed build is
+  per app with what changed and what to try, the tracker PR's body carrying the newest; on
+  demand, post the localhost. A failed build is
   yours to fix before you post.
 - **Before the first task, check the plan's files against work in flight**: `gh pr list -R
   <o/r> --state open --json number,headRefName,files` and `git log origin/main --since=1.day
@@ -487,8 +495,9 @@ one with uncommitted work, one a live session holds (wt's 💬), or one under tw
   half-edit). A Convex repo's briefs say `convex codegen` prints "Uploading functions" and
   deploys nothing. Never add scope by message mid-run: findings wait for its report and go
   back to the same worker (SendMessage) as the next round. Two wrong diffs and the driver
-  writes it, `verdict=redone`. Silence is not a signal: if its work is in the tree and no
-  report has landed, review the diff and run the gates yourself.
+  writes it, `verdict=redone`. Its report is checked against every message it was sent, each
+  fix item done. Silence is not a signal: if its work is in the tree and no report has
+  landed, review the diff and run the gates yourself.
 - **A UI task matches its frame** (`specs/designs/<storyboard>.html#A3`, markup and CSS), and
   a subagent writing UI is told to read `~/.claude/skills/impeccable/reference/craft-floor.md`
   and the storyboard's three banned model defaults, since it doesn't get impeccable's hook.
@@ -558,6 +567,8 @@ Wonder read where Sizing says.
   makes the branch correct, not bigger (Pete, 2026-11-01): decline a nit (style, naming, a
   comment that isn't wrong) and anything the spec doesn't ask for, unless it's security,
   money or data loss. Judgment calls go on the card or in `result:`.
+- **`git status` before the first fix**: dirt means a reader edited the tree, which nothing
+  stops a subagent doing; its edits are thrown away, never committed (incidents: Dispatch).
 - **Write the triage to `<job tmp>/triage-<slug>.md` before the first fix**: one line per
   finding, its reader, what it says, real, false or nit, and fixed or declined with why. It
   outlives a compaction, and the ledger rows and the PR's Reviewed line come from it
@@ -637,8 +648,9 @@ Wonder read where Sizing says.
   committed before the merge with the shots it shows. `LANDING_STATUS` says "Tested · landing
   on main" or what it waits on. EXPRESS has none; its `result:` names the proof shots.
 - **Screenshots** live in verify's `<shots-root>/.ship-shots/<slug>/`, never committed; any
-  brief that screenshots (recon's walk of the live product included) gets that absolute path
-  written in, since the browser writes only inside the session's launch directory.
+  brief that screenshots or hands the browser a file (an `evaluate_script` `sourcePath`, a
+  sign-in script; recon's walk of the live product included) gets that absolute path written
+  in, since the browser reads and writes only inside the session's launch directory.
   Copy what the card shows beside the card before teardown, then delete that folder after
   landing, unless the ship is EXPRESS, whose `result:` names them (moved to the main
   checkout's `.ship-shots/<slug>/` when the shots root was the worktree). A shots root in
@@ -734,7 +746,7 @@ or no GitHub remote: `reference/rare-cases.md`, Landing variants.
      worktree off main with `git revert <squash sha>`, its gates, the live load and a squash
      merge; then fix forward on a new ship. Tell Pete in one line what broke and which ships
      landed since the last green.
-   - `smoke: main` once, after the watch (one rerun on a network error); none after a land
+   - `smoke: main` once, after the watch (one rerun on a third party's network error); none after a land
      script that ran it. Restart a `worker:` once idle (rare-cases). Ship never runs a
      production deploy or pushes a production database by hand, and never makes Pete run
      one; an integration lane or a promotion is rare-cases.
@@ -764,8 +776,8 @@ run hitting it earns a line here.
 **The repo gets a retro too**: a mistake one of its checks could have caught (a lint rule, a
 type, a test, a CI job; a mechanical rule gets a check, never a standards line), information
 the run lacked (a log nobody tailed), a file it took long to find that a pointer in its
-`CLAUDE.md` would have saved, an expensive call a script would replace. Each real one is a
-follow-up. A gap an earlier run already listed is not news.
+`CLAUDE.md` would have saved, an expensive call a script would replace. A repo with no
+tests, lint or CI at all is one. Each real one is a follow-up. A gap an earlier run already listed is not news.
 
 **Follow-ups** are work outside the spec's scope the run threw off, never a specced surface
 left unbuilt. Keep a running list, never invent one, never gate the merge on it. Each gets
@@ -801,7 +813,7 @@ the tasks in `.ship-done`), since a stop's marker counts as waiting on him until
 
 "Merge main" takes the worktree all the way: merge, deploy, teardown. The same intent in
 other words counts ("ship it", "just merge"); "looks good" does not land. "Land anyway" on an
-unproven ship lands it with the unwalked steps named in `result:`. A locked phone stops
+unproven ship, or "merge main" there, lands it with the unwalked steps named in `result:`. A locked phone stops
 nothing: the simulator walks it unless the change needs the phone itself.
 
 **How a stop reaches him**: the status line shows the marker in amber (`✋ <slug> — needs

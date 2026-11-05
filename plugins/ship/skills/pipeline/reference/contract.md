@@ -171,8 +171,9 @@ The repo's automated end-to-end smoke, in two halves.
   smokes main on localhost). It is the one check that sees ships together: each branch was
   tested alone, and two that land an hour apart are never walked side by side.
 
-Each half runs once. A red whose failing step is a network error (a connect timeout, a DNS
-failure, a reset) gets one rerun, said in the `result:` line; any other red is real.
+Each half runs once. A red whose failing step is a network error reaching a third party (a
+connect timeout, a DNS failure, a reset) gets one rerun, said in the `result:` line; the app's
+own server resetting is a crash, and any other red is real.
 Default: none, and LAND's one load of each live URL is the whole check.
 
 ## `live:`
