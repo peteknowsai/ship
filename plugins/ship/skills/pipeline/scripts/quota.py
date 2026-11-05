@@ -7,7 +7,7 @@
 
 Pools: `anthropic` (Opus: weekly_all and the 5h session), `fable` (weekly_scoped), `openai`
 (Codex primary window) and `muse` (weekly, plus its 5h window). Each carries `used`, `unused`,
-`rate`, `empty`, `resets_at`, `known` and `note`. The spare rate is budget left per day until
+`rate`, `resets_at`, `known` and `note`. The spare rate is budget left per day until
 the reset, (100 - used) / max(days to reset, 0.25): "use what would otherwise go unused".
 
 A missing or unparseable cache, or a status-line cache older than 30 minutes, is unknown:
@@ -29,7 +29,6 @@ from datetime import datetime, timezone
 
 DAY = 86400
 STALE = 30 * 60  # the status line's own staleness rule
-EMPTY = 95
 # No "Opus blocked" flag: Opus writes all code since 2026-10-24, so nothing routes around it,
 # and a flat cap read as a stop sign stalled /groom at 94% an hour before the week reset
 # (2026-11-05). Pacing is the caller's: groom compares used% with the share of the window gone.
@@ -74,15 +73,15 @@ def spare(used, reset, t):
     return max(0.0, (100 - used) / max((reset - t) / DAY, 0.25))
 
 
-def pool(used, reset, t, empty=None, **extra):
+def pool(used, reset, t, **extra):
     return {'used': used, 'unused': 100 - used, 'rate': round(spare(used, reset, t), 2),
-            'empty': used >= EMPTY if empty is None else empty, 'resets_at': iso(reset),
+            'resets_at': iso(reset),
             'known': True, 'note': None, **extra}
 
 
 def unknown(note, **extra):
     return {'used': UNKNOWN_USED, 'unused': 100 - UNKNOWN_USED, 'rate': round((100 - UNKNOWN_USED) / UNKNOWN_DAYS, 2),
-            'empty': False, 'resets_at': None, 'known': False, 'note': note, **extra}
+            'resets_at': None, 'known': False, 'note': note, **extra}
 
 
 def anthropic_limits(data):
@@ -141,7 +140,7 @@ def openai_pool(t):
     window = limit['primary_window']
     used, reset = roll(window['used_percent'], float(window['reset_at']),
                        window.get('limit_window_seconds') or WEEK, t)
-    return pool(used, reset, t, empty=bool(limit.get('limit_reached')) or used >= EMPTY)
+    return pool(used, reset, t)
 
 
 def muse_pool(t):
@@ -154,7 +153,7 @@ def muse_pool(t):
     if window.get('usedPercent') is not None:
         span = (window.get('windowDurationMins') or 300) * 60
         five, _ = roll(window['usedPercent'], window['resetsAtMs'] / 1000, span, t)
-    return pool(used, reset, t, empty=used >= EMPTY or (five or 0) >= EMPTY, window=five)
+    return pool(used, reset, t, window=five)
 
 
 def pools():
@@ -182,7 +181,6 @@ def table(found=None):
         when = p['resets_at'][:16].replace('T', ' ') if p['resets_at'] else 'unknown'
         flags = [f"session {p['session']:.0f}%"] if p.get('session') is not None else []
         flags += [f"5h {p['window']:.0f}%"] if p.get('window') is not None else []
-        flags += ['EMPTY'] if p['empty'] else []
         flags += [f"unknown: {p['note']}"] if not p['known'] else []
         lines.append(f"{name:9} {p['used']:>5.0f} {p['unused']:>7.0f} {p['rate']:>9.1f}  {when}"
                      + (f"  ({', '.join(flags)})" if flags else ''))
@@ -235,8 +233,8 @@ def selftest():
         p = pools()
         check('10% used with 6 days to reset spares 15.0 a day', p['anthropic']['rate'] == 15.0)
         check('limits[] wins over the five_hour fallback', p['anthropic']['session'] == 10)
-        check('40% used with 5.42 days spares ~11.1 and is not empty',
-              abs(p['openai']['rate'] - 11.07) < 0.01 and not p['openai']['empty'] and p['openai']['known'])
+        check('40% used with 5.42 days spares ~11.1',
+              abs(p['openai']['rate'] - 11.07) < 0.01 and p['openai']['known'])
         check('Fable spares half: 10% with 6 days reads 7.5', p['fable']['rate'] == 7.5)
         check('Muse is known from a ten-day-old file whose resets lie ahead',
               p['muse']['known'] and p['muse']['used'] == 20 and p['muse']['window'] == 30)
@@ -247,15 +245,12 @@ def selftest():
         claude(94, 0.05, session=90)
         check('94% an hour before the reset prints no stop flag, only the numbers',
               'blocked' not in table() and ' 94 ' in table() and 'opus_blocked' not in pools()['anthropic'])
-        claude(10, 6, fable=95)
-        check('Fable at 95 is empty', pools()['fable']['empty'] is True)
+        claude(97, 0.05, fable=97)
+        check('97% an hour before the reset prints no EMPTY: what is left is still spendable',
+              'EMPTY' not in table() and 'empty' not in pools()['anthropic'] and 'empty' not in pools()['fable'])
         muse(20, 99, t - 60)
         m = pools()['muse']
-        check('an expired Muse window reads 0% and is not empty', m['window'] == 0 and not m['empty'])
-        muse(20, 96, t + 3600)
-        check('Muse window at 96% is empty', pools()['muse']['empty'] is True)
-        codex(40, 3, reached=True)
-        check('limit_reached is empty', pools()['openai']['empty'] is True)
+        check('an expired Muse window reads 0%', m['window'] == 0)
         os.remove(files['muse'])
         m = pools()['muse']
         check('a missing cache is known false, used 50, noted',
