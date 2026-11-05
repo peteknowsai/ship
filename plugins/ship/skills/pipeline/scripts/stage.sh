@@ -13,8 +13,9 @@ mkdir -p "$common/info"
 grep -qxF '.ship-*' "$common/info/exclude" 2>/dev/null || echo '.ship-*' >> "$common/info/exclude"
 [ "$2" = exclude ] && { echo "$root: .ship-* excluded"; exit 0; }
 printf '%s' "$2" > "$root/.ship-stage"
-# land: a SELF-DIRECTED or GATED ship commits its review card before LAND removes the
-# worktree; warn when the branch adds none for its slug (thin-search needed a second PR).
+# land: a SELF-DIRECTED or GATED ship commits its review card before the merge; remind it
+# when the branch adds none for its slug yet (thin-search needed a second PR). Step 0's smoke
+# line rides that commit, so a card still missing here is the normal case, not an alarm (cel-298).
 # Every lane hears it: .ship-route.json once told EXPRESS apart, but yonder-ideas-goals
 # reached LAND without one and without a card, so the line itself says EXPRESS has none.
 if [ "$2" = land ]; then
@@ -28,7 +29,7 @@ if [ "$2" = land ]; then
   # No base to diff against means no way to tell, so say nothing rather than cry wolf.
   if [ -n "$base" ] && files=$(git -C "$root" diff --name-only --diff-filter=A "$base"...HEAD 2>/dev/null); then
     printf '%s\n' "$files" | grep -qiE "review.*$id|$id.*review|(^|/)review\.html$" ||
-      echo "warning: no review card for $slug on this branch; a SELF-DIRECTED or GATED ship commits it now, Pete's approval on a live walk included (EXPRESS and a watched Codex hand-off have none)" >&2
+      echo "reminder: no review card for $slug on this branch yet; a SELF-DIRECTED or GATED ship commits it before the merge, in the commit that carries step 0's smoke line when step 0 runs one (EXPRESS has none)" >&2
   fi
 fi
 # A session keeps the ship it loaded at startup; a long one can run on rules since fixed.

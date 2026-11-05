@@ -243,6 +243,14 @@ Must carry:
   clause; 5dea5e0e by its content with Snap on TypeSafe's Jev (cells-app #390, 2026-11-03)
   in place of SubQ. Read each first. Then `stale` shows none.
 
+## Retro findings folded in mid-build
+
+- cel-298 (Task 6, 7): the review card's commit is the one that carries LAND step 0's
+  smoke line; stage.sh's land warning says to commit the card with step 0's smoke, before
+  the merge, so its warning on entry is the reminder, not an alarm.
+- cel-298 (Task 6): every template h1 gets line-height 1.3 or more (impeccable's
+  tight-leading floor), so a card never trips its Stop hook: review-card 1.05, go-card 1.1.
+
 ## After the merge (runs at LAND, not a build task)
 
 - Deploy to the plugin cache (every `ship@ship` entry); then check the deployed SKILL.md

@@ -98,13 +98,9 @@ if git rev-parse --git-dir >/dev/null 2>&1; then
 fi
 
 # ---- ship stage (worktree pipeline marker written by /ship) ----
-# Claude Code writes the bare stage word; Codex writes "key: value" lines with a
-# "stage:" key (or a bare word on line 1). Take the stage key when present.
 ship_stage=""
 if [ -n "$git_root" ] && [ -f "$git_root/.ship-stage" ]; then
-  ship_stage=$(sed -n 's/^stage:[[:space:]]*//p' "$git_root/.ship-stage" | head -1)
-  [ -n "$ship_stage" ] || ship_stage=$(head -1 "$git_root/.ship-stage")
-  ship_stage=$(printf '%s' "$ship_stage" | tr -d ' \n' | tr '[:upper:]' '[:lower:]')
+  ship_stage=$(head -1 "$git_root/.ship-stage" | tr -d ' \n' | tr '[:upper:]' '[:lower:]')
 fi
 ship_slug="${git_branch#*/}"
 
@@ -139,37 +135,10 @@ if [ -f "$usage_cache" ] && [ "$HAS_JQ" -eq 1 ]; then
   scoped_label=$(jq -r '(.limits[]? | select(.kind == "weekly_scoped") | .scope.model.display_name) // empty' "$usage_cache" 2>/dev/null | tr '[:upper:]' '[:lower:]')
 fi
 
-# ---- Codex weekly (cached; token from ~/.codex/auth.json) ----
-codex_pct=""; codex_reset_epoch=""
-codex_cache="$HOME/.claude/codex-usage-cache.json"
-codex_stale=1
-if [ -f "$codex_cache" ]; then
-  codex_age=$(($(date +%s) - $(stat -f %m "$codex_cache" 2>/dev/null || echo 0)))
-  [ "$codex_age" -lt 300 ] && codex_stale=0
-fi
-if [ "$codex_stale" -eq 1 ] && [ "$HAS_JQ" -eq 1 ] && [ -f "$HOME/.codex/auth.json" ] && [ ! -f "$HOME/.config/ship/no-codex" ]; then
-  codex_tok=$(jq -r '.tokens.access_token // empty' "$HOME/.codex/auth.json" 2>/dev/null)
-  codex_acct=$(jq -r '.tokens.account_id // empty' "$HOME/.codex/auth.json" 2>/dev/null)
-  if [ -n "$codex_tok" ]; then
-    fresh_codex=$(curl -s --max-time 2 "https://chatgpt.com/backend-api/wham/usage" \
-      -H "Authorization: Bearer $codex_tok" -H "chatgpt-account-id: $codex_acct" \
-      -H "Accept: application/json" 2>/dev/null)
-    echo "$fresh_codex" | jq -e '.rate_limit.primary_window' >/dev/null 2>&1 && echo "$fresh_codex" > "$codex_cache"
-  fi
-fi
-if [ -f "$codex_cache" ] && [ "$HAS_JQ" -eq 1 ]; then
-  codex_pct=$(jq -r '.rate_limit.primary_window.used_percent // empty' "$codex_cache" 2>/dev/null)
-  codex_reset_epoch=$(jq -r '.rate_limit.primary_window.reset_at // empty' "$codex_cache" 2>/dev/null)
-  codex_locked=$(jq -r '.rate_limit.limit_reached // false' "$codex_cache" 2>/dev/null)
-  # credits = the overage bank that keeps Codex running once the weekly locks
-  codex_credits=$(jq -r 'if .credits.has_credits then (.credits.balance | tonumber | floor) else empty end' "$codex_cache" 2>/dev/null)
-fi
-
 # ---- stale? a fetch that keeps failing leaves the last good cache behind; flag it ----
 stale_after=1800
 is_stale() { [ -f "$1" ] && [ $(( $(date +%s) - $(stat -f %m "$1" 2>/dev/null || echo 0) )) -gt "$stale_after" ]; }
 anthro_stale=0; is_stale "$usage_cache" && anthro_stale=1
-codex_stale=0;  is_stale "$codex_cache" && codex_stale=1
 
 # ---- update available? (cached 30m; render only when actually behind) ----
 update_available=""
@@ -220,17 +189,6 @@ weekly_color() {
   elif [ "${weekly_pct:-0}" -ge 50 ]; then c '38;5;215'
   else c '38;5;158'; fi
 }
-# the balance is its own gauge: green while it's healthy, red under 10k
-credits_color() {
-  [ "$codex_stale" = 1 ] && { c '38;5;245'; return; }
-  if [ "${codex_credits:-0}" -lt 10000 ]; then c '38;5;203'; else c '38;5;158'; fi
-}
-codex_color() {
-  [ "$codex_stale" = 1 ] && { c '38;5;245'; return; }   # stale: gray, not traffic-light
-  if [ "${codex_pct:-0}" -ge 80 ]; then c '38;5;203'
-  elif [ "${codex_pct:-0}" -ge 50 ]; then c '38;5;215'
-  else c '38;5;158'; fi
-}
 scoped_color() {
   [ "$anthro_stale" = 1 ] && { c '38;5;245'; return; }   # stale: gray, not traffic-light
   if [ "${scoped_pct:-0}" -ge 80 ]; then c '38;5;203'
@@ -246,7 +204,6 @@ if [ -n "$ship_stage" ]; then
   case "$ship_stage" in
     gate:1*) printf "$(gate_c)✋ %s — storyboard?$(rst)" "$ship_slug"; is_gate=1; phase="$(stage_bar design)" ;;
     gate:2*) printf "$(gate_c)✋ %s — go?$(rst)" "$ship_slug"; is_gate=1; phase="$(stage_bar plan)" ;;
-    gate:codex*) printf "$(gate_c)✋ %s — test it with Codex$(rst)" "$ship_slug"; is_gate=1; phase="$(stage_bar test)" ;;
     gate:test*) printf "$(gate_c)✋ %s — try it, then merge main?$(rst)" "$ship_slug"; is_gate=1; phase="$(stage_bar test)" ;;
     test*)   printf "$(ship_c)🧪 %s — testing$(rst)" "$ship_slug"; phase="$(stage_bar test)" ;;
     discover*) printf "$(ship_c)🚢 %s$(rst)" "$ship_slug"; phase="$(stage_bar design)" ;;
@@ -286,13 +243,10 @@ if [ -n "$effort" ]; then
 fi
 [ -n "$model_name$effort" ] && printf "  "
 printf "$(context_color)🧠 %d%%$(rst)" "${context_pct:-0}"
-# Quota, grouped by vendor:  O 72% · F 53% ↻2d │ C 80% ↻4d  (or C 58k once spent)
+# Quota:  O 72% · F 53% ↻2d
 # O = weekly_all (every model, Fable included; Pete reads it as Opus). F = weekly_scoped,
-# Fable alone, the tighter cap. Both drain on Fable tokens; the higher one locks first.
-# Each vendor always shows its own reset right after its group: the clocks differ
-# (a Codex reset restarts its 7-day timer, an Anthropic reset only refills the percent).
-# Codex at 100% with credits left shows the balance instead of the percent ("C 58k").
-# A trailing "?" and gray numbers mean that vendor's cache is over 30 minutes old.
+# Fable alone, the tighter cap. Both drain on Fable tokens; the higher one locks first, and
+# its reset shows. A trailing "?" and gray numbers mean the cache is over 30 minutes old.
 dim_sep() { printf " $(c '38;5;245')%s$(rst) " "$1"; }
 if [ -n "$weekly_pct" ]; then
   printf "  $(weekly_color)O %d%%$(rst)" "$weekly_pct"
@@ -305,21 +259,6 @@ if [ -n "$weekly_pct" ]; then
   rs=$(format_reset "$hot_reset")
   [ -n "$rs" ] && printf " $(c '38;5;245')↻%s$(rst)" "$rs"
   [ "$anthro_stale" = 1 ] && printf "$(c '38;5;245')?$(rst)"
-fi
-# ~/.config/ship/no-codex (Pete, 2026-10-22: no Codex subscription for a while) hides C
-[ -f "$HOME/.config/ship/no-codex" ] && codex_pct=""
-if [ -n "$codex_pct" ]; then
-  [ -n "$weekly_pct" ] && dim_sep "│" || printf "  "
-  if [ "${codex_pct%.*}" -ge 100 ] && [ "${codex_credits:-0}" -gt 0 ]; then
-    # sub is spent but credits are covering it: the balance is the number that matters now
-    if [ "$codex_credits" -ge 1000 ]; then cr="$((codex_credits / 1000))k"; else cr="$codex_credits"; fi
-    printf "$(credits_color)C %s$(rst)" "$cr"
-  else
-    printf "$(codex_color)C %d%%$(rst)" "$codex_pct"
-  fi
-  rs=$(format_reset_epoch "$codex_reset_epoch")
-  [ -n "$rs" ] && printf " $(c '38;5;245')↻%s$(rst)" "$rs"
-  [ "$codex_stale" = 1 ] && printf "$(c '38;5;245')?$(rst)"
 fi
 [ -n "$update_available" ] && printf "  $(update_c)⬆ update$(rst)"
 printf "\n"

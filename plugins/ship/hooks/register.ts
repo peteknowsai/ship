@@ -17,11 +17,9 @@ let top: { cwd: string; dir: string | null } | null = null
 // One look at a time: a slow git must not let an older tick land last with a stale gate.
 let looking = false
 
-// Same reading as statusline.sh: a Codex `stage:` line wins, else the first line.
+// Same reading as statusline.sh: the marker's first line, spaces out, lower case.
 function parseStage(text: string): string {
-  const lines = text.split('\n')
-  const keyed = lines.find(l => l.startsWith('stage:'))?.replace(/^stage:\s*/, '')
-  return (keyed || lines[0] || '').replace(/[ \n]/g, '').toLowerCase()
+  return (text.split('\n')[0] || '').replace(/[ \t]/g, '').toLowerCase()
 }
 
 function kindOf(stage: string): Kind | null {

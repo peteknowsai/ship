@@ -20,16 +20,15 @@ It's opinionated. Built for a hands-off, PM-style workflow: you stay in your lan
 
   "Show" brings that page's tab to the front (the newest of the preview and localhost for "open the app"). "Lock it" and "go" send those words as if you typed them, and the buttons hide until the turn they start ends. Reactions to a storyboard round still get typed, and "merge main" never gets a button. Since a lone digit in an empty prompt presses a button, a reply that is just `2` answers the gate.
 - **Stage-aware status line.** Which ship, what phase (`designing → planning → building → reviewing`), ships-in-flight, your context + weekly budget, effort level. A bold banner when a ship needs you.
-- **Opus 5.5 drives; each build task goes to the engine its difficulty earns.** `scripts/route.py` asks Jev, TypeSafe's classifier, to score every task in the plan and ranks them: the easier half goes to a Fable 5.1 subagent and the harder half to Opus 5.5. That split is an experiment the ledger will judge. Fable also reviews the plan before BUILD and the whole branch in REVIEW, and GPT-6.1 Sol reads the branch beside it, the one check from outside Claude's family; the ledger tallies which reader's findings were real. The driver owns the brief, the diff review, the gates, and git, and logs every task's outcome to a ledger (`route.py report`) so the split can be tuned on data.
-- **Ship tests it as Pete would, and a pass lands it.** TEST invokes the bundled `verify` skill: the session writes a QA script and runs it itself, in a browser through chrome-devtools and on iOS through agent-device (Pete's iPhone, or an Xcode simulator), fixes what fails and reruns, and its `works` lands the branch without waiting on Pete. Codex tests only when Pete asks (`verify/reference/codex.md`: a hand-off to his Codex app through `scripts/codex-handoff.py`, or the headless `astra.sh test`). Money paths, and changes Pete asked to try himself, still wait for his "merge main".
+- **Opus 5.5 writes; two labs read.** The main session builds every task in its own loop. Muse Wonder Full reads the plan before BUILD, and Wonder and a fresh Opus subagent both read the branch at REVIEW, since a reader from the lab that wrote the code shares its blind spots. `scripts/route.py` keeps the ledger: each task's time and first-pass gates, filled from the clock and `route.py gate` runs, and each reader's real and false finds (`route.py report`).
+- **Ship tests it as Pete would, and a pass lands it.** TEST invokes the bundled `verify` skill: the session writes a QA script and runs it itself, in a browser through chrome-devtools and on iOS through agent-device (Pete's iPhone, or an Xcode simulator), fixes what fails and reruns, and its `works` lands the branch without waiting on Pete. Money paths, and changes Pete asked to try himself, still wait for his "merge main".
 
 ## What's in the plugin
 
-- `skills/ship` — the pipeline playbook + the storyboard / plan-card / review-card templates + the design record.
+- `skills/pipeline` — the pipeline playbook, its scripts, and the storyboard / plan-card / review-card templates.
 - `skills/verify` — fresh read-only verification against the running app before merge.
 - `hooks/` — the gate desktop-notification hook, and the gate-buttons mod (`register.ts`, a Claude Code mod; `claude plugin test plugins/ship` runs its tests).
-- `statusline.sh` — the stage-aware status line, with Anthropic and Codex quota.
-- `.codex-plugin/plugin.json` — the Codex Desktop manifest (see below).
+- `statusline.sh` — the stage-aware status line, with Anthropic quota.
 
 ## Requires
 
@@ -37,7 +36,7 @@ Declared as plugin `dependencies` (Claude Code will prompt/handle them): **super
 
 ## Your standing stack stays personal
 
-`/ship` reads your **standing stack** (your default frameworks — never re-asked) from your own agent instructions, *not* from this plugin. In Claude Code that's usually `~/.claude/CLAUDE.md`; in Codex it's AGENTS.md/global instructions. A repo's own `CLAUDE.md` / `AGENTS.md` overrides it. The plugin is the *process*; your stack is *you*.
+`/ship` reads your **standing stack** (your default frameworks — never re-asked) from your own agent instructions, *not* from this plugin. In Claude Code that's usually `~/.claude/CLAUDE.md`. A repo's own `CLAUDE.md` / `AGENTS.md` overrides it. The plugin is the *process*; your stack is *you*.
 
 ## Install
 
@@ -81,29 +80,3 @@ Install once: `chrome://extensions`, turn on Developer mode, **Load unpacked**, 
 in its Details: Chrome lets it label local docs only with that on. After a change, press its reload button. `node chrome/ship-tabs/test.mjs`
 checks the tag rules; `--live` also runs the real grouping in Chrome for Testing, launched
 in the background.
-
-## Codex Desktop
-
-The Codex package uses `codex/ship.md` and `codex/verify.md`. It keeps the shared
-express and design processes, but uses Astra subagents directly. It has no
-supervisors or app-server dispatcher. Small changes stay with the driver; independent
-build tasks and final reviews can run in parallel.
-
-Build a portable package into a new directory:
-
-```sh
-python3 scripts/test-codex.py
-python3 scripts/build-codex.py /tmp/ship-codex
-```
-
-The builder copies the current storyboard, plan-card, and review-card templates from
-`plugins/ship`, adds the Codex instructions and manifest, and records the source commit
-in `SOURCE.json`. Install the result as the personal marketplace's ship package.
-Before replacing an existing local package or installed cache, back it up. Preserve
-its registered manifest version for an in-place refresh. New tasks rediscover the
-skills; an active task must explicitly reread them.
-
-When the Claude pipeline changes, review the matching native process in `codex/`
-and rerun the behavioral cases in [the sync notes](specs/2026-09-05-codex-ship.html).
-The bundle shares templates, not Claude tool instructions. Do not copy supervisors
-or Claude-only tools into the Codex package.
