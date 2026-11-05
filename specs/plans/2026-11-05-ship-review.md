@@ -273,6 +273,10 @@ Must carry:
 - cel-323 3 (Task 9): cells-app's `stack:` line marks yonder and yeoman `:unreleased`, as
   their pack.json files do. Not a stack-check change: Vercel shows a production deployment
   for both, so a "no production yet" hint would never fire.
+- cel-320 (folded after Task 8): verify's layout-shift row gains the accessibility row's
+  "main already had it" clause: a shift main's layout has goes in TASTE and the checks
+  file's Noise table, the change's own share is measured in one trace with its new
+  elements hidden, and only that share over 0.1 fails.
 
 ## After the merge (runs at LAND, not a build task)
 

@@ -255,7 +255,7 @@ these on each page it touched, and every pass line the repo's checks add:
 
 | Check | Passes when | On a fail |
 |---|---|---|
-| Layout shift: `performance_start_trace` (it reloads the page), at desktop and 390px; the summary prints CLS | CLS under 0.1 | `performance_analyze_insight` with `CLSCulprits` and the insight set id names the element that moved: reserve its space, rerun |
+| Layout shift: `performance_start_trace` (it reloads the page), at desktop and 390px; the summary prints CLS | CLS under 0.1 from the change | `performance_analyze_insight` with `CLSCulprits` and the insight set id names the element that moved: reserve its space, rerun. A shift main's layout already has goes in TASTE and the checks file's Noise table: measure the change's own share in one trace with its new elements hidden by an `initScript` style (`reload: false`), and only that share over 0.1 fails (cel-320's Mail tab: 0.38 with them, 0.29 without) |
 | Accessibility: `lighthouse_audit` (`mode: "snapshot"` for a state the walk reached), its accessibility failures and the nodes they flag | no failure on an element the change added or changed, a new one styled with main's tokens included | fix it and rerun; one main already had goes in TASTE |
 | Load time, only on a production build or a preview (a dev server compiles on first load) | LCP under 2.5 s | the trace's LCP breakdown says which part is slow |
 
