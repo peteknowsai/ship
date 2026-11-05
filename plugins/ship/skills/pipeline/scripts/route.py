@@ -24,7 +24,8 @@ clock alone.
   route.py readers repo=<r> ship=<s>
                                  exit 0 once both branch readers are logged for the ship
                                  (a wonder row whose note starts "out" counts, for Muse
-                                 being down); exit 1 naming the missing one
+                                 being down) and, run from the worktree, its branch adds
+                                 the review card; exit 1 naming what's missing
   route.py report                the ledger as a table by engine, then the readers'
   route.py --selftest
 
@@ -286,8 +287,35 @@ def readers(pairs):
               "(review=<reader> stage=branch real= false= nits=) before landing, or "
               "review=wonder stage=branch note=out:<exit> when Muse was down", file=sys.stderr)
         return 1
+    if card_missing(want['ship']):
+        print(f"route readers: this branch adds no review card for {want['ship']}; commit it "
+              "with LAND step 1's smoke line before the push", file=sys.stderr)
+        return 1
     print(f"route readers: {want['ship']} has both branch readers logged", file=sys.stderr)
     return 0
+
+
+def card_missing(ship, root='.'):
+    """True when the branch at `root` adds no review card for `ship`; False when it does or git
+    can't tell (no repo, no base). Only SELF-DIRECTED and GATED ships run readers, and they run
+    it after the card's commit, so it never nags an EXPRESS ship or one mid-LAND (cel-323; a
+    reminder at `stage.sh land` fired on every landing). thin-search needed a second PR for one."""
+    def git(*a):
+        return subprocess.run(['git', '-C', root, *a], capture_output=True, text=True)
+    base = git('rev-parse', '--abbrev-ref', 'origin/HEAD').stdout.strip()
+    for name in ([base] if base else []) + ['origin/main', 'origin/master', 'main', 'master']:
+        if git('rev-parse', '-q', '--verify', name).returncode == 0:
+            base = name
+            break
+    else:
+        return False
+    added = git('diff', '--name-only', '--diff-filter=A', f'{base}...HEAD')
+    if added.returncode:
+        return False
+    key = re.match(r'[a-z]+-[0-9]+', ship, re.I)  # cel-221: a card folder may carry just the key
+    sid = re.escape(key.group(0) if key else ship)
+    card = re.compile(rf'review.*{sid}|{sid}.*review|(^|/)review\.html$', re.I)
+    return not any(card.search(f) for f in added.stdout.splitlines())
 
 
 def report():
@@ -428,6 +456,31 @@ def selftest():
         log(['repo=ship', 'ship=m', 'review=opus', 'stage=branch', 'real=3'])
         check('a wonder row marked out counts when Muse was down', readers(['repo=ship', 'ship=m']) == 0)
         check('readers needs repo and ship', 'repo=' in refused(readers, ['ship=m']))
+
+        # the review card: readers, run from the worktree, refuses a branch that adds none
+        cards = os.path.join(tmp, 'cards')
+        os.makedirs(cards)
+        g = lambda *a: subprocess.run(['git', '-C', cards, *a], check=True, capture_output=True)
+        g('init', '-q', '-b', 'main')
+        g('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '--allow-empty', '-m', 'base')
+        g('switch', '-q', '-c', 'feature/cel-9-thing')
+        os.makedirs(os.path.join(cards, 'src'))
+        open(os.path.join(cards, 'src', 'x.ts'), 'w').write('x\n')
+        g('add', '-A')
+        g('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '-m', 'code')
+        check('a branch that adds no card is missing one', card_missing('cel-9-thing', cards) is True)
+        check('outside a repo the check says nothing', card_missing('cel-9-thing', plain) is False)
+        os.chdir(cards)
+        try:
+            check('readers refuses a landing with both readers but no card',
+                  readers(['repo=ship', 'ship=m']) == 1)
+            os.makedirs(os.path.join(cards, 'specs', 'qa', '2026-11-05-cel-9'))
+            open(os.path.join(cards, 'specs', 'qa', '2026-11-05-cel-9', 'review.html'), 'w').write('<p>\n')
+            g('add', '-A')
+            g('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '-m', 'card')
+            check('a card in a folder named by the key counts', card_missing('cel-9-thing', cards) is False)
+        finally:
+            os.chdir(plain)
 
         # a ship: marker, plan, gate runs, logs, on a clock the test sets
         repo = os.path.join(tmp, 'repo')

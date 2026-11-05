@@ -661,7 +661,8 @@ or no GitHub remote: `reference/rare-cases.md`, Landing variants.
      after that PR.
    - Stop the worktree's dev server with the repo's stop command, from the worktree; then
      `listener.sh <port> 1` must find nothing (one still there stops by its process group).
-   - `route.py readers repo=<r> ship=<slug>` exits 0 (SELF-DIRECTED and GATED). Push.
+   - `route.py readers repo=<r> ship=<slug>` exits 0 (SELF-DIRECTED and GATED): both branch
+     readers logged and the review card committed. Push.
 2. **GitHub agrees.** `gh pr ready <#> -R <o/r>`; `gh pr view <#> -R <o/r> --json mergeable`
    says `MERGEABLE`; `gh pr checks <#> -R <o/r>`: no checks reported means the local gates
    stand, pending waits (`--watch`), red is fixed in the worktree and back to step 1. These
