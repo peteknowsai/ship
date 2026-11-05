@@ -246,7 +246,7 @@ def selftest():
         check('0.1 days to reset uses the 0.25 floor: 50% spares 200', pools()['anthropic']['rate'] == 200)
         claude(94, 0.05, session=90)
         check('94% an hour before the reset prints no stop flag, only the numbers',
-              'blocked' not in table() and 'opus_blocked' not in pools()['anthropic'])
+              'blocked' not in table() and ' 94 ' in table() and 'opus_blocked' not in pools()['anthropic'])
         claude(10, 6, fable=95)
         check('Fable at 95 is empty', pools()['fable']['empty'] is True)
         muse(20, 99, t - 60)
@@ -266,11 +266,12 @@ def selftest():
         open(files['anthropic'], 'w').write('{"limits": [{"kind": "weekly_all"')
         a = pools()
         check('an unparseable cache is unknown, never a crash',
-              a['anthropic']['known'] is False and a['fable']['known'] is False and a['fable']['rate'] == 7.14)
+              a['anthropic']['known'] is False and a['fable']['known'] is False and a['fable']['rate'] == 7.14
+              and 'opus_blocked' not in a['anthropic'])
         check('the table prints a line per pool', len(table(a).splitlines()) == 5)
         write('anthropic', {'limits': [{'kind': 'session', 'percent': 99, 'resets_at': iso(t + 3600)}]})
         a = pools()['anthropic']
-        check('session 99 still reads with the weekly unknown', a['known'] is False and a['session'] == 99)
+        check('session 99 still reads with the weekly unknown', a['known'] is False and a['session'] == 99 and 'opus_blocked' not in a)
         claude(10, 6, session=90)
         broken = json.load(open(files['anthropic']))
         broken['limits'][1]['percent'] = 'unavailable'
