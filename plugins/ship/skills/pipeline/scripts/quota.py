@@ -140,7 +140,7 @@ def openai_pool(t):
     window = limit['primary_window']
     used, reset = roll(window['used_percent'], float(window['reset_at']),
                        window.get('limit_window_seconds') or WEEK, t)
-    return pool(used, reset, t)
+    return pool(used, reset, t, limit_reached=bool(limit.get('limit_reached')))  # the provider's own lock, not a threshold
 
 
 def muse_pool(t):
@@ -181,6 +181,7 @@ def table(found=None):
         when = p['resets_at'][:16].replace('T', ' ') if p['resets_at'] else 'unknown'
         flags = [f"session {p['session']:.0f}%"] if p.get('session') is not None else []
         flags += [f"5h {p['window']:.0f}%"] if p.get('window') is not None else []
+        flags += ['limit reached'] if p.get('limit_reached') else []
         flags += [f"unknown: {p['note']}"] if not p['known'] else []
         lines.append(f"{name:9} {p['used']:>5.0f} {p['unused']:>7.0f} {p['rate']:>9.1f}  {when}"
                      + (f"  ({', '.join(flags)})" if flags else ''))
@@ -247,10 +248,14 @@ def selftest():
               'blocked' not in table() and ' 94 ' in table() and 'opus_blocked' not in pools()['anthropic'])
         claude(97, 0.05, fable=97)
         check('97% an hour before the reset prints no EMPTY: what is left is still spendable',
-              'EMPTY' not in table() and 'empty' not in pools()['anthropic'] and 'empty' not in pools()['fable'])
+              'EMPTY' not in table() and all('empty' not in q for q in pools().values()))
         muse(20, 99, t - 60)
         m = pools()['muse']
         check('an expired Muse window reads 0%', m['window'] == 0)
+        codex(40, 3, reached=True)
+        check('the provider\'s own limit_reached still shows', 'limit reached' in table()
+              and pools()['openai']['limit_reached'] is True)
+        codex(40, 3)
         os.remove(files['muse'])
         m = pools()['muse']
         check('a missing cache is known false, used 50, noted',
