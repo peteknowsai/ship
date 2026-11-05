@@ -338,6 +338,11 @@ from `reference/checks-template.md` with what this run proved, and say so in the
 Name it `checks`, never `verify`, which is Claude Code's own skill. A run that learned
 nothing leaves it alone.
 
+**Commit it once the QA result is written**, with the run's fixes, before anything else
+happens in the tree. A write-back left uncommitted until landing makes the absorb refuse
+when main changed the same file; committed, the absorb merges it or shows a real conflict
+(cel-303: main rewrote cells-app's checks file to one line per lesson meanwhile).
+
 ## 6. Hand back proof
 
 Return to the caller: `VERDICT`, `UNWALKED`, `EVIDENCE` (the ordered screenshot + caption storyboard),
