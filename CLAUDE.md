@@ -6,8 +6,7 @@ wrapper is `plugins/ship/skills/pipeline/scripts/astra.sh`, used only when Pete 
 test in Codex, and `astra.sh --selftest` is its check;
 `route.py --selftest` checks the task counter and build ledger,
 `codex-handoff.py --selftest` the TEST hand-off to Pete's Codex app, and
-`decisions.py --selftest` the per-repo decision log, `quota.py --selftest` the four usage pools the
-router reads, `muse.py --selftest` the Muse Code wrapper (Wonder Full's read-only plan and branch
+`decisions.py --selftest` the per-repo decision log, `muse.py --selftest` the Muse Code wrapper (Wonder Full's read-only plan and branch
 reviews; its build mode is unused since 2026-10-24), `bash plugins/ship/hooks/ship-recap.sh
 --selftest` the recap a ship prints into its context after each compaction, `branch-db.py --selftest` the copy of
 the Convex dev database each worktree gets, `icon-check.py --selftest` the
