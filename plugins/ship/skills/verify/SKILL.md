@@ -338,6 +338,14 @@ from `reference/checks-template.md` with what this run proved, and say so in the
 Name it `checks`, never `verify`, which is Claude Code's own skill. A run that learned
 nothing leaves it alone.
 
+**Commit before handing back, in a ship's worktree on `works`**: the run's fixes, §4's spec
+and this write-back, whichever exist, staged by path so generated churn a running dev server
+writes (`next-env.d.ts`) stays out. Left uncommitted until landing, a write-back makes the
+absorb refuse when main changed the same file; committed, the absorb merges it or shows a
+real conflict (cel-303: main rewrote cells-app's checks file to one line per lesson
+meanwhile). A `broken` or `unverifiable` run commits nothing, and a standalone run outside a
+ship commits nothing either: it names the changed files in the hand-back.
+
 ## 6. Hand back proof
 
 Return to the caller: `VERDICT`, `UNWALKED`, `EVIDENCE` (the ordered screenshot + caption storyboard),
