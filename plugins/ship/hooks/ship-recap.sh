@@ -75,7 +75,7 @@ selftest() {
   printf '{"plugins":{"ship@ship":[{"installPath":"%s"}]}}' "$tmp/cache/abc123" > "$tmp/installed.json"
   out=$(printf '{"session_id":"","cwd":"%s"}' "$tmp/repo" | SHIP_INSTALLED="$tmp/installed.json" recap)
   check 'and lists what changed, file then section' '[[ "$out" == *"   pipeline/SKILL.md"* && "$out" == *"     ## A section the update added"* ]]'
-  check 'after an update, names the copy stage.sh moves the session to' '[[ "$out" == *"-> abc123): its skills are $tmp/cache/abc123/skills"* && "$out" != *"this session'"'"'s ship skills"* ]]'
+  check 'after an update, names the copy stage.sh moves the session to' '[[ "$out" == *"-> abc123): the newest skills are $tmp/cache/abc123/skills"* && "$out" != *"this session'"'"'s ship skills"* ]]'
   out=$(printf '{"session_id":"","cwd":"%s"}' "$tmp" | recap)
   check 'silent outside a ship' '[ -z "$out" ]'
   echo "ship-recap self-test: $fails failed"
