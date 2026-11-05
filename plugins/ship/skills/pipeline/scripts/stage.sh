@@ -18,8 +18,9 @@ here=$(cd "$(dirname "$0")/../../.." && pwd)
 new=$(jq -r '.plugins["ship@ship"][0].installPath // empty' "${SHIP_INSTALLED:-$HOME/.claude/plugins/installed_plugins.json}" 2>/dev/null || true)
 case "$here" in */plugins/cache/ship/ship/*)
   if [ -n "$new" ] && [ "$(basename "$new")" != "$(basename "$here")" ] && [ -d "$new" ]; then
-    echo "notice: ship was updated since this session loaded it ($(basename "$here") -> $(basename "$new")). Reread what changed, listed below by file and section under $new/skills/ (diff -ru $here/skills $new/skills for the lines), and call scripts from $new from here on; the newer rules win. A changed rule for a stage this ship already passed is not rerun: write now only a record of what was done that a later step checks (the reader rows route.py readers counts)." >&2
-    bash "$(dirname "$0")/what-changed.sh" "$here" "$new" >&2 2>/dev/null || true
+    echo "notice: ship was updated since this session loaded it ($(basename "$here") -> $(basename "$new")). Reread what changed, listed below by file and section under $new/skills/ (diff -ru $here/skills $new/skills for the lines), and call scripts from $new from here on; the newer rules win. A changed rule for a stage this ship already passed does not redo that stage: a check or stop it adds runs before landing, and a record a later step reads is written from what was done, never invented." >&2
+    lister="$new/skills/pipeline/scripts/what-changed.sh"; [ -f "$lister" ] || lister="$(dirname "$0")/what-changed.sh"
+    bash "$lister" "$here" "$new" >&2 2>/dev/null || true
   fi
 esac
 echo "$root: $2"

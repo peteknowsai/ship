@@ -68,5 +68,5 @@ if [ "${1:-}" = --selftest ]; then
   exit 0
 fi
 
-[ $# -eq 2 ] && [ -d "$1/skills" ] && [ -d "$2/skills" ] || { sed -n '2,5p' "$0" >&2; exit 2; }
+[ $# -eq 2 ] && [ -d "$1/skills" ] && [ -d "$2/skills" ] || { sed -n '2,7p' "$0" >&2; exit 2; }
 changes "$1" "$2"
