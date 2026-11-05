@@ -25,7 +25,7 @@ recap() {
   # recap names the same copy stage.sh would, never the one the session started on.
   local new; new=$(jq -r '.plugins["ship@ship"][0].installPath // empty' "${SHIP_INSTALLED:-$HOME/.claude/plugins/installed_plugins.json}" 2>/dev/null || true)
   if [ -n "$new" ] && [ -d "$new/skills" ] && [ "$(basename "$new")" != "$(basename "$plugin")" ]; then
-    echo "- ship was updated since this session started ($(basename "$plugin") -> $(basename "$new")): its skills are $new/skills; reread what changed, below by file and section, and call scripts there, since the newer rules win; a changed rule for a stage this ship already passed does not redo that stage: a check or stop it adds runs before landing, and a record a later step reads is written from what was done, never invented"
+    echo "- ship was updated since this session started ($(basename "$plugin") -> $(basename "$new")): the newest skills are $new/skills, though the Skill tool still loads this session's first copy; reread what changed, below by file and section, and call scripts there, since the newer rules win; a changed rule for a stage this ship already passed does not redo that stage: a check or stop it adds runs before landing, and a record a later step reads is written from what was done, never invented"
     [ -f "$new/skills/pipeline/scripts/what-changed.sh" ] && bash "$new/skills/pipeline/scripts/what-changed.sh" "$plugin" "$new" 2>/dev/null | sed 's/^/ /'
   else
     echo "- this session's ship skills: $plugin/skills (call the pipeline's scripts there)"
@@ -75,7 +75,7 @@ selftest() {
   printf '{"plugins":{"ship@ship":[{"installPath":"%s"}]}}' "$tmp/cache/abc123" > "$tmp/installed.json"
   out=$(printf '{"session_id":"","cwd":"%s"}' "$tmp/repo" | SHIP_INSTALLED="$tmp/installed.json" recap)
   check 'and lists what changed, file then section' '[[ "$out" == *"   pipeline/SKILL.md"* && "$out" == *"     ## A section the update added"* ]]'
-  check 'after an update, names the copy stage.sh moves the session to' '[[ "$out" == *"-> abc123): its skills are $tmp/cache/abc123/skills"* && "$out" != *"this session'"'"'s ship skills"* ]]'
+  check 'after an update, names the copy stage.sh moves the session to' '[[ "$out" == *"-> abc123): the newest skills are $tmp/cache/abc123/skills"* && "$out" != *"this session'"'"'s ship skills"* ]]'
   out=$(printf '{"session_id":"","cwd":"%s"}' "$tmp" | recap)
   check 'silent outside a ship' '[ -z "$out" ]'
   echo "ship-recap self-test: $fails failed"
