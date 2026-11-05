@@ -30,8 +30,8 @@ outside the canon.
 `reference/incidents.md` holds environment facts from real failed runs: read its section
 before merges, teardowns, deploys, or debugging a dispatch or a refused command.
 
-**Not ship's job:** phasing (the scope law); superpowers' `brainstorming` (ship's DISCOVER
-replaces it) and `executing-plans`; strict TDD outside money paths, where
+**Not ship's job:** phasing (the scope law); superpowers' `brainstorming`, on any lane
+(ship's DISCOVER replaces it), and `executing-plans`; strict TDD outside money paths, where
 `superpowers:test-driven-development` runs; grilling outside DISCOVER; manual worktree
 management (`wt` owns birth to death); a production deploy or database push by hand; a
 promotion script that is Pete's ritual.
@@ -131,7 +131,9 @@ the PR body's first lines. Messages between sessions are exempt.
   `stage.sh` on a new worktree, `route.py log`, `muse.py`, `decisions.py` writes, anything
   that talks to GitHub (`gh`, `git push`, `git fetch`: the sandbox's proxy fails their TLS),
   any git command that rewrites the tree or makes a branch (the sandbox denies writes under
-  `.claude/` and to `.git/config`, and CEL-213's rebase stopped halfway), gates, smokes, dev
+  `.claude/` and to `.git/config`, and CEL-213's rebase stopped halfway), a script that writes
+  under `.claude/` (the Edit and Write tools can; cel-285's merge of the checks skill could
+  not), gates, smokes, dev
   servers, `tsx`, and anything that reaches a local server, since a sandboxed `curl` at
   localhost reads as a dead server. Everything else stays in the sandbox.
 - **`$TMPDIR` changes with the sandbox** (`/tmp/claude-<uid>` inside, `/var/folders/…/T`
@@ -153,7 +155,12 @@ the PR body's first lines. Messages between sessions are exempt.
   `result:`, when nothing can move without Pete, or while you wait on background work with
   nothing else to do.
 - **Pete's budget word outranks ship's defaults.** When he caps subagents or spend for a run,
-  skip the Opus readers, keep Wonder (no Claude quota), and say what that skipped in `result:`.
+  skip the Opus readers, keep Wonder (no Claude quota), log each skip (`review=opus
+  stage=<plan|branch> note=skipped:budget`), and say what that skipped in `result:`.
+- **Log every durable call**, on any lane, that a stop or Pete mid-run settles (direction,
+  scope cut, architecture or tool choice): `decisions.py log --file <json>`
+  (`{"decision","rationale","source":"user"}`); a reversal is `decisions.py supersede <id>
+  [<id>...] --file <json>` with ids from `recent`. Never turn-level edits.
 
 ## Engines and readers
 
@@ -180,9 +187,11 @@ them, signatures, test cases, constraints; call the Skill tool with
 comes back and runs the gates before anything is committed, and owns git. One writer per tree.
 
 **Compaction is survivable by design.** A ship keeps its state on disk: the plan, a commit
-per task, the marker, `.ship-done`, the ledger, the triage file, the QA result. After each
-compaction `hooks/ship-recap.sh` prints that state into the fresh context: trust it over the
-summary, reread the plan and this skill's section for the stage, and post Pete the one line.
+per task, the marker, `.ship-done`, the ledger, and in the job's tmp the triage file and the
+QA result. After each compaction `hooks/ship-recap.sh` prints the stage, the plan, each task
+done or todo, the branch's commits and uncommitted files: trust it over the summary, reread
+the plan, this skill's section for the stage and any triage or QA file the stage wrote, and
+post Pete the one line.
 
 **The readers: Opus and Wonder, two labs.** A reader shares the blind spots of code its own
 lab wrote and goes easy on it (Pete, 2026-10-14). The Opus reader is a fresh subagent whose
@@ -190,8 +199,9 @@ brief says to assume the writer was wrong at every seam. Wonder runs as `scripts
 review <worktree> <brief> <out-dir>`, a background Bash call: read-only, findings in
 `<out-dir>/last.md`, `<out-dir>` in the job's tmp (muse.py refuses one inside the worktree).
 Any nonzero exit means Muse is out (5: its quota, with the reset; 2: a usage error, so read
-stderr; 6: the tree changed under it): a fresh Opus subagent takes Wonder's brief, and
-`result:` says so. Nothing writes in the worktree while Muse reads, the gates, a build, a
+stderr; 6: the tree changed under it): a fresh Opus subagent takes Wonder's brief, its row
+is `review=opus … note=for:wonder` so the ledger never credits Wonder with it, and `result:`
+says so. Nothing writes in the worktree while Muse reads, the gates, a build, a
 commit and a dev server's start included: `next build` and `next dev` rewrite the tracked
 `next-env.d.ts` (find-three-more, CEL-233), so a server TEST needs is up before the read
 starts. Gitignored files don't count. Muse runs only through `muse.py`, never a hand-typed
@@ -207,9 +217,12 @@ worktree:
 - `route.py log repo=<r> ship=<slug> task=<n> engine=<driver|opus> verdict=<clean|fixed|redone>`
   after each task's commit: it fills `seconds`, `gates_first_pass` and `fix_rounds` from the
   clock and the gate runs, and counts the task done. Never type a number you don't have.
-- `review=<wonder|opus> stage=<plan|branch> real= false= only= nits= seconds=` per reader,
-  and `recall=<shown> used=<n>` on design ships. `route.py readers repo= ship=` exits 1 until
-  both branch readers are logged. `route.py report` compares engines and readers; if
+- `review=<wonder|opus> stage=<plan|branch> real= false= only= nits=` per reader, timed by
+  `out=<out-dir>` on Wonder's row (route.py reads muse.py's `seconds` file there) and by
+  `seconds=` from the subagent's reported duration on Opus's; and `recall=<shown> used=<n>`
+  on design ships. `route.py readers repo= ship=` exits 1 until both branch readers are
+  logged since the branch began and the branch adds its review card. `route.py report`
+  compares engines and readers; if
   handed-off tasks keep needing more fix rounds, job 3 above shrinks.
 
 **Browser work runs on the chrome-devtools MCP** (headless, a fresh profile per session): the
@@ -233,9 +246,10 @@ the ship's other tabs.
 A repo tells ship its commands in its `CLAUDE.md` / `AGENTS.md`. Every key is optional; each
 is in full in `reference/contract.md`, read the first time a stage uses it.
 
-- `gates:` the commands that must pass. Full at BUILD's pre-flight and whenever the tree
-  changed since the last full run; scoped (typecheck plus the runner's changed tests) for
-  each task and fix round; always through `route.py gate`, sandbox off.
+- `gates:` the commands that must pass. Full at BUILD's pre-flight, after an absorb that
+  changed the tree, and at LAND step 1 when the tree changed since the last full run; scoped
+  (typecheck plus the runner's changed tests) for each task and fix round; always through
+  `route.py gate`, sandbox off.
 - `dev:` starts the worktree's own server on its own port and prints its URL.
 - `preview:` prints the branch's preview links after each push, or `on demand`.
 - `test-auth:` how the QA run signs in: `seed`, `form` or `none`.
@@ -394,11 +408,7 @@ one with uncommitted work, one a live session holds (wt's 💬), or one under tw
   reuse its code, drop answered questions and continue the numbers, re-`show.sh`, and stop
   again. Push back where taste warrants it.
 - **Lock = gate 1** ("lock it", "this is it", "yes"): commit the storyboard as it stands.
-  Every frame in it ships and nothing else does. Log the direction (below), then PLAN.
-- **Log every durable call** a stop or Pete mid-run settles (direction, scope cut,
-  architecture or tool choice): `decisions.py log --file <json>`
-  (`{"decision","rationale","source":"user"}`); a reversal is `decisions.py supersede <id>
-  [<id>...] --file <json>` with ids from `recent`. Never turn-level edits.
+  Every frame in it ships and nothing else does. Log the direction (Working rules), then PLAN.
 - **Smaller shapes.** A trivial visual change may collapse to one frame and one confirm,
   never zero on GATED. A non-visual GATED ship gates on a one-screen board: the lead, the one
   question that matters, depth collapsed. When Pete asks to take a frame into pen (Pencil),
@@ -414,11 +424,12 @@ one with uncommitted work, one a live session holds (wt's 💬), or one under tw
   rules: the locked storyboard first, then the work list, the cut list, his calls, risk, go.
   Calls are plain language and only ones that change what he gets. Commit it, `show.sh … plan`
   it. **With a call** it is gate 2: `stage.sh <root> gate:2`, `needs input:` ("go?"), a hard
-  stop. **With none** it is shown, not waited on: one line ("plan card: no calls, building"),
-  no marker, straight on. SELF-DIRECTED and EXPRESS render no card.
+  stop; after his "go", `stage.sh <root> plan` again. **With none** it is shown, not waited
+  on: one line ("plan card: no calls, building"), no marker, straight on. SELF-DIRECTED and
+  EXPRESS render no card.
 - **Anything Pete must create himself** (an OAuth app, an account, a key) is a call on the
-  card, or on a cardless lane a `needs input:` now, never a surprise at TEST (cc-bridge's
-  GitHub app swapped for Cloudflare Access once asked).
+  card, or on a cardless lane a stop now (`stage.sh <root> gate:input`, `needs input:`),
+  never a surprise at TEST (cc-bridge's GitHub app swapped for Cloudflare Access once asked).
 - **Then the execution plan**: call `superpowers:writing-plans` for ONE plan covering the
   whole storyboard or spec, saved as `specs/plans/YYYY-MM-DD-<slug>.md` in the docs home. It
   carries what a frame can't: copy as data, routes, behaviour, states, a11y, and for each UI
@@ -439,7 +450,7 @@ one with uncommitted work, one a live session holds (wt's 💬), or one under tw
 - **Wonder reads the plan before BUILD** (an Opus subagent when Muse is out), from
   `reference/plan-review-brief.md` written to a file. The driver triages: fix the plan where
   real, decline nits and anything the spec doesn't ask for, and log `route.py log repo= ship=
-  review=wonder stage=plan real= false= nits= seconds=`. Nothing goes back to Pete unless it
+  review=wonder stage=plan real= false= nits= out=<out-dir>`. Nothing goes back to Pete unless it
   changes what gets built. Then `route.py plan`. No task starts before the review lands,
   unless the plan names it a spike.
 
@@ -491,7 +502,8 @@ one with uncommitted work, one a live session holds (wt's 💬), or one under tw
   reproduce ends as "no repro" with what was tried, never a guessed fix.
 - **The pre-flight closes BUILD, so the QA run never opens a broken page:**
   1. Full gates and, for a framework with its own production build, that build (dev server
-     stopped first: contract.md).
+     stopped first: contract.md). On `backend: per-branch`, the preview re-push rare-cases
+     names.
   2. The key names in the worktree's env files against the main checkout's and
      `.env.example`: a key main gained after the fork is missing here.
   3. A native repo builds its app once now (rare-cases: Native app repos).
@@ -516,20 +528,24 @@ one with uncommitted work, one a live session holds (wt's 💬), or one under tw
      --default-background-color=00000000 file://<svg>` (Next: `app/icon.svg`,
      `app/apple-icon.png`).
   You find the breakage, never Pete.
-- Raise a hand mid-BUILD only for a genuine fork, PM-framed, with a pick.
+- **A genuine fork mid-BUILD** (his answer would change what gets built) is a stop:
+  `stage.sh <root> gate:input`, `needs input:` PM-framed with a pick, and keep building what
+  it doesn't hold. Taste or direction promotes instead (Verbs and sizing).
 
 ### 4 · REVIEW — two readers, then triage  → marker: `review`
 
-SELF-DIRECTED and GATED. EXPRESS goes straight to TEST, with its one Wonder read where
-Sizing says.
+SELF-DIRECTED and GATED. EXPRESS runs only the sync with main below, then TEST, with its one
+Wonder read where Sizing says.
 
 - `stage.sh <root> review`. **Sync with main**: `git fetch origin`, absorb in the worktree
   in a call of its own (rebase, or merge if unsafe) and see it clean; rerun the repo's install
   when the absorb changed a lockfile or the workspace list; on `copy`, push absorbed Convex
   changes to the copy with `npx convex dev --once` in each app-dir (muse-core-loops hit a
-  function its copy lacked). **When the absorb changed the tree, the full gates run before
-  QA.** An absorb that touched the repo's `CLAUDE.md` / `AGENTS.md` can change the contract:
-  reread it. Review against a stale fork reviews other ships' work as reversions.
+  function its copy lacked); on `per-branch`, rare-cases' re-deploy. **When the absorb
+  changed the tree, the full gates run now, before either reader starts**, since a gate that
+  builds rewrites tracked files under Muse's read. An absorb that touched the repo's
+  `CLAUDE.md` / `AGENTS.md` can change the contract: reread it. Review against a stale fork
+  reviews other ships' work as reversions.
 - **Start TEST's dev server now** (TEST: Keep it running), before either reader starts.
 - **Both readers read the branch at once, from `reference/branch-review-brief.md`** filled
   and written to a file first, so a reader that dies is respawned from it: the Opus subagent
@@ -547,8 +563,9 @@ Sizing says.
   outlives a compaction, and the ledger rows and the PR's Reviewed line come from it
   (screendrop-worker rebuilt one from the transcript). Then one row per reader: `route.py log
   repo= ship= review=opus stage=branch real= false= only= nits= seconds=` and the same for
-  `review=wonder`, where `only` counts real findings the other missed. Muse out:
-  `review=wonder stage=branch note=out:<exit>`, plus the stand-in's own `review=opus` row.
+  `review=wonder` with `out=<out-dir>` in place of `seconds=`, where `only` counts real
+  findings the other missed. Muse out: `review=wonder stage=branch note=out:<exit>`, plus the
+  stand-in's own `review=opus … note=for:wonder` row.
 - **Fix what's real**, each fix run against the cases the issue or spec names before it's
   committed (two readers' fixes added up to a guard that undid eca-finder's loose deck), with
   the gates scoped through `route.py gate`.
@@ -561,8 +578,9 @@ Sizing says.
 
 ### 5 · TEST — ship uses it as Pete would  → marker: `test`
 
-- `stage.sh <root> test`. **Freeze upstream while the QA run walks**: absorb before a run,
-  never during; the run's own fixes are the only edits.
+- **Push**, so the preview QA walks carries REVIEW's absorb and fixes (with a per-push
+  `preview:`, wait for its build), then `stage.sh <root> test`. **Freeze upstream while the QA
+  run walks**: absorb before a run, never during; the run's own fixes are the only edits.
 - **Keep it running, for the QA run and for Pete.** Two surfaces: the branch's preview links
   (`preview:`) and the worktree's localhost (`dev:`). Boot the dev server detached from the
   worktree root by absolute path (`cd <worktree> &&` first: one in `packs/homebody` started
@@ -580,7 +598,8 @@ Sizing says.
   another skill and is refused), an API-only change included. Hand it the worktree's path,
   the URL, the BACKEND, test-auth, IOS and STORYBOARD lines, the plan's `## QA cases` (or on
   EXPRESS the change's intent), and the repo's checks skill (`.claude/skills/checks/SKILL.md`,
-  or "none yet: write it"). verify defines `<out-dir>` and `<shots-root>`; it writes qa.md,
+  or "none yet: write it"), and the `<out-dir>` and `<shots-root>` verify names at its top;
+  it writes qa.md,
   walks the surface Pete would open the way he would, with real clicks and keys, fixes what
   fails, reruns, up to three fix rounds on one step (a new bug each round is progress, and
   `result:` gives the count), and writes back what it learned. A
@@ -606,7 +625,9 @@ Sizing says.
   before posting and after a compaction. An image on the branch links by commit
   (`blob/<sha>/<path>?raw=true`). The door is ship's call: **two-way** (a revert undoes it)
   lands now; **one-way** (it deletes or migrates data, sends something to people, or a revert
-  can't undo it) waits for "merge main", as do the other stops in Every stop.
+  can't undo it) waits for "merge main", as do a money path and a change he said he'd try
+  first: `stage.sh <root> gate:test`, the card, `needs input:`. On `land: auto` only a money
+  path waits.
 - **`broken` after three rounds on one step, or `unverifiable`: park.** `stage.sh <root>
   gate:input`, hand Pete the result and evidence, and end with `needs input:` ("test:
   <feature>: couldn't prove <step>: <reason>"). Partial is `unverifiable`, never a footnote
@@ -615,7 +636,9 @@ Sizing says.
   review-card.html`, whose comment says where it goes, what each slot holds, and that it is
   committed before the merge with the shots it shows. `LANDING_STATUS` says "Tested · landing
   on main" or what it waits on. EXPRESS has none; its `result:` names the proof shots.
-- **Screenshots** live in verify's `<shots-root>/.ship-shots/<slug>/`, never committed.
+- **Screenshots** live in verify's `<shots-root>/.ship-shots/<slug>/`, never committed; any
+  brief that screenshots (recon's walk of the live product included) gets that absolute path
+  written in, since the browser writes only inside the session's launch directory.
   Copy what the card shows beside the card before teardown, then delete that folder after
   landing, unless the ship is EXPRESS, whose `result:` names them (moved to the main
   checkout's `.ship-shots/<slug>/` when the shots root was the worktree). A shots root in
@@ -652,8 +675,8 @@ or no GitHub remote: `reference/rare-cases.md`, Landing variants.
      rerun.
    - **Every env name the diff newly reads exists where landing deploys**, by name: `wrangler
      secret list`, `vercel env ls production`, `npx convex env list --prod`. Names only,
-     never values. A missing one parks with `needs input:` naming it: a production setting is
-     Pete's (screendrop-worker's OWNER_SUB, 2026-11-05).
+     never values. A missing one parks (`stage.sh <root> gate:input`, `needs input:` naming
+     it): a production setting is Pete's (screendrop-worker's OWNER_SUB, 2026-11-05).
    - Commit the smoke's result line with the review card and its shots (`git restore
      next-env.d.ts` first), and bring the PR body up to date with what shipped (the squash
      takes it). `stack:` once more. For each other open PR, `git cherry HEAD origin/<branch>
@@ -677,17 +700,21 @@ or no GitHub remote: `reference/rare-cases.md`, Landing variants.
    `.claude/.cc-writes` keeps the folder alive); if the harness refuses because it is the
    session's own folder, leave it to `wt-sweep`. If `ExitWorktree` answers that no session is
    active, `cd <main checkout>` after this step, so the next ship's `EnterWorktree` takes.
-5. **Tidy the branch and main**: `git -C <main> push origin --delete feature/<slug>`; `git
-   -C <main> pull --ff-only`, and `git -C <main> branch -D feature/<slug>` if it lingers (a
-   squash rewrites the commits, so git calls it unmerged). A dirty main checkout holds another
-   session's work: skip the pull, and run any deploy from a throwaway worktree pinned to
-   `origin/main`. When the guard still refuses git against main, leave the pull to the next
-   session there and say so in `result:`. Then `rm -f <worktree>/.ship-stage
+5. **Tidy the branch and main**: `git -C <main> push origin --delete feature/<slug>` (a
+   "remote ref does not exist" means the repo already deleted it); `git -C <main> pull
+   --ff-only`, and `git -C <main> branch -D feature/<slug>` if it lingers (a squash rewrites
+   the commits, so git calls it unmerged). A dirty main checkout holds another session's
+   work: skip the pull. When the guard still refuses git against main, leave the pull to the
+   next session there and say so in `result:`. Then `rm -f <worktree>/.ship-stage
    <worktree>/.ship-route.json ~/.claude/ship-active/$CLAUDE_CODE_SESSION_ID` where they
    remain, deprovision a per-branch backend, remove a native branch app (rare-cases), and
    check `git worktree list`: zero ship-made worktrees remain, or teardown failed and is
    recovered before `result:`.
-6. **Watch the deploy.** `deploy:` runs now, once, from the main checkout. Then what `live:`
+6. **Watch the deploy.** `deploy:` runs now, once, from the main checkout once step 5 pulled
+   it, else from a throwaway worktree pinned to `origin/main` (`git -C <main> worktree add
+   --detach <job tmp>/deploy origin/main` after a fetch, removed after), never from a main
+   that missed the merge; when neither can run, `result:` says the deploy is still owed.
+   Then what `live:`
    names, to READY or ERROR, and each live URL loaded once (`curl -sS -o /dev/null -w
    '%{http_code}'` and the page's text): READY with a 404 or the host's "not found" page is a
    failed deploy. Watch rules (incidents: Backends):
@@ -758,16 +785,18 @@ list. Ship fixes found in its own retro go to the maintainer, never this list. D
 ## Every stop
 
 A stop is a hard stop: show the page, write the marker, end the turn with `needs input:`,
-and keep doing work the stop doesn't hold. Nothing else stops a ship.
+and keep doing work the stop doesn't hold. Nothing else stops a ship. Once Pete answers,
+write the stage back (`stage.sh <root> plan`, `test`, `land`; mid-BUILD `build:<n>:<m>`, n
+the tasks in `.ship-done`), since a stop's marker counts as waiting on him until it moves.
 
 | Stop | Marker | Pete sees | He says |
 |---|---|---|---|
 | Storyboard round (GATED) | `gate:1` | ✋ storyboard? and the page | reactions, or "lock it" |
 | Plan card with a call | `gate:2` | ✋ go? and the card | "go", or the call |
-| A step only his login can do, or a thing only he can create | `gate:input` | the exact step | "done" |
+| A step only his login can do, a thing only he can create, or a genuine fork mid-BUILD | `gate:input` | the exact step, or the fork and ship's pick | "done", or the pick |
 | Money path, any repo, `land: auto` included | `gate:test` | ✋ try it, then merge main? | "merge main" |
-| One-way door | `gate:test` | ✋ try it, then merge main? | "merge main" |
-| A change he said he'd try or see first (a copy change included) | `gate:test` | ✋ try it, then merge main? | "merge main" |
+| One-way door (not on `land: auto`) | `gate:test` | ✋ try it, then merge main? | "merge main" |
+| A change he said he'd try or see first, a copy change included (not on `land: auto`) | `gate:test` | ✋ try it, then merge main? | "merge main" |
 | QA couldn't prove a step, a missing production setting | `gate:input` | the step and why | do it, or "land anyway" |
 
 "Merge main" takes the worktree all the way: merge, deploy, teardown. The same intent in

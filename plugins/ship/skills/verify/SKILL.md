@@ -255,14 +255,15 @@ these on each page it touched, and every pass line the repo's checks add:
 
 | Check | Passes when | On a fail |
 |---|---|---|
-| Layout shift: `performance_start_trace` (it reloads the page), at desktop and 390px; the summary prints CLS | CLS under 0.1 from the change | `performance_analyze_insight` with `CLSCulprits` and the insight set id names the element that moved: reserve its space, rerun. A shift main's layout already has goes in TASTE and the checks file's Noise table: measure the change's own share in one trace with its new elements hidden by an `initScript` style (`reload: false`), and only that share over 0.1 fails (cel-320's Mail tab: 0.38 with them, 0.29 without) |
+| Layout shift: `performance_start_trace` (it reloads the page), at desktop and 390px; the summary prints CLS | CLS under 0.1 from the change | `performance_analyze_insight` with `CLSCulprits` and the insight set id names the element that moved: reserve its space, rerun. A shift main's layout already has goes in TASTE, and its number in the checks file's Noise table: the change's share is then the difference of two traces taken the same way, one with the change's new elements hidden by an `initScript` style, and only a difference over 0.1 fails (cel-320's Mail tab: 0.38 with them, 0.29 hidden, so 0.09 passed) |
 | Accessibility: `lighthouse_audit` (`mode: "snapshot"` for a state the walk reached), its accessibility failures and the nodes they flag | no failure on an element the change added or changed, a new one styled with main's tokens included | fix it and rerun; one main already had goes in TASTE |
 | Load time, only on a production build or a preview (a dev server compiles on first load) | LCP under 2.5 s | the trace's LCP breakdown says which part is slow |
 
 A failed measure is a failed step like any other, with the number as its evidence. Trace
 each page on its own URL before blaming a shift on the change: Settings opened over
 /activity scored 0.26 from that view's sheet animating in, and 0.00 on its own. A false
-alarm the repo's checks list under noise is skipped.
+alarm the repo's checks list under noise is skipped, except a page's layout shift: its
+Noise row holds main's number, and the change on that page is still measured against it.
 
 **Prove something stays idle** (a spinner that must not appear, a message that must not
 come): `wait_for` on the failure text with the step's timeout (`timeout: 90000` for 90 s).
@@ -321,7 +322,8 @@ not a spec per micro-feature. **Running** the committed spec in the gate is the 
 ## 5. Write back what the run learned
 
 Update the repo's `.claude/skills/checks/SKILL.md` in the branch, so it lands with the
-change: a screen the change added (how to reach it, what it shows), a step that changed, a
+change, with the Edit or Write tool (the Bash sandbox denies a script's writes under
+`.claude/`, cel-325): a screen the change added (how to reach it, what it shows), a step that changed, a
 trick the run had to discover (a sign-in trick under Sign in, a seed, a port), a pass line
 Pete asked for, and noise: console noise the app always prints, or a false alarm a measured
 check raises on every run (cells-app's localhost branch strip in each Lighthouse audit),

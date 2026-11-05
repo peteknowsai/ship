@@ -72,16 +72,16 @@ def beside_marker(start, name):
 
 def mark_build(start, task=None, total=None):
     """build:0:<total> when routing ends, then build:<distinct tasks logged>:<total>, so a
-    task logged twice (a fix round) counts once and task=4,10 counts two. Outside a ship,
-    nothing."""
+    task logged twice (a fix round) counts once and task=4,10 counts two. A task logged while
+    a stop holds the marker still goes in .ship-done, so the recap and the count stay right
+    once the stage is written back. Outside a ship, nothing."""
     path = stage_marker(start)
     if not path:
         return
     current = re.match(r'build:(\d+):(\d+)', open(path).read().strip())
     if total is not None and not current:  # a re-route mid-build keeps the count
         open(path, 'w').write(f'build:0:{total}')
-    elif task is not None and current:
-        m = int(current.group(2))
+    elif task is not None:
         done_file = os.path.join(os.path.dirname(path), '.ship-done')
         seen = set(open(done_file).read().split()) if os.path.isfile(done_file) else set()
         before = len(seen)
@@ -89,6 +89,9 @@ def mark_build(start, task=None, total=None):
         if len(seen) == before:
             return
         open(done_file, 'w').write('\n'.join(sorted(seen)) + '\n')
+        if not current:
+            return
+        m = int(current.group(2))
         n = min(len(seen), m)
         open(path, 'w').write(f'build:{n}:{m}')
         if n == m:  # the muse-tools ship sat on build:32:32 through review, test and land
@@ -171,11 +174,14 @@ def gate(argv, start=None):
 
 def fill_task(row, start, now=None):
     """Fill seconds, gates_first_pass and fix_rounds from the clock and the gate runs since
-    the last task row (or `plan`), then restart the clock. Values passed on the command line win."""
+    the last task row (or `plan`), and return the clock's new start, which log saves only once
+    the row is written. Values passed on the command line win. A re-log with a note (a fix
+    round after REVIEW) fills nothing and leaves the clock: its span holds the pre-flight,
+    the readers and the absorb, not the task."""
     saved = beside_marker(start, '.ship-route.json')
     route = saved and read_route(saved)
-    if not route or not route.get('anchor'):
-        return
+    if not route or not route.get('anchor') or 'note' in row:
+        return None
     anchor, now = route['anchor'], int(now or time.time())
     if now > anchor:
         row.setdefault('seconds', now - anchor)
@@ -192,7 +198,7 @@ def fill_task(row, start, now=None):
     if runs:
         row.setdefault('gates_first_pass', bool(runs[0].get('ok')))
         row.setdefault('fix_rounds', sum(1 for r in runs if not r.get('ok')))
-    write_route(saved, {**route, 'anchor': max(now, anchor)})
+    return lambda: write_route(saved, {**route, 'anchor': max(now, anchor)})
 
 
 def coerce(value):
@@ -239,14 +245,15 @@ def log(pairs):
         except (OSError, ValueError):
             print(f'route log: no seconds file in {out}, so seconds is left out', file=sys.stderr)
     task_row = 'task' in row and 'review' not in row
-    if task_row:
-        fill_task(row, os.getcwd(), os.environ.get('ROUTE_NOW'))
+    restart = task_row and fill_task(row, os.getcwd(), os.environ.get('ROUTE_NOW'))
     try:
         with open(ledger_path(), 'a') as ledger:
             ledger.write(json.dumps(row) + '\n')
     except PermissionError:  # Claude Code's Bash sandbox can't write ~/.claude: CEL-74 lost four rows to it
         raise SystemExit(f'route log: no write access to {ledger_path()}, so nothing was logged. '
                          'Run this same command again with the Bash sandbox off.')
+    if restart:
+        restart()
     if task_row:
         mark_build(os.getcwd(), task=row['task'])
     return row
@@ -275,47 +282,76 @@ def logged(repo, ship, tasks):
 
 
 def readers(pairs):
-    """Exit 0 once the ship's ledger holds both branch readers, else 1 naming what's missing."""
+    """Exit 0 once the ship's ledger holds both branch readers, logged since the branch's first
+    commit, and the branch adds its review card; else 1 naming what's missing. Run from the
+    worktree or the session the ship's marker points at."""
     want = pairs_to_row(pairs, 'readers')
     if not want.get('repo') or not want.get('ship'):
         raise SystemExit('route readers: give repo=<repo> ship=<slug>')
+    marker = stage_marker(os.getcwd())  # a cross-repo ship runs this from the launch repo
+    root = os.path.dirname(marker) if marker else '.'
+    since = branch_start(root)
     seen = {r['review'] for r in rows() if (r.get('repo'), r.get('ship')) == (want['repo'], want['ship'])
-            and r.get('review') in ('wonder', 'opus') and r.get('stage') == 'branch'}
+            and r.get('review') in ('wonder', 'opus')
+            and r.get('stage', 'branch') == 'branch'  # main's text logged branch reads with no stage
+            and (since is None or logged_at(r) is None or logged_at(r) >= since)}  # a reused slug's old rows
     missing = [name for name in ('wonder', 'opus') if name not in seen]
     if missing:
-        print(f"route readers: {want['ship']} has no {' or '.join(missing)} branch row; log the read "
-              "(review=<reader> stage=branch real= false= nits=) before landing, or "
-              "review=wonder stage=branch note=out:<exit> when Muse was down", file=sys.stderr)
+        print(f"route readers: {want['ship']} has no {' or '.join(missing)} branch row since the branch "
+              "began; log the read (review=<reader> stage=branch real= false= nits=) before landing, "
+              "review=wonder stage=branch note=out:<exit> when Muse was down, or review=opus "
+              "stage=branch note=skipped:budget when Pete capped spend", file=sys.stderr)
         return 1
-    if card_missing(want['ship']):
+    if card_missing(want['ship'], root):
         print(f"route readers: this branch adds no review card for {want['ship']}; commit it "
-              "with LAND step 1's smoke line before the push", file=sys.stderr)
+              "(LAND step 1) before the push", file=sys.stderr)
         return 1
-    print(f"route readers: {want['ship']} has both branch readers logged", file=sys.stderr)
+    print(f"route readers: {want['ship']} has both branch readers logged and its card", file=sys.stderr)
     return 0
 
 
+def logged_at(row):
+    try:
+        return int(time.mktime(time.strptime(str(row.get('ts')), '%Y-%m-%dT%H:%M:%S')))
+    except ValueError:
+        return None
+
+
+def git_at(root, *a):
+    return subprocess.run(['git', '-C', root, *a], capture_output=True, text=True)
+
+
+def base_ref(root):
+    """The base branch the way stage 0 finds it, or None when git can't tell."""
+    head = git_at(root, 'rev-parse', '--abbrev-ref', 'origin/HEAD').stdout.strip()
+    for name in ([head] if head else []) + ['origin/main', 'origin/master', 'main', 'master']:
+        if git_at(root, 'rev-parse', '-q', '--verify', name).returncode == 0:
+            return name
+    return None
+
+
+def branch_start(root):
+    """When the branch's first commit was authored (a rebase keeps it), or None."""
+    base = base_ref(root)
+    out = base and git_at(root, 'log', '--reverse', '--format=%at', f'{base}..HEAD')
+    first = out and out.returncode == 0 and out.stdout.split()
+    return int(first[0]) if first else None
+
+
 def card_missing(ship, root='.'):
-    """True when the branch at `root` adds no review card for `ship`; False when it does or git
-    can't tell (no repo, no base). Only SELF-DIRECTED and GATED ships run readers, and they run
-    it after the card's commit, so it never nags an EXPRESS ship or one mid-LAND (cel-323; a
-    reminder at `stage.sh land` fired on every landing). thin-search needed a second PR for one."""
-    def git(*a):
-        return subprocess.run(['git', '-C', root, *a], capture_output=True, text=True)
-    base = git('rev-parse', '--abbrev-ref', 'origin/HEAD').stdout.strip()
-    for name in ([base] if base else []) + ['origin/main', 'origin/master', 'main', 'master']:
-        if git('rev-parse', '-q', '--verify', name).returncode == 0:
-            base = name
-            break
-    else:
-        return False
-    added = git('diff', '--name-only', '--diff-filter=A', f'{base}...HEAD')
-    if added.returncode:
+    """True when the branch at `root` adds no review card for `ship`: an .html file naming the
+    ship's key or slug that says review outside the slug itself, so cel-12-review-queue's
+    storyboard isn't its card. False when it does or git can't tell (no repo, no base). Only
+    SELF-DIRECTED and GATED ships run readers, after the card's commit, so it never nags an
+    EXPRESS ship or one mid-LAND (cel-323). thin-search needed a second PR for one."""
+    base = base_ref(root)
+    added = base and git_at(root, 'diff', '--name-only', '--diff-filter=A', f'{base}...HEAD')
+    if not added or added.returncode:
         return False
     key = re.match(r'[a-z]+-[0-9]+', ship, re.I)  # cel-221: a card folder may carry just the key
-    sid = re.escape(key.group(0) if key else ship)
-    card = re.compile(rf'review.*{sid}|{sid}.*review|(^|/)review\.html$', re.I)
-    return not any(card.search(f) for f in added.stdout.splitlines())
+    sid = re.compile(re.escape((key.group(0) if key else ship).lower()) + r'(?![0-9])')
+    return not any(f.endswith('.html') and sid.search(f) and 'review' in f.replace(ship.lower(), '')
+                   for f in (line.lower() for line in added.stdout.splitlines()))
 
 
 def report():
@@ -457,28 +493,43 @@ def selftest():
         check('a wonder row marked out counts when Muse was down', readers(['repo=ship', 'ship=m']) == 0)
         check('readers needs repo and ship', 'repo=' in refused(readers, ['ship=m']))
 
-        # the review card: readers, run from the worktree, refuses a branch that adds none
+        # the review card and the branch's own rows: readers, run from the worktree
         cards = os.path.join(tmp, 'cards')
         os.makedirs(cards)
-        g = lambda *a: subprocess.run(['git', '-C', cards, *a], check=True, capture_output=True)
+        g = lambda *a: subprocess.run(['git', '-C', cards, *a], check=True, capture_output=True,
+                                      env={**os.environ, 'GIT_AUTHOR_DATE': '@1577836800 +0000'})
+        commit = lambda files, msg: ([os.makedirs(os.path.dirname(os.path.join(cards, f)), exist_ok=True)
+                                      or open(os.path.join(cards, f), 'w').write('x\n') for f in files],
+                                     g('add', '-A'), g('-c', 'user.name=t', '-c', 'user.email=t@t',
+                                                       'commit', '-q', '--allow-empty', '-m', msg))
         g('init', '-q', '-b', 'main')
-        g('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '--allow-empty', '-m', 'base')
+        commit([], 'base')
         g('switch', '-q', '-c', 'feature/cel-9-thing')
-        os.makedirs(os.path.join(cards, 'src'))
-        open(os.path.join(cards, 'src', 'x.ts'), 'w').write('x\n')
-        g('add', '-A')
-        g('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '-m', 'code')
+        commit(['src/x.ts'], 'code')  # the branch began 2020-01-01
         check('a branch that adds no card is missing one', card_missing('cel-9-thing', cards) is True)
         check('outside a repo the check says nothing', card_missing('cel-9-thing', plain) is False)
+        g('switch', '-q', '-c', 'feature/cel-9-review-queue')
+        commit(['specs/designs/2026-11-05-cel-9-review-queue.html', 'specs/plans/2026-11-05-cel-9-review-queue.md',
+                'docs/review.html', 'specs/qa/2026-11-05-cel-90/review.html'], 'not cards')
+        check("a slug's storyboard and plan, a bare review.html and another key's card are not its card",
+              card_missing('cel-9-review-queue', cards) is True)
+        g('switch', '-q', 'feature/cel-9-thing')
         os.chdir(cards)
         try:
+            for name in ('wonder', 'opus'):
+                open(ledger_path(), 'a').write(json.dumps({'ts': '2019-12-01T00:00:00', 'repo': 'ship',
+                                                           'ship': 'cel-9-thing', 'review': name,
+                                                           'stage': 'branch', 'real': 1}) + '\n')
+            check("a reused slug's rows from before the branch began don't count",
+                  readers(['repo=ship', 'ship=cel-9-thing']) == 1)
+            log(['repo=ship', 'ship=cel-9-thing', 'review=wonder', 'stage=branch', 'real=1'])
+            log(['repo=ship', 'ship=cel-9-thing', 'review=opus', 'real=2'])
             check('readers refuses a landing with both readers but no card',
-                  readers(['repo=ship', 'ship=m']) == 1)
-            os.makedirs(os.path.join(cards, 'specs', 'qa', '2026-11-05-cel-9'))
-            open(os.path.join(cards, 'specs', 'qa', '2026-11-05-cel-9', 'review.html'), 'w').write('<p>\n')
-            g('add', '-A')
-            g('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '-m', 'card')
+                  readers(['repo=ship', 'ship=cel-9-thing']) == 1)
+            commit(['specs/qa/2026-11-05-cel-9/review.html'], 'card')
             check('a card in a folder named by the key counts', card_missing('cel-9-thing', cards) is False)
+            check('with the card, a branch row with no stage (main\'s rows) counts as a branch read',
+                  readers(['repo=ship', 'ship=cel-9-thing']) == 0)
         finally:
             os.chdir(plain)
 
@@ -514,7 +565,8 @@ def selftest():
             gate_at(t0 + 400, True)
             two = at(t0 + 500, ['task=2', 'engine=driver', 'seconds=7'])
             three = at(t0 + 560, ['task=3', 'engine=driver'])
-            log(['task=2', 'engine=driver', 'note=fix round'])
+            fixed = at(t0 + 9000, ['task=2', 'engine=driver', 'note=fix round'])
+            fixed_anchor = read_route(os.path.join(repo, '.ship-route.json'))['anchor']
             plan(shipped)
             log(['task=5,6', 'engine=opus'])
             code = gate([sys.executable, '-c', 'import sys; sys.exit(3)'])
@@ -526,22 +578,38 @@ def selftest():
               two.get('seconds') == 7 and two.get('gates_first_pass') is True and two.get('fix_rounds') == 0)
         check('the next task times from the last task row, and no gate runs leaves first pass out',
               three.get('seconds') == 60 and 'gates_first_pass' not in three)
+        check('a fix round re-logged with a note fills nothing and leaves the clock',
+              'seconds' not in fixed and 'gates_first_pass' not in fixed and fixed_anchor == t0 + 560)
         check('a re-plan keeps the clock', read_route(os.path.join(repo, '.ship-route.json'))['anchor'] >= t0 + 560)
         check('distinct logged tasks count done, a re-log counts once, a re-route keeps the count, 5,6 counts two',
               open(stage).read() == 'build:5:9')
+        os.chdir(repo)
+        try:
+            open(stage, 'w').write('gate:input')
+            log(['task=7', 'engine=driver'])
+            check('a task logged while a stop holds the marker joins the done list and leaves the stop',
+                  open(stage).read() == 'gate:input' and '7' in open(os.path.join(repo, '.ship-done')).read().split())
+            open(stage, 'w').write('build:6:9')
+            anchor = read_route(os.path.join(repo, '.ship-route.json'))['anchor']
+            locked = os.path.join(tmp, 'locked')
+            os.makedirs(locked)
+            os.chmod(locked, 0o500)
+            os.environ['SHIP_LEDGER'], kept = os.path.join(locked, 'ledger.jsonl'), os.environ['SHIP_LEDGER']
+            os.environ['ROUTE_NOW'] = str(t0 + 20000)
+            try:
+                said = refused(log, ['task=8', 'engine=driver'])
+            finally:
+                os.environ['SHIP_LEDGER'] = kept
+                del os.environ['ROUTE_NOW']
+                os.chmod(locked, 0o700)
+        finally:
+            os.chdir(plain)
+        check('a ledger it cannot write says to rerun with the sandbox off, and the clock stays for the rerun',
+              'sandbox off' in said and read_route(os.path.join(repo, '.ship-route.json'))['anchor'] == anchor
+              and open(stage).read() == 'build:6:9')
         last = open(os.path.join(repo, '.ship-gates')).read().splitlines()[-1]
         check('gate returns the command\'s exit code and records the run beside the marker',
               code == 3 and json.loads(last)['ok'] is False)
-        locked = os.path.join(tmp, 'locked')
-        os.makedirs(locked)
-        os.chmod(locked, 0o500)
-        os.environ['SHIP_LEDGER'], kept = os.path.join(locked, 'ledger.jsonl'), os.environ['SHIP_LEDGER']
-        try:
-            said = refused(log, ['repo=ship', 'review=opus', 'real=1'])
-        finally:
-            os.environ['SHIP_LEDGER'] = kept
-            os.chmod(locked, 0o700)
-        check('a ledger it cannot write says to rerun with the sandbox off', 'sandbox off' in said)
         os.remove(stage)
         plan(shipped)
         check('outside a ship no marker appears', not os.path.exists(stage))

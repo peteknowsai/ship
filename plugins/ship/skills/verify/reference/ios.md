@@ -27,8 +27,8 @@ Otherwise a booted simulator, and the result says which ran.
 
 **A locked or held phone stops nothing.** Locked, or showing an XCTest passcode or Enable UI
 Automation prompt: walk the step on a simulator, unless the change needs the phone itself,
-meaning a simulator can't show it (touch and scroll feel, the camera, the mic, push, a
-network only the phone joins). Then park only that step with `needs input:` ("unlock the
+meaning a simulator can't show it (touch and scroll feel, the camera, the mic, push,
+location or another system prompt, a network only the phone joins). Then park only that step with `needs input:` ("unlock the
 phone", or the prompt it shows) and walk the rest.
 
 ## The `ios:` command

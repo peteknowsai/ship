@@ -53,15 +53,17 @@ These are facts, not process — the process lives in SKILL.md.
 - **Cross-repo `EnterWorktree` silently doesn't take.** It only adopts worktrees of the
   session's *primary* repo. Against any other repo the cwd never moves and the status
   line stays blind — the worktree and `.ship-stage` are real but invisible. Work by
-  absolute path and narrate the fork (see the narration contract).
+  absolute path and narrate the fork (SKILL.md: Talking to Pete).
 - **In a multi-repo workspace, the target repo is itself a recon finding.** A run forked
   in the repo the conversation was about; recon then established the feature needed zero
   changes there and landed entirely in a sibling repo. Fork-first stays (it's how Pete
   sees engagement), but when recon contradicts the fork: exit, `wt remove` the empty
   worktree, re-fork in the right repo, and narrate the move.
-- **`gh pr merge` run from inside the worktree fails** with `fatal: 'main' is already
-  used by worktree …` — the PR merges on GitHub but local teardown never runs, stranding
-  an orphan worktree. Merge from the main checkout, always.
+- **`gh pr merge --delete-branch` run from inside the worktree fails** with `fatal: 'main'
+  is already used by worktree …`: the flag checks main out locally after the merge, the PR
+  has merged on GitHub, and the teardown never runs, stranding an orphan worktree. LAND
+  merges from the worktree without the flag, so nothing local runs, and deletes the branch
+  from the main checkout at step 5.
 - **A lane that borrowed `node_modules` by symlink committed the link** (cells,
   2026-09-19). Five lane worktrees symlinked `agent/`, `web/` and
   `electron/node_modules` to the main worktree's installs. The repo ignored

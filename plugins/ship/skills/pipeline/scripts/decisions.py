@@ -58,7 +58,7 @@ RETIRED = [
     ('Sonnet', '2026-10-24', r'\bsonnet\b'),
     ('Fable', '2026-10-29', r'\bfable\b'),
     ('SubQ', '2026-11-03', r'\bsubq\b'),
-    ('quota pacing', '2026-11-05', r'\bquota'),
+    ('quota pacing', '2026-11-05', r'quota\.py|\bquota[ -](?:pac|pool|window)|\bpac\w*\b.{0,30}\bquota'),  # not a product's billing quota
     ('the shipboard', '2026-11-05', r'shipboard|board\.cells\.md'),
 ]
 SHIP_JOB = re.compile(r'\b(build|builds|built|builder|review|reviews|reviewer|reader|reads|qa|parity|tests?|'
@@ -318,12 +318,13 @@ def selftest():
                           ('No Codex, no Fable, no Sonnet: Opus writes and reviews', '2026-11-05'),
                           ('Groom paces launches to the quota', '2026-10-19'),
                           ('The model picker offers only Muse Spark 1.3', '2026-10-01'),
+                          ('Billing quota tests run nightly', '2026-10-01'),
                           ('Sidebar stays on the left', '2026-09-01')]:
             append(old_engines, {**decide(json.dumps({'decision': text, 'rationale': 'Sol reviewed it'})), 'date': day})
         listed = stale(old_engines)
         check('stale lists calls giving a retired engine a ship job, not newer calls, product calls or rationales',
               'Astra builds' in listed and 'paces launches' in listed and 'Opus writes' not in listed
-              and 'model picker' not in listed and 'Sidebar' not in listed)
+              and 'model picker' not in listed and 'Billing quota' not in listed and 'Sidebar' not in listed)
         check('recent marks a stale call in place', '[stale: gives Astra a ship job' in recent(old_engines, 5))
 
         many = os.path.join(tmp, 'many.jsonl')

@@ -18,7 +18,7 @@ and they override SKILL.md where they differ.
 
 ## Landing variants
 
-SKILL.md's LAND runs its pre-flight, the checks and the merge in the worktree, then leaves
+SKILL.md's LAND runs its step 1 checks and the merge in the worktree, then leaves
 for the main checkout to remove the worktree, delete the remote branch and pull. These
 replace parts of it.
 
@@ -29,7 +29,9 @@ replace parts of it.
   can't leave. `ExitWorktree` does nothing, and once the directory is gone the harness
   refuses every shell command, in subagents too. Run LAND's worktree steps and the merge as
   written, then `git push origin --delete <branch>` from the worktree, skip the main
-  checkout's steps and the marker's removal, and finish with `stage.sh <root> landed`. The
+  checkout's steps and the marker's removal except `deploy:`, which runs from a throwaway
+  worktree pinned to `origin/main` (`git worktree add --detach <job tmp>/deploy origin/main`
+  after a fetch, removed after), and finish with `stage.sh <root> landed`. The
   SessionEnd hook removes a landed worktree when the session closes, and `wt-sweep` (every
   10 minutes) catches any the hook missed. Never `wt remove` the folder the session is
   standing in. Main's pull waits for the next session in the main checkout; say so in the
@@ -40,15 +42,15 @@ replace parts of it.
   which merges main into the pushed PR head, collapses it to one commit from the PR title
   and the branch's commit messages, gates that tree by the paths the PR changes,
   squash-merges and smokes main):
-  - LAND's pre-flight runs as written, absorb, `smoke: branch`, `stack:`, the Never-stack
+  - LAND step 1 runs as written, absorb, `smoke: branch`, `stack:`, the Never-stack
     check and the push included, except its full-suite runs (the tree-changed one and the
-    overlap re-gate): the script's gates stand in for those, so the suite never runs twice
-    (cel-268-email-approvals). Still run in the pre-flight what the script doesn't pick for
+    one after an absorb): the script's gates stand in for those, so the suite never runs twice
+    (cel-268-email-approvals). Still run in step 1 what the script doesn't pick for
     this diff: cells-app's land-pr runs no `mac:test`, so a `mac/` change runs it there. It
     runs the network gates (`network:typecheck`, `network:test`) only when the PR's own
     diff has a `convex/`, `convex-core/` or `packs/*/convex/` path, which misses a `lib/`
     file convex-core imports (#398 landed `network:typecheck` red that way, and its test
-    runs under `network:test`). So the pre-flight runs both when the branch changes code
+    runs under `network:test`). So step 1 runs both when the branch changes code
     with no such path, or an absorb brought one, and never on a diff of only what never
     ships.
   - Push everything first (it lands the PR's pushed head), put the final evidence in a
@@ -61,11 +63,13 @@ replace parts of it.
   - When it prints its smoke line (cells-app: `main: <sha> serving, smoke ...`), LAND's own
     `smoke: main` is skipped: one paid smoke per landing. A diff of only what never ships
     gets no main smoke from it; say so in the `result:` line rather than claim one.
+- **`land: auto`** lands as `pr` does, on the QA run's `works`: a one-way door or a try-it
+  change doesn't wait, a money path still waits for "merge main" (contract.md).
 - **`land: direct`** replaces LAND's checks and merge: from the worktree, `git fetch origin
-  && git rebase origin/main`, re-gate and smoke as the pre-flight says, `git push origin
+  && git rebase origin/main`, re-gate and smoke as LAND step 1 says, `git push origin
   HEAD:main`, confirm main moved, then teardown and `git push origin --delete <branch>`.
 - **A `land: <command>`** replaces them the same way: sync with main, re-gate and smoke as
-  the pre-flight says, run the contract's command from the worktree, confirm main moved
+  LAND step 1 says, run the contract's command from the worktree, confirm main moved
   (`git log -1 main`), then teardown from the main checkout as written. No PR is merged; a
   mirror remote is pushed only if the contract says so.
 
@@ -78,7 +82,8 @@ its worktree, or it said so), land into it the way a teammate would:
   first, with their say, before QA writes any rows.
 - Message that session before the squash merge, and have it pull before its watcher
   pushes again.
-- The review card lands on the base, not main (LAND: the landed base's copy).
+- The review card lands on the base, not main (`reference/review-card.html`'s comment: the
+  landed base's copy).
 
 ## Showing a storyboard on Pete's phone
 
@@ -162,7 +167,7 @@ against a shared backend it changes clobbers it (incidents: Backends).
 - **TEST** runs it through verify: `reference/ios.md` for the phone, simulators, mobile-web
   Safari and a locked phone (a simulator walks it unless the change needs the phone
   itself); `reference/mac.md` for the borrowed Mac VM.
-- **LAND's pre-flight** deletes a simulator the run cloned and returns a borrowed VM slot,
+- **LAND step 1** deletes a simulator the run cloned and returns a borrowed VM slot,
   from the worktree, since removing the worktree first orphans them.
 - **LAND's teardown** removes the branch app `ios:` installed, by the udid and bundle on its
   IOS line (`xcrun devicectl device uninstall app --device <udid> <bundle>`, or `xcrun

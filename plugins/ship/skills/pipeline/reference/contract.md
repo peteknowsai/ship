@@ -12,8 +12,9 @@ here the first time a stage uses it. An absorb that touched the repo's `CLAUDE.m
 The commands that must pass: tests, typecheck, production build. Default: whatever you can
 find.
 
-**Full or scoped.** Full gates run at BUILD's pre-flight, again at LAND's step 1 when the
-tree changed since, and after an absorb whose files overlap the branch's. Every other check,
+**Full or scoped.** Full gates run at BUILD's pre-flight, after an absorb that changed the
+tree (REVIEW's runs before either reader starts), and at LAND's step 1 when the tree changed
+since their last full run. Every other check,
 each BUILD task and each TEST fix round, runs them **scoped**: the typecheck plus only the
 tests the uncommitted change touches, by the contract's `scoped <cmd>` if it names one, else
 the test runner's changed mode through the repo's own test script, so its pretest hooks run
@@ -119,7 +120,10 @@ main), protection, the Convex deploy key on Production only, every dev Convex se
 on prod, Clerk `pk_live` on Production and `pk_test` elsewhere. A project with no production
 yet is passed as `<project>:unreleased`, which skips the checks only a live app passes (the
 deploy key, `pk_live`, prod's settings). Ship runs it before TEST and before landing; a ✗ is
-ship's to fix, never Pete's.
+ship's to fix, never Pete's. A ✗ on a project the repo itself marks unreleased (cells-app: its
+`pack.json` says `"unreleased": true`) is the contract line missing `:unreleased`: rerun with
+it, and fix the line in this PR (cel-323, cel-325, cel-285 each read four ✗ for yonder and
+yeoman).
 
 ## `ios:` and `mac:`
 

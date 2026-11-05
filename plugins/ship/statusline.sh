@@ -22,12 +22,12 @@ phase_c()    { c '38;5;245'; }   # dim gray — the phase word
 gate_c()     { c '1;38;5;214'; } # bold amber — needs you
 update_c()   { c '38;5;179'; }   # muted gold
 
-# the stage breadcrumb — design · plan · build · test · land, active stage lit amber.
+# the stage breadcrumb — design · plan · build · review · test · land, active stage lit amber.
 # Shown for the whole ship (and at gates), next to the brain on line 2,
 # so which stage we're in always reads — not just a single dim word.
 stage_bar() {
   active="$1"; out=""
-  for s in design plan build test land; do
+  for s in design plan build review test land; do
     [ -n "$out" ] && out="$out$(c '38;5;239') · $(rst)"
     if [ "$s" = "$active" ]; then out="$out$(c '1;38;5;215')$s$(rst)"
     else out="$out$(c '38;5;242')$s$(rst)"; fi
@@ -220,7 +220,7 @@ if [ -n "$ship_stage" ]; then
     build*)    printf "$(ship_c)🚢 %s$(rst)" "$ship_slug"; phase="$(stage_bar build)" ;;
     landed*) printf "$(ship_c)✅ %s — landed; goes when this session ends$(rst)" "$ship_slug"; phase="$(stage_bar land)" ;;
     land*)   printf "$(ship_c)🚢 %s$(rst)" "$ship_slug"; phase="$(stage_bar land)" ;;
-    review*)   printf "$(ship_c)🚢 %s$(rst)" "$ship_slug"; phase="$(stage_bar test)" ;;
+    review*)   printf "$(ship_c)🚢 %s$(rst)" "$ship_slug"; phase="$(stage_bar review)" ;;
     *)         printf "$(ship_c)🚢 %s$(rst)" "$ship_slug" ;;
   esac
 elif [ "$is_linked" -eq 1 ]; then

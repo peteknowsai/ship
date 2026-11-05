@@ -19,7 +19,8 @@
   Bash call, sandbox off, every path written out (`cp`: the worktree guard refuses a path
   built from a shell variable, and `sips` writes a temp file the sandbox denies). Commit it
   before the merge, in the commit that carries LAND step 1's smoke line when step 1 runs a
-  smoke, else on its own: LAND removes the worktree.
+  smoke, else on its own: LAND removes the worktree. On a park, commit it at the stop too:
+  an uncommitted file in a parked worktree is unprotected (incidents: Worktrees).
 
   Showing it: on a landing, `scripts/show.sh <root> <slug> review <file> done` the landed
   base's copy with the result: line (main's; for another base, `git show

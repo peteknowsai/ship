@@ -20,7 +20,7 @@ refuse() { local name=$1 bad=$2 got=$3
 
 # ---- ship stages ----
 echo 'review' > "$T/target.thing/.ship-stage"
-expect "review lights test"        "build · test" "$(line1 s0 "$T/target.thing")"
+expect "review has its own stage"  "build · review · test" "$(line1 s0 "$T/target.thing")"
 echo 'gate:1' > "$T/target.thing/.ship-stage"
 expect "storyboard gate"           "thing — storyboard?" "$(line1 s0 "$T/target.thing")"
 echo 'test' > "$T/target.thing/.ship-stage"
