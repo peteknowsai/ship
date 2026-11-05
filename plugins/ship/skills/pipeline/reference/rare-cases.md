@@ -57,9 +57,10 @@ replace parts of it.
     commit message rather than only the PR body (its commit never reads the body), and stop
     the worktree's dev server and any simulator before it runs, since its suite is
     load-sensitive too.
-  - A red of only files the diff never touched, timeouts under load: contract.md `gates:`,
-    Red under load, which covers this script (rerun those files alone, a second red waits on
-    the load, never a test edited to pass; cel-303 went red on 3 of 14,026 at load 446).
+  - A red of only files the diff never touched, under load: contract.md `gates:`, Red under
+    load, which covers this script. Rerun those files alone; when they pass, run the script
+    again, and a second red waits on the load first. Never skip, deselect or loosen a test
+    (cel-303 went red on 3 of 14,026 at load 446, and landed on the rerun).
   - Run it from the worktree in place of LAND's checks and merge, then tear down as
     written (`wt remove`, the remote branch if the script left it, `git branch -D`, the
     marker).
