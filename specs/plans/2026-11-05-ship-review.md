@@ -266,6 +266,13 @@ Must carry:
   the ledger counts and the PR body's Reviewed line and declined list come from it.
 - screendrop 5: not a change. The locked stop table already says "land anyway", or the same
   intent in other words, lands an unproven ship with the unwalked steps in `result:`.
+- cel-323 1 (folded after Task 8): stage.sh's land reminder fired on every landing, since
+  EXPRESS has no card and the carded lanes commit theirs later in LAND step 1. The check
+  moves to `route.py readers`, which only SELF-DIRECTED and GATED run, after the card's
+  commit, and refuses a branch that adds none.
+- cel-323 3 (Task 9): cells-app's `stack:` line marks yonder and yeoman `:unreleased`, as
+  their pack.json files do. Not a stack-check change: Vercel shows a production deployment
+  for both, so a "no production yet" hint would never fire.
 
 ## After the merge (runs at LAND, not a build task)
 
