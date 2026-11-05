@@ -250,6 +250,22 @@ Must carry:
   the merge, so its warning on entry is the reminder, not an alarm.
 - cel-298 (Task 6): every template h1 gets line-height 1.3 or more (impeccable's
   tight-leading floor), so a card never trips its Stop hook: review-card 1.05, go-card 1.1.
+- screendrop-worker/loom-parity 1 (Task 7): every `gh` call names its repo, `-R
+  <owner/repo>`, once as a working rule; gh resolves a fork's PR against `upstream`
+  otherwise. The PR_URL line included.
+- screendrop 2 (Task 6, 7): `deploy:` is the repo's own command that puts merged main live
+  where the host doesn't build main (a Worker with no Workers Builds). LAND runs it from the
+  main checkout after the merge, then watches `live:`; that is the repo's command, not a
+  hand deploy. A repo that deploys by hand with no line gets one in this PR.
+- screendrop 3 (Task 7): LAND step 0 checks each env name the diff newly reads exists, by
+  name, where landing deploys (`wrangler secret list`, `vercel env ls production`, `npx
+  convex env list --prod`); a missing one parks with `needs input:` naming it, since a
+  production setting is Pete's. Names only, never values.
+- screendrop 4 (Task 7): REVIEW's triage goes to `<job tmp>/triage-<slug>.md` before the
+  first fix, one line per finding (reader, what, real/false/nit, fixed or declined and why);
+  the ledger counts and the PR body's Reviewed line and declined list come from it.
+- screendrop 5: not a change. The locked stop table already says "land anyway", or the same
+  intent in other words, lands an unproven ship with the unwalked steps in `result:`.
 
 ## After the merge (runs at LAND, not a build task)
 

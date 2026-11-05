@@ -38,14 +38,15 @@ These are facts, not process — the process lives in SKILL.md.
 - **The browser writes screenshots only inside the session's workspace roots**
   (2026-09-24, when gstack's `/browse` gave way to the chrome-devtools MCP). A verifier
   saving to `/tmp` got "Access denied: not within any of the configured workspace
-  roots". The session's working directory and its added directories are roots; the
-  scratchpad and `~/.claude` are not. Hence `.ship-shots/<slug>/` under the session's
-  working directory, excluded from git.
+  roots". The session's launch directory and its added directories are roots, and they
+  stay put when the session enters a worktree; the scratchpad, the job's tmp and
+  `~/.claude` are not. Hence `.ship-shots/<slug>/` under the launch directory, excluded
+  from git (cel-315 wrote shots to the worktree it had entered and was refused).
 - **Landed worktrees piled up in cells, 82 GB of instances with them** (2026-09-24).
   Seven clean, merged worktrees sat for days, three holding a later ship's branch
   because a session had switched branches inside a finished tree; cells names each
   instance after the branch, so every switch orphaned one, and `wt remove` never ran
-  `make wt-clean` anyway. Teardown misses from many causes (a Codex session, a closed
+  `make wt-clean` anyway. Teardown misses from many causes (a crashed session, a closed
   terminal), so the backstop is `wt-sweep -f` hourly from launchd (`md.pete.wt-sweep`),
   skipping any worktree under 12h old, dirty, or with a live session; cells' own
   `pre-remove` hook runs `make wt-clean` on every removal.
@@ -248,68 +249,56 @@ why `shared-dev` is now an opt-out.
   computes from rows another code path writes needs at least one case through the real
   writer.
 
+## The worktree guard
+
+Inside a worktree session the harness refuses any command it can't prove stays in the
+worktree, and it misreads some that do. Each of these was refused in a real run; the fix is
+always a script file in the job's tmp (Write tool), run by its path typed out in full, or
+one plain command per call.
+- `$(git …)` substitutions, `git merge-base` inside one too; a redirect of git's output
+  (`git show <ref>:<path> > <file>`); a `git diff` on a computed path. Conflict triage hits
+  all three.
+- `cd <dir> && git …`, and any command on the main checkout (`cd <main> && git`, `git -C
+  <main>`) while the session sits in the worktree.
+- A script wrapped in a redirect with a chained `echo $?` or `tail` (CEL-229's land-pr
+  call): start it bare with `run_in_background` and read its output file.
+- Loops and heredocs that name git; a heredoc, a loop or a program named by a variable at
+  all (six refusals in eca-finder's v1 API ship); `sed -i` chains (one run hit the guard
+  eight times reaching for them).
+- A computed script path, `python3 "$TMPDIR/x.py"`, or a `$VAR` argument even to a binary
+  that isn't git; a stage script called through a shell variable.
+- Read-only commands it misparses: a path segment named `source`, a zsh `echo ==`, a `for`
+  loop over `sed`, a heredoc that only writes files, a docker `--format '{{…}}'` string, a
+  `python3 -` heredoc whose text says "git".
+- `ref=$(…)` then `press "$ref"` inline (CEL-223 lost five rounds to it).
+- Quoted JSON on a command line (`decisions.py log '{…}'`): use `log --file <json>`.
+- `set -a && . ./.env.local`: give the tool the file instead (`tsx --env-file=.env.local`,
+  `node --env-file=.env.local`).
+- A process substitution (`comm -12 <(…) <(…)`).
+
+Two runs lost 40 commands to split-and-retry, and two more lost about ten each
+(2026-10-05).
+
 ## Dispatch
 
-- **Codex builds with its sandbox off, in a blank home with the real one in its shell** (2026-10-16).
-  In October Codex's sandbox blocked vitest's writes, Xcode and typecheck, and the driver reran the tests on
-  most of its tasks, so Codex left BUILD. It came back with `-s danger-full-access`. The private HOME that keeps
-  Pete's skills, MCP servers and connectors out would also hide npm, Xcode and Playwright caches from the
-  model's tests, so `astra.sh build` sets `shell_environment_policy.inherit="all"` and
-  `shell_environment_policy.set.HOME` to the real home. Live check: Astra and Sol each built a one-line task
-  in about 20 s, saw `/Users/pete` and ran a self-test. Muse gets the same shape through `muse.py`, whose
-  `serve` session has no `--no-foreign-personal-context`, so a private HOME drops Pete's skills there too.
-- **Headless Codex carried all of Pete's ChatGPT connectors** (2026-10-14, codex-cli
-  0.162.1, reported by another of Pete's sessions). `--ignore-user-config` and a private CODEX_HOME both
-  still left 331 `mcp__codex_apps__*` tools in reach through code mode (Gmail, Drive
-  delete, GitHub writes, Slack), and Pete's ~/.agents/skills loaded regardless. Only
-  `-c features.apps=false` drops the connectors, and only a private HOME holding just
-  the login drops the skills. astra.sh does both for the reader and the first for the
-  tester. Any new headless `codex exec` needs the same. An MCP server inherits that
-  private HOME, so one that finds files through it (a browser in ~/.cache/puppeteer) breaks:
-  hand the real one back in `mcp_servers.<name>.env.HOME`. That is also how the tester
-  could take a private HOME, if its skills ever cost enough to matter.
-- **The first two days on the ladder, read from nine ship sessions** (2026-09-24 to 26).
-  Pete found at TEST what the walk skipped: a right-click menu synthetic events can't
-  reproduce, a voice path no walk reached, a localhost broken by a shared sign-in
-  cookie. `verify` ran by its bare name and was refused, or not at all. Worktree
-  isolation refused over 100 compound commands, the skill's own stage-0 line among
-  them. Two runs built before Fable's plan review landed. Fable's plan and branch
-  reviews found real bugs in every run. On the ledger Astra came back clean on 13 of
-  29 tasks against Opus's 18 of 26, and 4 of 13 above a Jev score of 2.
+Lessons from handing work to a subagent or another engine, kept where they hold for any
+worker. From 2026-08 to 2026-10 ship also built and tested through Codex models; that
+history is in git, and nothing calls those engines now.
 
-From 2026-09-24 to 2026-10-01 BUILD routed each task by difficulty: Astra through `codex
-exec` inside `scripts/astra.sh` for the easier half, Opus 5.5 and Fable subagents above
-it. Codex then left BUILD, and `astra.sh` ran only TEST's headless tester until Sol came back as REVIEW's reader (2026-10-14). Codex was the only engine from 2026-09-18, through `codex app-server` and a
-supervisor from 2026-08-12, and not an engine at all from 2026-09-06. The codex bullets
-below are why the wrapper has each of its guards; every other line is about delegation
-itself and holds for any worker.
-
-- **Sol is not 6x faster on a coding task** (2026-09-24). The same brief (a model
-  argument for `astra.sh` plus a selftest case) at high effort: Sol 81 s, Astra 91 s,
-  both 10/10. Sol wrote 75% more tokens in less time, so it generates about twice as
-  fast, but reading files and running tests set a task's wall time. That is why Sol
-  left the ladder. Put it back only on a ledger showing generation-heavy tasks.
-- **The first ladder build ran its Astra tasks on Opus and sat on `plan`** (cells-app
-  packs, 2026-09-24). The driver's own ship args said "Codex is out", carried over from
-  a September 23 outage, so it overrode the router's three Astra picks without trying one.
-  The same run went from the router straight to fan-out and never wrote `build:0:<M>`,
-  and Pete asked which stage it was in. The router now moves the marker, and "down"
-  needs this ship's own failed run.
-- **`app-server` over `exec` buys nothing a fire-and-collect task uses** (measured
-  2026-09-18): a new task costs about 5 s either way, and app-server saves 2 to 3 s only
-  on a second turn in a live thread, while needing a long-lived client that answers
-  the server or wedges the thread.
-
-- **Astra's sandbox cannot bind a loopback port**, so any test that starts a local
-  server fails inside a run with `listen EPERM` or `EADDRINUSE` on port 0 (cells,
-  2026-09-19: `loopback.test.ts`, `bridgeWorkflows.test.ts`, in all seven runs). It is
-  never the task's fault and never worth a fix round. Tell the worker in the brief which
-  tests those are so it reports and moves on, and treat the driver's own gate run,
-  outside the sandbox, as the only real one.
+- **A worker in a sandbox can't bind a loopback port**, so any test that starts a local
+  server fails inside its run with `listen EPERM` or `EADDRINUSE` on port 0 (cells,
+  2026-09-19: `loopback.test.ts`, `bridgeWorkflows.test.ts`, in all seven runs). It is never
+  the task's fault and never worth a fix round. Tell the worker in the brief which tests
+  those are so it reports and moves on, and treat the driver's own gate run, outside the
+  sandbox, as the only real one.
+- **A reader that exits 0 without writing its result did not run** (2026-09): a review hit
+  an unrelated skill-loading error and stopped in seconds. A missing or empty result file
+  is never a clean bill; a plain retry of the identical command produced five genuine
+  findings, two of them serious.
 - **Runs killed at a 2-minute timeout got mislogged as failures** — they were healthy
-  high-effort runs that hadn't written anything yet. **Slow is not failure.** Give a
-  dispatch a generous window and check in rather than killing; escalate on a wrong diff,
-  never on a slow one.
+  high-effort runs that hadn't written anything yet. **Slow is not failure; unknown is.**
+  Give a dispatch a generous window and check in rather than killing; escalate on a wrong
+  diff or a run with no sign of life, never on a slow one.
 - **A worker has auto-opened PRs and committed unprompted** — git stays with the driver,
   whoever drafts. One also committed its own result markdown into the repo, and a `--hard`
   reset cleaning that up ate an unstaged driver edit: a worker reports its result and
@@ -324,26 +313,8 @@ itself and holds for any worker.
   behavior change invalidates an assertion in a test file outside the list — two of three
   dispatches stopped mid-run to ask permission, each costing a resume round-trip. Briefs
   say so up front: test files whose assertions the change invalidates are always in scope.
-- **`codex exec review` can exit 0 in seconds without writing its result file** (it hit an
-  unrelated skill-loading error and stopped). A missing or empty result file means the
-  review DID NOT RUN — never a clean bill. `astra.sh` exits 4 on exactly this. A plain retry of the identical command then
-  produced five genuine findings, two of them serious.
-- **`codex exec` runs went dark and nobody could tell** (Pete, 2026-09-03). A held stdin,
-  a startup error and a model that stopped calling tools all looked like a slow
-  high-effort run from outside; the supervisor's only tells were a rollout file under
-  `~/.codex/sessions` and `ps`, and a ship lost an hour on a dispatch that had died at
-  startup. The first answer was `codex app-server` through `dispatch.mjs` with a model
-  watching the stream, retired on 2026-09-06 as heavier than the work it watched. The
-  answer now is `astra.sh`: the brief from a file so stdin closes, a startup deadline on
-  `thread.started`, an idle deadline on the JSONL's mtime, exit 3 for either. Slow
-  still is not failure; unknown is.
-- **codex's workspace-write sandbox can't commit from a linked worktree** — the index
-  lives under the primary repo's `.git`, outside the sandbox root. The driver commits, so
-  nothing needs this now; kept for anyone tempted to let the worker commit. Add the common git dir
-  (`git rev-parse --git-common-dir`) to `sandbox_workspace_write.writable_roots`.
-- **codex's ChatGPT auth can die mid-BUILD.** A second machine refreshing the same OAuth
-  session invalidated it (`refresh_token_invalidated`); in-flight runs survived on their
-  access token while every new dispatch was instantly dead. Recover with
-  `codex logout && codex login --device-auth` (approve the code at
-  `auth.openai.com/codex/device` — fill the segmented boxes with `form_input`, synthetic
-  keystrokes get eaten); build inline meanwhile rather than parking the ship.
+- **The first two days of multi-engine builds, read from nine ship sessions** (2026-09-24
+  to 26): Pete found at TEST what the walk skipped (a right-click menu synthetic events
+  can't reproduce, a voice path no walk reached, a localhost broken by a shared sign-in
+  cookie); `verify` ran by its bare name and was refused; two runs built before the plan
+  review landed; and the plan and branch reviews found real bugs in every run.
