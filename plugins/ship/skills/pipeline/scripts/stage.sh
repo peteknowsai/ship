@@ -20,10 +20,6 @@ case "$here" in */plugins/cache/ship/ship/*)
   if [ -n "$new" ] && [ "$(basename "$new")" != "$(basename "$here")" ] && [ -d "$new" ]; then
     echo "notice: ship was updated since this session loaded it ($(basename "$here") -> $(basename "$new")). Reread what changed, listed below by file and section under $new/skills/ (diff -ru $here/skills $new/skills for the lines), and call scripts from $new from here on; the newer rules win. A changed rule for a stage this ship already passed does not redo that stage: a check or stop it adds runs before landing, and a record a later step reads is written from what was done, never invented." >&2
     lister="$new/skills/pipeline/scripts/what-changed.sh"; [ -f "$lister" ] || lister="$(dirname "$0")/what-changed.sh"
-    # The list below starts from the copy these scripts came from, but the Skill tool loads every
-    # ship skill from the copy the session started on, even one first loaded after an update
-    # (cel-306 followed 8f5738a's verify while calling 839a52's scripts).
-    echo "A ship skill loads from the copy this session started on, even one loaded after this notice: for each whose printed base directory is not under $new, run bash $lister <that path, cut before /skills> $new and read what it lists under that skill." >&2
     bash "$lister" "$here" "$new" >&2 2>/dev/null || true
   fi
 esac

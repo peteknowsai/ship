@@ -445,8 +445,8 @@ one with uncommitted work, one a live session holds (wt's 💬), or one under tw
   brief-grade. A change Pete asks for after go is an express round, not a re-plan.
 - **The plan writes its `## QA cases`**: numbered steps TEST walks, each one thing a person
   does and what they should see, covering every frame, requirement and edge the spec names,
-  and each a case that fails on main's code, a race fix's at every ordering it claims (verify:
-  Pick cases that can fail). TEST walks them as written, may add, never drops
+  and each a case that fails on main's code, a race fix's at every ordering it claims, the same
+  instant among them (verify: Pick cases that can fail). TEST walks them as written, may add, never drops
   one. Writing them before the code keeps them about what was asked, not what got built.
 - **A task that hooks into a dependency's runtime** (a framework's workflow, a bundler's
   transform, the shape a model must answer in) is followed by a driver live check of the real
@@ -607,7 +607,14 @@ Wonder read where Sizing says.
   writes (a local database file included) changes additively first, or Merge Danger calls it
   one-way.
 - **The QA run: call the Skill tool with `ship:verify`**, the full name (bare `verify` is
-  another skill and is refused), an API-only change included. Hand it the worktree's path,
+  another skill and is refused), an API-only change included. It loads from the copy this
+  session started on, whatever was installed since (cel-306 followed 8f5738a's verify while
+  calling 839a52's scripts): when its printed base directory is not under the `installPath`
+  that `~/.claude/plugins/installed_plugins.json` names for `ship@ship`, run
+  `<installPath>/skills/pipeline/scripts/what-changed.sh <the base directory cut before
+  /skills> <installPath>` and read
+  what it lists under `verify/`, which wins; nothing listed there means verify is unchanged.
+  Hand it the worktree's path,
   the URL, the BACKEND, test-auth, IOS and STORYBOARD lines, the plan's `## QA cases` (or on
   EXPRESS the change's intent), and the repo's checks skill (`.claude/skills/checks/SKILL.md`,
   or "none yet: write it"), and the `<out-dir>` and `<shots-root>` verify names at its top;

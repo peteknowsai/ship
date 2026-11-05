@@ -145,10 +145,14 @@ what he says mid-run changes the run.
 - A CSS rule is proven by computed style on the real element (`evaluate_script` with
   `getComputedStyle`), never by a test that greps the stylesheet: yonder-skin's underline
   passed one and read `none` on the page, beaten by a more specific rule.
-- A race fix walks every ordering it claims to handle, the same instant among them: separate
-  processes started at one shared wall-clock time, since one process dedupes its own calls
-  (cel-306's box race passed with the second open 5 s late; at the same instant the Sandbox
-  API answered 400 "already exists", not the 409 the fix handled).
+- A race fix walks every ordering it claims to handle, the same instant among them, started
+  the way the real race starts: two processes for two workers or devices, one page for a
+  double submit. A same-instant case counts only with proof the contended calls overlapped,
+  each call's start and end time or the server's log of the second arriving before the first
+  answered; a run that serialized is repeated, and the case goes red on main's code first.
+  cel-306's box race passed with the second open 5 s late; started together from two
+  processes, since one process deduped its own calls, the Sandbox API answered 400 "already
+  exists", not the 409 the fix handled.
 - On a shared backend, the job a step counts is one this run started: read back its starter
   and the deployment it ran on (live-label-rows' guest joined a search another session had
   begun a minute earlier, on other code).
