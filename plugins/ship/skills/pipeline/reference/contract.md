@@ -12,7 +12,7 @@ here the first time a stage uses it. An absorb that touched the repo's `CLAUDE.m
 The commands that must pass: tests, typecheck, production build. Default: whatever you can
 find.
 
-**Full or scoped.** Full gates run at BUILD's pre-flight, again at LAND's step 0 when the
+**Full or scoped.** Full gates run at BUILD's pre-flight, again at LAND's step 1 when the
 tree changed since, and after an absorb whose files overlap the branch's. Every other check,
 each BUILD task and each TEST fix round, runs them **scoped**: the typecheck plus only the
 tests the uncommitted change touches, by the contract's `scoped <cmd>` if it names one, else
@@ -157,7 +157,7 @@ its docs or `package.json` use (screendrop-worker, 2026-11-05).
 The repo's automated end-to-end smoke, in two halves.
 
 - `branch <cmd>` runs against the worktree's own server once, in BUILD's pre-flight, and
-  again only if what the app carries changed before landing (LAND's step 0); never per
+  again only if what the app carries changed before landing (LAND's step 1); never per
   milestone push or per task, because a smoke can cost real model calls (cells-app's: about
   12 bot turns, about 13 cents). Close the QA's browser pages and stop the branch's phone app
   first: their polling slowed a Swain reply past the smoke's 120 s wait, and the rerun with

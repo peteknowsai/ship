@@ -295,7 +295,7 @@ changed files (the contract's `scoped` command, else the runner's changed mode t
 repo's test script so its pretest hooks run, `npm test -- --changed` or `-- --onlyChanged` for
 jest; `vitest related` found no tests at all on cells-app's multi-project config,
 so a scoped run that finds none for a code change is a miss to check, not a pass). In ship, the final full run can wait for
-LAND's step 0, which runs it when the tree changed since the last one. Stop the worktree's dev server
+LAND's step 1, which runs it when the tree changed since the last one. Stop the worktree's dev server
 before a production build (`next build` and `next dev` both write `.next`) and restart it
 after. In ship, BUILD's pre-flight is
 the first run, so skip it then unless the tree changed since. Run the repo's `tsc` / lint / unit / existing e2e as a regression sweep — and **run what the

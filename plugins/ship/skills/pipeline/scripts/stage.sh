@@ -29,7 +29,7 @@ if [ "$2" = land ]; then
   # No base to diff against means no way to tell, so say nothing rather than cry wolf.
   if [ -n "$base" ] && files=$(git -C "$root" diff --name-only --diff-filter=A "$base"...HEAD 2>/dev/null); then
     printf '%s\n' "$files" | grep -qiE "review.*$id|$id.*review|(^|/)review\.html$" ||
-      echo "reminder: no review card for $slug on this branch yet; a SELF-DIRECTED or GATED ship commits it before the merge, in the commit that carries step 0's smoke line when step 0 runs one (EXPRESS has none)" >&2
+      echo "reminder: no review card for $slug on this branch yet; a SELF-DIRECTED or GATED ship commits it before the merge, in the commit that carries LAND step 1's smoke line when step 1 runs one (EXPRESS has none)" >&2
   fi
 fi
 # A session keeps the ship it loaded at startup; a long one can run on rules since fixed.
