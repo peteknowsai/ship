@@ -3,11 +3,11 @@ name: verify
 description: >
   Prove the feature just built actually works before anything merges: write a QA script,
   run it yourself on the running app the way Pete would (a browser through chrome-devtools;
-  his iPhone or a simulator through agent-device for a native app), fix what fails and run
-  it again until it passes. Codex tests only when Pete asks. Use in ship's TEST stage (it's
-  invoked there automatically) or standalone when a change is ready and you want proof it
-  works: "verify this", "prove it works", "/verify". Never declares a feature working off
-  the diff alone — it drives the real app.
+  a simulator or his iPhone through agent-device for a native app), fix what fails and run
+  it again until it passes. Use in ship's TEST stage (it's invoked there automatically) or
+  standalone when a change is ready and you want proof it works: "verify this", "prove it
+  works", "/verify". It never declares a feature working off the diff alone; it drives the
+  real app.
 user_invocable: true
 ---
 
@@ -19,11 +19,30 @@ on the running app, fix what fails, run it again. The one who sees the bug reads
 and makes the fix, so a round costs a rerun, not a hand-off. Split across two sessions it
 cost six rounds on one iPhone scroll bug: the tester could see it but not fix it, and the
 fixer could fix it but not see it. Objective checks (tsc / lint / unit / e2e) are the
-regression sweep (§3). Codex tests only when Pete asks for it: `reference/codex.md`.
+regression sweep (§3).
 
 **Works means every step of the script passed on the running app**, each with its
 evidence: a screenshot, the agent-device diff, a response body. Reading the diff and
 concluding "looks right" is exactly the failure this skill exists to prevent.
+
+**Read a reference when its case is in the run:**
+- `reference/ios.md` when the contract has `ios:`, or the spec or storyboard says mobile
+  web: the phone, simulators, Safari, and a locked phone.
+- `reference/mac.md` when the contract has `mac:`: the borrowed Mac VM and the lock check.
+- `reference/browser.md` when the target is a protected preview, chrome-devtools is missing,
+  or the walk prints, copies, drives a browser on another box, or runs a terminal UI.
+
+**Two paths, named once:**
+- `<out-dir>` holds qa.md, result.md, the QA script and the dev log: an absolute path under
+  the job's tmp directory (`$CLAUDE_JOB_DIR/tmp`), else `<shots-root>/.ship-shots/<slug>/`.
+  Never `/tmp`, where a restart mid-QA wiped one, and never inside the repo's tracked tree.
+- `<shots-root>` is the session's launch directory: the primary checkout when the session
+  started there and then entered a worktree, the worktree only when the session was launched
+  inside it. The chrome-devtools MCP reads and writes only inside its workspace roots, which
+  stay where the session launched (CEL-175, CEL-226, cel-315). Screenshots, `take_snapshot`
+  files and any file the MCP reads go in `<shots-root>/.ship-shots/<slug>/`, always as
+  absolute paths; `.ship-shots` is never committed (the `.ship-*` exclude covers it). In ship
+  the driver passes both.
 
 ## 1. Preconditions — the caller owns these
 
@@ -36,26 +55,21 @@ prints 000); for a remote URL, a curl loop up to a deadline, in a script file. W
 log for errors, never a process grep, since a dev server can build for minutes before it
 listens. Then, on the worktree's dev server, GET each page and read route the change added once
 before the walk, never one that starts work: a dev server compiles a route on its first request, and CEL-192's first call to a new API route came back 401 while it
-compiled. Reuse that stack, never boot a second. A preview behind the host's login wall (Vercel protection) is reached with its
-automation bypass, never through Pete's browser, and the secret never sits in a tool call
-or a URL, where the transcript keeps it (chrome-devtools' `emulate` extraHttpHeaders would
-put it there). Let the CLI read it and set the cookie: `vercel curl / --deployment <host> --
---silent --output /dev/null --header 'x-vercel-set-bypass-cookie: true' --cookie-jar <jar in
-the job's tmp>`, then load the jar's cookies into a Playwright context (`addCookies`) and walk
-the preview there (the Playwright recipe in §2). Walk one stable host across fix rounds so the
-cookie, driver and harness carry over: the branch's git alias
-(`<project>-git-<branch>-<team>.vercel.app`) when the host builds each push, else alias each
-new deploy to one name (`vercel alias set <deploy-url> <name>.vercel.app`); live-search
-rebuilt all three for seven fresh deploy URLs. The measured checks still run on
-chrome-devtools, against the worktree's own production build (`next build && next start`,
-or the repo's equivalent): CLS and accessibility don't change with the host, and CLS summed
-by hand from layout-shift entries misreads it (0.12 against a real 0.056).
+compiled. Reuse that stack, never boot a second. A preview behind the host's login wall
+(Vercel protection) is reached with its automation bypass through the CLI, never through
+Pete's browser, and the secret never sits in a tool call, a URL or qa.md
+(`reference/browser.md`).
+
+A web app is tested in the browser, its mobile layout at phone width (390px) there. Never
+control Pete's Mac desktop.
 
 **The generic seam (don't cross it):** if the feature is behind auth, the **repo** must
 provide a test way to reach authed surfaces: its contract's `test-auth:`. `seed <how>` is a
 seeded account and its secret. `form <how>` means the app's own sign-in form works with test
 credentials (a Clerk test instance: any address, the fixed code 424242), and then signing in
-through that form, with a fresh test address per walk, is the path. verify does **not** mint
+through that form, with a fresh test address per walk, is the path. The tricks a fresh
+account needs in one repo (an invite code, a redeem file, a PIN) live in that repo's checks
+file under Sign in. verify does **not** mint
 sessions, set auth cookies, hit a dev-login endpoint, bypass auth, or stand up infra — that's
 repo plumbing. If authed surfaces are unreachable and the repo offers no test-auth path, the
 result is `unverifiable` naming the wall, and Pete walks it — never fake a pass.
@@ -72,70 +86,6 @@ before a step that reads or clears what's unread, send every other page signed i
 person to `about:blank`, since an open page marks replies read as they arrive (yonder-skin's
 phone showed no unread dot for three tries while a web page sat on the chat).
 
-**iOS, through agent-device: a native app on Pete's own iPhone ("iPhone PM") or an Xcode
-simulator, and mobile web only ever in a simulator.** A web app is tested in the browser,
-its mobile layout at phone width (390px) there. When the build is meant for phones (the
-spec or storyboard says mobile web), the script may add the simulator's Safari at the
-branch URL: a judgment call on what's being built, never a default, and never iPhone PM,
-whose Safari is never used (Pete, 2026-10-05), unless Pete asks for it or the feature lives
-on the network the phone is on (a VPN or tailnet name a simulator can't join). Then drive
-iPhone PM's Safari by coordinates: `press` the address field, `fill` the URL, `press` the
-keyboard's Go key. `open <url>` doesn't navigate the open tab and `keyboard return` times
-out on the device (2026-10-14). A simulator check that only looks at a page runs headless,
-with no agent-device and no Simulator.app, which opens on Pete's screen, on a clone of its own
-(below): `xcrun simctl bootstatus <udid> -b` boots it and waits, `xcrun simctl openurl <udid>
-<url>`, then `xcrun simctl io <udid> screenshot <png>` until two shots a few seconds apart
-match, since Safari may still be loading. For a native app the phone is the real
-thing, so it is the default whenever `agent-device devices` lists it; otherwise a booted
-simulator. In a repo whose contract has `ios:`, run it whenever the app can see the change
-(its native code, or the server and APIs it calls): it builds the branch's own app, pointed
-at the branch's server, installs it, and prints the IOS line. Without `ios:` there is no
-device step. Landing removes that branch app from the device again (the pipeline skill's
-Land), unless its IOS line says `keep=yes`. One ship on the phone at a time: a second ship
-that finds it held tests on a simulator of its own, `xcrun simctl clone <base> ship-<slug>`
-then boot it, pass it to the repo's `ios:` command by UDID (cells-app: `IOS_SIM=<udid>`;
-without it the install lands on whichever simulator is booted, maybe another ship's), and
-`simctl delete` it at LAND. The `ios:` build restarts the branch's server, so it runs
-before or after a smoke or e2e, never beside one: a showing-followups smoke went 6/12 red
-on ECONNRESET while it ran, and 12/12 on the rerun. A shared booted one is another ship's to shut
-down mid-QA (2026-10-14). Never control the Mac's desktop.
-
-**A Mac app, through the repo's own rig.** In a repo whose contract has `mac:`, run it
-whenever the Mac app can see the change; it prints the MAC line. Drive the app the way the
-repo's checks skill says (its UI test fixtures, a live test against the branch server). On
-Pete's Mac that is never desktop control, and the app launches with `open -g` so it never takes
-his screen. A step that needs the app's own screens (a click, a field, what a window shows) runs in
-a borrowed Mac VM, a clean headless Mac with none of his logins, apps or permission grants.
-`scripts/mac-vm.sh` in the pipeline skill runs it, unsandboxed, from the ship's worktree, which
-holds the slot: `borrow --wait` with a 600000 ms timeout, since it waits up to 8 minutes for a
-slot, prints `SLOT=<n>`, and borrowing again from the same worktree hands back that slot; build the branch's app against a localhost
-port of the worktree's server, never a `*.localhost` name on :80, which the VM can't take;
-`put <n> <app>`, `tunnel <n> <port>`, then drive it through `run <n> '<cmd>'` with
-agent-desktop: `open -g` the app, `agent-desktop snapshot --app <name> -i`, then `click` or
-`set-value` on a ref exactly as the snapshot's `ref_id` prints it (`click @s2r8zyd7kmosvb:e9`),
-and `shot <n> <png>` to see the whole screen. A web view's first
-snapshot can need `--timeout-ms 20000`. In a web view, `type` needs `--headed` (physical input)
-and `press return --app <App> --headed` submits; a ref `click` that fails there, `--headed` too,
-or lands on a row whose one AX button swallows a nested "more" button, goes by coordinates:
-`mouse-click --headed --xy <x>,<y>` in points, half the shot's pixels (1920x1440 shots, scale 2).
-The app's first-run banners (Login Item Added, its notifications ask) sit over the top-right for
-the walk: `dismiss-all-notifications` is refused by policy, and `dismiss-notification <i>` from
-`list-notifications` needs `--expected-title`. Never `osascript` there: its Automation prompt hangs
-the command. `return <n>` the moment the walk ends, pass or fail: an abandoned VM keeps running,
-and only after two idle hours can another ship's borrow take its slot and delete it. A rig's own
-windows are on his screen too, `orderBack` or not, until torn down: open them just before the
-steps that need them and tear them down right after (CEL-222's live-node test windows sat over
-his terminal until he asked). A window level under `.normal` hides them from CGWindowList,
-which the capture needs, so that is no way out. A Chrome it
-needs, an extension under test included, is Chrome for Testing launched by the global rule
-(`open -g -n -a <app> --args --no-startup-window --use-mock-keychain --load-extension=<dir>`),
-never his Chrome. A rig a run had to build (CEL-198 built a relaunch script and a live-test
-fixture, and it found six real bugs) goes into the checks skill at §5, so the next run starts
-from it. Before a step that captures the Mac's screen, check the lock: `ioreg -n Root -d1 |
-grep -q '"CGSSessionScreenIsLocked"=Yes'` means locked, and a capture then hangs (CEL-198's
-`Page.captureScreenshot` sat over 60 s). Locked parks that step with `needs input:` "unlock
-the Mac", the way a locked iPhone does; steps that capture nothing still run.
-
 ## 2. Write the QA script → run it → fix → rerun (≤ 3 fix rounds per failing step)
 
 **A diff of only tests, evals or test scripts** has no page: its own run, green, with no
@@ -148,18 +98,21 @@ on GitHub, and any mermaid in it parses. handoff-readme's check found a spec the
 that existed only untracked in the main checkout.
 
 **Start from the repo's checks.** A repo keeps how it is proven in a project skill,
-`.claude/skills/checks/SKILL.md`: how to start it, sign in, walk each screen, and the pass
-lines it must meet. Read it first and build the QA script on it, so a run never rediscovers
+`.claude/skills/checks/SKILL.md`: how to start it, sign in, walk each screen, the pass
+lines it must meet, and the noise to ignore. Read it first and build the QA script on it, so a run never rediscovers
 what the last one learned (Pete, 2026-10-19). No file yet: §5 writes it from this run.
 
-**Write `<out-dir>/qa.md`** (outside the repo) from the spec or plan, else the acceptance
-criteria. Its head names what the run uses: URL, AUTH (the test-auth path, with everything
+**Write `<out-dir>/qa.md`.** On a ship with a plan, its steps start from the plan's
+`## QA cases`, which PLAN wrote before any code: walk each as written, add any the build
+showed were missing, and drop none. On EXPRESS or a standalone `/verify`, write the cases
+yourself from the spec, else the acceptance criteria. Its head names what the run uses: URL, AUTH (the test-auth path, with everything
 a fresh account needs, an invite code or a PIN), IOS (the line `ios:` printed, or none),
 BACKEND (on `backend: copy` or `per-branch`, the exact deployment, pinned on every CLI call, or seeds
 land on one backend and the app reads another), ENV (any variable the dev script sets only
 for its own server that a data-level script needs too; cells-app's `LOCAL_STAGE=local-<port>`,
-without which a script reads main's stage and comes back empty), PROTECTION (the bypass value, or none),
-STORYBOARD (a GATED ship's frames and `~/.claude/skills/impeccable/reference/craft-floor.md`,
+without which a script reads main's stage and comes back empty), PROTECTION (`protected` or
+none, never the bypass value), STORYBOARD (a GATED ship's frames and
+`~/.claude/skills/impeccable/reference/craft-floor.md`,
 or none). Then numbered steps, each one thing a person does and what they should see:
 "4. Scroll up slowly past the first page of history → the message you were reading stays
 put". Cover every acceptance criterion, every frame the change built (a visible gap from
@@ -229,85 +182,14 @@ its origin, and the walk lost a round to "No alert by that id".
   Enter in a field does start paid work, that is a failure to report: a real user hits it too. A React controlled input can ignore `fill` (the value snaps back): click it and
   `type_text`. The tool's clicks are slower than a person's, so a control with a short
   settle timer (picks counted after ~2s) can read three picks as three separate ones: judge
-  its result, not each click. When the app drives a browser of its own on another box (a
-  bot's remote Chrome), capture that box's real screen (its X display) as soon as clicks
-  there stop landing: in browser-replay a Chrome dialog swallowed every click and only the
-  screen showed it. A screen shown only while async work runs needs a target whose work
+  its result, not each click. A screen shown only while async work runs needs a target whose work
   outlasts the walk to it (reading-tally's small town finished during the intro, and a
   second paid search went to a mid-size one). `navigate_page`'s `initScript` lasts that one
-  navigation, since the MCP removes it after, so pass it again on every navigation that needs it. Keep the QA script and the dev log under the job's tmp
-  directory (else the worktree), never `/tmp`: a restart mid-QA wiped one. Screenshots and
-  `take_snapshot` files go under `<shots-root>/.ship-shots/<slug>/` (below), because the
-  chrome-devtools MCP refuses a path outside the session's workspace roots, the job's tmp
-  included, and a file it reads goes there too (a sign-in redeem script for
-  `evaluate_script`'s `sourcePath`). A copy or `sips` into it needs the Bash sandbox off (exit 13 otherwise); delete
-  a redeem file once it has run. A print flow: headless `window.print()` stalls the browser, so
-  judge the printout with print-media emulation first and click Print last. A copy flow:
-  headless Chrome refuses `navigator.clipboard.writeText`, so every Copy button reads
-  "Failed to copy". That is the environment, not the app: before the real click, swap
-  `writeText` for a recorder with `evaluate_script`, then click, and check the recorded
-  text and the success toast.
-  No chrome-devtools tools in the session (ToolSearch finds none: its `npx` start failed
-  at launch): drive headless Chrome through Playwright, imported by its absolute path
-  from a script under the job's tmp directory, since a bare `import "playwright"` there
-  finds nothing: `const { chromium } = await
-  import(process.env.HOME + "/node_modules/playwright/index.mjs"); await chromium.launch({
-  executablePath: <the chrome-headless-shell binary under
-  ~/.cache/puppeteer/chrome-headless-shell/, newest version> })`. Never `channel: "chrome"`:
-  that starts the Google Chrome app, and a hidden copy of it makes macOS switch Pete's
-  Dock click to that copy instead of opening his Chrome (2026-10-12). Use real locator clicks and keys, never events fired from
-  `evaluate`, read the console through `page.on("console")`, and say in the result which
-  browser ran.
-- **iOS: the agent-device CLI** from the shell (`agent-device help manual-qa` and
-  `help debugging` are its guides). `agent-device open <bundle> --device "iPhone PM"
-  --foreground` (without `--device` it picks a simulator), then press, fill and scroll with
-  `--settle` and judge from the diff it prints; `close` when done. What the phone taught
-  (cells-app, 2026-10-05):
-  - One XCTest runner drives a device at a time. `open` failing twice with "BUILD
-    INTERRUPTED" means another session holds it: `pgrep -fl 'xcodebuild.*AgentDeviceRunner'`
-    shows the device id and the owner pid in the xctestrun name. Ask that session
-    (ListAgents) or test in a simulator, and say which in the result (2026-10-14).
-  - On a loaded Mac `open` can hang: give it `--timeout 300000` rather than retrying, since
-    each retry restarts the shared daemon a sibling ship may be using. After one hang, check
-    the phone once with `xcrun devicectl device process launch --device <udid> <bundle>`, then
-    test in a simulator and say so (CEL-192, CEL-193). An XCTest passcode or Enable UI
-    Automation prompt on the phone is Pete's to answer: park the step with `needs input:`.
-  - A fresh simulator clone asks for the mic, then the camera, mid-walk: decline unless the
-    step needs them (cel-202).
-  - A ref that reads `[covered]` (a SwiftUI `.sheet`'s controls) ignores `press` and `fill`
-    without an error: tap its coordinates in points, the screenshot's pixels over the device's
-    scale as for `gesture pan` below, then snapshot to see
-    it took (CEL-135, CEL-193).
-  - A phone another ship just released can still answer `DEVICE_IN_USE` for that ship's
-    session handle: reuse it with `--session <that id>`, never close it, since it is theirs.
-  - Never `press` a ref you didn't just read back from a snapshot. An empty or stale one
-    stops the script: on Pete's own phone a misfired tap lands somewhere real. A step that
-    reads a ref and presses it (snapshot, pick, press, wait for a text) is one script file
-    under the job's tmp run with `bash`, since the worktree guard refuses `ref=$(…)` then
-    `press "$ref"` inline (CEL-223 lost five rounds to it).
-  - On iPhone PM the hand holding the phone is Pete's. Post him one line before the walk
-    ("QA is on your phone now, hands off until it says done") and one when it ends; a tap no
-    tool sent is his before it is a bug (CEL-223 traced an "Always allow" to one).
-  - A walk of anything that records on iPhone PM records Pete's room. Say so in the hands-off
-    line, keep each recording under a minute, and delete the test person before landing
-    (cells-app: `PACK=<pack> npm run prune -- --people --finish <clerk id>`): a 7-minute walk of the
-    Homebody walkie transcribed talk near his desk into the test person's showing.
-  - Read the app's own prints with `xcrun devicectl device process launch --console
-    --terminate-existing --device <udid> <bundle>`, and write debug traces to stderr: a
-    `print()` block-buffers off a terminal, so its lines arrive late or never.
-  - Scroll a feed with `agent-device gesture pan <x> <y> <dx> <dy> <ms>` from mid-screen, in
-    points: the screenshot's pixels over the device's scale (402×874 on iPhone PM, a third of
-    its screenshot; showing-issues' first pan in pixels threw the deck off the screen).
-    `scroll up` starts at the bottom edge and can land on the composer, and an open keyboard
-    swallows it. After a pan, press only from a snapshot taken once the scroll has stopped
-    (two snapshots a second apart that match): a ref read during momentum taps where the
-    element was (CEL-213).
-  - Seed content from the Mac (the repo's own test helpers or API), never by typing it on
-    the phone: `fill` garbles long text.
-  - To reach a state a short test account can't (paging, a long list), shrink the constants
-    in a debug build and never commit them.
-  - The simulator is not the phone: three scroll fixes passed in it and failed on iPhone PM.
-    A native change is proven on the phone when it is connected.
+  navigation, since the MCP removes it after, so pass it again on every navigation that needs it.
+  A file the MCP reads (a sign-in redeem script for `evaluate_script`'s `sourcePath`) goes in
+  `<shots-root>/.ship-shots/<slug>/` too. A copy or `sips` into it needs the Bash sandbox off
+  (exit 13 otherwise); delete a redeem file once it has run.
+- **iOS: the agent-device CLI**, by `reference/ios.md`.
 - **API, CLI, script:** run the real commands; their output is the evidence. A server-side
   change no surface reaches before the merge (code a background worker runs): replay the
   reported case at data level, the changed function against a read-only copy of the real
@@ -379,13 +261,8 @@ these on each page it touched, and every pass line the repo's checks add:
 
 A failed measure is a failed step like any other, with the number as its evidence. Trace
 each page on its own URL before blaming a shift on the change: Settings opened over
-/activity scored 0.26 from that view's sheet animating in, and 0.00 on its own.
-
-**A terminal UI** (a Claude Code mod, a CLI screen): run it in a detached tmux session
-(`tmux new-session -d`, then `send-keys` and `capture-pane -p` for each step) against a
-scratch repo, with a stub `open` first on `PATH` so nothing reaches Pete's screen. A
-`claude --plugin-dir` load writes `tsconfig.json` and `.claude-plugin/types` into the plugin
-folder; delete them before committing.
+/activity scored 0.26 from that view's sheet animating in, and 0.00 on its own. A false
+alarm the repo's checks list under noise is skipped.
 
 **Prove something stays idle** (a spinner that must not appear, a message that must not
 come): `wait_for` on the failure text with the step's timeout (`timeout: 90000` for 90 s).
@@ -445,13 +322,17 @@ not a spec per micro-feature. **Running** the committed spec in the gate is the 
 
 Update the repo's `.claude/skills/checks/SKILL.md` in the branch, so it lands with the
 change: a screen the change added (how to reach it, what it shows), a step that changed, a
-trick the run had to discover (sign-in, a seed, a port), a pass line Pete asked for, and a
-false alarm a measured check raises on every run (cells-app's localhost branch strip in each
-Lighthouse audit), named as known so the next run skips it. Replace
-a stale line rather than add one. No file yet: write it from
-`reference/checks-template.md` with what this run proved, and say so in the hand-back. Name
-it `checks`, never `verify`, which is Claude Code's own skill. A run that learned nothing
-leaves it alone.
+trick the run had to discover (a sign-in trick under Sign in, a seed, a port), a pass line
+Pete asked for, and noise: console noise the app always prints, or a false alarm a measured
+check raises on every run (cells-app's localhost branch strip in each Lighthouse audit),
+added to its noise table so the next run skips it.
+
+**One line per lesson.** A new lesson on a subject a line already covers replaces that line,
+never sits beside it. A file over its cap gets pruned in the same edit, back under it: merge
+the lines on one subject, and drop a line whose screen or code is gone. No file yet: write it
+from `reference/checks-template.md` with what this run proved, and say so in the hand-back.
+Name it `checks`, never `verify`, which is Claude Code's own skill. A run that learned
+nothing leaves it alone.
 
 ## 6. Hand back proof
 
