@@ -1,19 +1,17 @@
 #!/usr/bin/env python3
-"""Muse Code builds through `muse serve`, with astra.sh's guards, and records the plan usage it reports.
+"""Muse Code reads a plan or a branch through `muse serve`, read-only, and reports what it found.
 
-  muse.py build <worktree> <brief.md> <out-dir> <model>   BUILD's Muse builder on the model the router picked
-  muse.py review <worktree> <brief.md> <out-dir> [model]  a read-only reader (plan review, REVIEW's other-lab
-                                                          read), Wonder Full by default; exit 6 if it changed the tree
-  muse.py usage                                           the cached plan usage; no prompt spent
+  muse.py review <worktree> <brief.md> <out-dir> [model]  a read-only reader (PLAN's plan review, REVIEW's
+                                                          other-lab read), Wonder Full by default; exit 6 if
+                                                          anything changed the tree during the read
   muse.py --selftest
 
-`muse exec` never reports plan usage; `muse serve` (JSON-RPC 2.0, one object per line on stdio)
-sends `usage/changed` after each turn, so a build runs a serve session: initialize, initialized,
-session/start, turn/start with the brief, then frames until turn/completed. Every usage report,
-and a final `usage/read`, rewrites ~/.claude/muse-usage-cache.json (or SHIP_QUOTA_MUSE), which
-`muse.py usage` prints.
+A read is one `muse serve` session (JSON-RPC 2.0, one object per line on stdio): initialize,
+initialized, session/start, turn/start with the brief, then frames until turn/completed. Muse
+writes code for ship no more (Pete, 2026-10-24); the build mode is in git history.
 
-<out-dir> gets events.jsonl (every frame), last.md (the last finalAnswer message, else the last agentMessage), stderr.txt and
+<out-dir> gets events.jsonl (every frame), last.md (the last finalAnswer message, else the last
+agentMessage), seconds (the read's wall time, which `route.py log out=<out-dir>` reads), stderr.txt and
 home/, the serve's HOME: a shadow of the real home, every entry linked back except the skill
 folders (SKIP_HOME), so the login (macOS Keychain), Xcode, npm and Playwright caches all work in
 the model's shell while Pete's personal skills never load and never reach Meta. `serve` has no
@@ -23,8 +21,8 @@ and it has no shell-environment policy (2026-10-16).
 Exit 0: completed with a final message. 1: the turn failed, or a request got a JSON-RPC error.
 2: usage error. 3: killed by the watchdog (no turn/started inside
 MUSE_STARTUP seconds, default 60, or no frame for MUSE_IDLE, default 900). 4: completed with no
-agent message, which means it DID NOT RUN. 5: quota hit; the cache is marked exhausted until
-the reset. MUSE_BIN overrides the `muse` command.
+agent message, which means it DID NOT RUN. 5: quota hit; it prints the reset. 6: the tree
+changed during the read. MUSE_BIN overrides the `muse` command.
 """
 import json
 import os
@@ -55,50 +53,6 @@ def uuid7():
     b[6] = (b[6] & 0x0F) | 0x70
     b[8] = (b[8] & 0x3F) | 0x80
     return str(uuid.UUID(bytes=bytes(b)))
-
-
-def cache_path():
-    return os.environ.get('SHIP_QUOTA_MUSE') or os.path.expanduser('~/.claude/muse-usage-cache.json')
-
-
-def read_cache(path=None):
-    try:
-        return json.load(open(path or cache_path()))
-    except (OSError, ValueError):
-        return None
-
-
-def write_cache(data):
-    """Temp file and rename, so a reader never sees half a file."""
-    path = cache_path()
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    fd, tmp = tempfile.mkstemp(dir=os.path.dirname(path), prefix='.muse-usage-')
-    with os.fdopen(fd, 'w') as f:
-        json.dump(data, f)
-    os.replace(tmp, path)
-
-
-def save_usage(usage):
-    """An older observation never overwrites a newer one, such as a parallel build's exhausted mark."""
-    seen = usage.get('observedAtMs') or int(time.time() * 1000)
-    if ((read_cache() or {}).get('observedAtMs') or 0) > seen:
-        return
-    write_cache(dict(usage, observedAtMs=seen))
-
-
-def mark_exhausted(detail):
-    """A quota failure empties the pool until the reset it names."""
-    now_ms = int(time.time() * 1000)
-    reset = detail.get('resetsAtMs') or 0
-    if reset <= now_ms:  # a missing or past reset would reopen the pool at once
-        reset = now_ms + 5 * 3600 * 1000
-    data = read_cache() or {}
-    window = dict(data.get('window') or {}, usedPercent=100, resetsAtMs=reset)
-    window.setdefault('windowDurationMins', 300)
-    data.update(window=window, observedAtMs=now_ms, exhausted=detail)
-    data.setdefault('weekly', {'usedPercent': 100, 'resetsAtMs': reset})
-    write_cache(data)
-    return reset
 
 
 class Serve:
@@ -167,8 +121,6 @@ class Serve:
                 self.last = item['text']
                 if item.get('messagePhase') == 'finalAnswer':
                     self.final = item['text']
-        elif method == 'usage/changed':
-            save_usage(params)
         elif method == 'turn/completed':
             self.done = params
 
@@ -201,16 +153,9 @@ def shadow_home(real, home):
         os.symlink(os.path.join(real, name), dst)
 
 
-def build(worktree, brief, out, model):
-    if not os.path.isdir(worktree):
-        raise Exit(2, f'no worktree at {worktree}')
-    if not (os.path.isfile(brief) and os.path.getsize(brief)):
-        raise Exit(2, f'brief {brief} is missing or empty')
+def run(worktree, brief, out, model):
+    """One serve session on the brief in `worktree`; review() checks the paths first."""
     real = os.path.expanduser('~')  # before the child's HOME moves
-    worktree, out = os.path.realpath(worktree), os.path.realpath(out)
-    if out == worktree or out.startswith(worktree.rstrip('/') + '/'):
-        raise Exit(2, f'out-dir {out} is inside the worktree: Muse would index the shadow home and git add -A '
-                      'would commit it. Put it outside.')
     home = os.path.join(out, 'home')
     if os.path.islink(home):  # a reused out-dir: never build on top of the real home or old links
         os.unlink(home)
@@ -236,12 +181,6 @@ def build(worktree, brief, out, model):
                                   'input': [{'type': 'text', 'text': open(brief).read()}]})
         while serve.done is None:
             serve.handle(serve.frame())
-        try:  # bookkeeping: a failed read must not fail a finished build
-            usage = serve.call('usage/read', {}, limit=time.time() + 15) or {}
-            if usage.get('usage'):  # `{}` means nothing observed yet
-                save_usage(usage['usage'])
-        except Exit as error:
-            print(f'muse: usage/read: {error}', file=sys.stderr)
     finally:
         serve.kill()
     message = serve.final or serve.last  # the final answer, else whatever it said last
@@ -256,10 +195,10 @@ def build(worktree, brief, out, model):
         print(f'muse: done in {secs}s -> {last}')
         return 0
     if error.get('quota'):
-        reset = mark_exhausted(error['quota'])
-        print(f"muse: quota hit ({error['quota'].get('limitKind')}), resets "
-              f"{datetime.fromtimestamp(reset / 1000, timezone.utc).isoformat(timespec='seconds')}; "
-              f"marked exhausted in {cache_path()}")
+        reset = error['quota'].get('resetsAtMs') or 0
+        when = (datetime.fromtimestamp(reset / 1000, timezone.utc).isoformat(timespec='seconds')
+                if reset > time.time() * 1000 else 'at a time Muse did not give')
+        print(f"muse: quota hit ({error['quota'].get('limitKind')}), resets {when}")
         return 5
     raise Exit(1, f"turn {done.get('terminal')}: {error.get('message') or done.get('reason') or 'no error given'}"
                   f'. See {out}/events.jsonl')
@@ -281,8 +220,6 @@ for line in sys.stdin:
         out(id=i, error={'code': -32000, 'message': 'unknown model nope'})
     elif method == 'session/start':
         out(id=i, result={'session': {'sessionId': 's1'}})
-    elif method == 'usage/read':
-        out(id=i, result={'usage': usage(43)} if scenario == 'quota' else {})
     elif method == 'turn/start':
         if scenario == 'edit':  # a reader, or anything else, writing in the tree mid-read
             open(os.environ['STUB_EDIT'], 'w').write('x\n')
@@ -323,19 +260,15 @@ def selftest():
             os.makedirs(os.path.join(real, skills))
         os.makedirs(wt)
         open(os.path.join(tmp, 'brief.md'), 'w').write('do the thing')
-        cache = os.path.join(tmp, 'cache.json')
-
-        def run(scenario, name, worktree=wt, keep_cache=False, **env):
-            for f in ('started',) + (() if keep_cache else ('cache.json',)):
-                if os.path.exists(os.path.join(tmp, f)):
-                    os.remove(os.path.join(tmp, f))
+        def read(scenario, name, worktree=wt, **env):
+            if os.path.exists(os.path.join(tmp, 'started')):
+                os.remove(os.path.join(tmp, 'started'))
             out = name if os.path.isabs(name) else os.path.join(tmp, name)
-            r = subprocess.run([sys.executable, os.path.abspath(__file__), 'build', worktree,
-                                os.path.join(tmp, 'brief.md'), out, 'muse-spark-1.3'],
+            r = subprocess.run([sys.executable, os.path.abspath(__file__), 'review', worktree,
+                                os.path.join(tmp, 'brief.md'), out, 'muse-wonder-test'],
                                capture_output=True, text=True, timeout=60,
                                env=dict(os.environ, **{'HOME': real, 'MUSE_BIN': stub, 'STUB_DIR': tmp,
-                                        'STUB_SCENARIO': scenario, 'SHIP_QUOTA_MUSE': cache,
-                                        **env}))
+                                        'STUB_SCENARIO': scenario, **env}))
             started = os.path.join(tmp, 'started')
             return r, out, json.load(open(started)) if os.path.exists(started) else None
 
@@ -356,7 +289,7 @@ def selftest():
         rr = subprocess.run([sys.executable, os.path.abspath(__file__), 'review', gwt, os.path.join(tmp, 'brief.md'),
                              os.path.join(tmp, 'rv')], capture_output=True, text=True, timeout=60,
                             env=dict(os.environ, **{'HOME': real, 'MUSE_BIN': stub, 'STUB_DIR': tmp,
-                                     'STUB_SCENARIO': 'ok', 'SHIP_QUOTA_MUSE': cache}))
+                                     'STUB_SCENARIO': 'ok'}))
         sent = open(os.path.join(tmp, 'rv', 'review-brief.md')).read()
         check('review leads the brief with read-only rules and passes on an untouched tree',
               rr.returncode == 0 and sent.startswith('Read only.') and 'one batch of parallel calls' in sent and sent.endswith('do the thing'))
@@ -365,24 +298,21 @@ def selftest():
         rr = subprocess.run([sys.executable, os.path.abspath(__file__), 'review', gwt, os.path.join(tmp, 'brief.md'),
                              os.path.join(tmp, 'rv2')], capture_output=True, text=True, timeout=60,
                             env=dict(os.environ, **{'HOME': real, 'MUSE_BIN': stub, 'STUB_DIR': tmp,
-                                     'STUB_SCENARIO': 'edit', 'STUB_EDIT': os.path.join(gwt, 'b.txt'),
-                                     'SHIP_QUOTA_MUSE': cache}))
+                                     'STUB_SCENARIO': 'edit', 'STUB_EDIT': os.path.join(gwt, 'b.txt')}))
         check('a write during the read exits 6 and names the changed file',
               rr.returncode == 6 and 'b.txt' in rr.stderr and 'a build, the gates' in rr.stderr)
-        r, out, seen = run('ok', 'o1')
-        got = read_cache(cache)
-        check('a completed build exits 0 and last.md is the final answer, not later commentary', r.returncode == 0 and
-              open(os.path.join(out, 'last.md')).read() == 'built it' and 'done in' in r.stdout)
-        check('usage/changed writes the cache; an empty usage/read leaves it',
-              got and got['weekly']['usedPercent'] == 42 and got.get('observedAtMs'))
+        r, out, seen = read('ok', 'o1')
+        check('a completed read exits 0, last.md is the final answer, not later commentary, and seconds is written',
+              r.returncode == 0 and open(os.path.join(out, 'last.md')).read() == 'built it' and 'done in' in r.stdout
+              and open(os.path.join(out, 'seconds')).read().strip().isdigit())
         check('every frame lands in events.jsonl',
-              sum(1 for _ in open(os.path.join(out, 'events.jsonl'))) == 9)
+              sum(1 for _ in open(os.path.join(out, 'events.jsonl'))) == 8)
         home = os.path.join(out, 'home')
         auth = os.path.join(home, '.config', 'muse', 'auth.json')
         linked = sorted(os.listdir(home))
         check('serve argv carries the flags, the model and no session log',
               seen and seen['argv'][:6] == ['serve', *FLAGS] and
-              seen['argv'][6:] == ['--model', 'muse-spark-1.3', '--no-session-log'])
+              seen['argv'][6:] == ['--model', 'muse-wonder-test', '--no-session-log'])
         check('HOME is a shadow home: the real entries linked, the skill folders left out',
               seen and seen['home'] == home and linked == ['.config', '.npm', 'Library'] and
               all(os.path.islink(os.path.join(home, n)) for n in linked) and
@@ -390,55 +320,40 @@ def selftest():
         check('no auto-update, and cwd is the worktree', seen and seen['no_update'] == '1' and seen['cwd'] == wt)
         check('the serve is gone after a clean exit', seen and gone(seen))
 
-        r, out, _ = run('quota', 'o2')
-        got = read_cache(cache)
-        check('a quota failure exits 5 and prints the reset', r.returncode == 5 and 'quota hit' in r.stdout)
-        check('the cache is marked exhausted with the reset, the weekly read kept',
-              got and got['window']['usedPercent'] == 100 and got['window']['resetsAtMs'] == 1900000000000 and
-              got['weekly']['usedPercent'] == 43)
+        r, out, _ = read('quota', 'o2')
+        check('a quota failure exits 5 and prints the reset',
+              r.returncode == 5 and 'quota hit (tierLimit), resets 2030-03-17' in r.stdout)
+        r, _, _ = read('quota', 'o2b', STUB_RESET='1000')
+        check('a reset already past is not printed as a date', r.returncode == 5 and 'did not give' in r.stdout)
 
-        r, _, _ = run('nomsg', 'o3')
+        r, _, _ = read('nomsg', 'o3')
         check('completed with no agent message exits 4', r.returncode == 4 and 'DID NOT RUN' in r.stderr)
 
-        r, _, seen = run('silent', 'o4', MUSE_STARTUP='2')
+        r, _, seen = read('silent', 'o4', MUSE_STARTUP='2')
         check('a silent server is killed with exit 3', r.returncode == 3 and seen and gone(seen))
 
-        r, _, _ = run('rpcerror', 'o5')
+        r, _, _ = read('rpcerror', 'o5')
         check('a JSON-RPC error exits 1 with its message', r.returncode == 1 and 'unknown model nope' in r.stderr)
-
 
         os.makedirs(os.path.join(tmp, 'o7'))
         os.symlink(real, os.path.join(tmp, 'o7', 'home'))
-        r, out, _ = run('ok', 'o7')
+        r, out, _ = read('ok', 'o7')
         home = os.path.join(out, 'home')
         check('a reused out-dir whose home links to the real home gets a fresh shadow',
               r.returncode == 0 and not os.path.islink(home) and '.agents' not in os.listdir(home) and
               os.path.isdir(os.path.join(real, '.agents', 'skills')))
         os.makedirs(os.path.join(tmp, 'o8', 'home'))
         os.symlink(os.path.join(real, '.agents'), os.path.join(tmp, 'o8', 'home', '.agents'))
-        r, out, _ = run('ok', 'o8')
+        r, out, _ = read('ok', 'o8')
         check("a reused home's old links go, and their targets stay",
               r.returncode == 0 and '.agents' not in os.listdir(os.path.join(out, 'home')) and
               os.path.isdir(os.path.join(real, '.agents', 'skills')) and os.path.isdir(os.path.join(real, '.npm')))
 
-        r, _, seen = run('ok', os.path.join(wt, 'out'))
-        check('an out-dir inside the worktree exits 2 and builds no home there',
+        r, _, seen = read('ok', os.path.join(wt, 'out'))
+        check('an out-dir inside the worktree exits 2 and makes nothing there',
               r.returncode == 2 and seen is None and not os.path.exists(os.path.join(wt, 'out')))
 
-        mark = int(time.time() * 1000)
-        json.dump({'observedAtMs': mark, 'weekly': {'usedPercent': 43, 'resetsAtMs': 9e12},
-                   'window': {'usedPercent': 100, 'resetsAtMs': 1900000000000}}, open(cache, 'w'))
-        r, _, _ = run('ok', 'o9', keep_cache=True)
-        got = read_cache(cache)
-        check("a parallel build's older usage never erases an exhausted mark",
-              r.returncode == 0 and got['window']['usedPercent'] == 100 and got['observedAtMs'] == mark)
-
-        r, _, _ = run('quota', 'o10', STUB_RESET='1000')
-        got = read_cache(cache)
-        check('a quota reset already past is floored at five hours from now',
-              r.returncode == 5 and got['window']['resetsAtMs'] >= (time.time() + 5 * 3600 - 60) * 1000)
-
-        r, _, _ = run('ok', 'o11', MUSE_BIN=os.path.join(tmp, 'no-such-muse'))
+        r, _, _ = read('ok', 'o11', MUSE_BIN=os.path.join(tmp, 'no-such-muse'))
         check('a serve that cannot start exits 1 with a line, not a traceback',
               r.returncode == 1 and 'could not start' in r.stderr and 'Traceback' not in r.stderr)
     print(f'muse self-test: {fails} failed')
@@ -466,13 +381,19 @@ def tree_state(worktree):
 
 
 def review(worktree, brief, out, model=REVIEW_MODEL):
+    if not os.path.isdir(worktree):
+        raise Exit(2, f'no worktree at {worktree}')
     if not (os.path.isfile(brief) and os.path.getsize(brief)):
         raise Exit(2, f'brief {brief} is missing or empty')
+    worktree, out = os.path.realpath(worktree), os.path.realpath(out)
+    if out == worktree or out.startswith(worktree.rstrip('/') + '/'):
+        raise Exit(2, f'out-dir {out} is inside the worktree: Muse would index the shadow home and git add -A '
+                      'would commit it. Put it outside.')
     os.makedirs(out, exist_ok=True)
     ro = os.path.join(out, 'review-brief.md')
     open(ro, 'w').write(READ_ONLY + open(brief).read())
     before = tree_state(worktree)
-    code = build(worktree, ro, out, model)
+    code = run(worktree, ro, out, model)
     if tree_state(worktree) != before:
         now = subprocess.run(['git', '-C', worktree, 'status', '--porcelain'], capture_output=True,
                              text=True).stdout.strip() or '(clean again)'
@@ -486,15 +407,11 @@ def main(args):
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(143))  # so `finally` kills the serve
     if args == ['--selftest']:
         return 0 if selftest() else 1
-    if args == ['usage']:
-        data = read_cache()
-        print(json.dumps(data, indent=1) if data else f'muse: no usage observed yet ({cache_path()})')
-        return 0
-    if not ((args[:1] == ['build'] and len(args) == 5) or (args[:1] == ['review'] and len(args) in (4, 5))):
+    if not (args[:1] == ['review'] and len(args) in (4, 5)):
         print(__doc__.split('\n\n')[1], file=sys.stderr)
         return 2
     try:
-        return (build if args[0] == 'build' else review)(*args[1:])
+        return review(*args[1:])
     except Exit as error:
         print(f'muse: {error}', file=sys.stderr)
         return error.code

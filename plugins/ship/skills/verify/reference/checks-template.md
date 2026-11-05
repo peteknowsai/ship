@@ -6,8 +6,11 @@ description: How to prove a change to <repo> works, the way Pete would check it 
 # Checks for <repo>
 
 What every session that proves a change here starts from. A QA run reads it first and
-writes back what it learned, in the same branch as the change. Replace a stale line rather
-than add a second; keep it under about 80 lines.
+writes back what it learned, in the same branch as the change.
+
+**One line per lesson.** A new lesson on a subject a line already covers replaces that
+line. **Cap: 150 lines.** A run that takes the file over it prunes in the same edit: merge
+lines on one subject, drop a line whose screen or code is gone.
 
 ## Start it
 
@@ -30,6 +33,14 @@ should see when it works.
 |---|---|---|---|
 | <name> | <which changes run it> | <a number or a yes/no a tool can read> | <where to look first> |
 
+## Noise
+
+What every run sees that is not the change: skip it, never chase it.
+
+| Noise | Where it shows | Why it isn't the change |
+|---|---|---|
+| <console line or false alarm> | <console, a Lighthouse audit, a log> | <its known cause> |
+
 ## Learned
 
-- <YYYY-MM-DD> <slug>: <the thing a run had to discover, so the next one doesn't>
+- <subject>: <the thing a run had to discover, so the next one doesn't> (<slug>, <YYYY-MM-DD>)

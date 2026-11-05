@@ -5,11 +5,33 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>📋 {{SLUG}} · plan</title>
 <!--
-  /ship GATE 2 template — the plan Pete says go on. Fill the slots, write to
-  specs/plans/go-card-<slug>.html, and `scripts/show.sh <root> <slug> plan <file>` it. One screen: the locked storyboard in
-  a glance, the punch list in plain English, the cut list, his calls, risk, go. If a
-  section is empty (e.g. no calls), drop the whole card rather than showing it empty.
-  The execution plan is written AFTER his go and he never reads it.
+  /ship plan card (GATED ships only; SELF-DIRECTED and EXPRESS render none).
+
+  Where: specs/plans/go-card-<slug>.html in the docs home. Commit it, then
+  `scripts/show.sh <root> <slug> plan <file>`.
+
+  What it is: the meta of the plan, one screen, the only thing Pete reads before a build
+  starts. A 16-implementation-plan boiled down to what he says go on; the execution plan
+  is written after his go, and he never reads it. In this order:
+    1. The storyboard: the locked page embedded half scale in one glance, linked.
+       A non-visual ship drops this card.
+    2. What gets built: one plain-English line per piece of work, in build order, five to
+       twelve lines. Never files, never task numbers.
+    3. Ponytail cut: what was dropped as waste, and why. Never a frame Pete locked.
+    4. Your call: one to three calls, each a plain-language tradeoff that changes what he
+       gets, saying what he'd see either way, with ship's pick worded so "yes" takes it.
+       A technical choice with a clear pick is ship's: take it and log it. Never offer to
+       phase the work. Anything Pete must create himself (an OAuth app, an account, a key)
+       is always a call, beside the setup an agent can do alone where one exists.
+    5. Risk: one line.
+    6. Go: one line.
+
+  No calls: keep the card and set Your call to the one NO_CALLS line below, and the go
+  line to "Building now; nothing here waits on you." The card is shown, not waited on:
+  no gate:2 marker, one chat line ("plan card: no calls, building"), straight on.
+  With calls: gate:2, the gate notification, `needs input:` ("go?"), and a hard stop.
+
+  Any other section with nothing in it is deleted, never shown empty.
 -->
 <style>
   :root{--page:#f5f5f7;--card:#fff;--ink:#1d1d1f;--slate:#515154;--mut:#86868b;
@@ -19,7 +41,7 @@
     font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
     -webkit-font-smoothing:antialiased;padding:40px 20px}
   .wrap{max-width:680px;margin:0 auto}
-  h1{font-size:34px;line-height:1.1;margin:6px 0 2px;font-weight:600}
+  h1{font-size:34px;line-height:1.3;margin:6px 0 2px;font-weight:600}
   .sub{color:var(--slate);margin:0 0 22px;font-size:15px}
   .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin:14px 0}
   .card h2{margin:0 0 10px;text-transform:uppercase;color:var(--mut);
@@ -33,8 +55,8 @@
   .call .opts{color:var(--slate);font-size:14px;margin:0 0 5px}
   .rec{display:inline-block;font-size:13px;background:#f3ead6;color:#7a5a18;
     border:1px solid #e7d6ad;border-radius:6px;padding:2px 9px;font-weight:600}
+  .nocalls{margin:0;color:var(--slate);font-size:15px}
   .risk{font-weight:600;font-size:14px}
-  .thumb{width:100%;border-radius:8px;border:1px solid var(--line);margin-top:6px}
   .board{position:relative;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--page)}
   .board iframe{display:block;border:0;width:1240px;height:1400px;transform:scale(.5);transform-origin:0 0;pointer-events:none}
   .board a.open{position:absolute;right:10px;bottom:10px;font-size:13px;background:var(--card);
@@ -48,17 +70,9 @@
 <body>
 <div class="wrap">
   <h1>The plan</h1>
-  <p class="sub">The storyboard you locked, and what gets built from it. Say go.</p>
+  <p class="sub">The storyboard you locked, and what gets built from it.</p>
 
-  <div class="card">
-    <h2>What gets built</h2>
-    <p class="scope">{{SCOPE_ONE_LINE}}</p>
-    <!-- five to twelve lines, plain English, build order; never files or task numbers -->
-    <ol class="punch">{{PUNCH_LIST_ITEMS}}</ol>
-  </div>
-
-  <!-- STORYBOARD: the locked page, half scale, in one glance. Non-visual ship: delete
-       this card. The iframe's height is the storyboard's; set .board's height to half. -->
+  <!-- 1. STORYBOARD: the iframe's height is the storyboard's; set .board's height to half. -->
   <div class="card">
     <h2>The storyboard</h2>
     <div class="board" style="height:700px">
@@ -67,30 +81,40 @@
     </div>
   </div>
 
+  <!-- 2. WHAT GETS BUILT -->
+  <div class="card">
+    <h2>What gets built</h2>
+    <p class="scope">{{SCOPE_ONE_LINE}}</p>
+    <ol class="punch">{{PUNCH_LIST_ITEMS}}</ol>
+  </div>
+
+  <!-- 3. CUT -->
   <div class="card cut">
     <h2>Ponytail cut</h2>
     <ul>{{CUT_LIST_ITEMS}}</ul>
   </div>
 
-  <!-- CALLS: 1–3 of these. If none, replace this card with a single line:
-       "No calls — the storyboard settled everything." The card does not stop; the build proceeds. -->
+  <!-- 4. YOUR CALL: one .call block per call, or, with none, only the NO_CALLS line:
+       <p class="nocalls">No calls: the storyboard settled everything, so this card is shown, not waited on.</p> -->
   <div class="card">
     <h2>Your call</h2>
     <div class="call">
       <p class="q">{{CALL_QUESTION}}</p>
       <p class="opts">{{CALL_TRADEOFF}}</p>
-      <span class="rec">Rec: {{CALL_RECOMMENDATION}}</span>
+      <span class="rec">I'd pick: {{CALL_RECOMMENDATION}}</span>
     </div>
   </div>
 
+  <!-- 5. RISK -->
   <div class="card">
     <h2>Risk</h2>
     <p class="risk" style="color:{{RISK_COLOR}}">{{RISK_LEVEL}}</p>
     <p style="margin:4px 0 0;font-size:14px;color:var(--slate)">{{RISK_NOTE}}</p>
   </div>
 
-  <div class="go">go &nbsp;·&nbsp; or change something?</div>
-  <p class="foot">Storyboard: <code>{{STORYBOARD_PATH}}</code> · the execution plan is written after go</p>
+  <!-- 6. GO: "go · or change something?" with calls; "Building now; nothing here waits on you." without -->
+  <div class="go">{{GO_LINE}}</div>
+  <p class="foot">Storyboard: <code>{{STORYBOARD_PATH}}</code></p>
 </div>
 </body>
 </html>

@@ -1,0 +1,42 @@
+/* Frames for specs/designs/2026-11-05-ship-review.html. Ship has no product sheet, so the
+   diagrams carry their own tokens. */
+:root{--ink:#1d1d1f;--mut:#6e6e73;--line:#d2d2d7;--soft:#f5f5f7;--blue:#0a66d8;--cut:#c4314b;--add:#1f7a4d;--warn:#a15c00}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#fff;color:var(--ink);
+  font:13px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+.fr{padding:26px 28px;height:100%;display:flex;flex-direction:column;gap:12px}
+h3{margin:0;font-size:17px;font-weight:650;letter-spacing:-.01em}
+.sub{margin:-6px 0 0;color:var(--mut)}
+.big{font-size:34px;font-weight:700;letter-spacing:-.02em;line-height:1}
+.mut{color:var(--mut)}
+.cut{color:var(--cut)} .add{color:var(--add)} .warn{color:var(--warn)}
+table{border-collapse:collapse;width:100%}
+th,td{text-align:left;vertical-align:top;padding:6px 8px;border-bottom:1px solid var(--line)}
+th{font-size:11px;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.bars{display:grid;grid-template-columns:150px 1fr 44px;gap:5px 10px;align-items:center}
+.bars .b{height:14px;border-radius:3px;background:#b9c6d8}
+.bars .b.hot{background:#7f9cc4}
+.bars .v{text-align:right;font-variant-numeric:tabular-nums;color:var(--mut)}
+.spark{display:flex;align-items:flex-end;gap:6px;height:64px}
+.spark i{display:block;width:30px;background:#b9c6d8;border-radius:3px 3px 0 0}
+.spark i.now{background:#7f9cc4}
+.spark-l{display:flex;gap:6px;color:var(--mut);font-size:11px}
+.spark-l span{width:30px;text-align:center}
+.tree{font:12.5px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--soft);border-radius:8px;padding:12px 14px;white-space:pre}
+.tree .cut{text-decoration:line-through}
+.flow{display:flex;flex-direction:column;gap:8px}
+.step{border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:#fff}
+.step.bad{border-color:var(--cut);background:#fdf3f5}
+.step.good{border-color:var(--add);background:#f1f8f4}
+.step b{display:block}
+.arrow{color:var(--mut);text-align:center;line-height:1}
+.pill{display:inline-block;border-radius:4px;padding:0 6px;font-size:11px;font-weight:600;background:var(--soft);color:var(--mut)}
+.pill.cut{background:#fdf3f5;color:var(--cut)} .pill.add{background:#f1f8f4;color:var(--add)}
+.term{background:#1e1e1e;color:#d4d4d4;height:100%;padding:16px 20px;font:14px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace}
+.term .y{color:#e5c07b} .term .g{color:#98c379} .term .d{color:#7f848e} .term .a{color:#f0a020;font-weight:700}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.stat{background:var(--soft);border-radius:8px;padding:12px 14px}
+.stat .big{margin-bottom:4px}
+.note{margin-top:auto;color:var(--mut);font-size:12px}
+ul.tight{margin:0;padding-left:18px} ul.tight li{margin:2px 0}

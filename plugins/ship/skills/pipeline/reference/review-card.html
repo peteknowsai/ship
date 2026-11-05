@@ -5,9 +5,46 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>✅ {{SLUG}} · review</title>
 <!--
-  /ship REVIEW template. Fill the slots, write it where the pipeline's "Render the review card" step
-  says (beside the repo's earlier cards), and show it with `scripts/show.sh <root> <slug> review <file>` (`done` with the result). This is what Pete reviews — NOT the raw PR diff. PM-framed:
-  what it DOES, what's already checked, what only he can confirm. The meta, one screen.
+  /ship review card: every SELF-DIRECTED and GATED ship, on a pass and on a park. EXPRESS
+  has none; its result: line carries the proof shots' paths.
+
+  What it is: what Pete reviews, never the raw diff. The meta, one screen, PM-framed, a
+  17-pr-writeup for a PM and never a file tour: what it does, what's already checked, what
+  only he can confirm. It is the record of what landed and the proof, not a gate, so Pete
+  approving the QA on a live walk doesn't replace it.
+
+  Where: the docs home beside the repo's earlier cards (cells-app:
+  specs/qa/<date>-<slug>/review.html; a repo with none yet: <docs home>/reviews/<slug>.html),
+  rendered as soon as the QA result is in. Copy the proof shots it shows beside it in one
+  Bash call, sandbox off, every path written out (`cp`: the worktree guard refuses a path
+  built from a shell variable, and `sips` writes a temp file the sandbox denies). Commit it
+  before the merge, in the commit that carries LAND step 1's smoke line when step 1 runs a
+  smoke, else on its own: LAND removes the worktree. On a park, commit it at the stop too:
+  an uncommitted file in a parked worktree is unprotected (incidents: Worktrees).
+
+  Showing it: on a landing, `scripts/show.sh <root> <slug> review <file> done` the landed
+  base's copy with the result: line (main's; for another base, `git show
+  origin/<base>:<path>` into the job's tmp from a script file, shots too), which closes the
+  ship's other tabs. On a park, `show.sh ... review` the worktree's copy.
+
+  Slots:
+    WHAT YOU GOT      plain-English bullets of what now works.
+    PROOF IT WORKS    the QA run's captioned shots, start then action then success, browser
+                      and phone, with the verdict on top. Non-visual: demo or test output.
+    ALREADY CHECKED   gates green, the QA script walked end to end, a committed e2e spec by
+                      name; and what was NOT touched (schema, money, public surfaces).
+    FLAGGED           the QA run's taste notes, if any, else delete the card. Reports, not
+                      work: one Pete wants changed becomes a follow-up.
+    ONLY YOU          the one or two things that need his eye, on the preview or localhost.
+    WHAT NEXT         the follow-ups (SKILL.md RETRO). Most rounds have none: delete the card.
+    WHERE IT IS       the live links landing deploys (the contract's live:), or the preview
+                      links and localhost when parked; the branch-built native app (the IOS
+                      or MAC line: device and bundle, or the .app path) so he can open what
+                      he's asked to try; the PR for the record.
+    LANDING_STATUS    "Tested · landing on main" with the live URL it will serve, since the
+                      card is committed before the merge, or what it waits on.
+    PR_URL            from `gh pr view <#> -R <owner/repo> --json url -q .url`, never typed:
+                      a typed one named the wrong owner for cells-app.
 -->
 <style>
   :root{--page:#f5f5f7;--card:#fff;--ink:#1d1d1f;--slate:#515154;--mut:#6e6e73;
@@ -17,7 +54,7 @@
     font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
     -webkit-font-smoothing:antialiased;padding:40px 20px}
   .wrap{max-width:700px;margin:0 auto}
-  h1{font-size:36px;line-height:1.05;margin:6px 0 2px;font-weight:600}
+  h1{font-size:36px;line-height:1.3;margin:6px 0 2px;font-weight:600}
   .sub{color:var(--slate);margin:0 0 22px;font-size:15px}
   .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin:14px 0}
   .card h2{margin:0 0 12px;text-transform:uppercase;color:var(--mut);
@@ -43,6 +80,8 @@
   .dest{display:inline-block;border-radius:5px;padding:1px 8px;font-size:11px;font-weight:700;
     letter-spacing:.04em;text-transform:uppercase;margin-left:8px;vertical-align:1px;
     background:#ececf0;color:var(--slate);border:1px solid var(--line)}
+  .where{list-style:none;padding:0} .where li{margin:6px 0}
+  .where .k{display:inline-block;min-width:92px;color:var(--mut);font-size:13px}
   .storyboard{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;align-items:start}
   .beat{margin:0}
   .beat img{width:100%;height:auto;max-height:560px;object-fit:contain;object-position:top;
@@ -61,8 +100,7 @@
     <ul>{{SHIPPED_BULLETS}}</ul>
   </div>
 
-  <!-- PROOF: the verifier's storyboard. Include for any user-facing feature; for a non-visual
-       change, swap the beats for demo/test output. Repeat the beat block per screenshot. -->
+  <!-- PROOF: the QA run's shots, one beat block per screenshot -->
   <div class="card">
     <h2>Proof it works <span class="vpill">{{VERDICT}}</span></h2>
     <div class="storyboard">
@@ -70,7 +108,6 @@
         <img src="{{SHOT_1_SRC}}" alt="{{SHOT_1_CAP}}">
         <figcaption>{{SHOT_1_CAP}}</figcaption>
       </figure>
-      <!-- one beat block per screenshot: start then action then success -->
     </div>
   </div>
 
@@ -80,11 +117,11 @@
     <p style="margin:10px 0 0;font-size:14px;color:var(--slate)">{{RISK_NOTE}}</p>
   </div>
 
-  <!-- FLAGGED: include only if the verifier returned taste notes, else delete this card -->
+  <!-- FLAGGED: only with taste notes from the QA run, else delete this card -->
   <div class="card">
-    <h2>Verifier flagged / suggested</h2>
+    <h2>Flagged</h2>
     <ul>{{FLAGGED_ITEMS}}</ul>
-    <p style="margin:10px 0 0;font-size:14px;color:var(--slate)">Reports, not work: say fix now, backlog or ignore.</p>
+    <p style="margin:10px 0 0;font-size:14px;color:var(--slate)">Reports, not work. Name the ones to fix and each becomes a follow-up; the rest stay notes.</p>
   </div>
 
   <div class="card">
@@ -92,24 +129,29 @@
     {{CONFIRM_ITEMS}}
   </div>
 
-  <!-- ALSO WORTH BUILDING: build-worthy things deliberately left out of THIS round. Include
-       only if there are real candidates (most rounds have none), else delete this whole card.
-       Each .cand: what it is + one plain line on why it's worth doing + its kind and place:
-       "Quick ship", or "Ticket · <column>" from the repo's board: (SKILL.md: Follow-ups;
-       cells-app: Ready, Backlog or Icebox).
-       Non-blocking: Pete says "ship <n>" or "file them" (or names which). -->
+  <!-- WHAT NEXT: only with real follow-ups, else delete this card. Each .cand: what it is,
+       one plain line on why it's worth doing, and its kind: "Quick ship", or
+       "Ticket · <column>" from the repo's board: (cells-app: Ready, Backlog or Icebox). -->
   <div class="card">
     <h2>What we should do next</h2>
     <div class="cand">
       <p class="t">{{CAND_1_TITLE}}<span class="dest">{{CAND_1_DEST}}</span></p>
       <p class="w">{{CAND_1_WHY}}</p>
     </div>
-    <!-- one .cand block per candidate -->
     <p style="margin:12px 0 0;font-size:14px;color:var(--slate)">Say <b>ship 1</b> to run a quick ship now, or <b>file them</b> (or name which) to put the tickets on the board.</p>
   </div>
 
+  <!-- WHERE IT IS: one li per link; drop a row that has nothing -->
+  <div class="card">
+    <h2>Where it is</h2>
+    <ul class="where">
+      <li><span class="k">{{WHERE_1_KIND}}</span><a href="{{WHERE_1_URL}}">{{WHERE_1_LABEL}}</a></li>
+      <li><span class="k">App</span>{{NATIVE_APP_LINE}}</li>
+      <li><span class="k">PR</span><a href="{{PR_URL}}">{{PR_LABEL}}</a>, for the record</li>
+    </ul>
+  </div>
+
   <div class="verdict">{{LANDING_STATUS}}</div>
-  <p class="foot">The diff, if you want it: <a href="{{PR_URL}}">{{PR_LABEL}}</a> · but you shouldn't need to.</p>
 </div>
 </body>
 </html>

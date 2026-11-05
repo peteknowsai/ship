@@ -115,8 +115,8 @@ test('the band follows the marker on the timer', async ($, on) => {
   await ui.unmount()
 })
 
-test('the plan gate answers go, read from a Codex stage: line', async ($, on) => {
-  const w = world(on, { [STAGE]: 'owner: codex\nstage:\tGATE:2\n' })
+test('the plan gate answers go, its marker read loosely', async ($, on) => {
+  const w = world(on, { [STAGE]: ' GATE:2\n' })
   await start($)
   const ui = await band($)
   expect((await ui.find({ key: 'ship-show' }))?.text).toContain('show plan card')
@@ -170,7 +170,7 @@ test('the ship-active pointer wins over the session folder', async ($, on) => {
   await ui.unmount()
 })
 
-for (const [name, stage] of [['no gate', 'build:2:5'], ['the Codex hand-off', 'gate:codex']] as const) {
+for (const [name, stage] of [['no gate', 'build:2:5'], ['a needs-input stop', 'gate:input']] as const) {
   test(`${name} draws nothing`, async ($, on) => {
     world(on, { [STAGE]: stage })
     await start($)
