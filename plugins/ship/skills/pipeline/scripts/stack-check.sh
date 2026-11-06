@@ -87,8 +87,15 @@ for arg in "$@"; do
 
   for target in production preview development; do
     file="$tmp/$project.$target"
-    vercel env pull "$file" --environment "$target" --project "$project" --scope "$scope" --yes >/dev/null 2>&1
+    # a failed pull or a value it can't read is "?", never "no key": cel-139's sandboxed pulls
+    # crossed live Homebody's Production, whose key the API lists
+    if ! pulled=$(vercel env pull "$file" --environment "$target" --project "$project" --scope "$scope" --yes 2>&1); then
+      say clerk "?" "$target env not pulled: $(tail -1 <<<"$pulled" | cut -c1-90)"; continue
+    fi
     pk=$(grep -E '^NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=' "$file" 2>/dev/null | cut -d= -f2- | tr -d '"')
+    case ",$(targets_of NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY)," in
+      *",$target,"*) [ -z "$pk" ] && { say clerk "?" "$target key unreadable (stored as sensitive)"; continue; } ;;
+    esac
     want=pk_test_; [ "$target" = production ] && want=pk_live_
     if [ -n "$unreleased" ] && [ "$target" = production ] && [ "${pk:0:8}" != pk_live_ ]; then
       skip clerk "Production not on live Clerk yet"; continue

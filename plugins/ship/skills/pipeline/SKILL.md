@@ -740,7 +740,9 @@ Landing variants.
      next-env.d.ts` first), and bring the PR body up to date with what shipped (the squash
      takes it). `stack:` once more. For each other open PR, `git cherry HEAD origin/<branch>
      origin/main` (a script file) prints `-` for its commits this branch carries: a hit lands
-     after that PR.
+     after that PR, unless that PR is a draft whose commit this branch carries on purpose
+     (prior art it built on, cel-139's docs-only spike commit): it lands first, and its PR
+     body names the draft it overlaps.
    - Stop the worktree's dev server with the repo's stop command, from the worktree; then
      `listener.sh <port> 1` must find nothing (one still there stops by its process group).
    - `route.py readers repo=<r> ship=<slug>` exits 0 (SELF-DIRECTED and GATED): both branch

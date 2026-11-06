@@ -33,6 +33,9 @@ What the VM taught:
 - The app's first-run banners (Login Item Added, its notifications ask) sit over the
   top-right for the walk: `dismiss-all-notifications` is refused by policy, and
   `dismiss-notification <i>` from `list-notifications` needs `--expected-title`.
+- The app's first load can raise macOS's "find devices on local networks" prompt over its
+  window, and it swallows what's typed next (cel-139's first sign-in code): snapshot before
+  typing, and Allow it by coordinates.
 - Never `osascript` there: its Automation prompt hangs the command.
 
 ## A rig on Pete's Mac
