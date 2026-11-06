@@ -27,7 +27,7 @@ Otherwise a booted simulator, and the result says which ran.
 
 **A locked or held phone stops nothing.** Locked, or showing an XCTest passcode or Enable UI
 Automation prompt: walk the step on a simulator, unless the change needs the phone itself,
-meaning a simulator can't show it (touch and scroll feel, the camera, the mic, push,
+meaning a simulator can't show it (touch and scroll feel, the camera, the mic,
 location or another system prompt, a network only the phone joins). Then park only that step with `needs input:` ("unlock the
 phone", or the prompt it shows) and walk the rest.
 
@@ -108,5 +108,18 @@ passes one word and fails "Unknown flag", silently inside a batch (cel-332). Wha
   aloud into it, but through a loopback input (cells-app's checks skill: BlackHole 2ch via
   `SwitchAudioSource`), switched back in a `trap` the moment the step ends, since it cuts
   off his dictation and calls while it's set (cel-264).
+- A push walks on the Simulator, the real path first: once the app has asked for
+  notifications and been allowed, it registers a sandbox APNs token, and a server that sends
+  to `api.sandbox.push.apple.com` can reach it. Send with the app in the background or on
+  another screen, since an app may hide a push for what's on view. The proof is the
+  notification on screen: a token kept after the send shows only that Apple took it, and
+  cel-330 saw no more than that from its real send. When the real one never shows, `xcrun
+  simctl push <udid> <bundle> <file>` with the server's own payload proves the display half,
+  and the result says which ran. It fails with UNErrorDomain 2003 "Source is not authorized"
+  until that same allow. To open a notification, with every flag written out as above:
+  `agent-device open com.apple.springboard`, pull Notification Center down with `gesture pan
+  120 2 0 500 400`, swipe the row fully right with `gesture pan <x> <y> 230 0 250`, then
+  `open <bundle>` to rebind the session. `press` on a row only expands the stack or shows
+  Open, and a press while the session is bound to the app brings the app forward first.
 - To reach a state a short test account can't (paging, a long list), shrink the constants in a
   debug build and never commit them.
