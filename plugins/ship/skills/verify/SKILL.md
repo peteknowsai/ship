@@ -168,6 +168,13 @@ the red, and the evidence says main's page was unreachable.
   the small-town walks read the same gap as a thin market.
 - Removing an element walks the other jobs it did: homebody-skin's disc behind the phone face
   also caught taps and hid scrolled text.
+- A state bug that won't go red on the reported path tries each path that writes that state
+  (a tool's update, a timeline entry, a background job) before it's called not reproduced:
+  cel-313's check-in path read right on main 8 of 8, and the goal edited with no timeline
+  entry was where main's judge failed the right Letter and wrote $18,000 back.
+- A fixed input handed to a model judge or seat is true on its own terms, its sums and every
+  claim it makes, or main and the branch both fail it for that: cel-313's first drafts each
+  carried an arithmetic slip and an invented lender claim.
 - A CSS rule is proven by computed style on the real element (`evaluate_script` with
   `getComputedStyle`), never by a test that greps the stylesheet: yonder-skin's underline
   passed one and read `none` on the page, beaten by a more specific rule.
