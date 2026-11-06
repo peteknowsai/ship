@@ -46,7 +46,8 @@ or the auto-trigger, sizes itself. Every verb rides the same rails.
   path or a taste call promotes per the mid-flight rule regardless.
 - **`/ship design <idea>`** pins GATED and the full design workshop (storyboard, rounds,
   lock, plan card, go, plan, build). Pete is saying taste is in play; never downgrade it,
-  however mechanical the work looks.
+  however mechanical the work looks. With no card key, in a repo whose `board:` names one,
+  stage 0 files its card before the fork (Pete, 2026-11-06).
 - **A claude.ai/share link** is Pete's own conversation: read it at once, headless, since
   WebFetch gets only the footer of a page that renders client-side. The chrome-devtools MCP
   (navigate, wait for "You said", take the text) or `chrome-headless-shell --headless
@@ -311,6 +312,11 @@ and FleetView read `.ship-stage`.
   Pete in one line and stop. Then `git log origin/<base> --since=7.days --format='%h %s' --
   <files the card names>`: a merged PR that meets the card's done-when lines closes the card
   instead (CEL-241 rebuilt one).
+- **A design verb with no card key**, in a repo whose `board:` names one: file its card
+  through the board's skill, in the column for work in flight (cells-app: Building, never
+  Ready, which `/groom` launches new sessions from), titled from the idea and saying a design
+  session is on it. Its key names the branch (`feature/cel-<n>-<slug>`), so `/groom` finds
+  the PR. A board that won't take it is one line to Pete, and the fork goes on.
 - **Free disk**: `df -h ~` under 10 GB is one line to Pete before forking (a full disk failed
   `stage.sh` mid-LAND).
 
