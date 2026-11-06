@@ -323,8 +323,8 @@ last edit is in: a sweep started before then reports on code that's gone. Betwee
 run it **scoped** to what the fix touched: the typecheck, plus the tests that cover the
 changed files (the contract's `scoped` command, else the runner's changed mode through the
 repo's test script so its pretest hooks run, `npm test -- --changed` or `-- --onlyChanged` for
-jest; `vitest related` found no tests at all on cells-app's multi-project config,
-so a scoped run that finds none for a code change is a miss to check, not a pass). In ship, the final full run can wait for
+jest; a scoped run that finds none for a code change is a miss to check, not a pass, and one
+never sees a test that loads code by a computed path: contract.md `gates:`). In ship, the final full run can wait for
 LAND's step 1, which runs it when the tree changed since the last one. Stop the worktree's dev server
 before a production build (`next build` and `next dev` both write `.next`) and restart it
 after. In ship, BUILD's pre-flight is
