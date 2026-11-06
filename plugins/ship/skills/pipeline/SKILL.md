@@ -398,7 +398,10 @@ one with uncommitted work, one a live session holds (wt's 💬), or one under tw
   length. The spec names the chosen surface (incidents: Design).
 - **A bug-shaped request gets an empirical root-cause check**: reproduce it or read the
   runtime evidence, never spec from a hypothesis. When the measurement contradicts the card,
-  the measurement wins, and the PR and card say so (CEL-74).
+  the measurement wins, and the PR and card say so (CEL-74). A bug in saved state isn't
+  "not reproduced" until every code path that writes that state is listed from the code and
+  each one tried or ruled out; one a read-only repro can't run sends the card to the fork
+  (verify: Pick cases that can fail; cel-313).
 - **Consult the installed domain experts** before drawing, as harness subagents in parallel
   with recon, one round: match the session's own roster of agents and skills against what the
   change touches (`convex/` → the Convex expert and its authz auditor, a Claude Code
@@ -653,7 +656,10 @@ Wonder read where Sizing says.
   says which steps went that way. A screen reachable only by seeding model output passes on a
   render test of the real component with the result's real shape. A prompt change is proven
   by replay: the same saved inputs through main's prompt and the branch's, a few times each,
-  both quoted (CEL-170); an empty reply or a fallback is a failed run.
+  both quoted (CEL-170); an empty reply or a fallback is a failed run. A saved input handed
+  to a model that judges it has its sums recomputed and each claim traced to the seeded
+  record first, and a case main and the branch both fail gets its input checked before it
+  counts (cel-313's first drafts each carried a slip of their own).
 - **`works`: write the PR body, then land.** Call the Skill tool with `mattpocock-skills:pr`
   and rewrite the tracker PR in its shape: Summary, Evidence (the QA result and its shots, the
   test that went green), Merge Danger, and a last line per reader, `Reviewed: Wonder Full <n>

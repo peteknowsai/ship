@@ -168,6 +168,11 @@ the red, and the evidence says main's page was unreachable.
   the small-town walks read the same gap as a thin market.
 - Removing an element walks the other jobs it did: homebody-skin's disc behind the phone face
   also caught taps and hid scrolled text.
+- A bug in saved state that main gets right on the reported path gets a case for each other
+  code path that writes that state, found by searching the code for every write to it, and
+  the fix is walked on each: cel-313's reported write read right on main 8 of 8, and only a
+  direct edit of the same field made main's checker reject the right $19,500 and write the
+  old $18,000 back.
 - A CSS rule is proven by computed style on the real element (`evaluate_script` with
   `getComputedStyle`), never by a test that greps the stylesheet: yonder-skin's underline
   passed one and read `none` on the page, beaten by a more specific rule.
