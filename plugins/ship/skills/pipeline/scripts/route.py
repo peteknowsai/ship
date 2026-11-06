@@ -29,8 +29,9 @@ clock alone.
   route.py readers repo=<r> ship=<s>
                                  exit 0 once both branch readers are logged for the ship
                                  (a wonder row whose note starts "out" counts, for Muse
-                                 being down) and, run from the worktree, its branch adds
-                                 the review card; exit 1 naming what's missing
+                                 being down) and, run from the worktree, every plan task
+                                 is logged built or parked and its branch adds the review
+                                 card; exit 1 naming what's missing
   route.py report                the ledger as a table by engine, then the readers'
   route.py --selftest
 
@@ -268,6 +269,11 @@ def log(pairs):
             print(f'route log: no seconds file in {out}, so seconds is left out', file=sys.stderr)
     task_row = 'task' in row and 'review' not in row
     restart = task_row and fill_task(row, os.getcwd(), os.environ.get('ROUTE_NOW'))
+    if task_row and row.get('status') == 'parked':  # fills nothing, but the next task's clock
+        saved = beside_marker(os.getcwd(), '.ship-route.json')  # and gate runs start here, as adopt's do
+        route = saved and read_route(saved)
+        if route:
+            restart = lambda: write_route(saved, {**route, 'anchor': int(os.environ.get('ROUTE_NOW') or time.time())})
     try:
         with open(ledger_path(), 'a') as ledger:
             ledger.write(json.dumps(row) + '\n')
@@ -315,14 +321,15 @@ def logged(repo, ship, tasks):
     """The timestamp of an earlier build row sharing any of these tasks, if there is one."""
     for r in rows():
         if (r.get('repo'), r.get('ship')) == (repo, ship) and 'task' in r and 'review' not in r \
-                and tasks & set(str(r['task']).split(',')):
+                and r.get('status') != 'parked' and tasks & set(str(r['task']).split(',')):
             return r.get('ts')
     return None
 
 
 def readers(pairs):
-    """Exit 0 once the ship's ledger holds both branch readers, logged since the branch's first
-    commit, and the branch adds its review card; else 1 naming what's missing. Run from the
+    """Exit 0 once every saved plan task is logged, built or parked, the ship's ledger holds
+    both branch readers, logged since the branch's first commit, and the branch adds its
+    review card; else 1 naming what's missing. Run from the
     worktree or the session the ship's marker points at."""
     want = pairs_to_row(pairs, 'readers')
     if not want.get('repo') or not want.get('ship'):
@@ -370,7 +377,11 @@ def readers(pairs):
         print(f"route readers: this branch adds no review card for {want['ship']}; commit it "
               "(LAND step 1) before the push", file=sys.stderr)
         return 1
-    print(f"route readers: {want['ship']} has both branch readers logged and its card", file=sys.stderr)
+    parked = sorted({f"{r['task']} ({r.get('note')})" for r in rows() if r.get('status') == 'parked'
+                     and (r.get('repo'), r.get('ship')) == (want['repo'], want['ship'])})
+    print(f"route readers: {want['ship']} has both branch readers logged and its card"
+          + (f"; parked on Pete's word, so the PR body names them: {', '.join(parked)}" if parked else ''),
+          file=sys.stderr)
     return 0
 
 
@@ -712,19 +723,23 @@ def selftest():
         try:
             todo_before, todo_after = io.StringIO(), io.StringIO()
             with contextlib.redirect_stderr(todo_before):
-                readers(['repo=ship', 'ship=routed'])
+                todo_code = readers(['repo=ship', 'ship=routed'])
             done = set(open(os.path.join(repo, '.ship-done')).read().split())
             left = [str(t.get('label', t.get('n'))) for t in read_route(os.path.join(repo, '.ship-route.json'))['tasks']
                     if str(t.get('label', t.get('n'))) not in done]
             no_note = refused(log, ['repo=ship', 'ship=routed', f'task={left[0]}', 'status=parked'])
             for t in left:
-                log(['repo=ship', 'ship=routed', f'task={t}', 'status=parked', 'note=needs the Mac'])
+                at(t0 + 40000, ['repo=ship', 'ship=routed', f'task={t}', 'status=parked', 'note=needs the Mac'])
+            parked_clock = read_route(os.path.join(repo, '.ship-route.json'))['anchor'] == t0 + 40000
+            built_later = refused(log, ['repo=ship', 'ship=routed', f'task={left[0]}', 'engine=driver'])
             with contextlib.redirect_stderr(todo_after):
                 readers(['repo=ship', 'ship=routed'])
         finally:
             os.chdir(plain)
         check('readers refuses while a plan task is neither built nor parked; a parked one needs its '
-              'note and then clears it', left and f'plan task {left[0]}' in todo_before.getvalue()
+              'note, restarts the clock, can still be logged built, and then clears it',
+              left and todo_code == 1 and parked_clock and built_later == ''
+              and f'plan task {left[0]}' in todo_before.getvalue()
               and 'note=<why' in no_note and 'neither built' not in todo_after.getvalue())
         last = open(os.path.join(repo, '.ship-gates')).read().splitlines()[-1]
         check('gate returns the command\'s exit code and records the run beside the marker',
