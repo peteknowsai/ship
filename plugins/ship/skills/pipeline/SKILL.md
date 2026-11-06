@@ -302,7 +302,7 @@ and FleetView read `.ship-stage`.
   && git commit -m init` first). No GitHub remote falls back to `wt merge` at LAND.
 - **The base branch**: `git symbolic-ref refs/remotes/origin/HEAD`, else `origin/main`,
   else `origin/master`, else local `main`. Every `main` below means that branch.
-- **A card key in the idea (`CEL-103`)**: `git branch -a --list '*<key>*'` and `gh pr list
+- **A card key in the idea (`CEL-103`)**: `git branch -a -i --list '*<key>*'` and `gh pr list
   -R <o/r> --state open --search <key>`. A hit with no live session (none in ListAgents, its
   `.ship-stage` not moving) is a stalled ship: resume it there, PR and all (a fresh fork once
   rebuilt CEL-103 beside its first run). A task it built that `.ship-done` lacks, its plan's
@@ -312,11 +312,14 @@ and FleetView read `.ship-stage`.
   Pete in one line and stop. Then `git log origin/<base> --since=7.days --format='%h %s' --
   <files the card names>`: a merged PR that meets the card's done-when lines closes the card
   instead (CEL-241 rebuilt one).
-- **A design verb with no card key**, in a repo whose `board:` names one: file its card
-  through the board's skill, in the column for work in flight (cells-app: Building, never
-  Ready, which `/groom` launches new sessions from), titled from the idea and saying a design
-  session is on it. Its key names the branch (`feature/cel-<n>-<slug>`), so `/groom` finds
-  the PR. A board that won't take it is one line to Pete, and the fork goes on.
+- **A design verb with no card key**, in a repo whose `board:` names one: search the board
+  for the idea first, since Pete often captured it already, and use a match. Otherwise file
+  its card through the board's skill, titled from the idea and saying a design session is on
+  it. Either way it goes to the column for work in flight (cells-app: Building, never Ready,
+  which `/groom` launches new sessions from), and the slug opens with its key (`cel-<n>-`),
+  so `/groom` finds the PR. The lock fills its description in the board's anatomy from the
+  storyboard. A design Pete drops goes to Scrapped, or Backlog when he parks it, and its
+  draft PR closes. A board that won't take it is one line to Pete, and the fork goes on.
 - **Free disk**: `df -h ~` under 10 GB is one line to Pete before forking (a full disk failed
   `stage.sh` mid-LAND).
 
