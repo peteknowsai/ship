@@ -250,6 +250,18 @@ why `shared-dev` is now an opt-out.
   (one always 100%, one always null); only the adversarial review caught it. A task that
   computes from rows another code path writes needs at least one case through the real
   writer.
+- **A fix that rebuilds the rule a finding was about is code no reader has seen**
+  (eca-finder stable-class-ids, 2026-11-05: the first fix redesigned the id rule, and a read
+  of it found 12 real, two high). Such a fix gets one delta read of its commits before TEST,
+  from the reader that didn't make the finding, briefed like the branch read; a local patch
+  doesn't.
+- **A stateful rule that keeps drawing findings has a hole the readers can't size.** Reads
+  two, three and four of the same ship each found one more move sequence that lost an id,
+  and each fix patched that sequence; a seeded fuzz written after the fourth failed 100 of
+  200 runs of eight moves, and a rebuilt rule, each row storing the id it handed on, held
+  2,000. When a second read finds new real cases in one rule, write a seeded property test
+  before the next fix (random sequences of the inputs the findings used, one invariant),
+  run the current code through it, and fix the rule rather than the case.
 
 ## The worktree guard
 

@@ -29,7 +29,12 @@ you read it whole, in a clean context, with the spec.
    (`node_modules/<pkg>/dist`), not its docs.
 
 [Spec or storyboard path. The repo's ship contract. Anything this branch's shape calls for:
-money, secrets, data the change deletes or migrates.]
+money, secrets, data the change deletes or migrates. A stateful rule (an id handed on, an
+order kept, an undo), in the Opus reader's brief only, since muse.py tells Wonder to write
+no file: "write your own seeded fuzz from the rule's invariants, in a scratch folder outside
+the worktree, and run it; never rerun the writer's" (eca-finder's writer
+fuzzed one class for 2,000 clean runs; the reader's two-class fuzz crossed ids in 43 of
+200).]
 
 Return findings as file:line, the failure scenario (the inputs or state that go wrong, and
 what happens), and a severity (blocker, should-fix, nit). Report; never fix.

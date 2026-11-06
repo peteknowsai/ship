@@ -580,7 +580,8 @@ Wonder read where Sizing says.
   stand-in's own `review=opus … note=for:wonder` row.
 - **Fix what's real**, each fix run against the cases the issue or spec names before it's
   committed (two readers' fixes added up to a guard that undid eca-finder's loose deck), with
-  the gates scoped through `route.py gate`.
+  the gates scoped through `route.py gate`. A fix that rebuilds the rule a finding was
+  about, or a rule a second read still finds new cases in: incidents, Design & review.
 - **A text transform or a row filter runs over the real corpus, on every lane.** A change to
   anything that rewrites text (a name cleaner, a parser, a formatter) runs over all the dev
   data it will see, and the driver reads the before-and-after diff (eca-finder's cleaner
@@ -592,7 +593,9 @@ Wonder read where Sizing says.
 
 - **Push**, so the preview QA walks carries REVIEW's absorb and fixes (with a per-push
   `preview:`, wait for its build), then `stage.sh <root> test`. **Freeze upstream while the QA
-  run walks**: absorb before a run, never during; the run's own fixes are the only edits.
+  run walks**: absorb before a run, never during, and no branch read is still out (a read
+  launched mid-walk moved code eca-finder's step 7 had proved); the run's own fixes are the
+  only edits.
 - **Keep it running, for the QA run and for Pete.** Two surfaces: the branch's preview links
   (`preview:`) and the worktree's localhost (`dev:`). Boot the dev server detached from the
   worktree root by absolute path (`cd <worktree> &&` first: one in `packs/homebody` started
