@@ -43,6 +43,11 @@ The `ios:` build restarts the branch's server, so it runs before or after a smok
 never beside one: a showing-followups smoke went 6/12 red on ECONNRESET while it ran, and
 12/12 on the rerun.
 
+An iOS test run's totals live only in its xcresult, inside the build cache LAND deletes, and
+`xcodebuild -quiet` keeps them out of the log. After each run, `xcrun xcresulttool get
+test-results summary --path <newest .xcresult under <dd>/Logs/Test>` goes into `<out-dir>`,
+where the PR body's numbers come from (cel-332's branch pass count was gone by then).
+
 **One ship on the phone at a time.** A second ship that finds it held tests on a simulator of
 its own: `xcrun simctl clone <base> ship-<slug>`, boot it, pass it to the repo's `ios:`
 command by UDID (cells-app: `IOS_SIM=<udid>`; without it the install lands on whichever
@@ -56,7 +61,9 @@ udid from the repo's own iOS script where it prints one, cells-app's `ios-branch
 line, else `xcrun devicectl list devices` or `xcrun simctl list devices`; `--device "iPhone
 PM"` failed twice with CoreDeviceError 10002 where the udid worked first try,
 hello-straight-in), then press, fill and scroll with `--settle` and judge from the diff it prints;
-`close` when done. What the phone taught (cells-app, 2026-10-05):
+`close` when done. Write the flags out on each call: zsh never splits a variable, so
+`agent-device press $S` with `S="--session x --udid y"` passes one word and fails "Unknown
+flag", silently inside a batch (cel-332). What the phone taught (cells-app, 2026-10-05):
 
 - A simulator just cloned or created times out on its first snapshot ("Daemon request timed
   out ... run agent-device prepare ios-runner"): run `agent-device prepare ios-runner
