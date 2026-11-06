@@ -64,6 +64,19 @@ replace parts of it.
   - Run it from the worktree in place of LAND's checks and merge, then tear down as
     written (`wt remove`, the remote branch if the script left it, `git branch -D`, the
     marker).
+  - A run cut off before its last line (a reboot, a lost session; cel-301's died
+    mid-gates): `gh pr view <n> -R <owner/repo> --json state,headRefOid,mergeCommit`.
+    - OPEN: run it again. It clears a lock whose pid is dead, but after a reboot a new
+      process can hold that pid, so a lock dated before the boot (`sysctl -n
+      kern.boottime`) is removed by hand. A PR head that is no longer the branch's HEAD
+      means the cut came after the script pushed its collapsed commit: fetch and reset the
+      branch to that head before the rerun, never push over it.
+    - MERGED: the merge happened. When code changed, its restart and smoke ran only if the
+      main checkout's `.next/local-main-status` names the merge commit serving; otherwise
+      run them as the script does after its merge, from a throwaway worktree at
+      `mergeCommit`. Then LAND goes on as written after the merge: the deploy watch and
+      the teardown.
+    - CLOSED: someone closed it. Park, `gate:input`, and say so.
   - When it prints its smoke line (cells-app: `main: <sha> serving, smoke ...`), LAND's own
     `smoke: main` is skipped: one paid smoke per landing. A diff of only what never ships
     gets no main smoke from it; say so in the `result:` line rather than claim one.
