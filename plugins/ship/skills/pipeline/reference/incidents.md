@@ -34,6 +34,13 @@ These are facts, not process — the process lives in SKILL.md.
   folder, `EnterWorktree` refused with "not in a git repository", Bash kept resetting
   there, and chrome-devtools would save shots only under the dead path, recreating it.
   joined-search had to drive its whole worktree by absolute path.
+  `ExitWorktree` first doesn't prevent it (eca-finder class-id-followups, 2026-11-05): it
+  answered that the session was back in the main checkout, and two Bash calls later the
+  shell reset into the worktree `wt remove` had just deleted, and kept resetting there. The
+  second ship's `EnterWorktree` took that folder as its origin, its `ExitWorktree` answered
+  that the original directory no longer exists and stayed put, and chrome-devtools refused
+  shots under the main checkout, the new worktree and the dead path alike; shots taken
+  with no `filePath` still saved under the session's `tool-results/`.
 
 - **The browser writes screenshots only inside the session's workspace roots**
   (2026-09-24, when gstack's `/browse` gave way to the chrome-devtools MCP). A verifier

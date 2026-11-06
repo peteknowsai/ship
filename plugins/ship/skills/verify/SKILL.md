@@ -44,7 +44,11 @@ concluding "looks right" is exactly the failure this skill exists to prevent.
   stay where the session launched (CEL-175, CEL-226, cel-315). Screenshots, `take_snapshot`
   files and any file the MCP reads go in `<shots-root>/.ship-shots/<slug>/`, always as
   absolute paths; `.ship-shots` is never committed (the `.ship-*` exclude covers it). In ship
-  the driver passes both.
+  the driver passes both. When the MCP refuses every path, the main checkout and the
+  worktree alike (a second ship in one session, entered from the first's removed worktree),
+  take the shot with no `filePath`: its result names the copy saved under the session's
+  `tool-results/`, which the shell copies into `<shots-root>/.ship-shots/<slug>/`, sandbox off
+  (eca-finder class-id-followups).
 
 ## 1. Preconditions — the caller owns these
 

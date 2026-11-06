@@ -36,8 +36,11 @@ reader's copy of the brief only, a file of its own, since muse.py tells Wonder t
 file. "Write your own seeded fuzz of [the rule] from its invariants, to a scratch folder
 outside the worktree, never a copy of the writer's. Don't run it: another reader is reading
 the tree, and a test run can write inside it. Return its path, its seed and the invariant."
-The driver runs it once both reads are back (eca-finder's writer fuzzed one class for 2,000
-clean runs; the reader's two-class fuzz crossed ids in 43 of 200).]
+The driver runs it once both reads are back, then breaks the rule it checks once to see it
+fail, and when it does, commits it among the repo's tests (eca-finder's writer fuzzed one
+class for 2,000 clean runs, and the reader's two-class fuzz crossed ids in 43 of 200; in
+class-id-followups the reader's fuzz passed 300 seeds and failed 28 of 30 on each of three
+broken lookups the writer's tests only partly caught).]
 
 Return findings as file:line, the failure scenario (the inputs or state that go wrong, and
 what happens), and a severity (blocker, should-fix, nit). Report; never fix.
