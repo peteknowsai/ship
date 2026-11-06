@@ -267,12 +267,21 @@ def log(pairs):
     return row
 
 
-def adopt(tasks):
+def adopt(tasks, now=None):
+    """Mark tasks an earlier session built as done, with no ledger row, and start the clock
+    now, so the next task's time and gate runs aren't the stall's or that session's."""
     if not re.fullmatch(r'\d+[a-z]?(,\d+[a-z]?)*', tasks):
         raise SystemExit('route adopt: give plan tasks, e.g. route.py adopt 1,2,3')
-    if not stage_marker(os.getcwd()):
-        raise SystemExit('route adopt: run it from the ship worktree')
+    saved = beside_marker(os.getcwd(), '.ship-route.json')
+    route = saved and read_route(saved)
+    if not route:
+        raise SystemExit('route adopt: no saved plan beside the marker; run it from the ship worktree after plan')
+    known = {str(t.get('label', t.get('n'))) for t in route.get('tasks', [])}
+    unknown = [t for t in tasks.split(',') if t not in known]
+    if unknown:
+        raise SystemExit(f"route adopt: {', '.join(unknown)} is not a task in {route.get('plan')}")
     mark_build(os.getcwd(), task=tasks)
+    write_route(saved, {**route, 'anchor': int(now or time.time())})
 
 
 def rows():
@@ -628,14 +637,16 @@ def selftest():
         os.chdir(repo)
         try:
             ledger_before, n_before = len(rows()), int(open(stage).read().split(':')[1])
-            adopt('8')
+            adopt('8', now=t0 + 30000)
             adopted = (len(rows()) == ledger_before and open(stage).read() == f'build:{n_before + 1}:9'
-                       and '8' in open(os.path.join(repo, '.ship-done')).read().split())
-            bad = refused(adopt, 'all')
+                       and '8' in open(os.path.join(repo, '.ship-done')).read().split()
+                       and read_route(os.path.join(repo, '.ship-route.json'))['anchor'] == t0 + 30000)
+            bad, outside = refused(adopt, 'all'), refused(adopt, '12')
         finally:
             os.chdir(plain)
-        check('adopt marks a task an earlier session built as done and writes no ledger row; a non-task refuses',
-              adopted and 'give plan tasks' in bad)
+        check('adopt marks a plan task done, writes no ledger row and restarts the clock; '
+              'a non-task or a task the plan lacks refuses',
+              adopted and 'give plan tasks' in bad and 'not a task' in outside)
         last = open(os.path.join(repo, '.ship-gates')).read().splitlines()[-1]
         check('gate returns the command\'s exit code and records the run beside the marker',
               code == 3 and json.loads(last)['ok'] is False)
