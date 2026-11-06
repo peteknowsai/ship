@@ -320,6 +320,12 @@ each page on its own URL before blaming a shift on the change: Settings opened o
 alarm the repo's checks list under noise is skipped, except a page's layout shift: its
 Noise row holds main's number, and the change on that page is still measured against it.
 
+**Catch a transient element** (a toast, a flash) with a MutationObserver armed by
+`evaluate_script` before the action, never a poll after it: cel-278's 4 s toast was gone by
+the time the click returned. Observe `document.documentElement` with `subtree: true`, since
+toasts render in portals, and keep each hit on `window`. An action that navigates takes the
+observer with the old page, so record it with `screencast_start` instead.
+
 **Prove something stays idle** (a spinner that must not appear, a message that must not
 come): `wait_for` on the failure text with the step's timeout (`timeout: 90000` for 90 s).
 A timeout is the pass; the text showing up is the fail. `sleep` is blocked. A fixed wait

@@ -238,6 +238,12 @@ why `shared-dev` is now an opt-out.
 
 ## Design & review
 
+- **A QA case whose starting state nothing reaches** (cel-278, 2026-11-06): "an approval
+  it can't describe" had no live path, since the tool refuses every unknown write before
+  an approval exists, and TEST spent a probe and a model turn before forcing a fetch failure
+  from an initScript. A case names how its state is reached; one only a seed or a forced
+  failure reaches says so, so the plan review can keep it as a defense or cut it.
+
 - **Safari won't load local CSS into a storyboard's srcdoc frames over file://**
   (2026-10-13). When Pete wants a storyboard in Safari, serve its folder over http
   (`python3 -m http.server`) and open that; Chrome is fine with file://.
