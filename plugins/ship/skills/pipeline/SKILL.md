@@ -685,8 +685,8 @@ Wonder read where Sizing says.
 
 Mechanics only: nothing is reviewed here. The checks and the merge run in the worktree, so a
 refusal leaves a tree to fix in; the main checkout comes after. A repo with its own land
-script lands every PR through it, a ship's own included, whatever its contract says the
-script is for: cells-app's `land-pr.sh` absorbs main and gates the merged tree right before
+script lands every PR through it, a ship's own included, even when its contract names it
+only for PRs built elsewhere: cells-app's `land-pr.sh` absorbs main and gates the merged tree right before
 it merges, and cel-326 and hello-straight-in, merging around it, re-absorbed a busy main by
 hand, one three times. That script, a `land:` other than `pr`, a session launched inside
 its worktree, a worktree ship didn't make, or no GitHub remote: `reference/rare-cases.md`,
