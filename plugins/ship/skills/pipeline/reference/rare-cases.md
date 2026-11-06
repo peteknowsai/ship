@@ -12,9 +12,10 @@ and they override SKILL.md where they differ.
   the status line at it with `mkdir -p ~/.claude/ship-active && echo <path> >
   ~/.claude/ship-active/$CLAUDE_CODE_SESSION_ID`, and narrate the fork the moment you
   create it (`forked feature/<slug> off main @ <path>`).
-- Screenshots: `<shots-root>` is the session's launch directory, which teardown does
-  not remove, so delete `<shots-root>/.ship-shots/<slug>/` yourself after landing, unless the ship is
-  EXPRESS, whose `result:` line names them.
+- Screenshots: `<shots-root>` is found by verify's probe (Two paths), the session's launch
+  directory first. Teardown doesn't remove a launch-directory root, so delete
+  `<shots-root>/.ship-shots/<slug>/` yourself after landing, and move a worktree root's
+  shots there before teardown, unless the ship is EXPRESS, whose `result:` line names them.
 
 ## Landing variants
 

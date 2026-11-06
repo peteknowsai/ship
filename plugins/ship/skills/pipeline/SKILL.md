@@ -661,14 +661,14 @@ Wonder read where Sizing says.
   review-card.html`, whose comment says where it goes, what each slot holds, and that it is
   committed before the merge with the shots it shows. `LANDING_STATUS` says "Tested · landing
   on main" or what it waits on. EXPRESS has none; its `result:` names the proof shots.
-- **Screenshots** live in verify's `<shots-root>/.ship-shots/<slug>/`, never committed; any
-  brief that screenshots or hands the browser a file (an `evaluate_script` `sourcePath`, a
-  sign-in script; recon's walk of the live product included) gets that absolute path written
-  in, found by its first screenshot as verify's Two paths says, since the browser reads and
-  writes only inside its workspace roots.
+- **Screenshots** live in verify's `<shots-root>/.ship-shots/<slug>/` (its `SHOTS:`), never
+  committed; any brief that screenshots or hands the browser a file (an `evaluate_script`
+  `sourcePath`, a sign-in script; recon's walk of the live product included) gets that
+  absolute path written in, or before verify has run, verify's probe (Two paths), since the
+  browser reads and writes only inside its workspace roots.
   Copy what the card shows beside the card before teardown, then delete that folder after
   landing, unless the ship is EXPRESS, whose `result:` names them (moved to the main
-  checkout's `.ship-shots/<slug>/` when the shots root was the worktree). A shots root in
+  checkout's `.ship-shots/<slug>/` before teardown when the shots root was the worktree). A shots root in
   another repo gets the exclude with `scripts/stage.sh <shots-root> exclude`.
 - **While parked**, keep the dev server up. A change Pete asks for goes through
   `superpowers:receiving-code-review` (verify the ask against the code), BUILD's push and
