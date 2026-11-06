@@ -132,7 +132,8 @@ the PR body's first lines. Messages between sessions are exempt.
   A command on the main checkout waits until LAND has left the worktree, never a script that
   hides it from the guard.
   Commit messages and PR bodies are files too: `git commit -F`, `gh pr create --body-file`.
-- **Sandbox off** for anything that writes outside the worktree or binds a port: the fork,
+- **Sandbox off** for anything that writes outside the worktree, the job's tmp included (the
+  sandbox denies writes under `~/.claude/jobs`; the Write tool can), or binds a port: the fork,
   `stage.sh` on a new worktree, `route.py log`, `muse.py`, `decisions.py` writes, anything
   that talks to GitHub (`gh`, `git push`, `git fetch`: the sandbox's proxy fails their TLS),
   any git command that rewrites the tree or makes a branch (the sandbox denies writes under
@@ -308,9 +309,12 @@ feature/<slug> --no-cd -y`. Then `EnterWorktree({path})` on the JSON's path: the
 and FleetView read the session's cwd, so a run working by absolute path from main is
 invisible to Pete. It is required in the session's primary repo, over a background session's
 default to skip it. A second ship in one session calls `ExitWorktree({action:"keep"})`
-first; a session launched inside a worktree can't take a second, so its next ship starts a
-fresh session from the main checkout (CEL-128); a cwd outside the repo `cd`s to the main
-checkout first. Noticed mid-pipeline that the cwd isn't the worktree: `EnterWorktree` right
+first, and its shell can still reset into the first ship's removed worktree after that
+(incidents: Worktrees): the new worktree is then entered from a dead folder, the browser
+can refuse every shots folder (verify: Two paths), and LAND's `ExitWorktree` can't go back,
+so its teardown runs by `-C <main>` as written. A session launched inside a worktree can't take a second, so
+its next ship starts a fresh session from the main checkout (CEL-128); a cwd outside the
+repo `cd`s to the main checkout first. Noticed mid-pipeline that the cwd isn't the worktree: `EnterWorktree` right
 then. A new ship always forks a new worktree, never `git switch -c` in a landed one.
 
 **Provision before the first gate.** A `.config/wt.toml` provisions gitignored files. With
@@ -619,7 +623,7 @@ Wonder read where Sizing says.
   Hand it the worktree's path,
   the URL, the BACKEND, test-auth, IOS and STORYBOARD lines, the plan's `## QA cases` (or on
   EXPRESS the change's intent), and the repo's checks skill (`.claude/skills/checks/SKILL.md`,
-  or "none yet: write it"), and the `<out-dir>` and `<shots-root>` verify names at its top;
+  or "none yet: write it"), and the `<out-dir>` and launch directory verify names at its top;
   it writes qa.md,
   walks the surface Pete would open the way he would, with real clicks and keys, fixes what
   fails, reruns, up to three fix rounds on one step (a new bug each round is progress, and
@@ -657,13 +661,14 @@ Wonder read where Sizing says.
   review-card.html`, whose comment says where it goes, what each slot holds, and that it is
   committed before the merge with the shots it shows. `LANDING_STATUS` says "Tested · landing
   on main" or what it waits on. EXPRESS has none; its `result:` names the proof shots.
-- **Screenshots** live in verify's `<shots-root>/.ship-shots/<slug>/`, never committed; any
-  brief that screenshots or hands the browser a file (an `evaluate_script` `sourcePath`, a
-  sign-in script; recon's walk of the live product included) gets that absolute path written
-  in, since the browser reads and writes only inside the session's launch directory.
+- **Screenshots** live in verify's `<shots-root>/.ship-shots/<slug>/` (its `SHOTS:`), never
+  committed; any brief that screenshots or hands the browser a file (an `evaluate_script`
+  `sourcePath`, a sign-in script; recon's walk of the live product included) gets that
+  absolute path written in, or before verify has run, verify's probe (Two paths), since the
+  browser reads and writes only inside its workspace roots.
   Copy what the card shows beside the card before teardown, then delete that folder after
   landing, unless the ship is EXPRESS, whose `result:` names them (moved to the main
-  checkout's `.ship-shots/<slug>/` when the shots root was the worktree). A shots root in
+  checkout's `.ship-shots/<slug>/` before teardown when the shots root was the worktree). A shots root in
   another repo gets the exclude with `scripts/stage.sh <shots-root> exclude`.
 - **While parked**, keep the dev server up. A change Pete asks for goes through
   `superpowers:receiving-code-review` (verify the ask against the code), BUILD's push and

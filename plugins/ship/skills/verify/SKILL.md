@@ -36,15 +36,26 @@ concluding "looks right" is exactly the failure this skill exists to prevent.
 
 **Two paths, named once:**
 - `<out-dir>` holds qa.md, result.md, the QA script and the dev log: an absolute path under
-  the job's tmp directory (`$CLAUDE_JOB_DIR/tmp`), else `<shots-root>/.ship-shots/<slug>/`.
+  the job's tmp directory (`$CLAUDE_JOB_DIR/tmp`), else the launch directory's
+  `.ship-shots/<slug>/`.
   Never `/tmp`, where a restart mid-QA wiped one, and never inside the repo's tracked tree.
-- `<shots-root>` is the session's launch directory: the primary checkout when the session
-  started there and then entered a worktree, the worktree only when the session was launched
-  inside it. The chrome-devtools MCP reads and writes only inside its workspace roots, which
-  stay where the session launched (CEL-175, CEL-226, cel-315). Screenshots, `take_snapshot`
-  files and any file the MCP reads go in `<shots-root>/.ship-shots/<slug>/`, always as
-  absolute paths; `.ship-shots` is never committed (the `.ship-*` exclude covers it). In ship
-  the driver passes both.
+- `<shots-root>` is the session's launch directory unless a chrome-devtools walk's probe
+  finds otherwise. That MCP reads and writes only inside its workspace roots, which usually
+  stay at the launch directory after the session enters a worktree (CEL-175, CEL-226,
+  cel-315), but were the worktree for cel-300, whose first browser call came after a
+  compaction, and neither for eca-finder's second ship in one session. So such a walk's
+  first call after opening its page is a probe, before any proof shot, snapshot or redeem
+  file: `take_screenshot` to the launch directory's `.ship-shots/<slug>/probe.png`, then to
+  the worktree's; the one that saves is `<shots-root>`, and result.md's `SHOTS:` names it.
+  Screenshots, `take_snapshot` files and any file the MCP reads go in
+  `<shots-root>/.ship-shots/<slug>/`, always as absolute paths; `.ship-shots` is never
+  committed (the `.ship-*` exclude covers it). In ship the driver passes the launch
+  directory. **A probe that saves in neither** makes it `SHOTS: inline`: shots and snapshots
+  go with no `filePath`, a shot's result names the copy saved under the session's
+  `tool-results/`, and the shell copies that into the launch directory's
+  `.ship-shots/<slug>/`, sandbox off, which EVIDENCE then names. A file the MCP must read (a
+  redeem script, whose secret stays out of the transcript) has no inline form, so its step
+  is `unverifiable` and says why.
 
 ## 1. Preconditions — the caller owns these
 
@@ -252,6 +263,7 @@ merge unproven.
 VERDICT: works | broken | unverifiable
 UNWALKED: every step the run didn't walk itself, handed to Pete or skipped, or "none"
 EVIDENCE: ordered list of "<screenshot path or output> — <plain-language caption>"
+SHOTS: <shots-root>, or "inline"
 EXPECTED / OBSERVED: for every step that didn't pass
 TASTE: <0-3 short "looked off / couldn't confirm" notes, or "none">
 ```
@@ -357,6 +369,6 @@ ship commits nothing either: it names the changed files in the hand-back.
 ## 6. Hand back proof
 
 Return to the caller: `VERDICT`, `UNWALKED`, `EVIDENCE` (the ordered screenshot + caption storyboard),
-`TASTE` notes, and the crystallized spec path (or none). In ship they go on the review card:
+`SHOTS`, `TASTE` notes, and the crystallized spec path (or none). In ship they go on the review card:
 the storyboard becomes "Proof it works," the taste notes "Flagged." Pete reviews proof, not
 faith.
