@@ -163,7 +163,8 @@ the red, and the evidence says main's page was unreachable.
   in, so a walk already under way records its verdicts and closes each one first
   (`close_page`, or the app quit), and whatever is judged after the restore is judged from a
   fresh load, console, requests and audits included (cel-326's open page logged 11 "Export
-  doesn't exist" errors that read as a branch bug); quote that red in the evidence (CEL-100). A data fix is checked on a row main's
+  doesn't exist" errors that read as a branch bug); quote that red in the evidence (CEL-100). The same swap
+  takes a visual change's before shot on the run's own data, closed the same way (cel-278). A data fix is checked on a row main's
   code gets wrong: every card live-label-rows first reached was labeled right by the old match.
 - A feature that returns a list gets one case where a large result is certain, and a small
   count there fails: homebody-onboarding's rental search found 1 of 6 real Denver homes, and
@@ -319,6 +320,10 @@ each page on its own URL before blaming a shift on the change: Settings opened o
 /activity scored 0.26 from that view's sheet animating in, and 0.00 on its own. A false
 alarm the repo's checks list under noise is skipped, except a page's layout shift: its
 Noise row holds main's number, and the change on that page is still measured against it.
+
+**Catch a transient element** (a toast, a flash) with a MutationObserver armed by
+`evaluate_script` before the action, never a poll after it: cel-278's 4 s toast was gone by
+the time the click returned.
 
 **Prove something stays idle** (a spinner that must not appear, a message that must not
 come): `wait_for` on the failure text with the step's timeout (`timeout: 90000` for 90 s).
