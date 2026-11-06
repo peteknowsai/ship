@@ -92,9 +92,10 @@ passes one word and fails "Unknown flag", silently inside a batch (cel-332). Wha
   (cells-app: `PACK=<pack> npm run prune -- --people --finish <clerk id>`): a 7-minute walk of
   the Homebody walkie transcribed talk near his desk into the test person's showing.
 - An effect too quick for a screenshot (cel-262's 0.3 s blink) needs a recording, and
-  iPhone PM can't record (`devicectl` says it doesn't support it; agent-device's `record`
-  can be held by another session's stale recording). There, prove it on an uncommitted debug
-  build with the duration stretched and a screenshot taken mid-effect.
+  iPhone PM may give none: `devicectl` says it doesn't support screen recording, and
+  agent-device's `record` can be held by another session's stale one. Then prove it on an
+  uncommitted debug build with the duration stretched and a screenshot taken mid-effect,
+  and reinstall the branch build after.
 - Read the app's own prints with `xcrun devicectl device process launch --console
   --terminate-existing --device <udid> <bundle>`, and write debug traces to stderr: a
   `print()` block-buffers off a terminal, so its lines arrive late or never.
