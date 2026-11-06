@@ -145,7 +145,10 @@ Homebody's stages. Post one line
 before running, `QA: <n> steps on <surface> — <qa.md path>`, so Pete can watch and steer;
 what he says mid-run changes the run.
 
-**Pick cases that can fail.** A step that would pass on main's code proves nothing:
+**Pick cases that can fail.** A step that would pass on main's code proves nothing. A page
+main's server can't show at all gives the walk nothing to compare (cells-app main's
+localhost sends /hello to sign-in, lacking the branch's Turnstile test keys): the regression
+test's swap below is the red, and the evidence says main's page was unreachable.
 - A fix's regression test runs once against main's copy of the fix's source files and goes
   red: one script swaps them in (`git show origin/main:<path> > <path>`), runs the test and
   restores them (`git checkout HEAD -- <path>`), outside any walk, since the swap hot-reloads

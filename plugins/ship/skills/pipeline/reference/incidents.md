@@ -283,7 +283,10 @@ why `shared-dev` is now an opt-out.
   touched, write a seeded property test before the next fix (random sequences of the inputs
   the findings used, one invariant), run the current code through it, fix the rule rather
   than the case, and commit the test with the fix. A delta read's finding that would rebuild
-  the rule again comes here, not to another delta read.
+  the rule again comes here, not to another delta read. The harness counts an effect inside
+  the mock once it succeeds, never from an async mock's `mock.results`, which records a
+  rejected call as type "return": hello-straight-in's first harness counted every failed
+  tell as delivered and read green on broken code.
 - **A read still out while QA walks moves code the walk proved** (the same ship: a read
   launched mid-walk led to a fix that changed what step 7 had proved, and step 7 ran
   again). No read is out when the walk starts and none starts during it; a fix made after
@@ -312,7 +315,8 @@ one plain command per call.
   operand): one plain call each, or a script file.
 - Read-only commands it misparses: a path segment named `source`, a zsh `echo ==`, a `for`
   loop over `sed`, a heredoc that only writes files, a docker `--format '{{…}}'` string, a
-  `python3 -` heredoc whose text says "git".
+  `python3 -` heredoc whose text says "git", a jq string interpolation `"\(…)"` even in one
+  `gh … -q` call.
 - `ref=$(…)` then `press "$ref"` inline (CEL-223 lost five rounds to it).
 - Quoted JSON on a command line (`decisions.py log '{…}'`): use `log --file <json>`.
 - `set -a && . ./.env.local`: give the tool the file instead (`tsx --env-file=.env.local`,
