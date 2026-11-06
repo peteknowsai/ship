@@ -580,7 +580,9 @@ Wonder read where Sizing says.
   stand-in's own `review=opus … note=for:wonder` row.
 - **Fix what's real**, each fix run against the cases the issue or spec names before it's
   committed (two readers' fixes added up to a guard that undid eca-finder's loose deck), with
-  the gates scoped through `route.py gate`.
+  the gates scoped through `route.py gate`. A fix that rebuilds the rule a finding was
+  about, a rule a later read still finds new cases in, or a read still out when TEST
+  starts: incidents, Design & review.
 - **A text transform or a row filter runs over the real corpus, on every lane.** A change to
   anything that rewrites text (a name cleaner, a parser, a formatter) runs over all the dev
   data it will see, and the driver reads the before-and-after diff (eca-finder's cleaner

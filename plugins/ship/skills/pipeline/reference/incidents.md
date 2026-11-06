@@ -250,6 +250,28 @@ why `shared-dev` is now an opt-out.
   (one always 100%, one always null); only the adversarial review caught it. A task that
   computes from rows another code path writes needs at least one case through the real
   writer.
+- **A fix that rebuilds the rule a finding was about is code no reader has seen**
+  (eca-finder stable-class-ids, 2026-11-05: the first fix redesigned the id rule, and a read
+  of it found 12 real, two high). A fix rebuilds the rule when it changes what the rule
+  decides for inputs no finding named (a new state, a rewritten branch), not when it adds
+  the case a finding named. It gets one delta read before TEST: the other lab's reader
+  where the lane has one, else the lane's reader in a fresh context; the branch brief with
+  `git diff <sha before the fix>..HEAD` as the diff and the findings it fixed in place of
+  the plan's tasks; logged `review=<wonder|opus> stage=delta`, which `route.py readers`
+  doesn't count as a branch read. Its findings join the triage file.
+- **A stateful rule that keeps drawing findings has a hole the readers can't size.** Reads
+  two, three and four of the same ship each found one more move sequence that lost an id,
+  and each fix patched that sequence; a seeded fuzz written after the fourth failed 100 of
+  200 runs of eight moves, and a rebuilt rule, each row storing the id it handed on, held
+  2,000. When any read after the first finds a new real case in a rule a fix already
+  touched, write a seeded property test before the next fix (random sequences of the inputs
+  the findings used, one invariant), run the current code through it, fix the rule rather
+  than the case, and commit the test with the fix. A delta read's finding that would rebuild
+  the rule again comes here, not to another delta read.
+- **A read still out while QA walks moves code the walk proved** (the same ship: a read
+  launched mid-walk led to a fix that changed what step 7 had proved, and step 7 ran
+  again). No read is out when the walk starts and none starts during it; a fix made after
+  the walk reruns the steps it touched.
 
 ## The worktree guard
 
