@@ -52,7 +52,7 @@ replace parts of it.
     diff has a `convex/`, `convex-core/` or `packs/*/convex/` path, which misses a `lib/`
     file convex-core imports (#398 landed `network:typecheck` red that way, and its test
     runs under `network:test`). So step 1 runs both whenever the branch changes code
-    but has no such path, without checking what convex-core imports, and when an absorb
+    but has no such path, without checking what convex-core imports, or when an absorb
     brought one; never on a diff of only what never ships.
   - Push everything first (it lands the PR's pushed head), put the final evidence in a
     commit message rather than only the PR body (its commit never reads the body), and stop

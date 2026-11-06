@@ -50,8 +50,9 @@ concluding "looks right" is exactly the failure this skill exists to prevent.
   first call after opening its page is a probe, before any proof shot, snapshot or redeem
   file: `take_screenshot` to the launch directory's `.ship-shots/<slug>/probe.png`, then to
   the worktree's; the one that saves is `<shots-root>`, and result.md's `SHOTS:` names it.
-  The MCP restarting mid-run can move its roots, so the probe runs again after a restart
-  (yonder's came back rooted at the worktree and refused a file under the launch directory).
+  The MCP can restart mid-run without notice and come back on other roots, so the probe runs
+  again when a call is refused a path it took before, a call fails outright, or the walk's
+  page is gone from `list_pages` (yonder's came back rooted at the worktree).
   Screenshots, `take_snapshot` files and any file the MCP reads go in
   `<shots-root>/.ship-shots/<slug>/`, always as absolute paths; `.ship-shots` is never
   committed (the `.ship-*` exclude covers it). In ship the driver passes the launch
@@ -122,7 +123,8 @@ what the last one learned (Pete, 2026-10-19). No file yet: §5 writes it from th
 
 **Write `<out-dir>/qa.md`.** On a ship with a plan, its steps start from the plan's
 `## QA cases`, which PLAN wrote before any code: walk each as written, add any the build
-showed were missing, and drop none. On EXPRESS or a standalone `/verify`, write the cases
+showed were missing, and drop none. A step that switches a feature off runs last or in a bot
+chat of its own: a bot that saw it gone keeps believing so once it's back on (yonder). On EXPRESS or a standalone `/verify`, write the cases
 yourself from the spec, else the acceptance criteria. Its head names what the run uses: URL, AUTH (the test-auth path, with everything
 a fresh account needs, an invite code or a PIN), IOS (the line `ios:` printed, or none),
 BACKEND (on `backend: copy` or `per-branch`, the exact deployment, pinned on every CLI call, or seeds
@@ -242,9 +244,7 @@ network, the device log, a trace — and fix the cause where it lives, not on th
 that showed it: when one view gets state wrong, find every other view that reads the same
 state and walk them all in the rerun (CEL-56 fixed a stale flag in a chat header, then QA
 found it again in the bot panel). A chat with a bot: the old thread keeps what the bot
-believed before the fix ("I can't move it"), and one that saw a feature switched off keeps
-believing it gone once it's back on (yonder), so rerun in a fresh conversation, run a
-switch-off step last or in its own chat, and check
+believed before the fix ("I can't move it"), so rerun in a fresh conversation, and check
 each sent message shows in the thread before waiting on a reply. One typed while the chat
 reads "Connecting..." can vanish, which is a finding, not a retype. Re-run the gates scoped (§3), push a fix under `convex/` to the BACKEND (`npx convex dev --once`),
 and put the target on the fix before the rerun: a preview needs the branch pushed and its
@@ -304,9 +304,10 @@ Noise row holds main's number, and the change on that page is still measured aga
 
 **Prove something stays idle** (a spinner that must not appear, a message that must not
 come): `wait_for` on the failure text with the step's timeout (`timeout: 90000` for 90 s).
-A timeout is the pass; the text showing up is the fail. `sleep` is blocked, and a background
-one can come back with no output or exit code (yonder's 660 s across an idle stop): a timed
-wait is a Monitor with an until-loop. When the step
+A timeout is the pass; the text showing up is the fail. `sleep` is blocked. A fixed wait
+before a check (a box's idle stop) is timed by the clock, never by the wait returning: note
+`date` before it and check the time has passed after, since yonder's 660 s background
+`sleep` came back with no output or exit code. When the step
 claims why something never shows, the walk can't tell that cause from another, so also run
 the code that decides it on the saved state with the cause and without, and show both:
 signup-status's closed deck pick never dealt, but only the deal's own `leftOf` (`[]`

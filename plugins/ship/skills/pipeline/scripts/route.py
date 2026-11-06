@@ -404,8 +404,12 @@ def report():
                      f"{mean(group, 'fix_rounds'):>10} {minutes:>8}")
     if reviews:
         lines += ['', f"{'reader':8} {'ships':>5} {'real':>5} {'false':>5} {'only it':>7} {'owned':>5} {'minutes':>8}"]
-        for name in sorted({r['review'] for r in reviews}):
-            group = [r for r in reviews if r['review'] == name]
+        note = lambda r: str(r.get('note', ''))
+        # an outage's note=out row is no read; the stand-in's note=for:wonder row is no Opus read
+        reads = [r for r in reviews if not note(r).startswith(('out:', 'skipped:'))]
+        reader = lambda r: 'stand-in' if note(r).startswith('for:wonder') else r['review']
+        for name in sorted({reader(r) for r in reads}):
+            group = [r for r in reads if reader(r) == name]
             total = lambda key: sum(r[key] for r in group if isinstance(r.get(key), int) and not isinstance(r[key], bool))
             secs = [r['seconds'] for r in group if isinstance(r.get('seconds'), (int, float))]
             minutes = f'{sum(secs) / len(secs) / 60:.1f}' if secs else '-'
@@ -474,7 +478,12 @@ def selftest():
         log(['repo=ship', 'review=wonder', 'stage=plan', 'real=1', 'false=0', 'only=0', 'seconds=60'])
         open(ledger_path(), 'a').write(json.dumps({'repo': 'ship', 'task': 4, 'engine': 'sonnet', 'pool': 'anthropic',
                                                    'score': 2.1, 'routed': 'sonnet', 'fix_rounds': 2}) + '\n')
+        log(['repo=ship', 'ship=o', 'review=wonder', 'stage=branch', 'note=out:5'])
+        log(['repo=ship', 'ship=o', 'review=opus', 'stage=branch', 'real=4', 'false=1', 'only=2',
+             'note=for:wonder'])
         table = report()
+        check("a Muse outage's rows count as no Wonder read and a stand-in, never as Opus",
+              'stand-in     1     4     1       2' in table and '\nopus     ' not in table.split('reader')[1])
         check('an old row with pool, score and routed still reports under its engine',
               'sonnet      1     0          -        2.0        -' in table)
         check('the ledger reports by engine, past a broken line',
