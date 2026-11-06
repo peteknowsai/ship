@@ -146,9 +146,10 @@ the PR body's first lines. Messages between sessions are exempt.
   outside), so anything that crosses gets an absolute path under the job's tmp.
 - **Env files are given to the tool** (`tsx --env-file=.env.local`), never sourced. The
   tool sets the file's values before the script starts and a variable already in the shell
-  beats them, so one that must name this worktree, not main, goes in the shell (cells-app's
-  checks skill: `LOCAL_STAGE=local-<port>`): its `prepare()` fills `APP_ORIGIN` only when
-  unset, and the file's main value put cel-296's seed on main's stage.
+  beats them, so every one that must name this worktree, not main, goes in the shell: on
+  cells-app both `LOCAL_STAGE=local-<port>` and `APP_ORIGIN=$(env -u APP_ORIGIN bash scripts/dev.sh --print-origin)`, since
+  `prepare()` fills `APP_ORIGIN` only when unset (the file's main value put cel-296's seed on
+  main's stage and sent cel-264's close to main's server).
 - **Every `gh` call names its repo**, `-R <owner/repo>`: in a fork with an `upstream` remote
   gh resolves against upstream and finds no PR (screendrop-worker, 2026-11-05).
 - **Calls sent together all run**, even when the first fails, so a call that needs another's

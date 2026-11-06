@@ -102,5 +102,11 @@ passes one word and fails "Unknown flag", silently inside a batch (cel-332). Wha
   second apart that match): a ref read during momentum taps where the element was (CEL-213).
 - Seed content from the Mac (the repo's own test helpers or API), never by typing it on the
   phone: `fill` garbles long text.
+- A Simulator app that records stops at once on a refused mic: `xcrun simctl privacy <udid>
+  grant microphone <bundle>` before the app launches (it quits a running one). The
+  Simulator hears the Mac's default input, which is Pete's mic: a test sound never plays
+  aloud into it, but through a loopback input (cells-app's checks skill: BlackHole 2ch via
+  `SwitchAudioSource`), switched back in a `trap` the moment the step ends, since it cuts
+  off his dictation and calls while it's set (cel-264).
 - To reach a state a short test account can't (paging, a long list), shrink the constants in a
   debug build and never commit them.
