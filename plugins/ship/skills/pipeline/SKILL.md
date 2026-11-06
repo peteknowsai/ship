@@ -139,8 +139,8 @@ the PR body's first lines. Messages between sessions are exempt.
   any git command that rewrites the tree or makes a branch (the sandbox denies writes under
   `.claude/` and to `.git/config`, and CEL-213's rebase stopped halfway), a script that writes
   under `.claude/` (the Edit and Write tools can; cel-285's merge of the checks skill could
-  not), gates, smokes, dev
-  servers, `tsx`, and anything that reaches a local server, since a sandboxed `curl` at
+  not), gates, smokes, `stack:` (its
+  `vercel env pull` fails inside), dev servers, `tsx`, and anything that reaches a local server, since a sandboxed `curl` at
   localhost reads as a dead server. Everything else stays in the sandbox.
 - **`$TMPDIR` changes with the sandbox** (`/tmp/claude-<uid>` inside, `/var/folders/…/T`
   outside), so anything that crosses gets an absolute path under the job's tmp.
@@ -359,7 +359,7 @@ rare-cases.
 **Never stack on a branch that hasn't landed.** Asked to build on another ship's branch,
 branch off main, cherry-pick the commits you need, and open the PR against main. Picked
 commits bring their door: this ship lands after that one, and its Merge Danger says "lands
-after #N" (eca-finder #290 nearly landed #291's one-way sweep on its own pass).
+after #N", unless LAND's cherry check finds that PR a draft and the commits docs only (eca-finder #290 nearly landed #291's one-way sweep on its own pass).
 
 **Waiting on sibling ships to land** (a docs ship written once they're in): a background
 Bash wait in a script file, until `gh pr list -R <o/r> --state open --search '<keys>'` is
@@ -738,11 +738,13 @@ Landing variants.
      ran, so no row; route.py refuses a second one, as a return to step 1 would log.
    - Commit the smoke's result line with the review card and its shots (`git restore
      next-env.d.ts` first), and bring the PR body up to date with what shipped (the squash
-     takes it). `stack:` once more. For each other open PR, `git cherry HEAD origin/<branch>
-     origin/main` (a script file) prints `-` for its commits this branch carries: a hit lands
-     after that PR, unless that PR is a draft whose commit this branch carries on purpose
-     (prior art it built on, cel-139's docs-only spike commit): it lands first, and its PR
-     body names the draft it overlaps.
+     takes it). `stack:` once more. For each other open PR, a script file finds its commits this
+     branch carries: `git cherry HEAD origin/<branch> origin/main` prints `-` for a copy, and
+     a sha in both `git rev-list origin/main..HEAD` and `git rev-list
+     origin/main..origin/<branch>` is one carried as-is. A hit lands after that PR, unless
+     it's a draft (`gh pr view <n> --json isDraft`) and every shared commit docs only (`git
+     show --stat <sha>`): this branch lands first and comments on the draft naming the
+     overlap (cel-139 carried spike #243's docs commit).
    - Stop the worktree's dev server with the repo's stop command, from the worktree; then
      `listener.sh <port> 1` must find nothing (one still there stops by its process group).
    - `route.py readers repo=<r> ship=<slug>` exits 0 (SELF-DIRECTED and GATED): both branch

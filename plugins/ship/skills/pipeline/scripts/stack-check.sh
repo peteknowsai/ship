@@ -87,15 +87,17 @@ for arg in "$@"; do
 
   for target in production preview development; do
     file="$tmp/$project.$target"
-    # a failed pull or a value it can't read is "?", never "no key": cel-139's sandboxed pulls
-    # crossed live Homebody's Production, whose key the API lists
+    # a failed pull is a cross naming the pull, never "no key": cel-139's sandboxed pulls said
+    # live Homebody's Production had none, though the API lists it
     if ! pulled=$(vercel env pull "$file" --environment "$target" --project "$project" --scope "$scope" --yes 2>&1); then
-      say clerk "?" "$target env not pulled: $(tail -1 <<<"$pulled" | cut -c1-90)"; continue
+      say clerk ✗ "$target env not pulled: $({ grep -i -m1 error || tail -1; } <<<"$pulled" | cut -c1-90)"; continue
     fi
     pk=$(grep -E '^NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=' "$file" 2>/dev/null | cut -d= -f2- | tr -d '"')
-    case ",$(targets_of NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY)," in
-      *",$target,"*) [ -z "$pk" ] && { say clerk "?" "$target key unreadable (stored as sensitive)"; continue; } ;;
-    esac
+    hidden=$(jq --arg t "$target" '[.envs[] | select(.key == "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY" and .type == "sensitive"
+      and .gitBranch == null and ((.target // []) | index($t)))] | length' <<<"$envs" 2>/dev/null)
+    if [ -z "$pk" ] && [ "${hidden:-0}" -gt 0 ]; then
+      say clerk "?" "$target key unreadable (stored as sensitive)"; continue
+    fi
     want=pk_test_; [ "$target" = production ] && want=pk_live_
     if [ -n "$unreleased" ] && [ "$target" = production ] && [ "${pk:0:8}" != pk_live_ ]; then
       skip clerk "Production not on live Clerk yet"; continue
