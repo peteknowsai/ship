@@ -368,11 +368,12 @@ one with uncommitted work, one a live session holds (wt's 💬), or one under tw
 
 ### 1 · DISCOVER — Pete's taste, up front  → marker: `discover`, then `gate:1`
 
-- **Recall first, on design ships**: `decisions.py relevant "<the idea in one sentence>" >
-  .ship-recall`, from the worktree, saves the six decisions that bear on it; read them there.
-  They are settled calls: don't re-ask Pete one, and say so out loud when reversing one.
-  When one changes what the ship does, add `used: <what it changed>` under it in that file
-  then, since LAND counts those lines and a count from memory is a guess (company-pack). A call marked `[stale]`
+- **Recall first, on design ships**: `decisions.py relevant "<the idea in one sentence>"
+  --ship <slug>` (from inside the repo) prints up to six decisions that bear on it and
+  records them as shown. They are settled calls: don't re-ask Pete one, and say so out loud
+  when reversing one. When one changes what the ship does, `decisions.py used <slug> <id>
+  "<what it changed>"` right then: the repo's log keeps it through a compaction, a resume and
+  teardown, and a count from memory is a guess (company-pack). A call marked `[stale]`
   gives a retired engine a ship job, and this skill's text wins over it.
 - **Grill on the storyboard, never in chat.** Call the Skill tool with
   `mattpocock-skills:grilling` for how to ask: each round asks every question open now,
@@ -672,10 +673,7 @@ Wonder read where Sizing says.
   landing, unless the ship is EXPRESS, whose `result:` names them (moved to the main
   checkout's `.ship-shots/<slug>/` before teardown when the shots root was the worktree). A shots root in
   another repo gets the exclude with `scripts/stage.sh <shots-root> exclude`.
-- **While parked**, keep the dev server up. When the park ends, `scripts/listener.sh <port>
-  1` comes first: nothing listening means a reboot or a stop took it (company-pack's Mac
-  rebooted mid-park, and LAND's cleanup met no server), so start it again on the app the walk
-  used. A change Pete asks for goes through
+- **While parked**, keep the dev server up. A change Pete asks for goes through
   `superpowers:receiving-code-review` (verify the ask against the code), BUILD's push and
   links, and the QA run, and lands on its pass unless a stop still holds. A change he asks for
   after landing is a new EXPRESS ship.
@@ -690,10 +688,12 @@ or no GitHub remote: `reference/rare-cases.md`, Landing variants.
 1. **In the worktree, make it landable.**
    - Release what the run started from inside it: a QA-run directory's own teardown, its
      containers, a simulator it cloned, a borrowed VM slot. Delete test data the run kept,
-     the way the checks skill says, while the server still answers (Clerk's test instance
-     caps at 100 people; cells-app: each walk person by `DELETE /api/account` as them, the
-     checks skill's recipe, since `npm run prune -- --people --finish` waits on every other
-     landing's lock: cel-297 stalled behind #442's).
+     the way the checks skill says, while the server still answers: `scripts/listener.sh
+     <port> 1` naming this worktree, then one request. A reboot or a stop during a park takes
+     it (company-pack's Mac rebooted mid-park), so start it again on the app the walk used
+     first (Clerk's test instance caps at 100 people; cells-app: each walk person by `DELETE
+     /api/account` as them, the checks skill's recipe, since `npm run prune -- --people
+     --finish` waits on every other landing's lock: cel-297 stalled behind #442's).
    - `stage.sh <root> land`, `git fetch origin`; if main moved, absorb it in a call of its own
      and see it merged clean before any gate (CEL-140 gated a half-merged tree). An absorb
      whose files (`git diff --name-only HEAD...origin/main` after the fetch and before the
@@ -711,9 +711,6 @@ or no GitHub remote: `reference/rare-cases.md`, Landing variants.
      secret list`, `vercel env ls production`, `npx convex env list --prod`. Names only,
      never values. A missing one parks (`stage.sh <root> gate:input`, `needs input:` naming
      it): a production setting is Pete's (screendrop-worker's OWNER_SUB, 2026-11-05).
-   - On a design ship, `route.py log repo= ship= recall=<shown> used=<n>` now, since teardown
-     removes `.ship-recall`: `used` counts its `used:` lines, decisions that changed what the
-     ship did (a question not asked, a choice made their way, a reversal said out loud).
    - Commit the smoke's result line with the review card and its shots (`git restore
      next-env.d.ts` first), and bring the PR body up to date with what shipped (the squash
      takes it). `stack:` once more. For each other open PR, `git cherry HEAD origin/<branch>
@@ -775,8 +772,10 @@ or no GitHub remote: `reference/rare-cases.md`, Landing variants.
      script that ran it. Restart a `worker:` once idle (rare-cases). Ship never runs a
      production deploy or pushes a production database by hand, and never makes Pete run
      one; an integration lane or a promotion is rare-cases.
-7. **Close out.** On a design ship, the retro carries step 1's recall count. `show.sh …
-   review <file> done` the landed card.
+7. **Close out.** On a design ship, `route.py log repo= ship= <what decisions.py tally <slug>
+   prints>`, its `used` counting decisions that changed what the ship did (a question not
+   asked, a choice made their way, a reversal said out loud), and the retro carries the count.
+   `show.sh … review <file> done` the landed card.
    Run RETRO, then end with `result:`: what shipped, one sentence, the live links, `· retro
    sent` when it was, then the follow-ups. Only a landing earns `result:`.
 
