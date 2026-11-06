@@ -47,7 +47,11 @@ filter, and filter with `grep -E` rather than `tail`, so a red names its failing
 command> > <log> 2>&1 || rc=$?; grep -E 'FAIL|●|Test Files|Tests:? ' <log> || true; [ "$rc"
 = 0 ]`, which stops the script on red and goes on to the next gate on green. A typecheck or
 build filters for its own lines (`grep -E 'error' <log>`). A `|| true` on the test pipeline
-itself turned six red tests green (CEL-182, CEL-260).
+itself turned six red tests green (CEL-182, CEL-260). The log is where the PR body's numbers
+come from, so a runner that keeps its totals out of it is the repo's to fix, its script
+printing them: cells-app's `ios-test.sh` runs `xcodebuild -quiet` into a build folder every
+worktree shares, and cel-332's branch count was gone before its PR body was written (`xcrun
+xcresulttool get test-results summary --path <xcresult>` prints them).
 
 **Stopping a run early.** Kill its own process group: every Bash call runs in a group of
 its own, so `kill -- -$(ps -o pgid= -p <runner pid> | tr -d ' ')` from another call takes

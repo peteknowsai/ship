@@ -460,7 +460,8 @@ one with uncommitted work, one a live session holds (wt's 💬), or one under tw
 - **The plan writes its `## QA cases`**: numbered steps TEST walks, each one thing a person
   does and what they should see, covering every frame, requirement and edge the spec names,
   and each a case that fails on main's code, a race fix's at every ordering it claims, the same
-  instant among them (verify: Pick cases that can fail). TEST walks them as written, may add, never drops
+  instant among them (verify: Pick cases that can fail), each control it presses on main or
+  built by a named task (incidents: Design). TEST walks them as written, may add, never drops
   one. Writing them before the code keeps them about what was asked, not what got built.
 - **A task that hooks into a dependency's runtime** (a framework's workflow, a bundler's
   transform, the shape a model must answer in) is followed by a driver live check of the real

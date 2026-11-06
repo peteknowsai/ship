@@ -295,8 +295,8 @@ why `shared-dev` is now an opt-out.
 - **A QA case can press a control main doesn't have.** cel-332's plan copied the card's
   acceptance criteria as cases: the phone's long-press strip showed no chosen mark, and
   neither app let you react to your own line, which cost a fix round and a step rewritten
-  mid-walk. Each case names the control it presses, found in main's code or a snapshot
-  before the plan is written; a missing one is a task in the plan, not a test.
+  mid-walk. Each control a case presses either exists on main, found in its code or a
+  snapshot before the plan is written, or is built by a task the plan names.
 - **A read still out while QA walks moves code the walk proved** (the same ship: a read
   launched mid-walk led to a fix that changed what step 7 had proved, and step 7 ran
   again). No read is out when the walk starts and none starts during it; a fix made after
