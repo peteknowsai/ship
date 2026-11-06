@@ -12,7 +12,8 @@ nothing, and run no test that binds a port or starts a server.
 
 Repo: [repo], worktree [absolute path], branch [branch], HEAD [full sha]. Read the branch
 at that sha; a fix committed while you read is not yours to judge. The diff:
-`git diff [base]...HEAD`.
+`git diff [base branch, e.g. origin/main]...HEAD`: the three dots find the merge base, so
+the brief names a branch, never a sha typed from memory (cel-257's was a commit off).
 
 Assume the writer was wrong at every seam. One model wrote every line, one task at a time;
 you read it whole, in a clean context, with the spec.

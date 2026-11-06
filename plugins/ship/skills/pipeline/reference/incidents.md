@@ -126,7 +126,10 @@ These are facts, not process — the process lives in SKILL.md.
   The REST forms: `gh api repos/<o>/<r>/pulls -f head=<branch> -f base=main -f title=<t> -F
   body=@<file> -F draft=true` to open, `gh api -X PATCH repos/<o>/<r>/pulls/<n> -F
   body=@<file>` to edit, `gh api repos/<o>/<r>/pulls/<n> -q .mergeable_state` (`clean`, `has_hooks`, or `unstable` with
-  only optional checks red, merges; `behind` absorbs main first; `unknown` means GitHub is still working it out: ask again),
+  only optional checks red, merges; `behind` absorbs main first; `unknown` means GitHub is still working it out: ask again; a PR whose head still names the
+  old sha three minutes after a push that `git ls-remote` shows landed is stuck, and a REST
+  close then reopen, `-X PATCH .../pulls/<n> -f state=closed`, then `state=open`, resyncs it
+  at once, unless the repo runs a workflow on a PR's close: cel-257's #358 sat 10 minutes),
   `gh api -X PUT repos/<o>/<r>/pulls/<n>/merge -f merge_method=squash -f sha=<head> -f
   commit_title='<title> (#<n>)' -F commit_message=@<body file>` to merge, so the squash commit
   takes the PR body, then `git push origin --delete <branch>`.

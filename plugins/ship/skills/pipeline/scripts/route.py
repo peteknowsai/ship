@@ -21,6 +21,8 @@ clock alone.
   route.py log recall=<shown> used=<n> ...
                                  append how many of the decisions `decisions.py relevant`
                                  showed the ship it actually used; never a BUILD task
+  route.py adopt <n>[,<n>...]    from the worktree, mark tasks an earlier session built as done,
+                                 with no ledger row, since their time and first pass are its own
   route.py readers repo=<r> ship=<s>
                                  exit 0 once both branch readers are logged for the ship
                                  (a wonder row whose note starts "out" counts, for Muse
@@ -263,6 +265,14 @@ def log(pairs):
     if task_row:
         mark_build(os.getcwd(), task=row['task'])
     return row
+
+
+def adopt(tasks):
+    if not re.fullmatch(r'\d+[a-z]?(,\d+[a-z]?)*', tasks):
+        raise SystemExit('route adopt: give plan tasks, e.g. route.py adopt 1,2,3')
+    if not stage_marker(os.getcwd()):
+        raise SystemExit('route adopt: run it from the ship worktree')
+    mark_build(os.getcwd(), task=tasks)
 
 
 def rows():
@@ -615,6 +625,17 @@ def selftest():
         check('a ledger it cannot write says to rerun with the sandbox off, and the clock stays for the rerun',
               'sandbox off' in said and read_route(os.path.join(repo, '.ship-route.json'))['anchor'] == anchor
               and open(stage).read() == 'build:6:9')
+        os.chdir(repo)
+        try:
+            ledger_before, n_before = len(rows()), int(open(stage).read().split(':')[1])
+            adopt('8')
+            adopted = (len(rows()) == ledger_before and open(stage).read() == f'build:{n_before + 1}:9'
+                       and '8' in open(os.path.join(repo, '.ship-done')).read().split())
+            bad = refused(adopt, 'all')
+        finally:
+            os.chdir(plain)
+        check('adopt marks a task an earlier session built as done and writes no ledger row; a non-task refuses',
+              adopted and 'give plan tasks' in bad)
         last = open(os.path.join(repo, '.ship-gates')).read().splitlines()[-1]
         check('gate returns the command\'s exit code and records the run beside the marker',
               code == 3 and json.loads(last)['ok'] is False)
@@ -638,6 +659,8 @@ if __name__ == '__main__':
         sys.exit(gate(args[1:]))
     elif args and args[0] == 'log':
         log(args[1:])
+    elif len(args) == 2 and args[0] == 'adopt':
+        adopt(args[1])
     elif args and args[0] == 'readers':
         sys.exit(readers(args[1:]))
     elif args == ['report']:
