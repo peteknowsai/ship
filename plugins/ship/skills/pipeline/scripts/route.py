@@ -168,13 +168,14 @@ def gate(argv, start=None):
     except OSError as error:
         print(f'route gate: {argv[0]}: {error.strerror}', file=sys.stderr)
         code = 127
-    # the verdict as its last line, so a `| tail` shows it (cel-263 reran a suite to read one)
-    verdict = 'PASS' if code == 0 else f'FAIL (exit {code})'
-    print(f"route gate: {verdict} {' '.join(argv)[:120]} ({time.time() - began:.0f}s)", flush=True)
     runs = beside_marker(start or os.getcwd(), '.ship-gates')
     if runs:
         with open(runs, 'a') as f:
             f.write(json.dumps({'ts': int(time.time()), 'ok': code == 0, 'cmd': ' '.join(argv)[:200]}) + '\n')
+    # the verdict last and on stderr, after the row: a `| tail` can't hide it (cel-263 reran a
+    # suite to read one), and a closed stdout pipe can't cost the row
+    verdict = 'PASS' if code == 0 else f'FAIL (exit {code})'
+    print(f"route gate: {verdict} {' '.join(argv)[:120]} ({time.time() - began:.0f}s)", file=sys.stderr)
     return code
 
 
@@ -611,7 +612,7 @@ def selftest():
             log(['task=5,6', 'engine=opus'])
             import contextlib, io
             gate_out = io.StringIO()
-            with contextlib.redirect_stdout(gate_out):
+            with contextlib.redirect_stderr(gate_out):
                 code = gate([sys.executable, '-c', 'import sys; sys.exit(3)'])
         finally:
             os.chdir(plain)
