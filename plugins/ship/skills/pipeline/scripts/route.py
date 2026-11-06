@@ -21,6 +21,9 @@ clock alone.
   route.py log recall=<shown> used=<n> ...
                                  append how many of the decisions `decisions.py relevant`
                                  showed the ship it actually used; never a BUILD task
+  route.py log task=<n> status=parked note=<why> ...
+                                 a plan task Pete let the ship land without; it counts as
+                                 logged and stays out of the report's build times
   route.py adopt <n>[,<n>...]    from the worktree, mark tasks an earlier session built as done,
                                  with no ledger row, since their time and first pass are its own
   route.py readers repo=<r> ship=<s>
@@ -244,6 +247,8 @@ def log(pairs):
     if 'task' in row and not re.fullmatch(r'\d+[a-z]?(,\d+[a-z]?)*', str(row['task'])):
         raise SystemExit(f"route log: task={row['task']} isn't a plan task (3, 3b or 5,6); "
                          "a reader's tally is review=<engine> stage=<plan|branch> real= false= nits=")
+    if row.get('status') == 'parked' and ('task' not in row or 'note' not in row):
+        raise SystemExit("route log: a parked task needs task=<n> and note=<why it wasn't built>")
     if 'task' in row and 'review' not in row and 'note' not in row and row.get('repo') and row.get('ship'):
         earlier = logged(row['repo'], row['ship'], set(str(row['task']).split(',')))
         if earlier:
@@ -324,6 +329,19 @@ def readers(pairs):
         raise SystemExit('route readers: give repo=<repo> ship=<slug>')
     marker = stage_marker(os.getcwd())  # a cross-repo ship runs this from the launch repo
     root = os.path.dirname(marker) if marker else '.'
+    saved = beside_marker(os.getcwd(), '.ship-route.json')
+    route = saved and read_route(saved)
+    if route:  # yeoman-coverage landed with task 7 unbuilt, recorded only by a note in the plan
+        done_file = beside_marker(os.getcwd(), '.ship-done')
+        done = set(open(done_file).read().split()) if os.path.isfile(done_file) else set()
+        todo = [str(t.get('label', t.get('n'))) for t in route.get('tasks', [])
+                if str(t.get('label', t.get('n'))) not in done]
+        if todo:
+            print(f"route readers: plan task {', '.join(todo)} is neither built nor parked; build and log "
+                  "it (route.py adopt <n> if an earlier session built it), or, on Pete's word to land "
+                  "without it, route.py log repo= ship= task=<n> status=parked note=<why> and name it in "
+                  "the PR body", file=sys.stderr)
+            return 1
     since = branch_start(root)
     seen = {r['review'] for r in rows() if (r.get('repo'), r.get('ship')) == (want['repo'], want['ship'])
             and r.get('review') in ('wonder', 'opus')
@@ -404,7 +422,7 @@ def report():
     everything = rows()
     reviews = [r for r in everything if 'review' in r]
     recalls = [r for r in everything if 'recall' in r]
-    tasks = [r for r in everything if 'review' not in r and 'recall' not in r]
+    tasks = [r for r in everything if 'review' not in r and 'recall' not in r and r.get('status') != 'parked']
 
     def mean(group, key):
         values = [r[key] for r in group if isinstance(r.get(key), (int, float)) and not isinstance(r[key], bool)]
@@ -689,6 +707,25 @@ def selftest():
         check('adopt marks a plan task done, writes no ledger row and restarts the clock; '
               'a non-task or a task the plan lacks refuses',
               adopted and 'give plan tasks' in bad and 'not a task' in outside)
+        import contextlib, io
+        os.chdir(repo)
+        try:
+            todo_before, todo_after = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stderr(todo_before):
+                readers(['repo=ship', 'ship=routed'])
+            done = set(open(os.path.join(repo, '.ship-done')).read().split())
+            left = [str(t.get('label', t.get('n'))) for t in read_route(os.path.join(repo, '.ship-route.json'))['tasks']
+                    if str(t.get('label', t.get('n'))) not in done]
+            no_note = refused(log, ['repo=ship', 'ship=routed', f'task={left[0]}', 'status=parked'])
+            for t in left:
+                log(['repo=ship', 'ship=routed', f'task={t}', 'status=parked', 'note=needs the Mac'])
+            with contextlib.redirect_stderr(todo_after):
+                readers(['repo=ship', 'ship=routed'])
+        finally:
+            os.chdir(plain)
+        check('readers refuses while a plan task is neither built nor parked; a parked one needs its '
+              'note and then clears it', left and f'plan task {left[0]}' in todo_before.getvalue()
+              and 'note=<why' in no_note and 'neither built' not in todo_after.getvalue())
         last = open(os.path.join(repo, '.ship-gates')).read().splitlines()[-1]
         check('gate returns the command\'s exit code and records the run beside the marker',
               code == 3 and json.loads(last)['ok'] is False)

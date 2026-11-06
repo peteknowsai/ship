@@ -123,7 +123,11 @@ the PR body's first lines. Messages between sessions are exempt.
 ## Working rules
 
 - **Call this skill's scripts by absolute path**, the base directory the harness printed when
-  it loaded plus `/scripts/`, typed out in full, never through a shell variable.
+  it loaded plus `/scripts/`, typed out in full, never through a shell variable, or the newer
+  copy stage.sh or the recap names once ship is updated. A script file in the job's tmp reads
+  that path each time it runs, `S=$(jq -r '.plugins["ship@ship"][0].installPath'
+  ~/.claude/plugins/installed_plugins.json)/skills/pipeline/scripts`, since a path typed into
+  it goes stale at the next update (yeoman-coverage's full-gates.sh).
 - **The worktree guard** refuses any command it can't prove stays in the worktree, and
   misreads some that do (incidents: The worktree guard). Read and search with the Read and
   Grep tools; one plain git command per call; anything multi-step, any heredoc, loop or
@@ -487,7 +491,9 @@ one with uncommitted work, one a live session holds (wt's 💬), or one under tw
 - **The driver builds every task itself, in plan order**, test first where the task names its
   tests. Per task: read the diff, run the gates scoped through `route.py gate` (one call per
   check, so a red is one fix round), commit, then `route.py log`. Build all M tasks in one
-  session; land only when the whole plan is built. A run that skipped `route.py plan` writes
+  session; land only when the whole plan is built, or a task Pete lets go is logged
+  `status=parked note=<why>` and named in the PR body: `route.py readers` refuses while a task
+  is neither. A run that skipped `route.py plan` writes
   `build:0:<M>` itself.
 - **Push at every milestone and hand Pete the links.** After a commit, push. With a per-push
   `preview:`, run it once the builds settle, never blocking the next task, and post one line
