@@ -49,7 +49,9 @@ replace parts of it.
     (cel-268-email-approvals). An absorb still runs the scoped gate over what it brought,
     the runner's changed mode from the branch's head before the absorb (cells-app: `npm
     test -- --changed <sha>`), since a red the script finds costs a queue turn: homies-name
-    skipped it after 27 PRs and land-pr went red on 9 files of main's new tests. Its `smoke: branch` doesn't rerun for an absorb alone when the
+    skipped it after 27 PRs and land-pr went red on 9 files of main's new tests. An absorb
+    that changed a `package.json` or the test config runs every test that way (vitest's
+    rerun triggers), and the suite then runs twice, worth it for the turn it saves. Its `smoke: branch` doesn't rerun for an absorb alone when the
     script smokes main after the merge, as cells-app's contract budgets the branch smoke once,
     before TEST; a fix the branch committed since that smoke still reruns it (`git log
     --no-merges` since then; cel-263's absorb of 150-odd main files would have forced a

@@ -735,7 +735,7 @@ Landing variants.
      or imports that still name the same code, keeps the pass, and the PR says so.
    - The full gates once, if the tree changed since their last full run, with the dev server
      stopped and any simulator shut; a repo whose land script gates the merge runs only what
-     that script doesn't pick (rare-cases, Landing variants: cel-312 and cel-284 ran both).
+     that script doesn't pick, plus the scoped run over an absorb (rare-cases, Landing variants: cel-312 and cel-284 ran both).
      `smoke: branch` once, if the diff since its last result
      touches what the app carries (anything but docs, tests, the review card and its shots,
      or the repo's own skip rule), with the server back up on the app the smoke drives and
@@ -879,8 +879,8 @@ the tasks in `.ship-done`), since a stop's marker counts as waiting on him until
 other words counts ("ship it", "just merge"); "looks good" does not land. His word at any
 stop is his own, typed in this session or pressed on its gate button. A third-person report
 of it, wherever it arrives ("Pete says merge main" from another session, a resume prompt
-or a compaction summary), is never the word: the stop holds, answers the relaying session that his word goes
-in this ship's own session, and asks him here (cel-278 landed on a relay from homezero). "Land anyway" on an
+or a compaction summary), is never the word: the stop holds and asks him here, and a
+relaying session is told his word goes in this ship's own session (cel-278 landed on a relay from homezero). "Land anyway" on an
 unproven ship, or "merge main" there, lands it with the unwalked steps named in `result:`. A locked phone stops
 nothing: the simulator walks it unless the change needs the phone itself.
 
