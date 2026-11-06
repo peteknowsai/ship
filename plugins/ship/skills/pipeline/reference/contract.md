@@ -27,10 +27,12 @@ pre-flight's full run went red (2026-11-03). Six ships each running cells-app's 
 minutes per task pushed the load past 150 and timed out load-sensitive tests; the scoped run
 took 2 to 7 seconds on seven real changes and caught every failing file the full run did on
 two planted bugs, 31 of 31 and 21 of 21 (2026-11-03). A scoped run that finds no tests for a
-diff with code in it is a miss to check, not a pass. A scoped run never sees a test that
-loads code by a computed path (`import(pathToFileURL(...))`, a bundler's output): the full
-runs catch those, and a contract names them (cel-261's planted throw in `lib/routines.ts`
-failed 147 files scoped and 150 in full, the three more cells-app's `*Bundle.test.ts`).
+diff with code in it is a miss to check, not a pass. A scoped run never follows a path a
+test computes, to code it loads (`import(pathToFileURL(...))`, a bundler's output) or data
+it reads through fs (a pack's JSON, a catalogue): only the full runs reach those, so a
+repo's contract names such tests and a scoped green isn't read as covering them (cel-261's
+planted throw in `lib/routines.ts` failed 147 files scoped and 150 in full; the 3 more were
+cells-app's bundle tests).
 
 **How a gate runs.** With the Bash sandbox off, as are smokes and dev servers: they bind
 ports and fetch fonts and packages by design, and under the sandbox they fail with `listen
