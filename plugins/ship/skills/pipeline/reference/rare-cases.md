@@ -46,7 +46,12 @@ replace parts of it.
   - LAND step 1 runs as written, absorb, `smoke: branch`, `stack:`, the Never-stack
     check and the push included, except its full-suite runs (the tree-changed one and the
     one after an absorb): the script's gates stand in for those, so the suite never runs twice
-    (cel-268-email-approvals). Still run in step 1 what the script doesn't pick for
+    (cel-268-email-approvals). Its `smoke: branch` doesn't rerun for an absorb alone when the
+    script smokes main after the merge, as cells-app's contract budgets the branch smoke once,
+    before TEST; a fix the branch committed since that smoke still reruns it (`git log
+    --no-merges` since then; cel-263's absorb of 150-odd main files would have forced a
+    second). A break between the branch and what the absorb brought then first shows in the
+    script's smoke after the merge, and the revert path takes it. Still run in step 1 what the script doesn't pick for
     this diff: cells-app's land-pr runs no `mac:test`, so a `mac/` change runs it there. It
     runs the network gates (`network:typecheck`, `network:test`) only when the PR's own
     diff has a `convex/`, `convex-core/` or `packs/*/convex/` path, which misses a `lib/`
