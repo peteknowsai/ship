@@ -711,6 +711,10 @@ or no GitHub remote: `reference/rare-cases.md`, Landing variants.
      secret list`, `vercel env ls production`, `npx convex env list --prod`. Names only,
      never values. A missing one parks (`stage.sh <root> gate:input`, `needs input:` naming
      it): a production setting is Pete's (screendrop-worker's OWNER_SUB, 2026-11-05).
+   - On a design ship, from the worktree, `route.py log repo= ship= <what decisions.py tally
+     <slug> prints>`: `used` counts decisions that changed what the ship did (a question not
+     asked, a choice made their way, a reversal said out loud). Tally's exit 1 means no recall
+     ran, so no row; route.py refuses a second one, as a return to step 1 would log.
    - Commit the smoke's result line with the review card and its shots (`git restore
      next-env.d.ts` first), and bring the PR body up to date with what shipped (the squash
      takes it). `stack:` once more. For each other open PR, `git cherry HEAD origin/<branch>
@@ -772,10 +776,8 @@ or no GitHub remote: `reference/rare-cases.md`, Landing variants.
      script that ran it. Restart a `worker:` once idle (rare-cases). Ship never runs a
      production deploy or pushes a production database by hand, and never makes Pete run
      one; an integration lane or a promotion is rare-cases.
-7. **Close out.** On a design ship, `route.py log repo= ship= <what decisions.py tally <slug>
-   prints>`, its `used` counting decisions that changed what the ship did (a question not
-   asked, a choice made their way, a reversal said out loud), and the retro carries the count.
-   `show.sh … review <file> done` the landed card.
+7. **Close out.** On a design ship, the retro carries step 1's recall count. `show.sh …
+   review <file> done` the landed card.
    Run RETRO, then end with `result:`: what shipped, one sentence, the live links, `· retro
    sent` when it was, then the follow-ups. Only a landing earns `result:`.
 
