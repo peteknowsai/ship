@@ -65,6 +65,14 @@ replace parts of it.
   - Run it from the worktree in place of LAND's checks and merge, then tear down as
     written (`wt remove`, the remote branch if the script left it, `git branch -D`, the
     marker).
+  - It merges in whatever main took while the PR waited in its queue, gated but never
+    walked. Before its first run, note the main the walk saw, `git merge-base HEAD
+    origin/main`, kept for any rerun; after it merges, `git diff --name-only <that sha>
+    <merge commit>^` lists those files. One that overlaps what the QA run walked, as step 1
+    judges overlap, goes in the `result:` line and the retro as walked code main changed
+    unwalked, for a follow-up to walk on main. Ship reruns nothing on main: its server,
+    people and next landing's restart aren't the ship's (cel-284's land-pr merged #458's
+    `lib/team.ts`, the file its walk drove, six minutes before its own merge).
   - A run cut off before its last line (a reboot, a lost session; cel-301's died
     mid-gates): `gh pr view <n> -R <owner/repo> --json state,headRefOid,mergeCommit`.
     - OPEN: run it again. It clears a lock whose pid is dead, but after a reboot a new
