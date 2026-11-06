@@ -752,12 +752,11 @@ Landing variants.
      ran, so no row; route.py refuses a second one, as a return to step 1 would log.
    - Commit the smoke's result line with the review card and its shots (`git restore
      next-env.d.ts` first), and bring the PR body up to date with what shipped (the squash
-     takes it). `stack:` once more. For each other open PR, a script file finds its commits this
-     branch carries: `git cherry HEAD origin/<branch> origin/main` prints `-` for a copy, and
-     a sha in both `git rev-list origin/main..HEAD` and `git rev-list
-     origin/main..origin/<branch>` is one carried as-is. A hit lands after that PR, unless
-     it's a draft (`gh pr view <n> --json isDraft`) and every shared commit docs only (`git
-     show --stat <sha>`): this branch lands first and comments on the draft naming the
+     takes it). `stack:` once more. `carried.sh <owner/repo>` lists each commit this branch
+     carries from an older open PR, copied or as-is, leaving out what main has: `#<n>
+     <draft|ready> <branch> <sha> <docs|code> <count> files: ...`, exit 1 on any, 2 when it
+     couldn't check. A hit lands after that PR, unless it's a draft and its every line says
+     `docs`: this branch lands first and comments on the draft naming the
      overlap (cel-139 carried spike #243's docs commit).
    - Stop the worktree's dev server with the repo's stop command, from the worktree; then
      `listener.sh <port> 1` must find nothing (one still there stops by its process group).
@@ -869,7 +868,7 @@ the tasks in `.ship-done`), since a stop's marker counts as waiting on him until
 |---|---|---|---|
 | Storyboard round (GATED) | `gate:1` | ✋ storyboard? and the page | reactions, or "lock it" |
 | Plan card with a call | `gate:2` | ✋ go? and the card | "go", or the call |
-| A step only his login can do, a thing only he can create, or a genuine fork mid-BUILD | `gate:input` | the exact step, or the fork and ship's pick | "done", or the pick |
+| A step only his login can do, a thing only he can create, a genuine fork mid-BUILD, or an answer built on from a relay (cel-262's white blink reversed his locked "no blink"), which the review card flags | `gate:input` | the exact step, or the fork and ship's pick | "done", or the pick |
 | Money path, any repo, `land: auto` included | `gate:test` | ✋ try it, then merge main? | "merge main" |
 | One-way door (not on `land: auto`) | `gate:test` | ✋ try it, then merge main? | "merge main" |
 | A change he said he'd try or see first, a copy change included (not on `land: auto`) | `gate:test` | ✋ try it, then merge main? | "merge main" |
