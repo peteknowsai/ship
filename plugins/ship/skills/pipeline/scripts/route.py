@@ -162,6 +162,9 @@ def gate(argv, start=None):
     marker, and return its exit code."""
     if not argv:
         raise SystemExit('route gate: give the gate command, e.g. route.py gate bash gates.sh')
+    if len(argv) == 1 and any(c.isspace() for c in argv[0]):  # cel-302's "npm run typecheck"
+        raise SystemExit(f"route gate: {argv[0]!r} runs as one program name; pass its words "
+                         "separately (route.py gate npm run typecheck), or bash -c '<cmd>'")
     began = time.time()
     try:
         code = subprocess.call(argv)
@@ -327,10 +330,18 @@ def readers(pairs):
             and (since is None or logged_at(r) is None or logged_at(r) >= since)}  # a reused slug's old rows
     missing = [name for name in ('wonder', 'opus') if name not in seen]
     if missing:
+        key = lambda slug: (re.match(r'[a-z]+-\d+', slug) or [slug])[0]  # cel-302 of cel-302-usage-deny
+        near = sorted({str(r['ship']) for r in rows() if r.get('repo') == want['repo'] and r.get('ship')
+                       and r['ship'] != want['ship'] and r.get('review') in ('wonder', 'opus')
+                       and (since is None or logged_at(r) is None or logged_at(r) >= since)
+                       and (str(r['ship']).startswith(want['ship']) or want['ship'].startswith(str(r['ship']))
+                            or key(str(r['ship'])) == key(want['ship']))})
         print(f"route readers: {want['ship']} has no {' or '.join(missing)} branch row since the branch "
               "began; log the read (review=<reader> stage=branch real= false= nits=) before landing, "
               "review=wonder stage=branch note=out:<exit> when Muse was down, or review=opus "
-              "stage=branch note=skipped:budget when Pete capped spend", file=sys.stderr)
+              "stage=branch note=skipped:budget when Pete capped spend"
+              + (f"; rows since then are under ship={', '.join(near)}: pass that slug, or log under "
+                 "this one" if near else ''), file=sys.stderr)
         return 1
     if card_missing(want['ship'], root):
         print(f"route readers: this branch adds no review card for {want['ship']}; commit it "
@@ -563,6 +574,13 @@ def selftest():
                                                            'stage': 'branch', 'real': 1}) + '\n')
             check("a reused slug's rows from before the branch began don't count",
                   readers(['repo=ship', 'ship=cel-9-thing']) == 1)
+            log(['repo=ship', 'ship=cel-9', 'review=opus', 'stage=branch', 'real=1'])
+            import contextlib, io
+            hint = io.StringIO()
+            with contextlib.redirect_stderr(hint):
+                readers(['repo=ship', 'ship=cel-9-thing'])
+            check("a refusal names the near slug this branch's rows went under",
+                  'under ship=cel-9:' in hint.getvalue())
             log(['repo=ship', 'ship=cel-9-thing', 'review=wonder', 'stage=branch', 'real=1'])
             log(['repo=ship', 'ship=cel-9-thing', 'review=opus', 'real=2'])
             check('readers refuses a landing with both readers but no card',
@@ -667,6 +685,8 @@ def selftest():
         last = open(os.path.join(repo, '.ship-gates')).read().splitlines()[-1]
         check('gate returns the command\'s exit code and records the run beside the marker',
               code == 3 and json.loads(last)['ok'] is False)
+        check('a command in one quoted string is refused before it runs or logs',
+              'separately' in refused(gate, ['npm run typecheck']))
         check('gate ends on its own verdict line', gate_out.getvalue().startswith('route gate: FAIL (exit 3) '))
         os.remove(stage)
         plan(shipped)

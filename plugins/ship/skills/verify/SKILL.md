@@ -177,6 +177,9 @@ the red, and the evidence says main's page was unreachable.
   the phrasing, each run through main's wording and the branch's, the same inputs, 3 fresh
   sessions each, both quoted (the pipeline's replay rule): cel-264's "being there answers
   it" passed an evening showing and failed a morning one.
+- A feature that reads a number a provider reports (cost, tokens) gets one real value read
+  back from the runtime before a walk is built on it: cel-302 lost two rounds to $0.03 and
+  $0.002 caps before finding its model reports a cost of 0.
 - A CSS rule is proven by computed style on the real element (`evaluate_script` with
   `getComputedStyle`), never by a test that greps the stylesheet: yonder-skin's underline
   passed one and read `none` on the page, beaten by a more specific rule.
