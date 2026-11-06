@@ -54,6 +54,11 @@ replace parts of it.
     runs under `network:test`). So step 1 runs both when the branch changes code
     with no such path, or an absorb brought one, and never on a diff of only what never
     ships.
+  - Right before each run, `git fetch origin` and hold main's new files (`git diff
+    --name-only HEAD...origin/main`) against what the QA run walked, by step 1's absorb
+    rule, since the script merges them in unwalked (cel-284's land-pr merged #383 and
+    #473's `lib/team.ts`, the file its walk drove). What lands while it waits in the queue
+    is past that check; main's smoke after the merge covers it.
   - Push everything first (it lands the PR's pushed head), put the final evidence in a
     commit message rather than only the PR body (its commit never reads the body), and stop
     the worktree's dev server and any simulator before it runs, since its suite is

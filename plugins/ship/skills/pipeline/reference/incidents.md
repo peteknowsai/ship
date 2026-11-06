@@ -286,7 +286,9 @@ why `shared-dev` is now an opt-out.
   the rule again comes here, not to another delta read. The harness counts an effect inside
   the mock once it succeeds, or reads vitest's `mock.settledResults`, never an async mock's
   `mock.results`, which records a rejected call as type "return": hello-straight-in's first harness counted every failed
-  tell as delivered and read green on broken code.
+  tell as delivered and read green on broken code. One that takes over a second alone gets
+  its own timeout, since the runner's default fails it under load (cel-284's 500-case fuzz
+  ran 3.1 s alone and timed out at vitest's 5 s default in a land run at load 130).
 - **A read still out while QA walks moves code the walk proved** (the same ship: a read
   launched mid-walk led to a fix that changed what step 7 had proved, and step 7 ran
   again). No read is out when the walk starts and none starts during it; a fix made after
