@@ -357,7 +357,9 @@ prints the copy's name, the BACKEND the QA run pins. The worktree's `convex dev`
 Convex plugin's Stop hook push to the copy; the Convex MCP tools don't follow it, so read and
 write the copy with the CLI from the app-dir (`npx convex data`, `npx convex run`), never the
 MCP. The hook fires only when a turn ends, so an edit under `convex/` in REVIEW or TEST goes
-to the copy with `npx convex dev --once` before the next QA step (CEL-103). Stripe and Clerk
+to the copy with `branch-db.py push <worktree> [<app-dir>]` before the next QA step (CEL-103):
+a plain `npx convex dev --once` pushes wherever the app-dir's `.env.local` points, and one up
+never copied still points at shared dev. Stripe and Clerk
 webhooks still reach shared dev only, so a webhook flow is tested there or said untested.
 The copy expires after 7 days; an older branch restores its env files from main and runs
 `up` again. `up` refuses while a deploy key sits in the app's env files. Other backends:
@@ -577,9 +579,9 @@ Wonder read where Sizing says.
 
 - `stage.sh <root> review`. **Sync with main**: `git fetch origin`, absorb in the worktree
   in a call of its own (rebase, or merge if unsafe) and see it clean; rerun the repo's install
-  when the absorb changed a lockfile or the workspace list; on `copy`, push absorbed Convex
-  changes to the copy with `npx convex dev --once` in each app-dir (muse-core-loops hit a
-  function its copy lacked); on `per-branch`, rare-cases' re-deploy. **When the absorb
+  when the absorb changed a lockfile or the workspace list; on `copy`, `branch-db.py push
+  <worktree> [<app-dir>]` for each app-dir `up` copied (muse-core-loops hit a function its
+  copy lacked); on `per-branch`, rare-cases' re-deploy. **When the absorb
   changed the tree, the full gates run now, before either reader starts**, since a gate that
   builds rewrites tracked files under Muse's read. An absorb that touched the repo's
   `CLAUDE.md` / `AGENTS.md` can change the contract: reread it. Review against a stale fork
@@ -723,7 +725,9 @@ Landing variants.
      /api/account` as them, the checks skill's recipe, since `npm run prune -- --people
      --finish` waits on every other landing's lock: cel-297 stalled behind #442's).
    - `stage.sh <root> land`, `git fetch origin`; if main moved, absorb it in a call of its own
-     and see it merged clean before any gate (CEL-140 gated a half-merged tree). An absorb
+     and see it merged clean before any gate (CEL-140 gated a half-merged tree). On `copy`, every
+     absorb is pushed with `branch-db.py push` as REVIEW's sync says, before any gate or server
+     restart, since code outside `convex/` is deployed too (cel-311's copy ran old functions). An absorb
      whose files (`git diff --name-only HEAD...origin/main` after the fetch and before the
      absorb, one plain call, right for a merge or a rebase) overlap what the QA run walked or measured reruns those steps on the merged
      tree (the server restarted on it, or a preview's new build); an overlap of only tests,
