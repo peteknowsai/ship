@@ -51,8 +51,11 @@ one is another ship's to shut down mid-QA (2026-10-14).
 
 ## The walk
 
-`agent-device open <bundle> --device "iPhone PM" --foreground` (without `--device` it picks a
-simulator), then press, fill and scroll with `--settle` and judge from the diff it prints;
+`agent-device open <bundle> --platform ios --udid <udid> --session <name> --foreground` (the
+udid from the repo's own iOS script where it prints one, cells-app's `ios-branch.sh` IOS
+line, else `xcrun devicectl list devices` or `xcrun simctl list devices`; `--device "iPhone
+PM"` failed twice with CoreDeviceError 10002 where the udid worked first try,
+hello-straight-in), then press, fill and scroll with `--settle` and judge from the diff it prints;
 `close` when done. What the phone taught (cells-app, 2026-10-05):
 
 - A simulator just cloned or created times out on its first snapshot ("Daemon request timed

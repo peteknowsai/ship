@@ -684,9 +684,13 @@ Wonder read where Sizing says.
 ### 6 · LAND — on the QA pass, or Pete's word  → marker: `land`, then removed
 
 Mechanics only: nothing is reviewed here. The checks and the merge run in the worktree, so a
-refusal leaves a tree to fix in; the main checkout comes after. A `land:` other than `pr`, a
-repo's own land script, a session launched inside its worktree, a worktree ship didn't make,
-or no GitHub remote: `reference/rare-cases.md`, Landing variants.
+refusal leaves a tree to fix in; the main checkout comes after. A repo with its own land
+script lands every PR through it, a ship's own included, even when its contract names it
+only for PRs built elsewhere: cells-app's `land-pr.sh` absorbs main and gates the merged tree right before
+it merges, and cel-326 and hello-straight-in, merging around it, re-absorbed a busy main by
+hand, one three times. That script, a `land:` other than `pr`, a session launched inside
+its worktree, a worktree ship didn't make, or no GitHub remote: `reference/rare-cases.md`,
+Landing variants.
 
 1. **In the worktree, make it landable.**
    - Release what the run started from inside it: a QA-run directory's own teardown, its
