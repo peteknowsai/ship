@@ -69,14 +69,15 @@ runs the gates (cells-app's land-pr.sh): rerun the failed files alone, and when 
 run the landing script again (CEL-226 went red on two untouched files at a load near 150,
 then landed on the rerun).
 
-**Red on main too.** A red that isn't a timeout, in a file the diff never touched, that
-fails again when that file runs alone twice through the repo's test script, while `git diff
---quiet origin/main -- <the file and what it imports>` shows the branch left them as main
-has them, is main's own: never fixed inside this ship. If the gate that lands the branch
-passes anyway (a land script that runs other tests), it lands with the red named in the PR
-and the `result:` line. If that gate stops on it, park (`gate:input`, `needs input:` naming
-the test and both runs), since landing past a red is Pete's call (cel-312's full run exited
-1 on an unhandled `ReferenceError` from a ProseMirror timer after `test/fileRoundTrip.test.ts`).
+**Red in an untouched file, not a timeout.** A red that Red under load doesn't cover (a
+failed test, or an unhandled error with every test otherwise passing, only in files the diff
+never touched, with no timeout and no set that moves) runs the same command once more,
+keeping the first run's output, never loosened. That rerun comes once per ship: green goes
+on, with the first red, its file and its output path a follow-up in the `result:` line; a
+second such red, in any file at any stage, is a real red to root-cause (cel-312 and cel-333:
+an unhandled `ReferenceError` from a ProseMirror timer after cells-app's
+`test/fileRoundTrip.test.ts`, which failed 1 of 5 run alone; cel-333's second land-pr run
+passed and merged).
 
 **A production build beside a dev server.** A production build in a worktree whose dev
 server is up wipes the server's record in `.next`, so the repo's stop command later finds
