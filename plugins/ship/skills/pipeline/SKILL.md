@@ -721,10 +721,7 @@ or no GitHub remote: `reference/rare-cases.md`, Landing variants.
    and the merge spend GitHub's GraphQL budget, which sibling ships exhaust while `gh api
    rate_limit` still shows budget: the REST forms are in incidents: GitHub.
 3. **Merge**: `gh pr merge <#> -R <o/r> --squash`, from the worktree, without
-   `--delete-branch`, so nothing local runs and a refusal leaves the tree. Main moving again
-   after step 1's absorb goes back to step 1 when its files (`git diff --name-only
-   HEAD...origin/main` after a fetch) overlap the branch's diff or what QA walked; one that
-   misses both merges as is, the PR naming the commit (cel-326, after CEL-336's voice files).
+   `--delete-branch`, so nothing local runs and a refusal leaves the tree.
 4. **Leave the worktree**: `ExitWorktree({action:"keep"})`. Every command after names the
    main checkout (`git -C <main>`, `wt -C <main>`): the shell can still sit in the worktree
    or a removed folder (CEL-233, CEL-217). `wt -C <main> remove feature/<slug> -f`, then

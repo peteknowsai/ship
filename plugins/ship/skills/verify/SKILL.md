@@ -149,11 +149,11 @@ what he says mid-run changes the run.
 - A fix's regression test runs once against main's copy of the fix's source files and goes
   red: one script swaps them in (`git show origin/main:<path> > <path>`), runs the test and
   restores them (`git checkout HEAD -- <path>`), outside any walk, since the swap hot-reloads
-  a running server. Close every page on that server first (`close_page`), since an open page
-  runs main's code while it is swapped in, and any step judged after it is walked again
-  from a fresh load, console, requests and audits included (cel-326's open page logged 11
-  "Export doesn't exist" errors that read as a branch bug); quote that red in the evidence
-  (CEL-100). A data fix is checked on a row main's
+  a running server. A page or app open on that server runs main's code while it is swapped
+  in, so a walk already under way records its verdicts and closes each one first
+  (`close_page`, or the app quit), and whatever is judged after the restore is judged from a
+  fresh load, console, requests and audits included (cel-326's open page logged 11 "Export
+  doesn't exist" errors that read as a branch bug); quote that red in the evidence (CEL-100). A data fix is checked on a row main's
   code gets wrong: every card live-label-rows first reached was labeled right by the old match.
 - A feature that returns a list gets one case where a large result is certain, and a small
   count there fails: homebody-onboarding's rental search found 1 of 6 real Denver homes, and
