@@ -26,6 +26,10 @@ Find, with file:line evidence for each:
 - **A screen that waits on someone else with no way back to it.** Trace how the user
   returns once the other side acts: one plan's payoff screen was unreachable without
   re-walking the intro.
+- **A new floating surface** (a popover, a hover card, a menu that stays open while the
+  person works) **that an app-wide check counts as a modal or overlay**: get-the-apps' card
+  took `role="dialog"`, ModalLayer's `overlayIsOpen` went true, and ⌘B and every other
+  shortcut stopped. Both branch readers caught it; the plan read didn't.
 - **A step that copies a secret from somewhere it can't be read back** (a Vercel sensitive
   variable pulls as a placeholder): it becomes a planned rotation on both sides, and the
   card says it signs everyone out once.
