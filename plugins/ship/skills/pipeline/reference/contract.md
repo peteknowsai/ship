@@ -69,16 +69,15 @@ runs the gates (cells-app's land-pr.sh): rerun the failed files alone, and when 
 run the landing script again (CEL-226 went red on two untouched files at a load near 150,
 then landed on the rerun).
 
-**Red in an untouched file, not load.** A red that Red under load doesn't explain (a failed
-test, or an unhandled error with every test otherwise passing, only in files the diff never
-touched, at a load under the core count) runs the same command once more, never loosened.
-Green goes on, with the `result:` line naming the first red and its file as a follow-up, and
-route.py's log counting it as a load red. The same file red again parks (`gate:input`,
-`needs input:` naming the file and both runs): whose red it is and whether to land past it
-are Pete's, through a ship that fixes it on main or a landing he runs himself; a different
-red is judged on its own. Nothing in this ship fixes it (cel-312 and cel-333: an unhandled
-`ReferenceError` from a ProseMirror timer after cells-app's `test/fileRoundTrip.test.ts`,
-which failed 1 of 5 run alone; cel-333's second land-pr run passed and merged).
+**Red in an untouched file, not a timeout.** A red that Red under load doesn't cover (a
+failed test, or an unhandled error with every test otherwise passing, only in files the diff
+never touched, with no timeout and no set that moves) runs the same command once more,
+keeping the first run's output, never loosened. That rerun comes once per ship: green goes
+on, with the first red, its file and its output path a follow-up in the `result:` line; a
+second such red, in any file at any stage, is a real red to root-cause (cel-312 and cel-333:
+an unhandled `ReferenceError` from a ProseMirror timer after cells-app's
+`test/fileRoundTrip.test.ts`, which failed 1 of 5 run alone; cel-333's second land-pr run
+passed and merged).
 
 **A production build beside a dev server.** A production build in a worktree whose dev
 server is up wipes the server's record in `.next`, so the repo's stop command later finds
