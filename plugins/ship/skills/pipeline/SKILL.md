@@ -144,10 +144,11 @@ the PR body's first lines. Messages between sessions are exempt.
   localhost reads as a dead server. Everything else stays in the sandbox.
 - **`$TMPDIR` changes with the sandbox** (`/tmp/claude-<uid>` inside, `/var/folders/…/T`
   outside), so anything that crosses gets an absolute path under the job's tmp.
-- **Env files are given to the tool** (`tsx --env-file=.env.local`), never sourced. A
-  script that loads the repo's env itself (its checks skill says which) runs without one,
-  since the file's values land first: cells-app's `prepare()` sets the worktree's
-  `APP_ORIGIN` only when it's unset, and `--env-file` put cel-296's seed on main's stage.
+- **Env files are given to the tool** (`tsx --env-file=.env.local`), never sourced. The
+  tool sets the file's values before the script starts and a variable already in the shell
+  beats them, so one that must name this worktree, not main, goes in the shell (cells-app's
+  checks skill: `LOCAL_STAGE=local-<port>`): its `prepare()` fills `APP_ORIGIN` only when
+  unset, and the file's main value put cel-296's seed on main's stage.
 - **Every `gh` call names its repo**, `-R <owner/repo>`: in a fork with an `upstream` remote
   gh resolves against upstream and finds no PR (screendrop-worker, 2026-11-05).
 - **Calls sent together all run**, even when the first fails, so a call that needs another's

@@ -286,10 +286,10 @@ why `shared-dev` is now an opt-out.
   the rule again comes here, not to another delta read. The harness counts an effect inside
   the mock once it succeeds, or reads vitest's `mock.settledResults`, never an async mock's
   `mock.results`, which records a rejected call as type "return": hello-straight-in's first harness counted every failed
-  tell as delivered and read green on broken code. A new test whose time alone, times ten,
-  passes the runner's default timeout gets its own timeout of that size when it's written,
-  since the default fails it under load (cel-284's 500-case fuzz ran 3.1 s alone and timed
-  out at vitest's 5 s in a land run at load 130); an untouched test's timeout is never
+  tell as delivered and read green on broken code. A test the branch adds or slows whose time
+  alone, times 25, passes the runner's default timeout gets its own of that size when it's
+  written, since load slows a run that much (cel-303's land run at 446 on 18 cores), and
+  cel-284's 500-case fuzz ran 3.1 s alone and timed out at vitest's 5 s at load 130; an untouched test's timeout is never
   raised to get past a red (contract.md `gates:`).
 - **A read still out while QA walks moves code the walk proved** (the same ship: a read
   launched mid-walk led to a fix that changed what step 7 had proved, and step 7 ran
