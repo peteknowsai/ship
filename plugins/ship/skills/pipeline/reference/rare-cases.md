@@ -54,11 +54,6 @@ replace parts of it.
     runs under `network:test`). So step 1 runs both when the branch changes code
     with no such path, or an absorb brought one, and never on a diff of only what never
     ships.
-  - Right before each run, `git fetch origin` and hold main's new files (`git diff
-    --name-only HEAD...origin/main`) against what the QA run walked, by step 1's absorb
-    rule, since the script merges them in unwalked (cel-284's land-pr merged #383 and
-    #473's `lib/team.ts`, the file its walk drove). What lands while it waits in the queue
-    is past that check; main's smoke after the merge covers it.
   - Push everything first (it lands the PR's pushed head), put the final evidence in a
     commit message rather than only the PR body (its commit never reads the body), and stop
     the worktree's dev server and any simulator before it runs, since its suite is
@@ -70,6 +65,13 @@ replace parts of it.
   - Run it from the worktree in place of LAND's checks and merge, then tear down as
     written (`wt remove`, the remote branch if the script left it, `git branch -D`, the
     marker).
+  - It merges in whatever main took while the PR waited in its queue, gated but never
+    walked. Before it runs, note the main the walk saw, `git merge-base HEAD origin/main`;
+    after it merges, `git diff --name-only <that sha> <the base its "is green on" line
+    names>` lists those files. One that overlaps what the QA run walked, as step 1 judges
+    overlap, reruns those steps on main's localhost, which its restart just put on the
+    merge, and a red there is a fix-forward EXPRESS ship (cel-284's land-pr merged #458's
+    `lib/team.ts`, the file its walk drove, six minutes before its own merge).
   - A run cut off before its last line (a reboot, a lost session; cel-301's died
     mid-gates): `gh pr view <n> -R <owner/repo> --json state,headRefOid,mergeCommit`.
     - OPEN: run it again. It clears a lock whose pid is dead, but after a reboot a new

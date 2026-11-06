@@ -144,7 +144,10 @@ the PR body's first lines. Messages between sessions are exempt.
   localhost reads as a dead server. Everything else stays in the sandbox.
 - **`$TMPDIR` changes with the sandbox** (`/tmp/claude-<uid>` inside, `/var/folders/…/T`
   outside), so anything that crosses gets an absolute path under the job's tmp.
-- **Env files are given to the tool** (`tsx --env-file=.env.local`), never sourced.
+- **Env files are given to the tool** (`tsx --env-file=.env.local`), never sourced. A
+  script that loads the repo's env itself (its checks skill says which) runs without one,
+  since the file's values land first: cells-app's `prepare()` sets the worktree's
+  `APP_ORIGIN` only when it's unset, and `--env-file` put cel-296's seed on main's stage.
 - **Every `gh` call names its repo**, `-R <owner/repo>`: in a fork with an `upstream` remote
   gh resolves against upstream and finds no PR (screendrop-worker, 2026-11-05).
 - **Calls sent together all run**, even when the first fails, so a call that needs another's
@@ -686,9 +689,9 @@ Wonder read where Sizing says.
 Mechanics only: nothing is reviewed here. The checks and the merge run in the worktree, so a
 refusal leaves a tree to fix in; the main checkout comes after. A repo with its own land
 script lands every PR through it, a ship's own included, even when its contract names it
-only for PRs built elsewhere: cells-app's `land-pr.sh` absorbs main and gates the merged tree right before
-it merges, and cel-326 and hello-straight-in, merging around it, re-absorbed a busy main by
-hand, one three times. That script, a `land:` other than `pr`, a session launched inside
+only for PRs built elsewhere: cells-app's `land-pr.sh` absorbs main and gates the merged
+tree right before it merges, and cel-326 and hello-straight-in, merging around it,
+re-absorbed a busy main by hand, one three times. That script, a `land:` other than `pr`, a session launched inside
 its worktree, a worktree ship didn't make, or no GitHub remote: `reference/rare-cases.md`,
 Landing variants.
 
@@ -709,7 +712,8 @@ Landing variants.
      or imports that still name the same code, keeps the pass, and the PR says so.
    - The full gates once, if the tree changed since their last full run, with the dev server
      stopped and any simulator shut; a repo whose land script gates the merge runs only what
-     that script doesn't pick (rare-cases, Landing variants: cel-312 and cel-284 ran both). `smoke: branch` once, if the diff since its last result
+     that script doesn't pick (rare-cases, Landing variants: cel-312 and cel-284 ran both).
+     `smoke: branch` once, if the diff since its last result
      touches what the app carries (anything but docs, tests, the review card and its shots,
      or the repo's own skip rule), with the server back up on the app the smoke drives and
      its links and keys copied back from the main checkout where a QA of another app left its
