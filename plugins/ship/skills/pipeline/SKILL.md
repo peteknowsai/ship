@@ -122,8 +122,13 @@ the PR body's first lines. Messages between sessions are exempt.
 
 ## Working rules
 
-- **Call this skill's scripts by absolute path**, the base directory the harness printed when
-  it loaded plus `/scripts/`, typed out in full, never through a shell variable.
+- **Call this skill's scripts by absolute path**, typed out in full, never through a shell
+  variable: the base directory the harness printed when it loaded plus `/scripts/`, or the
+  newer copy stage.sh or the recap names once ship is updated. A script file you write into
+  the job's tmp is the one place for a variable, since a path typed into it can't follow an
+  update (yeoman-coverage's full-gates.sh). It starts
+  `S=$(jq -r '.plugins["ship@ship"][0].installPath // empty' ~/.claude/plugins/installed_plugins.json)/skills/pipeline/scripts`
+  then `[ -d "$S" ] || S=<the path you'd type>`, and calls `"$S/route.py"`.
 - **The worktree guard** refuses any command it can't prove stays in the worktree, and
   misreads some that do (incidents: The worktree guard). Read and search with the Read and
   Grep tools; one plain git command per call; anything multi-step, any heredoc, loop or
@@ -233,8 +238,9 @@ worktree:
 - `review=<wonder|opus> stage=<plan|branch> real= false= only= nits=` per reader, timed by
   `out=<out-dir>` on Wonder's row (route.py reads muse.py's `seconds` file there) and by
   `seconds=` from the subagent's reported duration on Opus's; and `recall=<shown> used=<n>`
-  on design ships. `route.py readers repo= ship=` exits 1 until both branch readers are
-  logged since the branch began and the branch adds its review card. `route.py report`
+  on design ships. `route.py readers repo= ship=` exits 1 until every plan task is logged
+  built or parked, both branch readers are logged since the branch began and the branch adds
+  its review card. `route.py report`
   compares engines and readers; if
   handed-off tasks keep needing more fix rounds, job 3 above shrinks.
 
@@ -487,7 +493,9 @@ one with uncommitted work, one a live session holds (wt's 💬), or one under tw
 - **The driver builds every task itself, in plan order**, test first where the task names its
   tests. Per task: read the diff, run the gates scoped through `route.py gate` (one call per
   check, so a red is one fix round), commit, then `route.py log`. Build all M tasks in one
-  session; land only when the whole plan is built. A run that skipped `route.py plan` writes
+  session; land only when the whole plan is built, or a task Pete lets go is logged
+  `status=parked note=<why>` and named in the PR body: `route.py readers` refuses while a task
+  is neither. A run that skipped `route.py plan` writes
   `build:0:<M>` itself.
 - **Push at every milestone and hand Pete the links.** After a commit, push. With a per-push
   `preview:`, run it once the builds settle, never blocking the next task, and post one line
@@ -748,8 +756,9 @@ Landing variants.
      overlap (cel-139 carried spike #243's docs commit).
    - Stop the worktree's dev server with the repo's stop command, from the worktree; then
      `listener.sh <port> 1` must find nothing (one still there stops by its process group).
-   - `route.py readers repo=<r> ship=<slug>` exits 0 (SELF-DIRECTED and GATED): both branch
-     readers logged and the review card committed. Push.
+   - `route.py readers repo=<r> ship=<slug>` exits 0 (SELF-DIRECTED and GATED): every plan
+     task built or parked, both branch readers logged and the review card committed; a
+     parked task it names goes in the PR body. Push.
 2. **GitHub agrees.** `gh pr ready <#> -R <o/r>`; `gh pr view <#> -R <o/r> --json mergeable`
    says `MERGEABLE`; `gh pr checks <#> -R <o/r>`: no checks reported means the local gates
    stand, pending waits (`--watch`), red is fixed in the worktree and back to step 1. These
