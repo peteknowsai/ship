@@ -64,6 +64,11 @@ replace parts of it.
   - Run it from the worktree in place of LAND's checks and merge, then tear down as
     written (`wt remove`, the remote branch if the script left it, `git branch -D`, the
     marker).
+  - A run cut off before its last line (a reboot, a lost session): `gh pr view <n> --json
+    state`. OPEN means it never merged: run it again, since it clears a lock whose pid is
+    dead itself. MERGED means only what follows its merge is left: its restart and smoke
+    (cells-app: `local-pack.sh homebody --restart <merge sha>`) when code changed, then
+    teardown (cel-301, cut off by a reboot mid-gates).
   - When it prints its smoke line (cells-app: `main: <sha> serving, smoke ...`), LAND's own
     `smoke: main` is skipped: one paid smoke per landing. A diff of only what never ships
     gets no main smoke from it; say so in the `result:` line rather than claim one.
