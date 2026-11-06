@@ -55,6 +55,10 @@ one is another ship's to shut down mid-QA (2026-10-14).
 simulator), then press, fill and scroll with `--settle` and judge from the diff it prints;
 `close` when done. What the phone taught (cells-app, 2026-10-05):
 
+- A simulator just cloned or created times out on its first snapshot ("Daemon request timed
+  out ... run agent-device prepare ios-runner"): run `agent-device prepare ios-runner
+  --platform ios --udid <sim>` first with the same `--session` the walk's `open` then uses,
+  about a minute (cel-257).
 - One XCTest runner drives a device at a time. `open` failing twice with "BUILD INTERRUPTED"
   means another session holds it: `pgrep -fl 'xcodebuild.*AgentDeviceRunner'` shows the
   device id and the owner pid in the xctestrun name. Ask that session (ListAgents) or test in

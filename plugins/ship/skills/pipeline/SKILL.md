@@ -292,7 +292,10 @@ and FleetView read `.ship-stage`.
 - **A card key in the idea (`CEL-103`)**: `git branch -a --list '*<key>*'` and `gh pr list
   -R <o/r> --state open --search <key>`. A hit with no live session (none in ListAgents, its
   `.ship-stage` not moving) is a stalled ship: resume it there, PR and all (a fresh fork once
-  rebuilt CEL-103 beside its first run). A hit with a live session is another ship's: tell
+  rebuilt CEL-103 beside its first run). A task it built that `.ship-done` lacks, its plan's
+  files and tests in `git diff <base>...HEAD` and its scoped gates passing through `route.py
+  gate`, gets `route.py adopt <n>[,<n>]` from the worktree, so the recap stops listing it as
+  owed; one half there is built again (cel-257). A hit with a live session is another ship's: tell
   Pete in one line and stop. Then `git log origin/<base> --since=7.days --format='%h %s' --
   <files the card names>`: a merged PR that meets the card's done-when lines closes the card
   instead (CEL-241 rebuilt one).
