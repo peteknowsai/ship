@@ -141,6 +141,16 @@ These are facts, not process — the process lives in SKILL.md.
 
 ## Backends & deploys
 
+- **A retire question that named one zone's hosts** (homies-name, 2026-11-06): Pete was
+  asked to retire the buzz tunnel "on hq, community and *.homezero.md", and its ingress also
+  served buzz.cells.md, live. Before Pete is asked to retire shared infra (a tunnel, a
+  Worker, a bucket), read its own config and list every host it serves, in every zone, not the zone's DNS
+  alone: a tunnel's ingress (`cf zero-trust tunnels cloudflared configurations get <id>`
+  for a remotely managed one, its local yml such as `~/.cloudflared/*.yml` otherwise, where
+  that command comes back empty), a Worker's custom domains account-wide (`cf workers
+  domains list`, since `routes list` reads one zone), a bucket's (`cf r2 buckets domains
+  custom list`).
+
 Most entries below are about `backend: per-branch`, a database preview per branch. Since
 2026-10-14 a Convex repo defaults to `copy`: `branch-db.py` makes the worktree its own dev
 deployment with `convex deployment create dev/<branch> --expiration`, the way Convex's
