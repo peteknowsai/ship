@@ -49,6 +49,10 @@ These are facts, not process — the process lives in SKILL.md.
   stay put when the session enters a worktree; the scratchpad, the job's tmp and
   `~/.claude` are not. Hence `.ship-shots/<slug>/` under the launch directory, excluded
   from git (cel-315 wrote shots to the worktree it had entered and was refused).
+  cel-300 (2026-11-05) went the other way: launched in cells-app's main checkout, it
+  entered its worktree, compacted, and its first browser call was refused a redeem script
+  under the main checkout and took the same file under the worktree. Hence verify tries
+  the launch directory, then the worktree, then inline shots.
 - **Landed worktrees piled up in cells, 82 GB of instances with them** (2026-09-24).
   Seven clean, merged worktrees sat for days, three holding a later ship's branch
   because a session had switched branches inside a finished tree; cells names each
@@ -297,7 +301,10 @@ one plain command per call.
   all (six refusals in eca-finder's v1 API ship); `sed -i` chains (one run hit the guard
   eight times reaching for them).
 - A computed script path, `python3 "$TMPDIR/x.py"`, or a `$VAR` argument even to a binary
-  that isn't git; a stage script called through a shell variable.
+  that isn't git (`sed -n 1,9p "$R"`); a stage script called through a shell variable.
+- Process substitution (`jq … <(sed …)`), and a `<cmd>; cd <dir> && <cmd>` compound even of
+  read-only commands that aren't git (cel-300 lost three calls to these and a `$VAR`
+  operand): one plain call each, or a script file.
 - Read-only commands it misparses: a path segment named `source`, a zsh `echo ==`, a `for`
   loop over `sed`, a heredoc that only writes files, a docker `--format '{{…}}'` string, a
   `python3 -` heredoc whose text says "git".

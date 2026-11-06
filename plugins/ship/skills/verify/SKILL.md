@@ -38,17 +38,21 @@ concluding "looks right" is exactly the failure this skill exists to prevent.
 - `<out-dir>` holds qa.md, result.md, the QA script and the dev log: an absolute path under
   the job's tmp directory (`$CLAUDE_JOB_DIR/tmp`), else `<shots-root>/.ship-shots/<slug>/`.
   Never `/tmp`, where a restart mid-QA wiped one, and never inside the repo's tracked tree.
-- `<shots-root>` is the session's launch directory: the primary checkout when the session
-  started there and then entered a worktree, the worktree only when the session was launched
-  inside it. The chrome-devtools MCP reads and writes only inside its workspace roots, which
-  stay where the session launched (CEL-175, CEL-226, cel-315). Screenshots, `take_snapshot`
-  files and any file the MCP reads go in `<shots-root>/.ship-shots/<slug>/`, always as
-  absolute paths; `.ship-shots` is never committed (the `.ship-*` exclude covers it). In ship
-  the driver passes both. When the MCP refuses every path, the main checkout and the
-  worktree alike (a second ship in one session, entered from the first's removed worktree),
-  take the shot with no `filePath`: its result names the copy saved under the session's
-  `tool-results/`, which the shell copies into `<shots-root>/.ship-shots/<slug>/`, sandbox off
-  (eca-finder class-id-followups).
+- `<shots-root>` is the folder the chrome-devtools MCP will write in. It reads and writes
+  only inside its workspace roots, and only it can say where those are: usually the
+  session's launch directory, even after the session enters a worktree (CEL-175, CEL-226,
+  cel-315), but the worktree for cel-300, whose first browser call came after a compaction,
+  and neither for eca-finder's second ship in one session. So the walk's first screenshot
+  tries the launch directory's `.ship-shots/<slug>/`, then the worktree's; the first that
+  saves is `<shots-root>` for the whole walk, and result.md names it. Screenshots,
+  `take_snapshot` files and any file the MCP reads go in `<shots-root>/.ship-shots/<slug>/`,
+  always as absolute paths; `.ship-shots` is never committed (the `.ship-*` exclude covers
+  it). In ship the driver passes the launch directory. **When neither saves**, take shots
+  and snapshots with no `filePath`: a shot's result names the copy saved under the session's
+  `tool-results/`, which the shell copies into the launch directory's `.ship-shots/<slug>/`,
+  sandbox off, so the card finds it; a snapshot comes back inline. A file the MCP must read
+  (a redeem script, whose secret stays out of the transcript) has no inline form, so its
+  step is `unverifiable` and says why.
 
 ## 1. Preconditions — the caller owns these
 
