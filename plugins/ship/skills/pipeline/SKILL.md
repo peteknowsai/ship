@@ -210,9 +210,10 @@ review <worktree> <brief> <out-dir>`, a background Bash call: read-only, finding
 `<out-dir>/last.md`, `<out-dir>` in the job's tmp (muse.py refuses one inside the worktree).
 Any nonzero exit means Muse is out (5: its quota, with the reset; 2: a usage error, so read
 stderr; 6: the tree changed under it), and so does exit 0 with `last.md` missing or empty,
-which is never a clean read (incidents: Dispatch): a fresh Opus subagent takes Wonder's brief, its row
-is `review=opus … note=for:wonder` so the ledger never credits Wonder with it, and `result:`
-says so. Nothing writes in the worktree while Muse reads, the gates, a build, a
+which is never a clean read (incidents: Dispatch): a fresh Opus subagent takes Wonder's brief, and both
+rows go in (REVIEW's triage): `review=wonder stage=branch note=out:<exit>` for the outage, which
+`route.py readers` asks for, and the stand-in's `review=opus … note=for:wonder`, so the ledger
+never credits Wonder with its read; `result:` says so. Nothing writes in the worktree while Muse reads, the gates, a build, a
 commit and a dev server's start included: `next build` and `next dev` rewrite the tracked
 `next-env.d.ts` (find-three-more, CEL-233), so a server TEST needs is up before the read
 starts. Gitignored files don't count. Muse runs only through `muse.py`, never a hand-typed
@@ -590,8 +591,8 @@ Wonder read where Sizing says.
   outlives a compaction, and the ledger rows and the PR's Reviewed line come from it
   (screendrop-worker rebuilt one from the transcript). Then one row per reader: `route.py log
   repo= ship= review=opus stage=branch real= false= only= nits= seconds=` and the same for
-  `review=wonder` with `out=<out-dir>` in place of `seconds=`, where `only` counts real
-  findings the other missed. Muse out: `review=wonder stage=branch note=out:<exit>`, plus the
+  `review=wonder` with `out=<out-dir>` in place of `seconds=`, where `real` counts this
+  reader's real findings and `only` those of them the other missed. Muse out: `review=wonder stage=branch note=out:<exit>`, plus the
   stand-in's own `review=opus … note=for:wonder` row.
 - **Fix what's real**, each fix run against the cases the issue or spec names before it's
   committed (two readers' fixes added up to a guard that undid eca-finder's loose deck), with

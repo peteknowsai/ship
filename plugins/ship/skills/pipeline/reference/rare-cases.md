@@ -51,9 +51,9 @@ replace parts of it.
     runs the network gates (`network:typecheck`, `network:test`) only when the PR's own
     diff has a `convex/`, `convex-core/` or `packs/*/convex/` path, which misses a `lib/`
     file convex-core imports (#398 landed `network:typecheck` red that way, and its test
-    runs under `network:test`). So step 1 runs both when the branch changes code
-    with no such path, or an absorb brought one, and never on a diff of only what never
-    ships.
+    runs under `network:test`). So step 1 runs both whenever the branch changes code
+    but has no such path, without checking what convex-core imports, or when an absorb
+    brought one; never on a diff of only what never ships.
   - Push everything first (it lands the PR's pushed head), put the final evidence in a
     commit message rather than only the PR body (its commit never reads the body), and stop
     the worktree's dev server and any simulator before it runs, since its suite is
