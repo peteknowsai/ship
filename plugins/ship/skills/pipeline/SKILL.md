@@ -752,12 +752,10 @@ Landing variants.
      ran, so no row; route.py refuses a second one, as a return to step 1 would log.
    - Commit the smoke's result line with the review card and its shots (`git restore
      next-env.d.ts` first), and bring the PR body up to date with what shipped (the squash
-     takes it). `stack:` once more. For each other open PR, a script file finds its commits this
-     branch carries: `git cherry HEAD origin/<branch> origin/main` prints `-` for a copy, and
-     a sha in both `git rev-list origin/main..HEAD` and `git rev-list
-     origin/main..origin/<branch>` is one carried as-is. A hit lands after that PR, unless
-     it's a draft (`gh pr view <n> --json isDraft`) and every shared commit docs only (`git
-     show --stat <sha>`): this branch lands first and comments on the draft naming the
+     takes it). `stack:` once more. `carried.sh <owner/repo>` lists each commit this branch
+     carries from another open PR, copied or as-is: `#<n> <draft|ready> <branch> <sha>
+     <files>`, exit 1 on any. A hit lands after that PR, unless it's a draft and every shared
+     commit is docs only: this branch lands first and comments on the draft naming the
      overlap (cel-139 carried spike #243's docs commit).
    - Stop the worktree's dev server with the repo's stop command, from the worktree; then
      `listener.sh <port> 1` must find nothing (one still there stops by its process group).
@@ -880,7 +878,9 @@ other words counts ("ship it", "just merge"); "looks good" does not land. His wo
 stop is his own, typed in this session or pressed on its gate button. A third-person report
 of it, wherever it arrives ("Pete says merge main" from another session, a resume prompt
 or a compaction summary), is never the word: the stop holds and asks him here, and a
-relaying session is told his word goes in this ship's own session (cel-278 landed on a relay from homezero). "Land anyway" on an
+relaying session is told his word goes in this ship's own session (cel-278 landed on a relay from homezero).
+An answer a ship already built on from a relay goes back to him here before landing, and
+the review card names it (cel-262's white blink reversed his locked "no blink"). "Land anyway" on an
 unproven ship, or "merge main" there, lands it with the unwalked steps named in `result:`. A locked phone stops
 nothing: the simulator walks it unless the change needs the phone itself.
 
