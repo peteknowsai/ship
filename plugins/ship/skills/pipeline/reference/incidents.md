@@ -285,12 +285,18 @@ why `shared-dev` is now an opt-out.
   than the case, and commit the test with the fix. A delta read's finding that would rebuild
   the rule again comes here, not to another delta read. The harness counts an effect inside
   the mock once it succeeds, or reads vitest's `mock.settledResults`, never an async mock's
-  `mock.results`, which records a rejected call as type "return": hello-straight-in's first harness counted every failed
-  tell as delivered and read green on broken code. A test the branch adds or slows whose time
-  alone, times 25, passes the runner's default timeout gets its own of that size when it's
-  written, since load slows a run that much (cel-303's land run at 446 on 18 cores), and
-  cel-284's 500-case fuzz ran 3.1 s alone and timed out at vitest's 5 s at load 130; an untouched test's timeout is never
-  raised to get past a red (contract.md `gates:`).
+  `mock.results`, which records a rejected call as type "return": hello-straight-in's first
+  harness counted every failed tell as delivered and read green on broken code. A test the
+  branch adds or slows whose time alone, times 25, passes the runner's default timeout gets
+  its own of that size when it's written, since load slows a run that much (cel-303's land
+  run at 446 on 18 cores), and cel-284's 500-case fuzz ran 3.1 s alone and timed out at
+  vitest's 5 s at load 130; an untouched test's timeout is never raised to get past a red
+  (contract.md `gates:`).
+- **A QA case can press a control main doesn't have.** cel-332's plan copied the card's
+  acceptance criteria as cases: the phone's long-press strip showed no chosen mark, and
+  neither app let you react to your own line, which cost a fix round and a step rewritten
+  mid-walk. Each control a case presses either exists on main, found in its code or a
+  snapshot before the plan is written, or is built by a task the plan names.
 - **A read still out while QA walks moves code the walk proved** (the same ship: a read
   launched mid-walk led to a fix that changed what step 7 had proved, and step 7 ran
   again). No read is out when the walk starts and none starts during it; a fix made after

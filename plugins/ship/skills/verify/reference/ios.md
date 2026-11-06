@@ -56,7 +56,9 @@ udid from the repo's own iOS script where it prints one, cells-app's `ios-branch
 line, else `xcrun devicectl list devices` or `xcrun simctl list devices`; `--device "iPhone
 PM"` failed twice with CoreDeviceError 10002 where the udid worked first try,
 hello-straight-in), then press, fill and scroll with `--settle` and judge from the diff it prints;
-`close` when done. What the phone taught (cells-app, 2026-10-05):
+`close` when done. Write the flags out on each call: zsh, the Bash tool's shell, doesn't
+split an unquoted variable, so `agent-device press $S` with `S="--session x --udid y"`
+passes one word and fails "Unknown flag", silently inside a batch (cel-332). What the phone taught (cells-app, 2026-10-05):
 
 - A simulator just cloned or created times out on its first snapshot ("Daemon request timed
   out ... run agent-device prepare ios-runner"): run `agent-device prepare ios-runner
