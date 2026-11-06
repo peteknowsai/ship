@@ -686,16 +686,16 @@ or no GitHub remote: `reference/rare-cases.md`, Landing variants.
    - Release what the run started from inside it: a QA-run directory's own teardown, its
      containers, a simulator it cloned, a borrowed VM slot. Delete test data the run kept,
      the way the checks skill says, while the server still answers (Clerk's test instance
-     caps at 100 people; cells-app: `PACK=<pack> npm run prune -- --people --finish <clerk
-     id>`, 5 to 20 minutes, after which main's restart prunes the rest).
+     caps at 100 people; cells-app: each walk person by `fetch('/api/account', {method:
+     'DELETE'})` on a page signed in as them, since `npm run prune -- --people --finish`
+     waits on every other landing's lock: cel-297 stalled behind #442's).
    - `stage.sh <root> land`, `git fetch origin`; if main moved, absorb it in a call of its own
      and see it merged clean before any gate (CEL-140 gated a half-merged tree). An absorb
      whose files (`git diff --name-only HEAD...origin/main` after the fetch and before the
      absorb, one plain call, right for a merge or a rebase) overlap what the QA run walked or measured reruns those steps on the merged
      tree (the server restarted on it, or a preview's new build); an overlap of only tests,
      or imports that still name the same code, keeps the pass, and the PR says so.
-   - The full gates once, if the tree changed since their last full run (main moving again
-     with no overlap runs them scoped: contract.md `gates:`), with the dev server
+   - The full gates once, if the tree changed since their last full run, with the dev server
      stopped and any simulator shut. `smoke: branch` once, if the diff since its last result
      touches what the app carries (anything but docs, tests, the review card and its shots,
      or the repo's own skip rule), with the server back up on the app the smoke drives and

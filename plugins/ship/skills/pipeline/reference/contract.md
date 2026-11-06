@@ -14,14 +14,7 @@ find.
 
 **Full or scoped.** Full gates run at BUILD's pre-flight, after an absorb that changed the
 tree (REVIEW's runs before either reader starts), and at LAND's step 1 when the tree changed
-since their last full run. At LAND, main moving again after that run doesn't restart it: an
-absorb whose files (`git diff --name-only HEAD...origin/main`, before it) overlap nothing
-the branch changed (`git diff --name-only origin/main...HEAD`) or the QA run walked keeps
-the full run, and the gates rerun scoped to the branch's whole diff against the new main
-(`npm test -- --changed origin/main`, jest `--changedSince=origin/main`) with the
-typecheck, since main's own commits were gated where they landed; an overlap reruns them in
-full (cel-312 absorbed main four times in LAND and spent about 45 minutes there, mostly
-gates). Every other check,
+since their last full run. Every other check,
 each BUILD task and each TEST fix round, runs them **scoped**: the typecheck plus only the
 tests the uncommitted change touches, by the contract's `scoped <cmd>` if it names one, else
 the test runner's changed mode through the repo's own test script, so its pretest hooks run
@@ -76,14 +69,14 @@ runs the gates (cells-app's land-pr.sh): rerun the failed files alone, and when 
 run the landing script again (CEL-226 went red on two untouched files at a load near 150,
 then landed on the rerun).
 
-**Red on main too.** A red in files the diff never touched that isn't load, since it fails
-alone too, is run on main: the same command in a throwaway worktree at `origin/main`
-(`git -C <main> worktree add --detach <job tmp>/main-red origin/main`, with the installs the
-gates need copied in, removed after). Red there too makes it main's: the PR and the
-`result:` line name both runs, the branch lands, and it is never fixed inside this ship;
-Pete hears it as main's own red. Green there makes it the branch's, a real red (cel-312's
-full run exited 1 on an unhandled `ReferenceError` from a ProseMirror timer after
-`test/fileRoundTrip.test.ts`, every file involved as main has it).
+**Red on main too.** A red that isn't a timeout, in a file the diff never touched, that
+fails again when that file runs alone twice through the repo's test script, while `git diff
+--quiet origin/main -- <the file and what it imports>` shows the branch left them as main
+has them, is main's own: never fixed inside this ship. If the gate that lands the branch
+passes anyway (a land script that runs other tests), it lands with the red named in the PR
+and the `result:` line. If that gate stops on it, park (`gate:input`, `needs input:` naming
+the test and both runs), since landing past a red is Pete's call (cel-312's full run exited
+1 on an unhandled `ReferenceError` from a ProseMirror timer after `test/fileRoundTrip.test.ts`).
 
 **A production build beside a dev server.** A production build in a worktree whose dev
 server is up wipes the server's record in `.next`, so the repo's stop command later finds
