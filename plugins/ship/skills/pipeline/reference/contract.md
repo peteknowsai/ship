@@ -69,18 +69,16 @@ runs the gates (cells-app's land-pr.sh): rerun the failed files alone, and when 
 run the landing script again (CEL-226 went red on two untouched files at a load near 150,
 then landed on the rerun).
 
-**Red on main too.** A red that isn't a timeout (a failed test, or an unhandled error with
-every test passing), in a file the diff never touched, while `git diff --quiet origin/main
--- <the file and what it imports>` shows the branch left them as main has them, runs that
-file alone five times through the repo's test script. Any failure there makes it main's, a
-steady red or a flake, never fixed inside this ship: the PR and the `result:` line name it
-with its rate, and it's a follow-up. The gate that lands the branch then runs once more,
-after the load falls under the core count, and a pass lands it; a gate that stops on it
-again parks (`gate:input`, `needs input:` naming the test, its rate and the runs), since
-landing past a red is Pete's call. Five clean runs alone send it to Red under load above.
-cel-312 and cel-333 both went red on an unhandled `ReferenceError` from a ProseMirror timer
-after cells-app's `test/fileRoundTrip.test.ts`, with every test passing; alone it failed 1
-of 5, and cel-333's second land-pr run passed and merged.
+**Red in an untouched file, not load.** A red that Red under load doesn't explain (a failed
+test, or an unhandled error with every test otherwise passing, only in files the diff never
+touched, at a load under the core count) runs the same command once more, never loosened.
+Green goes on, with the `result:` line naming the first red and its file as a follow-up, and
+route.py's log counting it as a load red. The same file red again parks (`gate:input`,
+`needs input:` naming the file and both runs): whose red it is and whether to land past it
+are Pete's, through a ship that fixes it on main or a landing he runs himself; a different
+red is judged on its own. Nothing in this ship fixes it (cel-312 and cel-333: an unhandled
+`ReferenceError` from a ProseMirror timer after cells-app's `test/fileRoundTrip.test.ts`,
+which failed 1 of 5 run alone; cel-333's second land-pr run passed and merged).
 
 **A production build beside a dev server.** A production build in a worktree whose dev
 server is up wipes the server's record in `.next`, so the repo's stop command later finds
