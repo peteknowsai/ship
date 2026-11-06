@@ -368,9 +368,12 @@ one with uncommitted work, one a live session holds (wt's 💬), or one under tw
 
 ### 1 · DISCOVER — Pete's taste, up front  → marker: `discover`, then `gate:1`
 
-- **Recall first, on design ships**: `decisions.py relevant "<the idea in one sentence>"`
-  (from inside the repo) returns the six decisions that bear on it. They are settled calls:
-  don't re-ask Pete one, and say so out loud when reversing one. A call marked `[stale]`
+- **Recall first, on design ships**: `decisions.py relevant "<the idea in one sentence>"
+  --ship <slug>` (from inside the repo) prints up to six decisions that bear on it and
+  records them as shown. They are settled calls: don't re-ask Pete one, and say so out loud
+  when reversing one. When one changes what the ship does, `decisions.py used <slug> <id>
+  "<what it changed>"` right then: the repo's log keeps it through a compaction, a resume and
+  teardown, and a count from memory is a guess (company-pack). A call marked `[stale]`
   gives a retired engine a ship job, and this skill's text wins over it.
 - **Grill on the storyboard, never in chat.** Call the Skill tool with
   `mattpocock-skills:grilling` for how to ask: each round asks every question open now,
@@ -685,10 +688,12 @@ or no GitHub remote: `reference/rare-cases.md`, Landing variants.
 1. **In the worktree, make it landable.**
    - Release what the run started from inside it: a QA-run directory's own teardown, its
      containers, a simulator it cloned, a borrowed VM slot. Delete test data the run kept,
-     the way the checks skill says, while the server still answers (Clerk's test instance
-     caps at 100 people; cells-app: each walk person by `fetch('/api/account', {method:
-     'DELETE'})` on a page signed in as them, since `npm run prune -- --people --finish`
-     waits on every other landing's lock: cel-297 stalled behind #442's).
+     the way the checks skill says, while the server still answers: `scripts/listener.sh
+     <port> 1` naming this worktree, then one request. A reboot or a stop during a park takes
+     it (company-pack's Mac rebooted mid-park), so start it again on the app the walk used
+     first (Clerk's test instance caps at 100 people; cells-app: each walk person by `DELETE
+     /api/account` as them, the checks skill's recipe, since `npm run prune -- --people
+     --finish` waits on every other landing's lock: cel-297 stalled behind #442's).
    - `stage.sh <root> land`, `git fetch origin`; if main moved, absorb it in a call of its own
      and see it merged clean before any gate (CEL-140 gated a half-merged tree). An absorb
      whose files (`git diff --name-only HEAD...origin/main` after the fetch and before the
@@ -706,6 +711,10 @@ or no GitHub remote: `reference/rare-cases.md`, Landing variants.
      secret list`, `vercel env ls production`, `npx convex env list --prod`. Names only,
      never values. A missing one parks (`stage.sh <root> gate:input`, `needs input:` naming
      it): a production setting is Pete's (screendrop-worker's OWNER_SUB, 2026-11-05).
+   - On a design ship, from the worktree, `route.py log repo= ship= <what decisions.py tally
+     <slug> prints>`: `used` counts decisions that changed what the ship did (a question not
+     asked, a choice made their way, a reversal said out loud). Tally's exit 1 means no recall
+     ran, so no row; route.py refuses a second one, as a return to step 1 would log.
    - Commit the smoke's result line with the review card and its shots (`git restore
      next-env.d.ts` first), and bring the PR body up to date with what shipped (the squash
      takes it). `stack:` once more. For each other open PR, `git cherry HEAD origin/<branch>
@@ -767,9 +776,7 @@ or no GitHub remote: `reference/rare-cases.md`, Landing variants.
      script that ran it. Restart a `worker:` once idle (rare-cases). Ship never runs a
      production deploy or pushes a production database by hand, and never makes Pete run
      one; an integration lane or a promotion is rare-cases.
-7. **Close out.** On a design ship, `route.py log repo= ship= recall=<shown> used=<n>`, where
-   `used` counts decisions that changed what the ship did (a question not asked, a choice
-   made their way, a reversal said out loud), and the retro carries the count. `show.sh …
+7. **Close out.** On a design ship, the retro carries step 1's recall count. `show.sh …
    review <file> done` the landed card.
    Run RETRO, then end with `result:`: what shipped, one sentence, the live links, `· retro
    sent` when it was, then the follow-ups. Only a landing earns `result:`.

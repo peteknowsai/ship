@@ -1,7 +1,13 @@
 #!/usr/bin/env python3
 """Settled calls per repo, so a later ship doesn't re-ask Pete what he already decided.
 
-  decisions.py relevant "<idea>" [N]         the N decisions (default 6) that bear on the idea
+  decisions.py relevant "<idea>" [N] [--ship <slug>]
+                                             the N decisions (default 6) that bear on the idea;
+                                             --ship records what that ship was shown
+  decisions.py used <slug> <id> "<what it changed>"
+                                             record that a shown decision changed what the ship did
+  decisions.py tally <slug>                  "recall=<shown> used=<n>" for route.py log, distinct
+                                             decisions each; exit 1 when the ship ran no recall
   decisions.py recent [N]                    the N newest active decisions (default 5)
   decisions.py log '<json>'                  record one: {"decision","rationale","source"}
   decisions.py supersede <id> [<id> ...] '<json>'
@@ -248,16 +254,48 @@ def scores(idea, decisions):
     return out
 
 
-def relevant(path, idea, n):
+def pick(path, idea, n):
     decisions = active(path)
     if not decisions:
-        return ''
+        return []
     try:
         ranked = sorted(zip(scores(idea, decisions), decisions), key=lambda p: -p[0])
     except Exception as error:  # recall must never block a run
         print(f'decisions: no decision model answered ({error}); showing the newest instead', file=sys.stderr)
-        return recent(path, n)
-    return show(e for _, e in ranked[:n])
+        return sorted(decisions, key=lambda e: e.get('date', ''), reverse=True)[:n]
+    return [e for _, e in ranked[:n]]
+
+
+def relevant(path, idea, n, ship=None):
+    chosen = pick(path, idea, n)
+    if ship:  # in the repo's log, not the worktree, so a resume, a compaction or teardown keeps it
+        append(path, {'id': str(uuid.uuid4()), 'kind': 'shown', 'ship': ship,
+                      'ids': [e['id'] for e in chosen], 'date': now()})
+    return show(chosen)
+
+
+def mark(path, ship, prefix, note):
+    """A use of one decision the ship was shown, superseded since or not (a reversal is a use)."""
+    if not note.strip():
+        raise SystemExit('decisions: say what the decision changed')
+    seen = {i for e in events(path) if e.get('kind') == 'shown' and e.get('ship') == ship
+            for i in e.get('ids', []) if i.startswith(prefix)}
+    if len(seen) != 1:
+        raise SystemExit(f'decisions: "{prefix}" matches {len(seen)} decisions {ship} was shown')
+    event = {'id': str(uuid.uuid4()), 'kind': 'used', 'ship': ship, 'of': seen.pop(),
+             'note': note, 'date': now()}
+    append(path, event)
+    return event
+
+
+def tally(path, ship):
+    """Distinct decisions shown to the ship and used by it; None when it ran no recall."""
+    # ponytail: a reused slug sums both runs; scope by run once that skews the report
+    evs = [e for e in events(path) if e.get('ship') == ship]
+    runs = [e for e in evs if e.get('kind') == 'shown']
+    shown = {i for e in runs for i in e.get('ids', [])}
+    used = {e.get('of') for e in evs if e.get('kind') == 'used'}
+    return (len(shown), len(used)) if runs else None
 
 
 def full_id(path, prefix):
@@ -337,6 +375,22 @@ def selftest():
         check('relevance beats recency', relevant(many, 'pick a voice', 1).startswith('- old voice rule'))
         json.dump({'answers': {'d0': 1}}, open(reply, 'w'))
         check('a bad reply falls back to the newest', relevant(many, 'pick a voice', 1).startswith('- sidebar'))
+        relevant(many, 'pick a voice', 2, ship='s1')
+        json.dump({'answers': {'d0': {'score': 1.9}, 'd1': {'score': 0.1},
+                               'd2': {'score': 0.2}, 'd3': {'score': 0.3}}}, open(reply, 'w'))
+        relevant(many, 'pick a voice', 2, ship='s1')  # a resumed ship asks again
+        voice = active(many)[0]['id']
+        mark(many, 's1', voice[:8], 'skipped the voice question')
+        supersede(many, [voice[:8]], '{"decision":"new voice rule","rationale":"r"}')
+        mark(many, 's1', voice[:8], 'reversed it out loud')
+        check('tally counts distinct decisions shown across reruns and used, a reversal included, once each',
+              tally(many, 's1') == (3, 1) and tally(many, 's2') is None)
+        check('a use that says nothing, or of a decision the ship was never shown, is refused',
+              'say what' in refused(mark, many, 's1', voice[:8], ' ')
+              and 'matches 0' in refused(mark, many, 's2', voice[:8], 'never shown'))
+        empty = os.path.join(tmp, 'empty.jsonl')
+        relevant(empty, 'anything', 6, ship='s3')
+        check('a recall over no decisions still tallies as zero', tally(empty, 's3') == (0, 0))
         del os.environ['DECISIONS_RESPONSE']
 
         sizes, urls, models, broke = [], [], [], []
@@ -423,10 +477,29 @@ if __name__ == '__main__':
     args = payload(sys.argv[1:])
     if args == ['--selftest']:
         sys.exit(0 if selftest() else 1)
+    ship = None
+    if args and args[0] == 'relevant' and '--ship' in args:
+        at = args.index('--ship')
+        ship = args[at + 1] if at + 1 < len(args) else ''
+        if not ship.strip():
+            sys.exit("decisions: --ship takes the ship's slug")
+        args = args[:at] + args[at + 2:]
     if args and args[0] == 'relevant' and len(args) in (2, 3):
         if len(args) == 3 and not args[2].isdigit():
             sys.exit('decisions: relevant takes a positive count')
-        print(relevant(store(), args[1], int(args[2]) if len(args) == 3 else 6))
+        print(relevant(store(), args[1], int(args[2]) if len(args) == 3 else 6, ship))
+    elif args and args[0] == 'used':
+        if len(args) != 4:
+            sys.exit('decisions: used takes <slug> <id> "<what it changed>"')
+        event = mark(store(), args[1], args[2], args[3])
+        print(f"decisions: {args[1]} used {event['of'][:8]}")
+    elif args and args[0] == 'tally':
+        if len(args) != 2:
+            sys.exit('decisions: tally takes <slug>')
+        counts = tally(store(), args[1])
+        if not counts:
+            sys.exit(f'decisions: {args[1]} ran no recall, so log no recall row')
+        print(f'recall={counts[0]} used={counts[1]}')
     elif args and args[0] == 'recent' and len(args) <= 2:
         if len(args) == 2 and not args[1].isdigit():
             sys.exit('decisions: recent takes a positive count')

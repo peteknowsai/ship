@@ -238,6 +238,12 @@ def log(pairs):
         if earlier:
             raise SystemExit(f"route log: task {row['task']} of {row['ship']} is already logged ({earlier}); "
                              "log it again only with note=<why>")
+    if 'recall' in row and 'note' not in row and row.get('repo') and row.get('ship'):
+        earlier = next((r.get('ts') for r in rows() if 'recall' in r
+                        and (r.get('repo'), r.get('ship')) == (row['repo'], row['ship'])), None)
+        if earlier:  # LAND step 2's red goes back to step 1, which logs it
+            raise SystemExit(f"route log: {row['ship']}'s recall is already logged ({earlier}); "
+                             "log it again only with note=<why>")
     out = row.pop('out', None)  # a wrapper's out-dir: its `seconds` file is the run's own wall time
     if out and 'seconds' not in row:
         try:
@@ -460,6 +466,8 @@ def selftest():
         log(['repo=ship', 'ship=b', 'recall=6', 'used=0'])
         check('recall rows get one line and never join the BUILD table',
               'decision recall: 2 ships used 2 of 12 shown (16%); 1 used none' in report())
+        check("a ship's second recall row is refused",
+              'already logged' in refused(log, ['repo=ship', 'ship=a', 'recall=6', 'used=3']))
         check('task=review is refused, pointing at review=',
               'review=<engine>' in refused(log, ['repo=ship', 'ship=dup', 'task=review', 'engine=opus']))
         check('a review row with only above real is refused',
