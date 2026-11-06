@@ -759,8 +759,8 @@ Landing variants.
      <slug> prints>`: `used` counts decisions that changed what the ship did (a question not
      asked, a choice made their way, a reversal said out loud). Tally's exit 1 means no recall
      ran, so no row; route.py refuses a second one, as a return to step 1 would log.
-   - Commit the smoke's result line with the review card and its shots (`git restore
-     next-env.d.ts` first), and bring the PR body up to date with what shipped (the squash
+   - Commit the review card and its shots, the smoke's result line in that commit's
+     message (`git restore next-env.d.ts` first), and bring the PR body up to date with what shipped (the squash
      takes it). `stack:` once more. `carried.sh <owner/repo>` lists each commit this branch
      carries from an older open PR, copied or as-is, leaving out what main has: `#<n>
      <draft|ready> <branch> <sha> <docs|code> <count> files: ...`, exit 1 on any, 2 when it
