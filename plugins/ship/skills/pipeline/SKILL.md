@@ -723,7 +723,9 @@ Landing variants.
      /api/account` as them, the checks skill's recipe, since `npm run prune -- --people
      --finish` waits on every other landing's lock: cel-297 stalled behind #442's).
    - `stage.sh <root> land`, `git fetch origin`; if main moved, absorb it in a call of its own
-     and see it merged clean before any gate (CEL-140 gated a half-merged tree). An absorb
+     and see it merged clean before any gate (CEL-140 gated a half-merged tree). On `copy`, an
+     absorb that touched convex paths is pushed to the worktree's copy as REVIEW's sync says,
+     before any gate or server restart (cel-311's copy ran the branch's old functions). An absorb
      whose files (`git diff --name-only HEAD...origin/main` after the fetch and before the
      absorb, one plain call, right for a merge or a rebase) overlap what the QA run walked or measured reruns those steps on the merged
      tree (the server restarted on it, or a preview's new build); an overlap of only tests,

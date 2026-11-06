@@ -22,7 +22,9 @@ fixer could fix it but not see it. Objective checks (tsc / lint / unit / e2e) ar
 regression sweep (§3).
 
 **Works means every step of the script passed on the running app**, each with its
-evidence: a screenshot, the agent-device diff, a response body. Reading the diff and
+evidence: a screenshot, the agent-device diff, a response body. Each surface the run walks
+(browser, phone, Mac) has at least one screenshot among them, since the review card shows
+one per surface (cel-311's iPhone pass had none, and LAND rebuilt the app to take it). Reading the diff and
 concluding "looks right" is exactly the failure this skill exists to prevent.
 
 **Read a reference when its case is in the run:**
