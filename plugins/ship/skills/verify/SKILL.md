@@ -39,6 +39,8 @@ concluding "looks right" is exactly the failure this skill exists to prevent.
   the job's tmp directory (`$CLAUDE_JOB_DIR/tmp`), else the launch directory's
   `.ship-shots/<slug>/`.
   Never `/tmp`, where a restart mid-QA wiped one, and never inside the repo's tracked tree.
+  Its files are written with the Write or Edit tool, or by a shell with the sandbox off,
+  which denies writes under `~/.claude/jobs` (cel-312's pr-body.md, eca-finder).
 - `<shots-root>` is the session's launch directory unless a chrome-devtools walk's probe
   finds otherwise. That MCP reads and writes only inside its workspace roots, which usually
   stay at the launch directory after the session enters a worktree (CEL-175, CEL-226,

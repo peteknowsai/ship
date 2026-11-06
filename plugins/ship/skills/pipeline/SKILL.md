@@ -694,7 +694,8 @@ or no GitHub remote: `reference/rare-cases.md`, Landing variants.
      absorb, one plain call, right for a merge or a rebase) overlap what the QA run walked or measured reruns those steps on the merged
      tree (the server restarted on it, or a preview's new build); an overlap of only tests,
      or imports that still name the same code, keeps the pass, and the PR says so.
-   - The full gates once, if the tree changed since their last full run, with the dev server
+   - The full gates once, if the tree changed since their last full run (main moving again
+     with no overlap runs them scoped: contract.md `gates:`), with the dev server
      stopped and any simulator shut. `smoke: branch` once, if the diff since its last result
      touches what the app carries (anything but docs, tests, the review card and its shots,
      or the repo's own skip rule), with the server back up on the app the smoke drives and
