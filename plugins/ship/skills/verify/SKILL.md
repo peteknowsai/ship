@@ -173,6 +173,9 @@ the red, and the evidence says main's page was unreachable.
   the fix is walked on each: cel-313's reported write read right on main 8 of 8, and only a
   direct edit of the same field made main's checker reject the right $19,500 and write the
   old $18,000 back.
+- A field a model fills or judges gets cases that vary what it reads, the time, the place,
+  the phrasing, and a wording fix is proven on 3 fresh sessions: cel-264's "being there
+  answers it" passed an evening showing and failed a morning one.
 - A CSS rule is proven by computed style on the real element (`evaluate_script` with
   `getComputedStyle`), never by a test that greps the stylesheet: yonder-skin's underline
   passed one and read `none` on the page, beaten by a more specific rule.
