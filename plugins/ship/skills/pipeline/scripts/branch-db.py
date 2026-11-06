@@ -7,6 +7,10 @@
                                            dev: the functions only shared dev has (a push
                                            drops them) and only the branch's copy has.
                                            Exit 1 when the push would drop any.
+  branch-db.py push <worktree> [<app-dir>]  push the worktree's functions to that app-dir's
+                                           own copy (after an edit under convex/ or an
+                                           absorb), with up's flags so no tracked file is
+                                           regenerated; refuses an app-dir still on shared dev
   branch-db.py --selftest
 
 `up` creates a cloud dev deployment `dev/<branch>` in the same Convex project, expiring in
@@ -219,10 +223,41 @@ def compare(shared, branch):
     return lines, bool(shared - branch)
 
 
+def main_of(worktree):
+    return subprocess.run(["git", "-C", worktree, "worktree", "list", "--porcelain"],
+                          capture_output=True, text=True).stdout.split("\n")[0].removeprefix("worktree ")
+
+
+def push_target(app_env, main_env):
+    """(deployment, None) when app_env names a dev copy of its own, else (None, why): a plain
+    `convex dev --once` pushes wherever .env.local points, and an app-dir up never copied (or
+    one whose env was restored) still points at the dev database every preview shares."""
+    mine, shared = env_value(app_env, "CONVEX_DEPLOYMENT"), env_value(main_env, "CONVEX_DEPLOYMENT")
+    if not mine or not shared:
+        return None, f"no CONVEX_DEPLOYMENT in {app_env if not mine else main_env}; is the app-dir right?"
+    if not mine.startswith("dev:"):
+        return None, f"{mine} is not a dev deployment"
+    if mine == shared:
+        return None, "this app-dir is on shared dev, not a copy: run up for it first, never push the branch there"
+    return mine, None
+
+
+def push(worktree, app_rel="."):
+    worktree = os.path.abspath(worktree)
+    app = os.path.join(worktree, app_rel)
+    target, why = push_target(os.path.join(app, ".env.local"), os.path.join(main_of(worktree), app_rel, ".env.local"))
+    if not target:
+        sys.exit(f"branch-db: {why}")
+    # The process env beats .env.local and a shell's export alike, so the push goes to the copy.
+    npx(["dev", "--once", "--typecheck", "disable", "--codegen", "disable"], app,
+        env=clean_env(CONVEX_DEPLOYMENT=target))
+    print(f"branch-db: pushed {app_rel} to its copy {target.partition(':')[2]}")
+    return 0
+
+
 def diff(worktree, app_rel="."):
     worktree = os.path.abspath(worktree)
-    main = subprocess.run(["git", "-C", worktree, "worktree", "list", "--porcelain"],
-                          capture_output=True, text=True).stdout.split("\n")[0].removeprefix("worktree ")
+    main = main_of(worktree)
     mine = env_value(os.path.join(worktree, app_rel, ".env.local"), "CONVEX_DEPLOYMENT")
     shared = env_value(os.path.join(main, app_rel, ".env.local"), "CONVEX_DEPLOYMENT")
     if not mine or not shared:
@@ -278,6 +313,13 @@ def selftest():
         assert "names without values (A first)" in check_settings(0, "A\nB\n", "", "s")[1]
         assert check_settings(0, "", "No environment variables set", "s") == ("", None)
         assert check_settings(1, "A=1\n", "", "s")[0] is None and check_settings(0, " \n", "", "s")[0] is None
+        open(f"{wt}/packs/a/.env.local", "w").write("CONVEX_DEPLOYMENT=dev:brainy-otter-615\n")
+        assert push_target(f"{wt}/packs/a/.env.local", f"{mn}/.env.local") == ("dev:brainy-otter-615", None)
+        same = push_target(f"{wt}/.env.local", f"{mn}/.env.local")
+        assert same[0] is None and "shared dev" in same[1], "an app-dir up never copied is refused"
+        open(f"{wt}/packs/a/.env.local", "w").write("CONVEX_DEPLOYMENT=prod:gallant-starling-747\n")
+        assert "not a dev deployment" in push_target(f"{wt}/packs/a/.env.local", f"{mn}/.env.local")[1]
+        assert push_target(f"{wt}/packs/a/.env.local", f"{mn}/absent")[0] is None
         cmd = create_cmd("dev/x-1")
         assert cmd[3:5] == ["create", "dev/x-1"] and cmd.count("dev/x-1") == 1, cmd
         print("branch-db selftest: ok")
@@ -293,5 +335,7 @@ if __name__ == "__main__":
         sys.exit(up(*a[1:]))
     elif a[:1] == ["diff"] and len(a) in (2, 3):
         sys.exit(diff(*a[1:]))
+    elif a[:1] == ["push"] and len(a) in (2, 3):
+        sys.exit(push(*a[1:]))
     else:
         sys.exit(__doc__)
