@@ -147,7 +147,7 @@ the PR body's first lines. Messages between sessions are exempt.
 - **Env files are given to the tool** (`tsx --env-file=.env.local`), never sourced. The
   tool sets the file's values before the script starts and a variable already in the shell
   beats them, so every one that must name this worktree, not main, goes in the shell: on
-  cells-app both `LOCAL_STAGE=local-<port>` and `APP_ORIGIN=<this worktree's origin>`, since
+  cells-app both `LOCAL_STAGE=local-<port>` and `APP_ORIGIN=$(env -u APP_ORIGIN bash scripts/dev.sh --print-origin)`, since
   `prepare()` fills `APP_ORIGIN` only when unset (the file's main value put cel-296's seed on
   main's stage and sent cel-264's close to main's server).
 - **Every `gh` call names its repo**, `-R <owner/repo>`: in a fork with an `upstream` remote
