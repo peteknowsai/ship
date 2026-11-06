@@ -206,7 +206,9 @@ its origin, and the walk lost a round to "No alert by that id".
   press keys through its tools; `evaluate_script` reads state, never fires events, because a
   script-fired event passes where a real right-click or drag fails. `emulate` covers the
   390px layout and dark mode (a screenshot right after a viewport change can come back blank
-  with the DOM fine: take it again before calling it a bug); `handle_dialog` answers a native prompt. Check the console and
+  with the DOM fine: take it again before calling it a bug), and a breakpoint crossing changes the width alone,
+  the same flags kept, since flipping mobile or touch reloads the page (cel-263 read that
+  fresh load as a bug); `handle_dialog` answers a native prompt. Check the console and
   failed requests as you go. A desktop walk starts with `resize_page` at 1440x900, since the
   default page is narrower (CEL-184 opened in its overlay layout). A proof shot waits for a known row's text first, since one taken
   right after `navigate_page` catches the loading frame (a `.jpg` path saves as `.jpeg`). After
@@ -292,7 +294,7 @@ these on each page it touched, and every pass line the repo's checks add:
 
 | Check | Passes when | On a fail |
 |---|---|---|
-| Layout shift: `performance_start_trace` (it reloads the page), at desktop and 390px; the summary prints CLS | CLS under 0.1 from the change | `performance_analyze_insight` with `CLSCulprits` and the insight set id names the element that moved: reserve its space, rerun. A shift main's layout already has goes in TASTE, and its number in the checks file's Noise table: the change's share is then the difference of two traces taken the same way, one with the change's new elements hidden by an `initScript` style, and only a difference over 0.1 fails (cel-320's Mail tab: 0.38 with them, 0.29 hidden, so 0.09 passed) |
+| Layout shift: `performance_start_trace` (it reloads the page), at desktop and 390px; the summary prints CLS | CLS under 0.1 from the change | `performance_analyze_insight` with `CLSCulprits` and the insight set id names the element that moved: reserve its space, rerun. A shift main's layout already has goes in TASTE, and its number in the checks file's Noise table: the change's share is then the difference of two traces taken the same way, one with the change's new elements hidden by an `initScript` style (the trace's own reload drops a `navigate_page` initScript, so: `about:blank`, start the trace with `reload: false`, `navigate_page` with the initScript, wait for a known row, stop), and only a difference over 0.1 fails (cel-320's Mail tab: 0.38 with them, 0.29 hidden, so 0.09 passed) |
 | Accessibility: `lighthouse_audit` (`mode: "snapshot"` for a state the walk reached), its accessibility failures and the nodes they flag | no failure on an element the change added or changed, a new one styled with main's tokens included | fix it and rerun; one main already had goes in TASTE |
 | Load time, only on a production build or a preview (a dev server compiles on first load) | LCP under 2.5 s | the trace's LCP breakdown says which part is slow |
 

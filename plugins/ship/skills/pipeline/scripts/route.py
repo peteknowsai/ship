@@ -162,11 +162,15 @@ def gate(argv, start=None):
     marker, and return its exit code."""
     if not argv:
         raise SystemExit('route gate: give the gate command, e.g. route.py gate bash gates.sh')
+    began = time.time()
     try:
         code = subprocess.call(argv)
     except OSError as error:
         print(f'route gate: {argv[0]}: {error.strerror}', file=sys.stderr)
         code = 127
+    # the verdict as its last line, so a `| tail` shows it (cel-263 reran a suite to read one)
+    verdict = 'PASS' if code == 0 else f'FAIL (exit {code})'
+    print(f"route gate: {verdict} {' '.join(argv)[:120]} ({time.time() - began:.0f}s)", flush=True)
     runs = beside_marker(start or os.getcwd(), '.ship-gates')
     if runs:
         with open(runs, 'a') as f:
@@ -605,7 +609,10 @@ def selftest():
             fixed_anchor = read_route(os.path.join(repo, '.ship-route.json'))['anchor']
             plan(shipped)
             log(['task=5,6', 'engine=opus'])
-            code = gate([sys.executable, '-c', 'import sys; sys.exit(3)'])
+            import contextlib, io
+            gate_out = io.StringIO()
+            with contextlib.redirect_stdout(gate_out):
+                code = gate([sys.executable, '-c', 'import sys; sys.exit(3)'])
         finally:
             os.chdir(plain)
         check('log fills seconds from the clock, and first pass and fix rounds from the gate runs',
@@ -659,6 +666,7 @@ def selftest():
         last = open(os.path.join(repo, '.ship-gates')).read().splitlines()[-1]
         check('gate returns the command\'s exit code and records the run beside the marker',
               code == 3 and json.loads(last)['ok'] is False)
+        check('gate ends on its own verdict line', gate_out.getvalue().startswith('route gate: FAIL (exit 3) '))
         os.remove(stage)
         plan(shipped)
         check('outside a ship no marker appears', not os.path.exists(stage))
