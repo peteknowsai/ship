@@ -709,10 +709,10 @@ Wonder read where Sizing says.
   stood beside it, `43@test`, since bare it matches clock times and line numbers. A number
   the session worked out in its head, such as a sum, may show in none, so check its parts.
   An image on the branch links by commit (`blob/<sha>/<path>?raw=true`). The door is ship's
-  call: **two-way** (a revert undoes it) lands now; **one-way** (it deletes or migrates data, sends something to people, or a revert
-  can't undo it) waits for "merge main", as do a money path and a change he said he'd try
-  first: `stage.sh <root> gate:test`, the card, `needs input:`. On `land: auto` only a money
-  path waits.
+  call: **two-way** (a revert undoes it) lands now; **one-way** (it deletes or migrates data,
+  sends something to people, or a revert can't undo it) waits for "merge main", as do a money
+  path and a change he said he'd try first: `stage.sh <root> gate:test`, the card, `needs
+  input:`. On `land: auto` only a money path waits.
 - **`broken` after three rounds on one step, or `unverifiable`: park.** `stage.sh <root>
   gate:input`, hand Pete the result and evidence, and end with `needs input:` ("test:
   <feature>: couldn't prove <step>: <reason>"). Partial is `unverifiable`, never a footnote
