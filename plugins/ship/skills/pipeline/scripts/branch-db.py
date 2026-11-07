@@ -4,9 +4,11 @@
   branch-db.py up <worktree> [<app-dir>]   app-dir: the folder with convex.json, relative
                                            to the worktree; default the worktree itself
   branch-db.py diff <worktree> [<app-dir>]  before pushing this branch's functions to shared
-                                           dev: the functions only shared dev has (a push
-                                           drops them) and only the branch's copy has.
-                                           Exit 1 when the push would drop any.
+                                           dev, and before landing: the functions only
+                                           shared dev has (a push drops them), only the
+                                           branch's copy has, and on both with other args,
+                                           returns or visibility. Exit 1 when the push
+                                           would drop any.
   branch-db.py push <worktree> [<app-dir>]  push the worktree's functions to that app-dir's
                                            own copy (after an edit under convex/ or an
                                            absorb), with up's flags so no tracked file is
@@ -207,20 +209,30 @@ def up(worktree, app_rel="."):
     return 0
 
 
-def ids(deployment, cwd):
+def specs(deployment, cwd):
+    """Each function's name and its whole spec: args, returns, type and visibility."""
     import json
     out = npx(["function-spec", "--deployment", deployment], cwd)
     spec = json.JSONDecoder().raw_decode(out, out.index("{"))[0]  # npx() appends stderr after the JSON
     # HTTP routes carry a method and path instead of an identifier
-    return {f.get("identifier") or f"{f.get('method')} {f.get('path')}" for f in spec["functions"]}
+    return {f.get("identifier") or f"{f.get('method')} {f.get('path')}": json.dumps(f, sort_keys=True)
+            for f in spec["functions"]}
 
 
 def compare(shared, branch):
-    """Lines for the two sides of a function-spec diff, and whether a push drops anything."""
-    lines = [f"only on shared dev, a push from this branch drops these ({len(shared - branch)}):"]
-    lines += [f"  {i}" for i in sorted(shared - branch)]
-    lines += [f"only on the branch copy ({len(branch - shared)}):"] + [f"  {i}" for i in sorted(branch - shared)]
-    return lines, bool(shared - branch)
+    """Lines for the two sides of a function-spec diff, and whether a push drops anything.
+    cel-360 added an optional arg to feed:setBrief that main's server sends once it lands, and
+    a diff of names alone printed nothing to push."""
+    gone, new = sorted(shared.keys() - branch.keys()), sorted(branch.keys() - shared.keys())
+    changed = sorted(i for i in shared.keys() & branch.keys() if shared[i] != branch[i])
+    lines = [f"only on shared dev, a push from this branch drops these ({len(gone)}):"]
+    lines += [f"  {i}" for i in gone] + [f"only on the branch copy ({len(new)}):"] + [f"  {i}" for i in new]
+    lines += [f"on both, with other args, returns or visibility on the branch ({len(changed)}):"]
+    lines += [f"  {i}" for i in changed]
+    if new or changed:
+        lines.append("push before landing, for each of these the branch made: main's server calls it on "
+                     "shared dev once the branch lands; one it didn't make is a sibling's, and a push reverts it")
+    return lines, bool(gone)
 
 
 def main_of(worktree):
@@ -265,7 +277,7 @@ def diff(worktree, app_rel="."):
     if mine == shared:
         sys.exit("branch-db: this worktree is on shared dev itself, with no copy to compare (run up first)")
     app = os.path.join(worktree, app_rel)
-    lines, drops = compare(ids(shared.partition(":")[2], app), ids(mine.partition(":")[2], app))
+    lines, drops = compare(specs(shared.partition(":")[2], app), specs(mine.partition(":")[2], app))
     print("\n".join(lines))
     return 1 if drops else 0
 
@@ -280,9 +292,12 @@ def selftest():
         for p in (f"{wt}/.env.local", f"{wt}/packs/a/.env.local", f"{mn}/.env.local", f"{wt}/node_modules/x/.env"):
             open(p, "w").write(dev)
         assert source(f"{wt}/.env.local", f"{mn}/.env.local") == ("charming-caiman-61", None)
-        lines, drops = compare({"a.js:x", "b.js:y"}, {"a.js:x", "c.js:z"})
-        assert drops and lines[1] == "  b.js:y" and lines[-1] == "  c.js:z", lines
-        assert compare({"a.js:x"}, {"a.js:x", "c.js:z"})[1] is False
+        lines, drops = compare({"a.js:x": "1", "b.js:y": "1"}, {"a.js:x": "1", "c.js:z": "1"})
+        assert drops and lines[1] == "  b.js:y" and lines[3] == "  c.js:z", lines
+        assert compare({"a.js:x": "1"}, {"a.js:x": "1", "c.js:z": "1"})[1] is False
+        lines, drops = compare({"a.js:x": "1"}, {"a.js:x": "2"})
+        assert not drops and "  a.js:x" in lines and lines[-1].startswith("push before landing"), lines
+        assert not compare({"a.js:x": "1"}, {"a.js:x": "1"})[0][-1].startswith("push"), "nothing to push"
         assert slug("feature/Desk Doorway!") == "feature-desk-doorway"
         assert len(slug("x" * 80)) == 40
         changed = repoint(wt, "charming-caiman-61", "brainy-otter-615")

@@ -782,6 +782,10 @@ Landing variants.
      secret list`, `vercel env ls production`, `npx convex env list --prod`. Names only,
      never values. A missing one parks (`stage.sh <root> gate:input`, `needs input:` naming
      it): a production setting is Pete's (screendrop-worker's OWNER_SUB, 2026-11-05).
+   - On `backend: copy`, `branch-db.py diff <worktree> [<app-dir>]`: each function it lists
+     as only on the branch, or reshaped there, is one main's server calls on shared dev the
+     moment this lands, so push it there first with the repo's dev deploy, merged with main
+     so nothing drops (cel-360's new optional arg; rare-cases, Backends, for a sibling's).
    - On a design ship, from the worktree, `route.py log repo= ship= <what decisions.py tally
      <slug> prints>`: `used` counts decisions that changed what the ship did (a question not
      asked, a choice made their way, a reversal said out loud). Tally's exit 1 means no recall
