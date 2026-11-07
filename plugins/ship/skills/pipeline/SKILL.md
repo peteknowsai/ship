@@ -708,8 +708,8 @@ Wonder read where Sizing says.
   back (the recap names the transcript). A number of one or two digits takes a word that
   stood beside it, `43@test`, since bare it matches clock times and line numbers. A number
   the session worked out in its head, such as a sum, may show in none, so check its parts.
-  An image on the branch links by commit (`blob/<sha>/<path>?raw=true`). The door is ship's call: **two-way** (a revert undoes it)
-  lands now; **one-way** (it deletes or migrates data, sends something to people, or a revert
+  An image on the branch links by commit (`blob/<sha>/<path>?raw=true`). The door is ship's
+  call: **two-way** (a revert undoes it) lands now; **one-way** (it deletes or migrates data, sends something to people, or a revert
   can't undo it) waits for "merge main", as do a money path and a change he said he'd try
   first: `stage.sh <root> gate:test`, the card, `needs input:`. On `land: auto` only a money
   path waits.
