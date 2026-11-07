@@ -248,6 +248,22 @@ why `shared-dev` is now an opt-out.
 
 ## Design & review
 
+- **A server-down case met the phone's cache** (iosvoicepads, 2026-11-07): plan case 12
+  stopped the server to show "The voices could not be loaded", but GET /api/voice/voices
+  answers `public, max-age=86400` and the sheet keeps its list in memory, so the phone opened
+  it from what it had. The Simulator's gallery showed the words, but it never fetches, so it
+  proved the text renders, not the path. cells-app reaches a load error with a fresh launch
+  under `CELLS_DEBUG_OFFLINE=1` (`NetworkPath.swift`), which fails before URLSession and its
+  cache, with no server stopped.
+
+- **Stopping the dev server cut off a bot turn** (the same ship): a worker run started
+  seconds before the stop kept answering 500 while the walk went on, and the QA person's
+  `DELETE /api/account` failed at its Eve wipe. cells-app's checks skill already says never
+  to restart dev mid-turn, and the offline switch above needs no stop. Once that delete has
+  failed at the Eve wipe, after its Plaid and connector revokes, the prune's own way out
+  finishes it: Clerk's deleteUser, then `deleteOrphan` in `lib/account.ts`. Never before
+  those revokes, since a connector grant outlives the Clerk user.
+
 - **A test that forbids the old value breaks when the value comes back** (homezero-www,
   2026-11-07): packDocs asserted that no doc said "$1 trial", and Pete's move back to $1 at
   "merge main" broke it. A test for a changed value checks every copy against its one
