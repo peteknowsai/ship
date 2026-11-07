@@ -423,6 +423,7 @@ def card_missing(ship, root='.'):
     added = base and git_at(root, 'diff', '--name-only', '--diff-filter=A', f'{base}...HEAD')
     if not added or added.returncode:
         return False
+    ship = re.sub(r'^(feature|fix|refactor)-', '', ship, flags=re.I)  # a fix/ branch's card skips fix-
     key = re.match(r'[a-z]+-[0-9]+', ship, re.I)  # cel-221: a card folder may carry just the key
     sid = re.compile(re.escape((key.group(0) if key else ship).lower()) + r'(?![0-9])')
     return not any(f.endswith('.html') and sid.search(f) and 'review' in f.replace(ship.lower(), '')
@@ -623,6 +624,12 @@ def selftest():
                   readers(['repo=ship', 'ship=cel-9-thing']) == 1)
             commit(['specs/qa/2026-11-05-cel-9/review.html'], 'card')
             check('a card in a folder named by the key counts', card_missing('cel-9-thing', cards) is False)
+            g('switch', '-q', '-c', 'fix/review-queue')
+            commit(['specs/designs/2026-11-05-review-queue.html'], 'storyboard')
+            check("a fix- slug's storyboard is not its card", card_missing('fix-review-queue', cards) is True)
+            commit(['specs/qa/2026-11-07-review-queue/review.html'], 'card')
+            check("a fix- slug's card may drop the fix-", card_missing('fix-review-queue', cards) is False)
+            g('switch', '-q', 'feature/cel-9-thing')
             check('with the card, a branch row with no stage (main\'s rows) counts as a branch read',
                   readers(['repo=ship', 'ship=cel-9-thing']) == 0)
         finally:

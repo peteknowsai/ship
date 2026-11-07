@@ -1,7 +1,7 @@
-# Browser extras: protected previews, Playwright, print, copy, right-click, terminal UI
+# Browser extras: protected previews, Playwright, print, copy, paste, right-click, terminal UI
 
 Read when the target is a protected preview, chrome-devtools is missing, or the walk prints,
-copies, right-clicks, drives a browser on another box, or runs a terminal UI.
+copies, pastes, right-clicks, drives a browser on another box, or runs a terminal UI.
 
 ## A protected preview
 
@@ -45,7 +45,7 @@ macOS switch Pete's Dock click to that copy instead of opening his Chrome (2026-
 real locator clicks and keys, never events fired from `evaluate`, read the console through
 `page.on("console")`, and say in the result which browser ran.
 
-## Print, copy and right-click
+## Print, copy, paste and right-click
 
 - **Print**: headless `window.print()` stalls the browser, so judge the printout with
   print-media emulation first and click Print last.
@@ -53,6 +53,12 @@ real locator clicks and keys, never events fired from `evaluate`, read the conso
   reads "Failed to copy". That is the environment, not the app: before the real click, swap
   `writeText` for a recorder with `evaluate_script`, then click, and check the recorded text
   and the success toast.
+- **Paste**: chrome-devtools' `fill` and `type_text` enter text a key at a time, and its
+  page refuses `writeText`, so a field that acts on a paste never gets one: hello-dead-ends'
+  place field emptied itself at "https://" as a link was typed, while a pasted one stayed.
+  Paste through Playwright on chrome-headless-shell, as above: `context.grantPermissions(
+  ['clipboard-read', 'clipboard-write'])`, set the text with `navigator.clipboard.writeText`
+  in `page.evaluate`, click the field, then `page.keyboard.press('ControlOrMeta+V')`.
 - **Right-click**: chrome-devtools' click has no right button, so a menu that opens on
   `contextmenu` opens from the keyboard: focus the element with `evaluate_script` and check
   that `document.activeElement` is it, setting `tabIndex = -1` first on one that takes no
