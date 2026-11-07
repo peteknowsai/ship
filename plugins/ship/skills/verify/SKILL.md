@@ -34,7 +34,8 @@ concluding "looks right" is exactly the failure this skill exists to prevent.
   Chrome extension, a live-node rig): the borrowed Mac VM, the lock check, and a rig's
   windows, its Chrome for Testing and what the checks file keeps of it.
 - `reference/browser.md` when the target is a protected preview, chrome-devtools is missing,
-  or the walk prints, copies, drives a browser on another box, or runs a terminal UI.
+  or the walk prints, copies, right-clicks, drives a browser on another box, or runs a terminal
+  UI.
 
 **Two paths, named once:**
 - `<out-dir>` holds qa.md, result.md, the QA script and the dev log: an absolute path under

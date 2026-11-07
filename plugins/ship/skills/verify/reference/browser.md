@@ -1,7 +1,7 @@
-# Browser extras: protected previews, Playwright, print, copy, terminal UI
+# Browser extras: protected previews, Playwright, print, copy, right-click, terminal UI
 
 Read when the target is a protected preview, chrome-devtools is missing, or the walk prints,
-copies, drives a browser on another box, or runs a terminal UI.
+copies, right-clicks, drives a browser on another box, or runs a terminal UI.
 
 ## A protected preview
 
@@ -45,7 +45,7 @@ macOS switch Pete's Dock click to that copy instead of opening his Chrome (2026-
 real locator clicks and keys, never events fired from `evaluate`, read the console through
 `page.on("console")`, and say in the result which browser ran.
 
-## Print and copy
+## Print, copy and right-click
 
 - **Print**: headless `window.print()` stalls the browser, so judge the printout with
   print-media emulation first and click Print last.
@@ -53,6 +53,11 @@ real locator clicks and keys, never events fired from `evaluate`, read the conso
   reads "Failed to copy". That is the environment, not the app: before the real click, swap
   `writeText` for a recorder with `evaluate_script`, then click, and check the recorded text
   and the success toast.
+- **Right-click**: chrome-devtools' click has no right button, so a menu that opens on
+  `contextmenu` opens from the keyboard: focus the element with `evaluate_script` and check
+  that `document.activeElement` is it, setting `tabIndex = -1` first on one that takes no
+  focus, then `press_key` `ContextMenu`. Shift+F10 does nothing on macOS, as muse-spaces'
+  Unpin menu showed.
 
 ## A browser on another box
 
