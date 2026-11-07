@@ -182,8 +182,9 @@ the red, and the evidence says main's page was unreachable.
   the phrasing, each run through main's wording and the branch's, the same inputs, 3 fresh
   sessions each, both quoted (the pipeline's replay rule): cel-264's "being there answers
   it" passed an evening showing and failed a morning one. A batch that needs no hands (those
-  sessions, a replay, an eval) starts in the background before the walk: prompt-cache's
-  15 x 3 cases took 45 minutes after it, and LAND waited.
+  sessions, a replay, an eval) starts in the background before the walk, as a test person of
+  its own: prompt-cache's 15 x 3 cases took 45 minutes after it, and LAND waited. A fix to
+  what it tests starts it again.
 - A feature that reads a number a provider reports (cost, tokens) gets one real value read
   back from the runtime before a walk is built on it: cel-302 lost two rounds to $0.03 and
   $0.002 caps before finding its model reports a cost of 0.
