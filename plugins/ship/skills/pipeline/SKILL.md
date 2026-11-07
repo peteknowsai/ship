@@ -494,7 +494,12 @@ one with uncommitted work, one a live session holds (wt's 💬), or one under tw
   1 of 3 asks while all 3 pictures showed one, and a round went to which counted. The cases
   verify proves at data level or counts as a rate pass on data. A cost or token count a
   provider reports is quoted from a live read or main's runtime, never guessed (verify: Pick
-  cases that can fail; cel-302). TEST walks them as written, may add, never drops one.
+  cases that can fail; cel-302). A case only Pete's hands can make, such as the lock button
+  or a real phone call, splits in two. What the app does walks on the tools: `agent-device
+  home` backgrounds it the way a lock does where its code is the same for both. Only what
+  the locked phone shows is his. Ask him in one line, and keep building, whether that half
+  gates the landing or is his check after; no answer by TEST parks only that step
+  (musevoice parked on a lock mid-call). TEST walks them as written, may add, never drops one.
   Writing them before the code keeps them about what was asked, not what got built.
 - **A task that hooks into a dependency's runtime** (a framework's workflow, a bundler's
   transform, the shape a model must answer in) is followed by a driver live check of the real
@@ -710,7 +715,9 @@ Wonder read where Sizing says.
 - **`broken` after three rounds on one step, or `unverifiable`: park.** `stage.sh <root>
   gate:input`, hand Pete the result and evidence, and end with `needs input:` ("test:
   <feature>: couldn't prove <step>: <reason>"). Partial is `unverifiable`, never a footnote
-  on a landing: three ships went to Pete with a known gap and he found it in minutes.
+  on a landing: three ships went to Pete with a known gap and he found it in minutes. The
+  one exception is a step Pete said at PLAN is his check after: with it the only UNWALKED
+  line, the run lands, and `result:` and the PR name it as his.
 - **The review card**, SELF-DIRECTED and GATED, on a pass or a park: `reference/
   review-card.html`, whose comment says where it goes, what each slot holds, and that it is
   committed before the merge with the shots it shows. `LANDING_STATUS` says "Tested · landing
@@ -746,9 +753,10 @@ Landing variants.
      the way the checks skill says, while the server still answers: `scripts/listener.sh
      <port> 1` naming this worktree, then one request. A reboot or a stop during a park takes
      it (company-pack's Mac rebooted mid-park), so start it again on the app the walk used
-     first (Clerk's test instance caps at 100 people; cells-app: each walk person by `DELETE
-     /api/account` as them, the checks skill's recipe, since `npm run prune -- --people
-     --finish` waits on every other landing's lock: cel-297 stalled behind #442's).
+     first (Clerk's test instance caps at 100 people; cells-app: each person it kept, the
+     walk's and a smoke's `--keep` one, by `DELETE /api/account` as them, the checks skill's
+     recipe, since `npm run prune -- --people --finish` waits on every other landing's lock:
+     cel-297 stalled behind #442's).
    - `stage.sh <root> land`, `git fetch origin`; if main moved, absorb it in a call of its own
      and see it merged clean before any gate (CEL-140 gated a half-merged tree). On `copy`, every
      absorb is pushed with `branch-db.py push` as REVIEW's sync says, before any gate or server
