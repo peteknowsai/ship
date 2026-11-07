@@ -771,9 +771,11 @@ Landing variants.
      `listener.sh <port> 1` must find nothing (one still there stops by its process group).
    - `route.py readers repo=<r> ship=<slug>` exits 0 (SELF-DIRECTED and GATED): every plan
      task built or parked, both branch readers logged and the review card committed; a
-     parked task it names goes in the PR body. Push.
+     parked task it names goes in the PR body. `git fetch origin` once more: main moved
+     during these steps means an absorb again and the scoped run over it (feed-imagery's
+     206 s smoke let #495 land between). Push.
 2. **GitHub agrees.** `gh pr ready <#> -R <o/r>`; `gh pr view <#> -R <o/r> --json mergeable`
-   says `MERGEABLE`; `gh pr checks <#> -R <o/r>`: no checks reported means the local gates
+   says `MERGEABLE`, else back to step 1's absorb; `gh pr checks <#> -R <o/r>`: no checks reported means the local gates
    stand, pending waits (`--watch`), red is fixed in the worktree and back to step 1. These
    and the merge spend GitHub's GraphQL budget, which sibling ships exhaust while `gh api
    rate_limit` still shows budget: the REST forms are in incidents: GitHub.
