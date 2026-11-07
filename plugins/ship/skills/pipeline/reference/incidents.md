@@ -245,6 +245,13 @@ why `shared-dev` is now an opt-out.
   (`gh run list --commit <sha>`), and artifact-check the lane before handing back a URL.
 - **Two sessions once raced identical fixes to a red shared lane** and one ship was
   thrown away. Check for an existing fix PR first; open a draft PR as the claim.
+- **A diff that `live:` puts out in two parts, one at the merge and one at a later release,
+  can send the first at a page the second hasn't put out yet.** cel-361's websites went
+  live at the merge with Sign up and "Ask to join" pointing at `app.homezero.md/sign-up`,
+  an app page that stayed 404 until Pete's release, and the run found it by chance at the
+  review card. Before the merge, curl on production each link, fetch or call a
+  merge-deployed file makes into a path the diff adds to the later part; a 404 parks with
+  `needs input:` offering "merge and release" or "merge now".
 
 ## Design & review
 
