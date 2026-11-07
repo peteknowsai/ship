@@ -695,8 +695,8 @@ Wonder read where Sizing says.
   list, all from the triage file. Every number anywhere comes from recorded output, rechecked
   before posting; after a compaction, with `scripts/numbers.py <transcript> <n>...`, which
   counts one only where output the session didn't write showed it, never its own words read
-  back (the recap names the transcript); a number it worked out, a sum or a share, shows in
-  none, so check its parts. An image on the branch links by commit
+  back (the recap names the transcript); a number it worked out in its head, such as a sum,
+  may show in none, so check its parts. An image on the branch links by commit
   (`blob/<sha>/<path>?raw=true`). The door is ship's call: **two-way** (a revert undoes it)
   lands now; **one-way** (it deletes or migrates data, sends something to people, or a revert
   can't undo it) waits for "merge main", as do a money path and a change he said he'd try

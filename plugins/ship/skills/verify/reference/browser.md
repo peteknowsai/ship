@@ -54,8 +54,10 @@ real locator clicks and keys, never events fired from `evaluate`, read the conso
   `writeText` for a recorder with `evaluate_script`, then click, and check the recorded text
   and the success toast.
 - **Right-click**: chrome-devtools' click has no right button, so a menu that opens on
-  `contextmenu` opens from the keyboard: focus the element with `evaluate_script`, then
-  `press_key` `ContextMenu`. Shift+F10 does nothing on macOS (muse-spaces' Unpin menu).
+  `contextmenu` opens from the keyboard: focus the element with `evaluate_script` and check
+  that `document.activeElement` is it, setting `tabIndex = -1` first on one that takes no
+  focus, then `press_key` `ContextMenu`. Shift+F10 does nothing on macOS, as muse-spaces'
+  Unpin menu showed.
 
 ## A browser on another box
 

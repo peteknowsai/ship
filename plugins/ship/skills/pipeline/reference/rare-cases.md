@@ -150,10 +150,12 @@ design machinery only to the repo's own. The repo's parity check joins the gates
   workshop. Its design is the reference bundle; its storyboard frame is the lifted
   markup, with the i18n id, the chunk and the class strings named in the caption. A
   ship that touches nothing of the repo's own still storyboards, so Pete sees where the
-  lifted thing sits in the app, and locks on that. A stylesheet copied in from the bundle
-  beside the storyboard loses its trailing spaces as it lands (`sed -i '' 's/[[:space:]]*$//'
-  <file>`), since a whole-branch `git diff --check` refuses them at land: #492 and muse-spaces
-  each carried Muse's 223.
+  lifted thing sits in the app, and locks on that. Strip the trailing spaces from a
+  stylesheet copied in from the bundle beside the storyboard, `sed -i '' 's/[[:space:]]*$//'
+  <file>`, and commit it once `git diff --check $(git merge-base origin/main HEAD)` is quiet,
+  since a land script that checks the whole branch refuses it: #492 and muse-spaces each
+  carried Muse's 223 trailing spaces to land. git also refuses a space before a tab and a
+  blank last line, which the sed leaves.
 - **PLAN.** Ponytail's ladder stops above the reference. A wrapper, a class, a token or
   an element the reference's markup carries is never waste, however empty it looks (the
   padding lives in it); "shortest working diff" applies to the repo's own code only.
