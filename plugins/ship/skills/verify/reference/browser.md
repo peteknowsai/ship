@@ -53,12 +53,14 @@ real locator clicks and keys, never events fired from `evaluate`, read the conso
   reads "Failed to copy". That is the environment, not the app: before the real click, swap
   `writeText` for a recorder with `evaluate_script`, then click, and check the recorded text
   and the success toast.
-- **Paste**: chrome-devtools' `fill` and `type_text` enter text a key at a time, and its
-  page refuses `writeText`, so a field that acts on a paste never gets one: hello-dead-ends'
-  place field emptied itself at "https://" as a link was typed, while a pasted one stayed.
-  Paste through Playwright on chrome-headless-shell, as above: `context.grantPermissions(
-  ['clipboard-read', 'clipboard-write'])`, set the text with `navigator.clipboard.writeText`
-  in `page.evaluate`, click the field, then `page.keyboard.press('ControlOrMeta+V')`.
+- **Paste**: chrome-devtools' `fill` and `type_text` fire no paste event, and its page
+  refuses `writeText`, so a field that acts on a paste never gets one: hello-dead-ends'
+  place field emptied itself at "https://" as a link was typed, and looked up a pasted one.
+  Paste through Playwright on chrome-headless-shell, as above: grant
+  `['clipboard-read', 'clipboard-write']` with `context.grantPermissions`, await
+  `navigator.clipboard.writeText(<text>)` in `page.evaluate` and check that it resolved,
+  since a failed write pastes whatever the browser held last, click the field, then
+  `page.keyboard.press('ControlOrMeta+V')`.
 - **Right-click**: chrome-devtools' click has no right button, so a menu that opens on
   `contextmenu` opens from the keyboard: focus the element with `evaluate_script` and check
   that `document.activeElement` is it, setting `tabIndex = -1` first on one that takes no

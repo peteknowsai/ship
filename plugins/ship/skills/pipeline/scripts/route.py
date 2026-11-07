@@ -359,7 +359,7 @@ def readers(pairs):
         ship = str(want['ship'])
         key = lambda slug: (re.match(r'[a-z]+-\d+', slug) or [slug])[0]  # cel-302 of cel-302-usage-deny
         akin = lambda slug: (slug.startswith(ship + '-') or ship.startswith(slug + '-')
-                             or key(slug) == key(ship))
+                             or key(slug) == key(ship) or bare_slug(slug) == bare_slug(ship))
         near = sorted({str(r['ship']) for r in rows() if r.get('repo') == want['repo'] and r.get('ship')
                        and str(r['ship']) != ship and r.get('review') in ('wonder', 'opus')
                        and r.get('stage', 'branch') == 'branch'
@@ -413,20 +413,26 @@ def branch_start(root):
     return int(first[0]) if first else None
 
 
+def bare_slug(ship):
+    """The slug without a branch kind's prefix: fix-x is x, as a fix/x branch's card names it."""
+    return re.sub(r'^(feature|fix|refactor)-', '', ship, flags=re.I)
+
+
 def card_missing(ship, root='.'):
     """True when the branch at `root` adds no review card for `ship`: an .html file naming the
-    ship's key or slug that says review outside the slug itself, so cel-12-review-queue's
-    storyboard isn't its card. False when it does or git can't tell (no repo, no base). Only
+    ship's key or slug, with or without a leading feature-, fix- or refactor-, that says review
+    outside the slug itself, so cel-12-review-queue's storyboard isn't its card. False when it does or git can't tell (no repo, no base). Only
     SELF-DIRECTED and GATED ships run readers, after the card's commit, so it never nags an
     EXPRESS ship or one mid-LAND (cel-323). thin-search needed a second PR for one."""
     base = base_ref(root)
     added = base and git_at(root, 'diff', '--name-only', '--diff-filter=A', f'{base}...HEAD')
     if not added or added.returncode:
         return False
-    ship = re.sub(r'^(feature|fix|refactor)-', '', ship, flags=re.I)  # a fix/ branch's card skips fix-
-    key = re.match(r'[a-z]+-[0-9]+', ship, re.I)  # cel-221: a card folder may carry just the key
-    sid = re.compile(re.escape((key.group(0) if key else ship).lower()) + r'(?![0-9])')
-    return not any(f.endswith('.html') and sid.search(f) and 'review' in f.replace(ship.lower(), '')
+    bare = bare_slug(ship)  # hello-dead-ends filed fix-hello-dead-ends' card without the fix-
+    key = re.match(r'[a-z]+-[0-9]+', bare, re.I)  # cel-221: a card folder may carry just the key
+    sid = re.compile(re.escape((key.group(0) if key else bare).lower()) + r'(?![0-9])')
+    cut = lambda f: f.replace(ship.lower() if ship.lower() in f else bare.lower(), '')  # fix-review
+    return not any(f.endswith('.html') and sid.search(f) and 'review' in cut(f)
                    for f in (line.lower() for line in added.stdout.splitlines()))
 
 
@@ -618,6 +624,12 @@ def selftest():
                 readers(['repo=ship', 'ship=cel-9-thing'])
             check("a refusal names the near slug this branch's rows went under, never a plan-only or "
                   "longer-numbered one", 'under ship=cel-9:' in hint.getvalue())
+            log(['repo=ship', 'ship=hello-x', 'review=opus', 'stage=branch', 'real=1'])
+            hint = io.StringIO()
+            with contextlib.redirect_stderr(hint):
+                readers(['repo=ship', 'ship=fix-hello-x'])
+            check("a refusal names the slug without fix- the rows went under",
+                  'under ship=hello-x:' in hint.getvalue())
             log(['repo=ship', 'ship=cel-9-thing', 'review=wonder', 'stage=branch', 'real=1'])
             log(['repo=ship', 'ship=cel-9-thing', 'review=opus', 'real=2'])
             check('readers refuses a landing with both readers but no card',
@@ -629,6 +641,9 @@ def selftest():
             check("a fix- slug's storyboard is not its card", card_missing('fix-review-queue', cards) is True)
             commit(['specs/qa/2026-11-07-review-queue/review.html'], 'card')
             check("a fix- slug's card may drop the fix-", card_missing('fix-review-queue', cards) is False)
+            g('switch', '-q', '-c', 'fix/review')
+            commit(['specs/qa/2026-11-07-fix-review/review.html'], 'card')
+            check("a slug inside the word review still finds its card", card_missing('fix-review', cards) is False)
             g('switch', '-q', 'feature/cel-9-thing')
             check('with the card, a branch row with no stage (main\'s rows) counts as a branch read',
                   readers(['repo=ship', 'ship=cel-9-thing']) == 0)
