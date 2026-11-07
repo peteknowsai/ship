@@ -140,8 +140,9 @@ or none). Then numbered steps, each one thing a person does and what they should
 put". Cover every acceptance criterion, every frame the change built (a visible gap from
 its frame is a failure), the edges the spec names, and a clean console. A repo whose
 contract checks one app of several (cells-app: Homebody) walks every frame there, and a
-frame that exists only on another app on that app's own server (cells-faces drew Cells'
-faces); the contract's app still runs the gates and smoke. Another app's part of a shared
+frame that app lacks on one that has it, from this worktree's server switched to it as the
+repo's checks file says, never that app's own checkout of main (cells-faces drew Cells'
+faces). The gates and smoke follow the contract's own rule. Another app's part of a shared
 frame is proven by its own tests, run under its own switch (`PACK=<pack>`) where the diff
 changed its files, and is neither a step nor unwalked. A changed helper's callers, and theirs, decide
 which screens the script walks: eca-finder-193 planned a page that renders none of the helpers
@@ -409,17 +410,16 @@ never sits beside it. A file over its cap gets pruned in the same edit, back und
 the lines on one subject, and drop a line whose screen or code is gone. No file yet: write it
 from `reference/checks-template.md` with what this run proved, and say so in the hand-back.
 Name it `checks`, never `verify`, which is Claude Code's own skill. A run that learned
-nothing leaves it alone. Write it over main's copy, fetched just before (`git show
-origin/<base>:<path>`), with every lesson this branch adds put back and the prune made
-there: two ships pruning cells-app's file the same day merged the same lines their own
-ways and conflicted at the PR (cells-faces and #495).
+nothing leaves it alone.
 
 **Commit before handing back, in a ship's worktree on `works`**: the run's fixes, §4's spec
 and this write-back, whichever exist, staged by path so generated churn a running dev server
 writes (`next-env.d.ts`) stays out. Left uncommitted until landing, a write-back makes the
 absorb refuse when main changed the same file; committed, the absorb merges it or shows a
 real conflict (cel-303: main rewrote cells-app's checks file to one line per lesson
-meanwhile). A `broken` or `unverifiable` run commits nothing, and a standalone run outside a
+meanwhile). A conflict there resolves to main's copy with this branch's own changes to it
+(`git diff $(git merge-base HEAD origin/main) HEAD -- <path>`) put back, and the cap's prune
+redone on the result: two ships pruned it the same day, 10 s apart (cells-faces and #495). A `broken` or `unverifiable` run commits nothing, and a standalone run outside a
 ship commits nothing either: it names the changed files in the hand-back.
 
 ## 6. Hand back proof

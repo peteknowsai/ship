@@ -258,15 +258,17 @@ why `shared-dev` is now an opt-out.
   film specks orbiting the old bean's oval, and the fix resized the oval, while her membrane
   swells, dents, squashes and hops every frame. TEST's per-frame `requestAnimationFrame`
   sampler then found specks on or past her outline at 0.7 to 1.3 s and 16.0 to 21.7 s of the
-  film. A fix to something that moves is checked frame by frame before its commit: sample
-  the fixed parts against the live shapes they must stay inside, across the whole loop.
+  film. A fix to something that moves is checked over the whole loop before its commit: a
+  test that samples the moving shape and the fixed parts at many times, or a browser
+  sampler on `requestAnimationFrame` through `evaluate_script` (the repo's checks file may
+  keep one), with the fixed parts kept inside the live shapes at every sample.
 
 - **QA cases that walked apps the contract assumes work** (muse-icons, 2026-11-06): the
   plan walked five other packs' web colors, Swain's iPhone app and a Cells lab, while
   cells-app checks on Homebody only and says the other packs are the same code. At TEST,
   verify's "partial is unverifiable" met that rule and the run settled it from memory at
   landing. The walks go on the app the contract checks, a lab switched on there, and a
-  frame that exists only on another app on that app (cells-faces drew Cells' faces); another
+  frame that app lacks on one that has it (cells-faces drew Cells' faces); another
   app's part of a shared frame is its own tests, under its own switch where the diff changed its
   files (muse-icons edited four packs' `skin.css`; `PACK=swain` runs `skin.test.ts`), never a
   step (verify: Write qa.md).
