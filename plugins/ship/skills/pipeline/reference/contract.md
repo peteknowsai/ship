@@ -58,9 +58,10 @@ its own, so `kill -- -$(ps -o pgid= -p <runner pid> | tr -d ' ')` from another c
 that run and nothing else, never a Mac-wide `pkill -f vitest`, which takes sibling ships'
 runs with it.
 
-**Red under load.** A run, full or scoped, whose only failures, of any kind, are in files the
-diff never touched, under heavy load from sibling ships (timeouts, a query that finds nothing
-right after a re-render, or a set that moves between unrelated files from run to run), reruns just those files alone, through the repo's test script. If they
+**Red under load.** A run, full or scoped, whose only failures are in files the diff never touched,
+under heavy load from sibling ships (timeouts, a set that moves between unrelated files from
+run to run, or another failure in a file that imports nothing the diff changed, as the
+runner's changed mode shows: a query that found nothing right after a re-render), reruns just those files alone, through the repo's test script. If they
 pass alone, it's load: both runs and the `uptime` load figure go in the commit or the
 `result:` line, and it isn't root-caused. A scoped run picked each file because it imports
 the diff, so there a file passes as load only when its time alone is under half its limit;

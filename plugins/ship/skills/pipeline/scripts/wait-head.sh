@@ -26,15 +26,17 @@ selftest() {
   git init -q "$t/w" && git -C "$t/w" -c user.email=t@t -c user.name=t commit -q --allow-empty -m a
   local head; head=$(git -C "$t/w" rev-parse HEAD)
   mkdir "$t/bin"
-  # a fake gh that shows the old head for the first two asks, then this HEAD
-  printf '#!/bin/sh\nn=$(cat %s/n 2>/dev/null || echo 0); n=$((n + 1)); echo $n > %s/n\n[ "$2" = repos/o/r/pulls/7 ] || exit 1\n[ $n -le 2 ] && echo 0000000000 || echo %s\n' "$t" "$t" "$head" > "$t/bin/gh"
+  # A fake gh: the head only for `api repos/o/r/pulls/7 -q .head.sha`, stale for the first
+  # $STALE asks, and failing past 10 so a loop that never ends fails rather than hangs.
+  printf '#!/bin/sh\nn=$(cat %s/n 2>/dev/null || echo 0); n=$((n + 1)); echo $n > %s/n\n[ $n -le 10 ] || exit 3\n[ "$*" = "api repos/o/r/pulls/7 -q .head.sha" ] || exit 1\n[ $n -le "$STALE" ] && echo 0000000000 || echo %s\n' "$t" "$t" "$head" > "$t/bin/gh"
   chmod +x "$t/bin/gh"
-  run() { (cd "$t/w" && PATH="$t/bin:$PATH" WAIT_HEAD_EVERY=0 bash "$self" "$@"); }
-  out=$(run o/r 7 10 2>&1) || { echo "wait-head selftest: FAILED (a head that catches up should pass: $out)"; return 1; }
+  run() { (cd "$t/w" && PATH="$t/bin:$PATH" WAIT_HEAD_EVERY=1 bash "$self" "$@"); }
+  out=$(STALE=2 run o/r 7 5 2>&1) || { echo "wait-head selftest: FAILED (a head that catches up should pass: $out)"; return 1; }
   [ "$(cat "$t/n")" = 3 ] || { echo "wait-head selftest: FAILED (asked $(cat "$t/n") times, want 3)"; return 1; }
-  echo 0 > "$t/n"; rc=0; run o/r 7 0 >/dev/null 2>&1 || rc=$?
-  [ "$rc" = 1 ] || { echo "wait-head selftest: FAILED (a stale head past the limit should exit 1, got $rc)"; return 1; }
-  rc=0; run o/r 8 10 >/dev/null 2>&1 || rc=$?
+  echo 0 > "$t/n"; rc=0; STALE=99 run o/r 7 2 >/dev/null 2>&1 || rc=$?
+  [ "$rc" = 1 ] && [ "$(cat "$t/n")" = 3 ] || { echo "wait-head selftest: FAILED (a stale head should exit 1 after 3 asks in 2 s, got $rc after $(cat "$t/n"))"; return 1; }
+  echo 0 > "$t/n"
+  rc=0; STALE=0 run o/r 8 10 >/dev/null 2>&1 || rc=$?
   [ "$rc" = 2 ] || { echo "wait-head selftest: FAILED (a failed ask should exit 2, got $rc)"; return 1; }
   echo "wait-head selftest: ok"
 }
