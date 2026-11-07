@@ -177,13 +177,14 @@ the red, and the evidence says main's page was unreachable.
   the small-town walks read the same gap as a thin market.
 - Removing an element walks the other jobs it did: homebody-skin's disc behind the phone face
   also caught taps and hid scrolled text.
-- A bug in saved state that main gets right on the reported path, or a new gate that reads
-  saved state, gets a case for each other code path that writes that state, found by
-  searching the code for every write to it, and the fix or gate is walked on each: cel-313's
-  reported write read right on main 8 of 8, and only a direct edit of the same field made
-  main's checker reject the right $19,500 and write the old $18,000 back. cel-360's
-  first-open gate read whether a person had posts, and the wire stories a scroll's
-  /api/feed/more wrote counted as theirs and lifted it; both branch readers missed it.
+- A bug in saved state that main gets right on the reported path, or a new condition that
+  reads saved state to decide what runs or shows, gets a case for each other code path that
+  writes that state, found by searching the code for every write to it, and the fix or
+  condition is walked on each: cel-313's reported write read right on main 8 of 8, and only
+  a direct edit of the same field made main's checker reject the right $19,500 and write
+  the old $18,000 back. cel-360's editions waited on "nothing known" until the person had
+  posts, and the wire stories a scroll's /api/feed/more wrote counted as theirs; both branch
+  readers missed it.
 - A field a model fills or judges gets cases that vary what it reads, the time, the place,
   the phrasing, each run through main's wording and the branch's, the same inputs, 3 fresh
   sessions each, both quoted (the pipeline's replay rule): cel-264's "being there answers
@@ -318,9 +319,9 @@ EXPECTED / OBSERVED: for every step that didn't pass
 TASTE: <0-3 short "looked off / couldn't confirm" notes, or "none">
 ```
 
-Each EVIDENCE caption, and any text it quotes, is read off the shot or output it cites after
-the last rerun, never copied from the QA script: cel-360's quoted the script's Paonia under a
-shot of Loveland.
+Each EVIDENCE caption, and any text it quotes, is read off the shot or output it cites
+after the last rerun, never copied from the QA script: cel-360's quoted the script's Paonia
+under a shot of Loveland.
 
 `works` needs `UNWALKED: none`; anything else is `unverifiable`. A compaction summary once
 carried "step 13 is Pete's" as settled, and the result put it under `works` as a footnote;

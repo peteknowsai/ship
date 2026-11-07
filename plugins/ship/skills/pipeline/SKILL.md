@@ -782,10 +782,6 @@ Landing variants.
      secret list`, `vercel env ls production`, `npx convex env list --prod`. Names only,
      never values. A missing one parks (`stage.sh <root> gate:input`, `needs input:` naming
      it): a production setting is Pete's (screendrop-worker's OWNER_SUB, 2026-11-05).
-   - On `backend: copy`, `branch-db.py diff <worktree> [<app-dir>]`: each function it lists
-     as only on the branch, or reshaped there, is one main's server calls on shared dev the
-     moment this lands, so push it there first with the repo's dev deploy, merged with main
-     so nothing drops (cel-360's new optional arg; rare-cases, Backends, for a sibling's).
    - On a design ship, from the worktree, `route.py log repo= ship= <what decisions.py tally
      <slug> prints>`: `used` counts decisions that changed what the ship did (a question not
      asked, a choice made their way, a reversal said out loud). Tally's exit 1 means no recall
@@ -814,8 +810,15 @@ Landing variants.
    stand, pending waits (`--watch`), red is fixed in the worktree and back to step 1. These
    and the merge spend GitHub's GraphQL budget, which sibling ships exhaust while `gh api
    rate_limit` still shows budget: the REST forms are in incidents: GitHub.
-3. **Merge**: `gh pr merge <#> -R <o/r> --squash`, from the worktree, without
-   `--delete-branch`, so nothing local runs and a refusal leaves the tree.
+3. **Merge**. On `backend: copy`, first `branch-db.py diff <worktree> [<app-dir>]`: a
+   function it lists as only on the branch or reshaped is one main's server calls on shared
+   dev the moment this lands, and cel-360's new optional arg showed nowhere else. Where the
+   repo's contract names a dev deploy, push now, scoped to this app and merged with main so
+   nothing drops, since a land script smokes main right after its merge (cells-app:
+   `deploy.sh --dev --pack <pack>`); else push from the main checkout's app-dir with `npx
+   convex dev --once` once step 5 has pulled (incidents: Backends). Exit 1 names what that
+   push would drop: rare-cases, Backends. Then `gh pr merge <#> -R <o/r> --squash`, from the
+   worktree, without `--delete-branch`, so nothing local runs and a refusal leaves the tree.
 4. **Leave the worktree**: `ExitWorktree({action:"keep"})`. Every command after names the
    main checkout (`git -C <main>`, `wt -C <main>`): the shell can still sit in the worktree
    or a removed folder (CEL-233, CEL-217). `wt -C <main> remove feature/<slug> -f`, then
