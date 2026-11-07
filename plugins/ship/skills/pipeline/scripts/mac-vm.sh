@@ -34,7 +34,10 @@ info() { lume get "$1" -f json 2>/dev/null | jq -r "(if type == \"array\" then .
 ipof() { info "$1" ipAddress; }
 sshv() {  # sshv <vm> <args...>: one control connection per VM, kept until return, so tunnels ride it
   local name=$1 ip alias=ship-mac kh=$dir/known_hosts strict=yes; shift
-  ip=$(ipof "$name" || true); [ -n "$ip" ] || { echo "$name isn't running" >&2; return 255; }
+  ip=$(ipof "$name" || true)
+  # Under load lume's answer can come back empty for a running VM (app-look's retry worked).
+  [ -n "$ip" ] || { sleep "${MAC_VM_RETRY_S:-3}"; ip=$(ipof "$name" || true); }
+  [ -n "$ip" ] || { echo "$name isn't running" >&2; return 255; }
   # Pete's VM keeps its host key across base rebuilds, which replace the clones' shared one.
   [ "$name" = "$mine" ] && { alias=$mine; kh=$dir/known_hosts.mine; strict=accept-new; }
   ssh -i "$key" -o IdentitiesOnly=yes -o BatchMode=yes -o HostKeyAlias="$alias" -o CheckHostIP=no \
@@ -114,6 +117,10 @@ wipe() {  # wipe <vm>: its connection, then the VM. Lume's delete leaves a --det
 }
 borrow() {
   local n waited=0
+  # A boot at a load far over the core count times out (app-look: twice at 117 to 146 on 18),
+  # so wait for it first, holding no slot a sibling could take meanwhile.
+  bash "$(dirname "${BASH_SOURCE[0]}")/wait-load.sh" "${MAC_VM_LOAD_WAIT_S:-1200}" >&2 ||
+    { echo "the load stayed over the core count; no slot was taken" >&2; exit 1; }
   until n=$(take); do
     [ "${1:-}" = --wait ] || { echo "every ship Mac VM is out:" >&2; status >&2; exit 3; }
     [ $waited -lt 480 ] || { echo "no Mac VM came free in 8 min:" >&2; status >&2; exit 3; }
@@ -260,7 +267,7 @@ EOF
   printf '#!/bin/sh\ncase "$*" in *shutdown*) echo stopped > %s/state.pete-mac ;; esac\nexit 0\n' "$t" > "$t/bin/ssh"
   chmod +x "$t/bin/lume" "$t/bin/ssh"
   for w in a b c; do git init -q "$t/$w"; done
-  me() { (cd "$t/$1" && SHIP_MAC_SLOTS=${ts:-2} SHIP_MAC_DIR=$t/cfg PATH="$t/bin:$PATH" bash "$self" "${@:2}"); }
+  me() { (cd "$t/$1" && SHIP_MAC_SLOTS=${ts:-2} SHIP_MAC_DIR=$t/cfg PATH="$t/bin:$PATH" WAIT_LOAD_CORES=${tc:-100000} MAC_VM_LOAD_WAIT_S=${tw:-1200} MAC_VM_RETRY_S=0 bash "$self" "${@:2}"); }
   local fail=0 out
   check() { if [ "$2" = "$3" ]; then echo "ok   $1"; else echo "FAIL $1: got '$2', want '$3'"; fail=1; fi; }
   check "first borrow gets slot 1" "$(me a borrow)" "SLOT=1 IP=192.168.64.9"
@@ -279,6 +286,7 @@ EOF
   rm -rf "$t/a"
   check "a slot whose worktree is gone is free again" "$(me c borrow)" "SLOT=1 IP=192.168.64.9"
   check "borrowing again recycles your own slot" "$(me c borrow)" "SLOT=1 IP=192.168.64.9"
+  check "a load over the cores takes no slot" "$(tc=0 tw=0 me c borrow 2>&1 | tail -1)" "the load stayed over the core count; no slot was taken"
   ln -sfn "$t/b|$(( $(date +%s) - stale - 1 ))" "$t/cfg/slots/2"
   check "a slot unused past the limit is free" "$(me c status | sed -n 2p)" "slot 2: free"
   me c borrow >/dev/null

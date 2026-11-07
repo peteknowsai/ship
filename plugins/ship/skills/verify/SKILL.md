@@ -221,7 +221,9 @@ timing, and the peak had gone down.
 **Seed, then read it back.** Before the walk, read each seeded record back through the
 same backend and stage the app's server uses, and print which one. Two cells-app runs
 seeded main's stage from a worktree because the script read `.env.local` before setting
-its origin, and the walk lost a round to "No alert by that id".
+its origin, and the walk lost a round to "No alert by that id". Read back the model a bot
+turn will run on too, against the repo's checks file, before the first one: app-look's and
+prompt-cache's test people ran on OpenRouter and Sonnet until Pete stepped in.
 
 **Run it** the way a person would, with real clicks, taps and keys:
 - **Browser: the chrome-devtools MCP** (`mcp__chrome-devtools__*`, loaded with one

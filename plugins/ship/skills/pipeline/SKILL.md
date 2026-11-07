@@ -234,7 +234,9 @@ not its docs (Eve's queued messages, 2026-10-14).
 worktree:
 - `route.py plan <plan.md>` after PLAN: saves the tasks, starts the clock, marker to
   `build:0:<M>`.
-- `route.py gate <cmd>` runs each check and records whether it passed, one call per check.
+- `route.py gate <cmd>` runs each check and records whether it passed, one call per check,
+  the command as separate words (`route.py gate npm run typecheck`), never one quoted string;
+  a pipeline goes in a script file, `route.py gate bash <file>`.
 - `route.py log repo=<r> ship=<slug> task=<n> engine=<driver|opus> verdict=<clean|fixed|redone>`
   after each task's commit: it fills `seconds`, `gates_first_pass` and `fix_rounds` from the
   clock and the gate runs, and counts the task done. Never type a number you don't have.
@@ -599,7 +601,8 @@ Wonder read where Sizing says.
   builds rewrites tracked files under Muse's read. An absorb that touched the repo's
   `CLAUDE.md` / `AGENTS.md` can change the contract: reread it. Review against a stale fork
   reviews other ships' work as reversions.
-- **Start TEST's dev server now** (TEST: Keep it running), before either reader starts.
+- **Start TEST's dev server now** (TEST: Keep it running), before either reader starts, its
+  dev build output cleared first after an absorb, as LAND's rerun says.
 - **Both readers read the branch at once, from `reference/branch-review-brief.md`** filled
   and written to a file first, so a reader that dies is respawned from it: the Opus subagent
   (`model: "opus"`), launched first, and Wonder (`muse.py review`, background). Both briefs
@@ -746,7 +749,9 @@ Landing variants.
      restart, since code outside `convex/` is deployed too (cel-311's copy ran old functions). An absorb
      whose files (`git diff --name-only HEAD...origin/main` after the fetch and before the
      absorb, one plain call, right for a merge or a rebase) overlap what the QA run walked or measured reruns those steps on the merged
-     tree (the server restarted on it, or a preview's new build); an overlap of only tests,
+     tree (the server restarted on it, its dev build output cleared first where the repo's
+     checks file names it, or a preview's new build: app-look's server looped /sign-in after
+     its third merge until `.next/dev` and `.next/cache` went); an overlap of only tests,
      or imports that still name the same code, keeps the pass, and the PR says so.
    - The full gates once, if the tree changed since their last full run, with the dev server
      stopped and any simulator shut; a repo whose land script gates the merge runs only what
