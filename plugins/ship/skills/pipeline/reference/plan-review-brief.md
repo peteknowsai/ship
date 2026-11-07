@@ -45,9 +45,9 @@ Find, with file:line evidence for each:
   payload) quotes a real sample of it, never the storyboard's mock: one plan parsed a
   "Price" heading from a mock when the live brief says "Budget" (market-loops, 2026-10-15).
 - **Words a task carries to another platform's control**, such as the web's copy in a
-  one-line iPhone field or a tab, measured at that control's width and font: cel-362's "Your
-  free messages are back December 1" needs 315 pt and showed "back D..." in a composer about
-  250 pt wide.
+  one-line iPhone field or a tab, measured at that control's width and font on the
+  narrowest screen it ships to: cel-362's "Your free messages are back December 1" needs
+  315 pt and showed "back D..." in a composer about 250 pt wide.
 - **A claim about how a dependency behaves at runtime**, checked in its installed code
   (`node_modules/<pkg>/dist`), not its docs: a review once took Eve's docs on queued
   messages at their word, and the runtime did otherwise (2026-10-14).

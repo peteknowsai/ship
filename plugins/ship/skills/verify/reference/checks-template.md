@@ -9,9 +9,10 @@ What every session that proves a change here starts from. A QA run reads it firs
 writes back what it learned, in the same branch as the change.
 
 **One line per lesson, about 300 characters.** A new lesson on a subject a line already
-covers replaces that line. **Cap: 150 lines and 40 KB.** A run that takes the file over it
-prunes in the same edit: merge lines on one subject, drop a line whose screen or code is
-gone, or move a subject to `checks/<topic>.md` behind one line saying when to read it.
+covers replaces that line. **Cap: 150 lines or 40 KB, whichever comes first.** A run that
+takes the file over it prunes in the same edit, and a file already over ends each edit
+smaller: merge lines on one subject, drop a line whose screen or code is gone, or move a
+subject to `.claude/skills/checks/<topic>.md` behind one line saying when to read it.
 
 ## Start it
 

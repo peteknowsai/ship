@@ -121,8 +121,10 @@ that existed only untracked in the main checkout.
 
 **Start from the repo's checks.** A repo keeps how it is proven in a project skill,
 `.claude/skills/checks/SKILL.md`: how to start it, sign in, walk each screen, the pass
-lines it must meet, and the noise to ignore. Read it first and build the QA script on it, so a run never rediscovers
-what the last one learned (Pete, 2026-10-19). No file yet: §5 writes it from this run.
+lines it must meet, and the noise to ignore. Read it first, with each
+`.claude/skills/checks/<topic>.md` a line of it sends this change to, and build the QA
+script on them, so a run never rediscovers what the last one learned (Pete, 2026-10-19).
+No file yet: §5 writes it from this run.
 
 **Write `<out-dir>/qa.md`.** On a ship with a plan, its steps start from the plan's
 `## QA cases`, which PLAN wrote before any code: walk each as written, add any the build
@@ -426,10 +428,13 @@ added to its noise table so the next run skips it.
 
 **One line per lesson, about 300 characters.** A new lesson on a subject a line already
 covers replaces that line, never sits beside it. A subject that needs more moves to
-`checks/<topic>.md` beside the file, behind one line saying when to read it. A file over its
-cap, 150 lines or 40 KB, gets pruned in the same edit, back under it: merge the lines on one
-subject, drop a line whose screen or code is gone, move a subject out. A line cap alone let
-cells-app's file reach 103 KB in 150 lines, its lessons grown to 4,000 characters (cel-362).
+`.claude/skills/checks/<topic>.md`, behind one line in SKILL.md saying when to read it, and
+each file keeps these rules. The cap is 150 lines or 40 KB, whichever comes first. An edit
+that takes a file over it prunes back under in the same edit; a file already over ends each
+edit smaller than it began, and the hand-back says it is still over. Prune by merging the
+lines on one subject, dropping a line whose screen or code is gone, or moving a subject out.
+A line cap alone let cells-app's file reach 103 KB in 150 lines, lessons of 4,000
+characters (cel-362).
 No file yet: write it from `reference/checks-template.md` with what this run proved, and say
 so in the hand-back. Name it `checks`, never `verify`, which is Claude Code's own skill. A
 run that learned nothing leaves it alone.
@@ -440,9 +445,11 @@ writes (`next-env.d.ts`) stays out. Left uncommitted until landing, a write-back
 absorb refuse when main changed the same file; committed, the absorb merges it or shows a
 real conflict (cel-303: main rewrote cells-app's checks file to one line per lesson
 meanwhile). A conflict there resolves to main's copy with this branch's own changes to it
-(`git diff $(git merge-base HEAD origin/main) HEAD -- <path>`) put back, and the cap's prune
-redone on the result: two ships pruned it the same day, 10 s apart (cells-faces and #495). A `broken` or `unverifiable` run commits nothing, and a standalone run outside a
-ship commits nothing either: it names the changed files in the hand-back.
+(`git diff $(git merge-base HEAD origin/main) HEAD -- .claude/skills/checks/`) put back,
+each line in the file main now keeps its subject in, and the cap's prune redone on the
+result: two ships pruned it the same day, 10 s apart (cells-faces and #495). A `broken` or
+`unverifiable` run commits nothing, and a standalone run outside a ship commits nothing
+either: it names the changed files in the hand-back.
 
 ## 6. Hand back proof
 
