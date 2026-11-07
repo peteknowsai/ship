@@ -487,8 +487,8 @@ one with uncommitted work, one a live session holds (wt's 💬), or one under tw
   does and what they should see, which is its pass line: a log, a prompt or a row it reads is
   recorded beside that, never in its place (space-icons' prompts read 1 of 3 while its
   pictures were 5 of 5, and a round went to which counted), and a number it expects is read
-  back from the runtime first (verify: a number a provider reports), covering every frame, requirement and edge the spec names,
-  and each a case that fails on main's code, a race fix's at every ordering it claims, the same
+  back from the runtime first (verify: a number a provider reports), covering every frame,
+  requirement and edge the spec names, and each a case that fails on main's code, a race fix's at every ordering it claims, the same
   instant among them (verify: Pick cases that can fail), each control it presses on main or
   built by a named task, each state it starts from reached by a named path or seed, and
   each walk on the app the contract checks, or for a frame it lacks one that has it
