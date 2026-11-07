@@ -86,7 +86,12 @@ passes one word and fails "Unknown flag", silently inside a batch (cel-332). Wha
   (CEL-223 lost five rounds to it).
 - On iPhone PM the hand holding the phone is Pete's. Post him one line before the walk ("QA is
   on your phone now, hands off until it says done") and one when it ends; a tap no tool sent
-  is his before it is a bug (CEL-223 traced an "Always allow" to one).
+  is his before it is a bug (CEL-223 traced an "Always allow" to one). Check that before app
+  code: `~/.agent-device/sessions/<session>/events.ndjson` lists each command the walk sent,
+  its `runner.log` each tap the runner made (`AGENT_DEVICE_RUNNER_SYNTHESIZED_DISPATCH`), and
+  `~/.agent-device/device-claims/*.json` the session holding each device. livewords' chat
+  slid into old history and sent "Get house details" twice while its log held only the call's
+  start and end taps, and it read app code first.
 - A walk of anything that records on iPhone PM records Pete's room. Say so in the hands-off
   line, keep each recording under a minute, and delete the test person before landing
   (cells-app: `PACK=<pack> npm run prune -- --people --finish <clerk id>`): a 7-minute walk of
