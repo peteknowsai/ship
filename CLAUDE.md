@@ -13,7 +13,8 @@ read-only plan and branch reviews), `bash plugins/ship/hooks/ship-recap.sh
 --selftest` the recap a ship prints into its context after each compaction, `branch-db.py --selftest` the copy of
 the Convex dev database each worktree gets, `icon-check.py --selftest` the
 pre-flight's check that every page has a browser icon and a Home Screen icon,
-`carried.sh --selftest` LAND's check for commits this branch carries from another open
+`numbers.py --selftest` the after-compaction check of a number against the transcript's
+tool output, `carried.sh --selftest` LAND's check for commits this branch carries from another open
 PR, `what-changed.sh --selftest` the list of changed files and sections that stage.sh and the recap print
 when ship updates mid-run, and
 `mac-vm.sh --selftest` the bookkeeping of the headless Mac VM ships borrow to walk a

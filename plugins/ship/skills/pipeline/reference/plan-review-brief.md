@@ -30,6 +30,10 @@ Find, with file:line evidence for each:
   person works) **that an app-wide check counts as a modal or overlay**: get-the-apps' card
   took `role="dialog"`, ModalLayer's `overlayIsOpen` went true, and ⌘B and every shortcut
   not marked to work over a modal stopped. Both branch readers caught it; the plan read didn't.
+- **A test that walks the repo's files** reads them through `git ls-files --cached --others --exclude-standard` or `git grep
+  --untracked`, so a file not yet added still counts:
+  prompt-cache's guard test read 2,545 files inside a 5 s limit and timed out at load 90 in
+  land-pr, where `git grep` takes 0.2 s.
 - **A step that copies a secret from somewhere it can't be read back** (a Vercel sensitive
   variable pulls as a placeholder): it becomes a planned rotation on both sides, and the
   card says it signs everyone out once.

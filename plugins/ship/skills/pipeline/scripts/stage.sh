@@ -24,3 +24,6 @@ case "$here" in */plugins/cache/ship/ship/*)
   fi
 esac
 echo "$root: $2"
+# gh's -R, read from origin at every stage: typed from memory it named the Vercel team.
+r=$(git -C "$root" remote get-url origin 2>/dev/null | sed -nE 's#/+$##; s#\.git$##; s#^.*github\.com(:[0-9]+)?[:/]([^/]+/[^/]+)$#\2#p') || true
+[ -z "$r" ] || echo "gh -R $r (origin's)"
