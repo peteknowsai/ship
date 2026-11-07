@@ -248,6 +248,19 @@ why `shared-dev` is now an opt-out.
 
 ## Design & review
 
+- **A server-down case on a cached GET** (iosvoicepads, 2026-11-07): plan case 12 stopped
+  the server to show "The voices could not be loaded", but GET /api/voice/voices answers
+  `public, max-age=86400`, so the phone served the list from its cache and the sheet opened.
+  Before a server-down case, read the route's `cache-control`; a cached GET shows its error
+  only on a client that never fetched it, here the Simulator's gallery with no session.
+
+- **Stopping the dev server strands a run in flight** (the same ship): a background worker
+  run started seconds before the stop kept failing after it, and the QA person's delete
+  failed on that session, through `DELETE /api/account` and the prune's `--finish` alike.
+  Clerk's deleteUser, then `deleteOrphan` in cells-app's `lib/account.ts`, finished it. The
+  run stayed stuck after the restart, so a server-down case stops the server only once no
+  run is in flight.
+
 - **A test that forbids the old value breaks when the value comes back** (homezero-www,
   2026-11-07): packDocs asserted that no doc said "$1 trial", and Pete's move back to $1 at
   "merge main" broke it. A test for a changed value checks every copy against its one
