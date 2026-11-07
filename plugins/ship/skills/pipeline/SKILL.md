@@ -676,8 +676,9 @@ Wonder read where Sizing says.
   party mid-call; records that cost money or that test-auth can't seed; a walk the brief
   forbids. The product's own functions over real records on the branch's backend, then a
   browser check of each screen that reads the result, is `works`, not partial, and the card
-  says which steps went that way. A screen reachable only by seeding model output passes on a
-  render test of the real component with the result's real shape. A prompt change is proven
+  says which steps went that way. A screen reachable only by seeding model output is seeded
+  through the real write path the model would use and walked; with no such path, a render
+  test of the real component with the result's real shape. A prompt change is proven
   by replay: the same saved inputs through main's prompt and the branch's, a few times each,
   both quoted (CEL-170); an empty reply or a fallback is a failed run. A saved input handed
   to a model that judges it has its sums recomputed and each claim traced to the seeded
@@ -775,9 +776,12 @@ Landing variants.
      `listener.sh <port> 1` must find nothing (one still there stops by its process group).
    - `route.py readers repo=<r> ship=<slug>` exits 0 (SELF-DIRECTED and GATED): every plan
      task built or parked, both branch readers logged and the review card committed; a
-     parked task it names goes in the PR body. Push.
+     parked task it names goes in the PR body. `git fetch origin` once more: main moved
+     during these steps sends the run back to this step's first bullet, the absorb and all it
+     owes (feed-imagery's 206 s smoke let #495 land between). Push.
 2. **GitHub agrees.** `gh pr ready <#> -R <o/r>`; `gh pr view <#> -R <o/r> --json mergeable`
-   says `MERGEABLE`; `gh pr checks <#> -R <o/r>`: no checks reported means the local gates
+   says `MERGEABLE` (`CONFLICTING`: back to step 1's first bullet; `UNKNOWN`: ask again);
+   `gh pr checks <#> -R <o/r>`: no checks reported means the local gates
    stand, pending waits (`--watch`), red is fixed in the worktree and back to step 1. These
    and the merge spend GitHub's GraphQL budget, which sibling ships exhaust while `gh api
    rate_limit` still shows budget: the REST forms are in incidents: GitHub.

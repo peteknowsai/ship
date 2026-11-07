@@ -49,7 +49,11 @@ Find, with file:line evidence for each:
   messages at their word, and the runtime did otherwise (2026-10-14).
 - **The plan's `## QA cases`**: a case that can't catch the failure it's meant to, a
   failure no case catches, or a walk on an app the contract doesn't check (cells-app checks
-  on Homebody), where that app's own tests stand in (incidents: Design).
+  on Homebody), where that app's own tests stand in (incidents: Design). A case whose screen
+  shows only when a model chooses it is two: the choice as a rate over fresh runs on main
+  and the branch, with the rate the plan expects named up front and 0 on the branch a fail,
+  and the screen reached by seeding through the real write path the model would use
+  (feed-imagery's writer picked no card in 6 runs, main's in 0 of 148).
 
 Skip style, wording and taste. Number each finding, give it a severity (blocker,
 should-fix, nit), the evidence, and the smallest fix as task, problem, fix.
