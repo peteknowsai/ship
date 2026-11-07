@@ -50,7 +50,8 @@ Find, with file:line evidence for each:
 - **The plan's `## QA cases`**: a case that can't catch the failure it's meant to, a
   failure no case catches, a pass line on a log, a model's wording or a row where a person
   could see the outcome, a provider's cost or token count no live read showed, a case only
-  Pete's hands can make that the plan doesn't split and ask him about, or a walk
+  Pete's hands can make that the plan doesn't split and ask him about, a case left to tests
+  that a named path, or a seed through the real write path, would let TEST walk, or a walk
   on an app the contract doesn't check (cells-app checks on Homebody) of a frame that app
   shares, where its own tests stand in (incidents: Design). A case whose screen
   shows only when a model chooses it is two: the choice as a rate over fresh runs on main

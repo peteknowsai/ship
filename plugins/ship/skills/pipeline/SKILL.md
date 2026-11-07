@@ -782,6 +782,8 @@ Landing variants.
      secret list`, `vercel env ls production`, `npx convex env list --prod`. Names only,
      never values. A missing one parks (`stage.sh <root> gate:input`, `needs input:` naming
      it): a production setting is Pete's (screendrop-worker's OWNER_SUB, 2026-11-05).
+   - Where `live:` puts the diff out in two parts, the merge's and a later release's, each
+     production URL the merge's part newly points at answers 2xx (incidents: Backends).
    - On `backend: copy`, `branch-db.py diff <worktree> [<app-dir>]` lists the functions
      shared dev lacks or holds in another shape. Each one the branch added or reshaped is
      called on shared dev by main's server once this lands, and gets there the way the repo's
