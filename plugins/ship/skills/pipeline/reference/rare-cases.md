@@ -72,7 +72,8 @@ replace parts of it.
     load, which covers this script. Rerun those files alone; when they pass, run the script
     again, and a second red waits on the load first. Never skip, deselect or loosen a test
     (cel-303 went red on 3 of 14,026 at load 446, and landed on the rerun).
-  - Run it from the worktree in place of LAND's checks and merge, then tear down as
+  - Run it from the worktree in place of LAND's checks and merge, after `wait-head.sh`
+    (LAND step 2), then tear down as
     written (`wt remove`, the remote branch if the script left it, `git branch -D`, the
     marker).
   - It merges in whatever main took while the PR waited in its queue, gated but never

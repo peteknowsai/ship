@@ -57,7 +57,7 @@ or the auto-trigger, sizes itself. Every verb rides the same rails.
 
 **The fork comes first.** The moment a verb lands, resolve the target repo, run stage 0's
 read-only checks (seconds), and fork. The marker flip is how Pete sees ship engage; nothing
-is asked and no recon starts before it. One exception: a bug card reproduces read-only
+is asked and no recon starts before it. One exception: a bug card, or a follow-up resting on a measurement, reproduces read-only
 against main first, posting one line that it is doing so, and forks only once a code change
 is known. That covers a brief that may end in no code ("if it's gone or not ours, close it
 with evidence") and a recheck of a fix that just landed: compare the bad data's timestamps
@@ -785,7 +785,10 @@ Landing variants.
      parked task it names goes in the PR body. `git fetch origin` once more: main moved
      during these steps sends the run back to this step's first bullet, the absorb and all it
      owes (feed-imagery's 206 s smoke let #495 land between). Push.
-2. **GitHub agrees.** `gh pr ready <#> -R <o/r>`; `gh pr view <#> -R <o/r> --json mergeable`
+2. **GitHub agrees.** `scripts/wait-head.sh <o/r> <#>`, since a head GitHub hasn't caught up
+   to answers stale (#492's 0 s "conflicts with main"): exit 1 is a head still not the pushed
+   one, so check the push landed (`git ls-remote origin <branch>`), and one a land script
+   collapsed is rare-cases' reset, never a push over it; exit 2 couldn't ask; `gh pr ready <#> -R <o/r>`; `gh pr view <#> -R <o/r> --json mergeable`
    says `MERGEABLE` (`CONFLICTING`: back to step 1's first bullet; `UNKNOWN`: ask again);
    `gh pr checks <#> -R <o/r>`: no checks reported means the local gates
    stand, pending waits (`--watch`), red is fixed in the worktree and back to step 1. These
@@ -875,6 +878,9 @@ one plain line on why it's worth doing, and a kind:
   for someday), never a column for work in flight. Pete says "file them" (or names which) and
   each lands with its why and a link to this PR, and any measurement it rests on pasted or at
   a durable path.
+
+Either kind resting on a measurement names the sha it was measured on, since main can fix it
+first (muse-icons' 4.39:1 caption was 7.09:1 once #499 landed).
 
 They go on the review card under "What we should do next", or under `result:` as a numbered
 list. Ship fixes found in its own retro go to the maintainer, never this list. Don't gate
