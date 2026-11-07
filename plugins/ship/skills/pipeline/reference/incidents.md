@@ -248,6 +248,17 @@ why `shared-dev` is now an opt-out.
 
 ## Design & review
 
+- **A money pick taken in a storyboard's "yes" moved at "merge main"** (homezero-www,
+  2026-11-07): Q11's $5 trial rode Pete's take-every-pick, and at the landing stop he kept
+  $1. That cost a revert, the full suite since tests across the app pinned $5, and both
+  cards rewritten while parked. A storyboard asks a money pick as its own question, outside "yes takes
+  every pick", so the price is settled before it is built.
+
+- **A test that forbids the old value breaks when the value comes back** (the same ship):
+  packDocs asserted that no doc said "$1 trial", and the move back to $1 broke it. A test
+  for a changed value checks every copy against its one source, here `pack.trialUsd`, never
+  that the old value is gone.
+
 - **A QA case whose starting state nothing reaches** (cel-278, 2026-11-06): "an approval
   it can't describe" had no live path, since the tool refuses every unknown write before
   an approval exists, and TEST spent a probe and a model turn before forcing a fetch failure

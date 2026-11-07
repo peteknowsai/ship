@@ -320,6 +320,12 @@ TASTE: <0-3 short "looked off / couldn't confirm" notes, or "none">
 carried "step 13 is Pete's" as settled, and the result put it under `works` as a footnote;
 the rig built for it found a real bug (yeoman-listing-readers, 2026-11-03).
 
+**A defect on what the change built is work, not a note.** One a step sees on an element
+the change added or changed is a failure the run fixes in its rounds, whoever wrote the
+line it comes from. TASTE holds taste calls, and what main already had on an element the
+change left alone. homezero-www flagged its own new phone menus, one link each on Swain and
+Cells, and Pete sent the ship back for them while it was parked.
+
 **Measure what a person feels.** On a change with a screen, after the walk passes, run
 these on each page it touched, and every pass line the repo's checks add:
 
