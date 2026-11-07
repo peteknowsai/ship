@@ -320,6 +320,15 @@ TASTE: <0-3 short "looked off / couldn't confirm" notes, or "none">
 carried "step 13 is Pete's" as settled, and the result put it under `works` as a footnote;
 the rig built for it found a real bug (yeoman-listing-readers, 2026-11-03).
 
+**A defect on what the change built is work, not a note.** One a step sees on an element
+the change added, or whose look or sound it changed, is a failure the run fixes in its
+rounds, whoever wrote the line it comes from: homezero-www flagged its own new phone menus,
+one link each on Swain and Cells, and Pete sent the parked ship back for them. It stays a
+TASTE note, named as main's or its owner's, when the fix needs a layout or a pick no frame
+drew, when it sits in code the repo doesn't own, such as a sign-in provider's form, or when
+a measure below judges the change's share by its own row. TASTE also holds taste calls and
+what the run couldn't confirm.
+
 **Measure what a person feels.** On a change with a screen, after the walk passes, run
 these on each page it touched, and every pass line the repo's checks add:
 

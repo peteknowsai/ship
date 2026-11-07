@@ -248,6 +248,12 @@ why `shared-dev` is now an opt-out.
 
 ## Design & review
 
+- **A test that forbids the old value breaks when the value comes back** (homezero-www,
+  2026-11-07): packDocs asserted that no doc said "$1 trial", and Pete's move back to $1 at
+  "merge main" broke it. A test for a changed value checks every copy against its one
+  source, here `pack.trialUsd`, rather than pinning a copy to a literal or checking that the
+  old value is gone.
+
 - **A QA case whose starting state nothing reaches** (cel-278, 2026-11-06): "an approval
   it can't describe" had no live path, since the tool refuses every unknown write before
   an approval exists, and TEST spent a probe and a model turn before forcing a fetch failure
