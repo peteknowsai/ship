@@ -138,7 +138,10 @@ none, never the bypass value), STORYBOARD (a GATED ship's frames and
 or none). Then numbered steps, each one thing a person does and what they should see:
 "4. Scroll up slowly past the first page of history → the message you were reading stays
 put". Cover every acceptance criterion, every frame the change built (a visible gap from
-its frame is a failure), the edges the spec names, and a clean console. A changed helper's callers, and theirs, decide
+its frame is a failure), the edges the spec names, and a clean console. A repo whose
+contract checks one app of several (cells-app: Homebody) walks every frame there; another
+app's part is proven by its own tests, run under its own switch (`PACK=<pack>`) where the
+diff changed its files, and is neither a step nor unwalked. A changed helper's callers, and theirs, decide
 which screens the script walks: eca-finder-193 planned a page that renders none of the helpers
 it changed. Start at least
 one walk the way a person most naturally would, from nothing, not from seeded state: the

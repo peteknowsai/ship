@@ -256,10 +256,12 @@ why `shared-dev` is now an opt-out.
 
 - **QA cases that walked apps the contract assumes work** (muse-icons, 2026-11-06): the
   plan walked five other packs' web colors, Swain's iPhone app and a Cells lab, while
-  cells-app's gates line runs on Homebody only and says the other packs are the same code.
-  At TEST, verify's "partial is unverifiable" met that rule and the run settled it from
-  memory at landing. A plan's walks cover the apps its contract's gates line names; another
-  app's part of a frame is a named test in the case, never a step.
+  cells-app checks on Homebody only and says the other packs are the same code. At TEST,
+  verify's "partial is unverifiable" met that rule and the run settled it from memory at
+  landing. The walks go on the app the contract checks, a lab switched on there; another
+  app's part of a frame is its own tests, under its own switch where the diff changed its
+  files (muse-icons edited four packs' `skin.css`; `PACK=swain` runs `skin.test.ts`), never a
+  step (verify: Write qa.md).
 
 - **Safari won't load local CSS into a storyboard's srcdoc frames over file://**
   (2026-10-13). When Pete wants a storyboard in Safari, serve its folder over http
