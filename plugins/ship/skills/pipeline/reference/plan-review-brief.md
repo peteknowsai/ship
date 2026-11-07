@@ -50,7 +50,8 @@ Find, with file:line evidence for each:
 - **The plan's `## QA cases`**: a case that can't catch the failure it's meant to, a
   failure no case catches, a pass line on a log, a model's wording or a row where a person
   could see the outcome, a provider's cost or token count no live read showed, or a walk
-  on an app the contract doesn't check (cells-app checks on Homebody) of a frame that app shares, where its own tests stand in (incidents: Design). A case whose screen
+  on an app the contract doesn't check (cells-app checks on Homebody) of a frame that app
+  shares, where its own tests stand in (incidents: Design). A case whose screen
   shows only when a model chooses it is two: the choice as a rate over fresh runs on main
   and the branch, with the rate the plan expects named up front and 0 on the branch a fail,
   and the screen reached by seeding through the real write path the model would use
