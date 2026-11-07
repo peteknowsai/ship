@@ -477,6 +477,10 @@ one with uncommitted work, one a live session holds (wt's 💬), or one under tw
 - **Anything Pete must create himself** (an OAuth app, an account, a key) is a call on the
   card, or on a cardless lane a stop now (`stage.sh <root> gate:input`, `needs input:`),
   never a surprise at TEST (cc-bridge's GitHub app swapped for Cloudflare Access once asked).
+  So is a QA case only his hands can make, such as the lock button or a real phone call,
+  which agent-device can't press: the call asks whether it gates the landing or is his check
+  after, and a cardless lane asks it in one line and keeps building (musevoice parked at TEST
+  on a lock mid-call).
 - **Then the execution plan**: call `superpowers:writing-plans` for ONE plan covering the
   whole storyboard or spec, saved as `specs/plans/YYYY-MM-DD-<slug>.md` in the docs home. It
   carries what a frame can't: copy as data, routes, behaviour, states, a11y, and for each UI
@@ -746,9 +750,10 @@ Landing variants.
      the way the checks skill says, while the server still answers: `scripts/listener.sh
      <port> 1` naming this worktree, then one request. A reboot or a stop during a park takes
      it (company-pack's Mac rebooted mid-park), so start it again on the app the walk used
-     first (Clerk's test instance caps at 100 people; cells-app: each walk person by `DELETE
-     /api/account` as them, the checks skill's recipe, since `npm run prune -- --people
-     --finish` waits on every other landing's lock: cel-297 stalled behind #442's).
+     first (Clerk's test instance caps at 100 people; cells-app: each person it kept, the
+     walk's and a smoke's `--keep` one, by `DELETE /api/account` as them, the checks skill's
+     recipe, since `npm run prune -- --people --finish` waits on every other landing's lock:
+     cel-297 stalled behind #442's).
    - `stage.sh <root> land`, `git fetch origin`; if main moved, absorb it in a call of its own
      and see it merged clean before any gate (CEL-140 gated a half-merged tree). On `copy`, every
      absorb is pushed with `branch-db.py push` as REVIEW's sync says, before any gate or server
