@@ -27,7 +27,7 @@ recap() {
   gh_repo=$(git -C "$root" remote get-url origin 2>/dev/null | sed -nE 's#/+$##; s#\.git$##; s#^.*github\.com(:[0-9]+)?[:/]([^/]+/[^/]+)$#\2#p')
   [ -n "$gh_repo" ] && echo "- every gh call: -R $gh_repo (origin's)"
   tp=$(printf '%s' "$input" | jq -r '.transcript_path // empty' 2>/dev/null)
-  [ -n "$tp" ] && echo "- transcript: $tp (recheck a number with $plugin/skills/pipeline/scripts/numbers.py $tp <n>...)"
+  [ -n "$tp" ] && echo "- transcript: $tp (recheck a number with $plugin/skills/pipeline/scripts/numbers.py $tp <n>[@word]...)"
   # A deploy mid-run installs a newer copy of ship. stage.sh moves a session onto it, so the
   # recap names the same copy stage.sh would, never the one the session started on.
   local new; new=$(jq -r '.plugins["ship@ship"][0].installPath // empty' "${SHIP_INSTALLED:-$HOME/.claude/plugins/installed_plugins.json}" 2>/dev/null || true)

@@ -705,14 +705,15 @@ Wonder read where Sizing says.
   list, all from the triage file. Every number anywhere comes from recorded output, rechecked
   before posting; after a compaction, with `scripts/numbers.py <transcript> <n>...`, which
   counts one only where output the session didn't write showed it, never its own words read
-  back (the recap names the transcript). A number of one or two digits takes a word that
-  stood beside it, `43@test`, since bare it matches clock times and line numbers. A number
-  the session worked out in its head, such as a sum, may show in none, so check its parts.
+  back (the recap names the transcript). Give each number a word that stood beside it on
+  its line, `43@test`, since a bare one matches clock times and line numbers; only a number
+  printed alone goes bare. A number the session worked out in its head, such as a sum, may
+  show in none, so check its parts.
   An image on the branch links by commit (`blob/<sha>/<path>?raw=true`). The door is ship's
   call: **two-way** (a revert undoes it) lands now; **one-way** (it deletes or migrates data,
   sends something to people, or a revert can't undo it) waits for "merge main", as do a money
-  path and a change he said he'd try first: `stage.sh <root> gate:test`, the card, `needs
-  input:`. On `land: auto` only a money path waits.
+  path and a change he said he'd try first: `stage.sh <root> gate:test`, the card,
+  `needs input:`. On `land: auto` only a money path waits.
 - **`broken` after three rounds on one step, or `unverifiable`: park.** `stage.sh <root>
   gate:input`, hand Pete the result and evidence, and end with `needs input:` ("test:
   <feature>: couldn't prove <step>: <reason>"). Partial is `unverifiable`, never a footnote
