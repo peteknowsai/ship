@@ -43,8 +43,10 @@ Find, with file:line evidence for each:
 - **A claim about how a dependency behaves at runtime**, checked in its installed code
   (`node_modules/<pkg>/dist`), not its docs: a review once took Eve's docs on queued
   messages at their word, and the runtime did otherwise (2026-10-14).
-- **The plan's `## QA cases`**: a case that can't catch the failure it's meant to, or a
-  failure no case catches.
+- **The plan's `## QA cases`**: a case that can't catch the failure it's meant to, a
+  failure no case catches, or a walk on an app the contract's gates line doesn't cover
+  (cells-app tests on Homebody only), where a named test should stand in (incidents:
+  Design).
 
 Skip style, wording and taste. Number each finding, give it a severity (blocker,
 should-fix, nit), the evidence, and the smallest fix as task, problem, fix.
