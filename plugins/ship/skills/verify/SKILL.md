@@ -139,9 +139,11 @@ or none). Then numbered steps, each one thing a person does and what they should
 "4. Scroll up slowly past the first page of history → the message you were reading stays
 put". Cover every acceptance criterion, every frame the change built (a visible gap from
 its frame is a failure), the edges the spec names, and a clean console. A repo whose
-contract checks one app of several (cells-app: Homebody) walks every frame there; another
-app's part is proven by its own tests, run under its own switch (`PACK=<pack>`) where the
-diff changed its files, and is neither a step nor unwalked. A changed helper's callers, and theirs, decide
+contract checks one app of several (cells-app: Homebody) walks every frame there, and a
+frame that exists only on another app on that app's own server (cells-faces drew Cells'
+faces); the contract's app still runs the gates and smoke. Another app's part of a shared
+frame is proven by its own tests, run under its own switch (`PACK=<pack>`) where the diff
+changed its files, and is neither a step nor unwalked. A changed helper's callers, and theirs, decide
 which screens the script walks: eca-finder-193 planned a page that renders none of the helpers
 it changed. Start at least
 one walk the way a person most naturally would, from nothing, not from seeded state: the
@@ -407,7 +409,10 @@ never sits beside it. A file over its cap gets pruned in the same edit, back und
 the lines on one subject, and drop a line whose screen or code is gone. No file yet: write it
 from `reference/checks-template.md` with what this run proved, and say so in the hand-back.
 Name it `checks`, never `verify`, which is Claude Code's own skill. A run that learned
-nothing leaves it alone.
+nothing leaves it alone. Write it over main's copy, fetched just before (`git show
+origin/<base>:<path>`), with every lesson this branch adds put back and the prune made
+there: two ships pruning cells-app's file the same day merged the same lines their own
+ways and conflicted at the PR (cells-faces and #495).
 
 **Commit before handing back, in a ship's worktree on `works`**: the run's fixes, §4's spec
 and this write-back, whichever exist, staged by path so generated churn a running dev server

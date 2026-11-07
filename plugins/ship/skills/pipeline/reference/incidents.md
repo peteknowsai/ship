@@ -254,12 +254,20 @@ why `shared-dev` is now an opt-out.
   from an initScript. A case names how its state is reached; one only a seed or a forced
   failure reaches says so, so the plan review can keep it as a defense or cut it.
 
+- **A fix to motion proven on a still** (cells-faces, 2026-11-06): both readers found Mito's
+  film specks orbiting the old bean's oval, and the fix resized the oval, while her membrane
+  swells, dents, squashes and hops every frame. TEST's per-frame `requestAnimationFrame`
+  sampler then found specks on or past her outline at 0.7 to 1.3 s and 16.0 to 21.7 s of the
+  film. A fix to something that moves is checked frame by frame before its commit: sample
+  the fixed parts against the live shapes they must stay inside, across the whole loop.
+
 - **QA cases that walked apps the contract assumes work** (muse-icons, 2026-11-06): the
   plan walked five other packs' web colors, Swain's iPhone app and a Cells lab, while
   cells-app checks on Homebody only and says the other packs are the same code. At TEST,
   verify's "partial is unverifiable" met that rule and the run settled it from memory at
-  landing. The walks go on the app the contract checks, a lab switched on there; another
-  app's part of a frame is its own tests, under its own switch where the diff changed its
+  landing. The walks go on the app the contract checks, a lab switched on there, and a
+  frame that exists only on another app on that app (cells-faces drew Cells' faces); another
+  app's part of a shared frame is its own tests, under its own switch where the diff changed its
   files (muse-icons edited four packs' `skin.css`; `PACK=swain` runs `skin.test.ts`), never a
   step (verify: Write qa.md).
 
