@@ -483,8 +483,8 @@ one with uncommitted work, one a live session holds (wt's 💬), or one under tw
   does and what they should see, covering every frame, requirement and edge the spec names,
   and each a case that fails on main's code, a race fix's at every ordering it claims, the same
   instant among them (verify: Pick cases that can fail), each control it presses on main or
-  built by a named task, and each state it starts from reached by a named path or seed
-  (incidents: Design). TEST walks them as written, may add, never drops
+  built by a named task, each state it starts from reached by a named path or seed, and
+  each walk on the app the contract checks (incidents: Design). TEST walks them as written, may add, never drops
   one. Writing them before the code keeps them about what was asked, not what got built.
 - **A task that hooks into a dependency's runtime** (a framework's workflow, a bundler's
   transform, the shape a model must answer in) is followed by a driver live check of the real
@@ -669,7 +669,7 @@ Wonder read where Sizing says.
   simulator unless the change needs the phone itself; a Mac app its `reference/mac.md`, in a
   borrowed VM, never desktop control of Pete's Mac.
 - **Design against the storyboard is the QA run's to judge**: a step per frame the change
-  built and the craft floor, and a gap is a failure.
+  built, on the app the contract checks, and the craft floor, and a gap is a failure.
 - **What no person can walk is proven at data level**: a race, a background worker, a third
   party mid-call; records that cost money or that test-auth can't seed; a walk the brief
   forbids. The product's own functions over real records on the branch's backend, then a
