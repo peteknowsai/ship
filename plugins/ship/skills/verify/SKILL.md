@@ -424,12 +424,15 @@ Pete asked for, and noise: console noise the app always prints, or a false alarm
 check raises on every run (cells-app's localhost branch strip in each Lighthouse audit),
 added to its noise table so the next run skips it.
 
-**One line per lesson.** A new lesson on a subject a line already covers replaces that line,
-never sits beside it. A file over its cap gets pruned in the same edit, back under it: merge
-the lines on one subject, and drop a line whose screen or code is gone. No file yet: write it
-from `reference/checks-template.md` with what this run proved, and say so in the hand-back.
-Name it `checks`, never `verify`, which is Claude Code's own skill. A run that learned
-nothing leaves it alone.
+**One line per lesson, about 300 characters.** A new lesson on a subject a line already
+covers replaces that line, never sits beside it. A subject that needs more moves to
+`checks/<topic>.md` beside the file, behind one line saying when to read it. A file over its
+cap, 150 lines or 40 KB, gets pruned in the same edit, back under it: merge the lines on one
+subject, drop a line whose screen or code is gone, move a subject out. A line cap alone let
+cells-app's file reach 103 KB in 150 lines, its lessons grown to 4,000 characters (cel-362).
+No file yet: write it from `reference/checks-template.md` with what this run proved, and say
+so in the hand-back. Name it `checks`, never `verify`, which is Claude Code's own skill. A
+run that learned nothing leaves it alone.
 
 **Commit before handing back, in a ship's worktree on `works`**: the run's fixes, §4's spec
 and this write-back, whichever exist, staged by path so generated churn a running dev server
