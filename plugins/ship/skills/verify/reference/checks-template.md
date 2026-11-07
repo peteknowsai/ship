@@ -8,9 +8,11 @@ description: How to prove a change to <repo> works, the way Pete would check it 
 What every session that proves a change here starts from. A QA run reads it first and
 writes back what it learned, in the same branch as the change.
 
-**One line per lesson.** A new lesson on a subject a line already covers replaces that
-line. **Cap: 150 lines.** A run that takes the file over it prunes in the same edit: merge
-lines on one subject, drop a line whose screen or code is gone.
+**One line per lesson, about 300 characters.** A new lesson on a subject a line already
+covers replaces that line. **Cap: 150 lines or 40 KB, whichever comes first.** A run that
+takes the file over it prunes in the same edit, and a file already over ends each edit
+smaller: merge lines on one subject, drop a line whose screen or code is gone, or move a
+subject to `.claude/skills/checks/<topic>.md` behind one line saying when to read it.
 
 ## Start it
 
