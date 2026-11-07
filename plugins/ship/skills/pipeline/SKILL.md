@@ -157,7 +157,9 @@ the PR body's first lines. Messages between sessions are exempt.
   `prepare()` fills `APP_ORIGIN` only when unset (the file's main value put cel-296's seed on
   main's stage and sent cel-264's close to main's server).
 - **Every `gh` call names its repo**, `-R <owner/repo>`: in a fork with an `upstream` remote
-  gh resolves against upstream and finds no PR (screendrop-worker, 2026-11-05).
+  gh resolves against upstream and finds no PR (screendrop-worker, 2026-11-05). It is
+  origin's, from `git remote get-url origin` and the recap, never typed from memory:
+  cells-app's is `homezero-md/cells-app`, and `pkai` is its Vercel team.
 - **Calls sent together all run**, even when the first fails, so a call that needs another's
   result goes in the next message (a wait beside a failed step ran out its whole timeout).
 - **A background or Monitor command reports nothing until its pipe flushes**: `grep
@@ -686,7 +688,8 @@ Wonder read where Sizing says.
   test that went green), Merge Danger, and a last line per reader, `Reviewed: Wonder Full <n>
   fixed, <n> declined, <n> wrong · Opus …`, with each declined finding and why in a collapsed
   list, all from the triage file. Every number anywhere comes from recorded output, rechecked
-  before posting and after a compaction. An image on the branch links by commit
+  before posting and after a compaction, then with `scripts/numbers.py <transcript> <n>...`,
+  which finds each in tool output only (the recap names the transcript). An image on the branch links by commit
   (`blob/<sha>/<path>?raw=true`). The door is ship's call: **two-way** (a revert undoes it)
   lands now; **one-way** (it deletes or migrates data, sends something to people, or a revert
   can't undo it) waits for "merge main", as do a money path and a change he said he'd try

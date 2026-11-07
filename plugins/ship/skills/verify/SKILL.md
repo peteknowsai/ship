@@ -178,7 +178,9 @@ the red, and the evidence says main's page was unreachable.
 - A field a model fills or judges gets cases that vary what it reads, the time, the place,
   the phrasing, each run through main's wording and the branch's, the same inputs, 3 fresh
   sessions each, both quoted (the pipeline's replay rule): cel-264's "being there answers
-  it" passed an evening showing and failed a morning one.
+  it" passed an evening showing and failed a morning one. A batch that needs no hands (those
+  sessions, a replay, an eval) starts in the background before the walk: prompt-cache's
+  15 x 3 cases took 45 minutes after it, and LAND waited.
 - A feature that reads a number a provider reports (cost, tokens) gets one real value read
   back from the runtime before a walk is built on it: cel-302 lost two rounds to $0.03 and
   $0.002 caps before finding its model reports a cost of 0.
@@ -232,7 +234,10 @@ its origin, and the walk lost a round to "No alert by that id".
   the file for the uid you need, rather than reading the whole tree back each time. A form
   that starts paid work (a model, a tier, a run): set its cost fields first and submit with
   its button, never Enter in a field, which submits with whatever defaults are left. Where
-  Enter in a field does start paid work, that is a failure to report: a real user hits it too. A React controlled input can ignore `fill` (the value snaps back): click it and
+  Enter in a field does start paid work, that is a failure to report: a real user hits it too.
+  A test person a case moves off the default model or tier goes back, or is deleted, when
+  that case ends: prompt-cache's, left on Sonnet, kept running loops through the local
+  dispatcher until LAND. A React controlled input can ignore `fill` (the value snaps back): click it and
   `type_text`. The tool's clicks are slower than a person's, so a control with a short
   settle timer (picks counted after ~2s) can read three picks as three separate ones: judge
   its result, not each click. A screen shown only while async work runs needs a target whose work
