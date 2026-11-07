@@ -131,8 +131,8 @@ redeem file) live in the repo's checks file under Sign in, where verify writes t
   worktree its own Convex dev deployment, a copy of dev's functions, settings, data and
   stored files, with `scripts/branch-db.py` (app-dir: the folder holding `convex.json`,
   default the root; cells-app names the pack it runs). The worktree tests and breaks its
-  copy, and landing puts it back on the shared database, where LAND's merge step pushes
-  the functions it added or reshaped. SKILL.md stage 0 runs it.
+  copy, and landing puts it back on the shared database, which gets the functions the
+  branch added or reshaped only by the repo's own dev deploy. SKILL.md stage 0 runs it.
 - `shared-dev` (the default otherwise): previews and localhost use the app's dev database,
   ship never rewrites an env file, and it says so on the card, or in the `result:` line,
   when a branch changes a schema. Its rules: `reference/rare-cases.md`, Backends.

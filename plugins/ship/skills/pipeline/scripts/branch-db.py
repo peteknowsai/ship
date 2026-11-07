@@ -230,9 +230,8 @@ def compare(shared, branch):
     lines += [f"on both, with other args, returns or visibility on the branch ({len(changed)}):"]
     lines += [f"  {i}" for i in changed]
     if new or changed:
-        lines.append("push these before landing, merged with main: main's server calls them on shared dev "
-                     "once the branch lands; one this branch didn't touch is shared dev behind main, or a "
-                     "sibling's push")
+        lines.append("main's server calls these on shared dev once the branch lands; one this branch didn't "
+                     "touch is shared dev behind main, or a sibling's push, which a push from here reverts")
     return lines, bool(gone)
 
 
@@ -297,8 +296,8 @@ def selftest():
         assert drops and lines[1] == "  b.js:y" and lines[3] == "  c.js:z", lines
         assert compare({"a.js:x": "1"}, {"a.js:x": "1", "c.js:z": "1"})[1] is False
         lines, drops = compare({"a.js:x": "1"}, {"a.js:x": "2"})
-        assert not drops and "  a.js:x" in lines and lines[-1].startswith("push these before landing"), lines
-        assert not compare({"a.js:x": "1"}, {"a.js:x": "1"})[0][-1].startswith("push"), "nothing to push"
+        assert not drops and "  a.js:x" in lines and lines[-1].startswith("main's server calls these"), lines
+        assert not compare({"a.js:x": "1"}, {"a.js:x": "1"})[0][-1].startswith("main's"), "nothing reshaped"
         assert slug("feature/Desk Doorway!") == "feature-desk-doorway"
         assert len(slug("x" * 80)) == 40
         changed = repoint(wt, "charming-caiman-61", "brainy-otter-615")
