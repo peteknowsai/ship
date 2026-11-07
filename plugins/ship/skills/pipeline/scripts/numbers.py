@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""numbers.py <transcript.jsonl> <number>...: where each number came from.
+"""numbers.py <transcript.jsonl> <number>[@word]...: where each number came from.
 
 After a compaction, every number a PR body or card states is rechecked against recorded
 output. A number counts only where something the session didn't write showed it: a tool
@@ -11,8 +11,12 @@ the call that printed it had the number in it. Order alone can't tell: muse-spac
 20000 was `s.length>20000` in a script, hours before its fuzz printed 20000 runs. A line of
 this script's own report never counts, wherever it turns up. A match stops at digits, so 97%
 is not 197%. A number the session worked out in its head, such as a sum, may be in no
-output, so check its parts. Prints the nearest three sources per number; exit 1 when one has
-none. The recap prints the transcript's path.
+output, so check its parts. A bare number matches noise, such as a clock time or a grep line
+number: 43@test counts a 43 only with a word starting "test" among the three words of
+letters on either side, on its own line, as plain-bot-names' vitest line had and its ps
+listing didn't. The Read tool's line numbers never count. Prints the newest three sources
+per number; exit 1 when one has none, 2 on a bad argument. The recap prints the transcript's
+path.
 numbers.py --selftest
 """
 import json, re, sys
@@ -69,19 +73,28 @@ def words(s):
 
 
 def find(path, nums):
-    pats = {n: re.compile(r'(?<!\d)(?<!\d[.,])' + re.escape(n) + r'(?!\d)(?![.,]\d)') for n in nums}
+    near = {n: n.partition('@')[2].lower() for n in nums}
+    pats = {n: re.compile(r'(?<!\d)(?<!\d[.,])' + re.escape(n.partition('@')[0]) + r'(?!\d)(?![.,]\d)')
+            for n in nums}
     hits = {n: [] for n in nums}
     echoes = {n: 0 for n in nums}
     seen = {n: set() for n in nums}  # the words the session wrote beside each number
     for kind, text, call in events(path):
         for n, p in pats.items():
             for m in p.finditer(text):
+                head = re.split(r'\n|\\n', text[max(0, m.start() - 200):m.start()])[-1]
+                tail = re.split(r'\n|\\n', text[m.end():m.end() + 200])[0]
+                if not head.strip() and tail[:1] in ('\t', '→'):
+                    continue  # the Read tool's line number, not a number the file holds
                 before = words(text[max(0, m.start() - 200):m.start()])[-3:]
                 after = words(text[m.end():m.end() + 200])[:3]
                 if kind == 'own':
                     seen[n].update([('<',) + tuple(before[-k:]) for k in range(1, len(before) + 1)]
                                    + [('>',) + tuple(after[:k]) for k in range(1, len(after) + 1)])
                 elif REPORT.match(text, text.rfind('\n', 0, m.start()) + 1):
+                    continue
+                elif near[n] and not any(w.startswith(near[n]) for w in re.findall(r'[a-z]+', head.lower())[-3:]
+                                         + re.findall(r'[a-z]+', tail.lower())[:3]):
                     continue
                 elif (('<',) + tuple(before) in seen[n] or ('>',) + tuple(after) in seen[n]
                         if before or after else p.search(call)):
@@ -97,6 +110,11 @@ def main(argv):
     if len(argv) < 3:
         print(__doc__.strip().splitlines()[0], file=sys.stderr)
         return 2
+    for a in argv[2:]:
+        n, at, w = a.partition('@')
+        if not n or at and not re.fullmatch(r'[A-Za-z]+', w):
+            print(f'numbers.py: {a}: a number, and after @ one word of letters', file=sys.stderr)
+            return 2
     hits, echoes = find(argv[1], argv[2:])
     missing = 0
     for n, ctxs in hits.items():
@@ -133,6 +151,9 @@ def selftest():
         note('peer', 'ran PACK=swain 16/16'),
         {'type': 'user', 'isCompactSummary': True, 'origin': {'kind': 'human'}, 'message': {'content': 'summary says 55%'}},
         {'type': 'attachment', 'attachment': {'type': 'queued_command', 'prompt': 'reader: 42 findings'}},
+        result('      Tests  43 passed'), result('Tests  2 failed | 41 passed (43)'),  # and noise:
+        result('STARTED Sat Nov  7 09:26:43 2026'), result('41- the tests below\n43- which merges main'),
+        result('elapsed 0:43'), result('    43\tthe tests below'), result('total 43\ntests below'),
         result('run 7 old'), result('run 7 mid'), result('run 7 a'), result('run 7 new'),
         ran('e1', {'command': 'echo 61,280 97%'}), result('61,280 97%', 'e1'),  # what it just typed, printed back
     ]
@@ -140,7 +161,8 @@ def selftest():
     with os.fdopen(fd, 'w') as f:
         f.write('not json\n[]\n' + '\n'.join(json.dumps(r) for r in rows) + '\n')
     try:
-        nums = ['97%', '61,280', '1,280', '$15.32', '83%', '42', '7', '16/16', '55%', '20000', '820', '4.39:1']
+        nums = ['97%', '61,280', '1,280', '$15.32', '83%', '42', '7', '16/16', '55%', '20000', '820', '4.39:1',
+                '43', '43@test', '43@build']
         hits, echoes = find(path, nums)
         assert hits['16/16'] == ['ran PACK=swain 16/16'], hits['16/16']   # another session; not its own file read back
         assert hits['820'] == [] and echoes['820'] == 1, hits['820']       # 820ms, from the file it wrote
@@ -154,11 +176,16 @@ def selftest():
         assert hits['4.39:1'] == [] and echoes['4.39:1'] == 1, hits['4.39:1']
         assert hits['42'] == ['reader: 42 findings'], hits['42']           # a background report
         assert hits['7'] == ['run 7 mid', 'run 7 a', 'run 7 new'], hits['7']  # the newest three
+        assert len(hits['43']) == 3 and 'Tests' not in ' '.join(hits['43']), hits['43']  # noise crowds it out
+        assert hits['43@test'] == ['      Tests  43 passed', 'Tests  2 failed | 41 passed (43)'], hits['43@test']
+        assert hits['43@build'] == [], hits['43@build']
         with contextlib.redirect_stdout(io.StringIO()) as out:
             rc = main(['numbers.py', path, '97%', '83%'])
         assert rc == 1 and "83%: in no output the session didn't write, only its own words read back" in out.getvalue(), out.getvalue()
         with contextlib.redirect_stdout(io.StringIO()):
             assert main(['numbers.py', path, '97%', '42']) == 0
+        with contextlib.redirect_stderr(io.StringIO()):
+            assert main(['numbers.py', path, '43@e2e']) == 2 and main(['numbers.py', path, '@test']) == 2
     finally:
         os.unlink(path)
     print('numbers selftest: ok')
