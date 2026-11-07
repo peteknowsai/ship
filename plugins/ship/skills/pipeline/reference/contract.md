@@ -67,7 +67,7 @@ the diff, so there a file passes as load only when its time alone is under half 
 nearer the limit, the diff may be what slowed it, and it's a real red. A failure in a file
 the diff touched is a real red. A second red on load waits
 before the next run until the 1-minute load average (`sysctl -n vm.loadavg`) falls under
-the core count (`sysctl -n hw.ncpu`), as a background wait; it never skips, deselects or
+the core count (`sysctl -n hw.ncpu`), as a background wait (`scripts/wait-load.sh`); it never skips, deselects or
 loosens a test to get past (cel-315). route.py counts every red run as a fix round, so a
 task's first `route.py log` after a load red passes `fix_rounds=` counting only the real
 reds, and `gates_first_pass=true` when its first run's only red was load; a `note=` re-log

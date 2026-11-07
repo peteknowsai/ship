@@ -35,7 +35,9 @@ What the VM taught:
   `dismiss-notification <i>` from `list-notifications` needs `--expected-title`.
 - The app's first load can raise macOS's "find devices on local networks" prompt over its
   window, and it swallows what's typed next (cel-139's first sign-in code): snapshot before
-  typing, and Allow it by coordinates.
+  typing, and Allow it from the keyboard, `agent-desktop press tab --headed` then `press space
+  --headed`: app-look's clicks on Allow went unheard at 2x and 1.875x of the shot. `type`
+  takes `<ref> "<text>"` and has no `--app`.
 - Never `osascript` there: its Automation prompt hangs the command.
 
 ## A rig on Pete's Mac
