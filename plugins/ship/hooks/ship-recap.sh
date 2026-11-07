@@ -21,6 +21,13 @@ recap() {
   route="$root/.ship-route.json"; done_file="$root/.ship-done"
   echo "/ship recap after compaction, read from disk (trust it over the summary):"
   echo "- worktree $root, branch ${branch:-?}, stage $stage"
+  # gh's -R is origin's owner/repo, read from the remote: typed from memory, it has named
+  # the Vercel team (pkai) instead of the GitHub owner (prompt-cache, 2026-11-06).
+  local gh_repo tp
+  gh_repo=$(git -C "$root" remote get-url origin 2>/dev/null | sed -nE 's#/+$##; s#\.git$##; s#^.*github\.com(:[0-9]+)?[:/]([^/]+/[^/]+)$#\2#p')
+  [ -n "$gh_repo" ] && echo "- every gh call: -R $gh_repo (origin's)"
+  tp=$(printf '%s' "$input" | jq -r '.transcript_path // empty' 2>/dev/null)
+  [ -n "$tp" ] && echo "- transcript: $tp (recheck a number with $plugin/skills/pipeline/scripts/numbers.py $tp <n>...)"
   # A deploy mid-run installs a newer copy of ship. stage.sh moves a session onto it, so the
   # recap names the same copy stage.sh would, never the one the session started on.
   local new; new=$(jq -r '.plugins["ship@ship"][0].installPath // empty' "${SHIP_INSTALLED:-$HOME/.claude/plugins/installed_plugins.json}" 2>/dev/null || true)
@@ -58,14 +65,16 @@ selftest() {
   tmp=$(mktemp -d); trap 'rm -rf "$tmp"' RETURN
   git init -q -b main "$tmp/repo" && cd "$tmp/repo" || return 1
   git -c user.email=t@t -c user.name=t commit -q --allow-empty -m base
-  git checkout -q -b feature/x
+  git checkout -q -b feature/x; git remote add origin ssh://git@github.com:22/acme/widget.git/
   echo a > a.txt && git add a.txt && git -c user.email=t@t -c user.name=t commit -q -m "task 1 lands"
   echo 'build:1:2' > .ship-stage; printf '1\n' > .ship-done
   echo '{"plan":"/p/plan.md","tasks":[{"n":1,"label":"1","title":"Task 1: first"},{"n":2,"label":"2","title":"Task 2: second"}]}' > .ship-route.json
   echo b > b.txt; echo n > next-env.d.ts
-  out=$(printf '{"session_id":"","cwd":"%s"}' "$tmp/repo" | SHIP_INSTALLED=/nonexistent recap)
+  out=$(printf '{"session_id":"","cwd":"%s","transcript_path":"/t/s.jsonl"}' "$tmp/repo" | SHIP_INSTALLED=/nonexistent recap)
   check() { if eval "$2"; then echo "  ok   $1"; else echo "  FAIL $1"; fails=$((fails+1)); fi; }
   check 'names this session'"'"'s own skills folder' '[[ "$out" == *"ship skills: $plugin/skills ("* ]] && [ -d "$plugin/skills/pipeline/scripts" ]'
+  check 'names origin'"'"'s GitHub repo for -R' '[[ "$out" == *"-R acme/widget (origin"* ]]'
+  check 'names the transcript for numbers.py' '[[ "$out" == *"transcript: /t/s.jsonl (recheck a number with $plugin/skills/pipeline/scripts/numbers.py"* ]]'
   check 'names the stage and branch' '[[ "$out" == *"branch feature/x, stage build:1:2"* ]]'
   check 'counts logged tasks and marks each' '[[ "$out" == *"1 of 2 tasks logged"* && "$out" == *"done Task 1: first"* && "$out" == *"todo Task 2: second"* ]]'
   check 'lists the branch commits and uncommitted files, not ship files' '[[ "$out" == *"task 1 lands"* && "$out" == *"b.txt"* && "$out" != *".ship-done"* ]]'
