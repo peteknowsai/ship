@@ -785,7 +785,8 @@ Landing variants.
      parked task it names goes in the PR body. `git fetch origin` once more: main moved
      during these steps sends the run back to this step's first bullet, the absorb and all it
      owes (feed-imagery's 206 s smoke let #495 land between). Push.
-2. **GitHub agrees.** `gh pr ready <#> -R <o/r>`; `gh pr view <#> -R <o/r> --json mergeable`
+2. **GitHub agrees.** `scripts/wait-head.sh <o/r> <#>` until GitHub's head is the one just
+   pushed, since a stale one answers stale (#492's 0 s "conflicts with main"); `gh pr ready <#> -R <o/r>`; `gh pr view <#> -R <o/r> --json mergeable`
    says `MERGEABLE` (`CONFLICTING`: back to step 1's first bullet; `UNKNOWN`: ask again);
    `gh pr checks <#> -R <o/r>`: no checks reported means the local gates
    stand, pending waits (`--watch`), red is fixed in the worktree and back to step 1. These
@@ -870,6 +871,10 @@ left unbuilt. Keep a running list, never invent one, never gate the merge on it.
 one plain line on why it's worth doing, and a kind:
 - **Quick ship**: the whole change visible, no taste call, one sitting. Pete says "ship <n>"
   and it runs as EXPRESS.
+
+A follow-up resting on a measurement names the sha it was measured on, and its ship
+measures again on main before any edit, as a bug card repros on main first (muse-icons'
+4.39:1 caption was 7.09:1 once #499 landed).
 - **Ticket**, in the column the repo's `board:` gives its need (cells-app: Ready for an agent
   to build alone, Backlog with the ask written on it for Pete's OK or a design call, Icebox
   for someday), never a column for work in flight. Pete says "file them" (or names which) and
