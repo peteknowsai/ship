@@ -48,9 +48,9 @@ Find, with file:line evidence for each:
   (`node_modules/<pkg>/dist`), not its docs: a review once took Eve's docs on queued
   messages at their word, and the runtime did otherwise (2026-10-14).
 - **The plan's `## QA cases`**: a case that can't catch the failure it's meant to, a
-  failure no case catches, a case whose pass line is a log, a prompt or a row rather than
-  what the person sees, a number a case expects that no output showed, or a walk on an app the contract doesn't check (cells-app checks
-  on Homebody) of a frame that app shares, where its own tests stand in (incidents: Design). A case whose screen
+  failure no case catches, a pass line on a log, a model's wording or a row where a person
+  could see the outcome, a provider's cost or token count no live read showed, or a walk
+  on an app the contract doesn't check (cells-app checks on Homebody) of a frame that app shares, where its own tests stand in (incidents: Design). A case whose screen
   shows only when a model chooses it is two: the choice as a rate over fresh runs on main
   and the branch, with the rate the plan expects named up front and 0 on the branch a fail,
   and the screen reached by seeding through the real write path the model would use

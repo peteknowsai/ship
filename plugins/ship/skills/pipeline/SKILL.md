@@ -484,16 +484,18 @@ one with uncommitted work, one a live session holds (wt's 💬), or one under tw
   `route.py plan` counts, and names its files, the signatures it adds, and its test cases,
   brief-grade. A change Pete asks for after go is an express round, not a re-plan.
 - **The plan writes its `## QA cases`**: numbered steps TEST walks, each one thing a person
-  does and what they should see, which is its pass line: a log, a prompt or a row it reads is
-  recorded beside that, never in its place (space-icons' prompts read 1 of 3 while its
-  pictures were 5 of 5, and a round went to which counted), and a number it expects is read
-  back from the runtime first (verify: a number a provider reports), covering every frame,
-  requirement and edge the spec names, and each a case that fails on main's code, a race fix's at every ordering it claims, the same
+  does and what they should see, covering every frame, requirement and edge the spec names,
+  and each a case that fails on main's code, a race fix's at every ordering it claims, the same
   instant among them (verify: Pick cases that can fail), each control it presses on main or
   built by a named task, each state it starts from reached by a named path or seed, and
   each walk on the app the contract checks, or for a frame it lacks one that has it
-  (incidents: Design). TEST walks them as written, may add, never drops
-  one. Writing them before the code keeps them about what was asked, not what got built.
+  (incidents: Design). Where a person can see the outcome, that is the pass line, and a log,
+  a model's wording or a row is recorded beside it: space-icons' builder named one object on
+  1 of 3 asks while all 3 pictures showed one, and a round went to which counted. The cases
+  verify proves at data level or counts as a rate pass on data. A cost or token count a
+  provider reports is quoted from a live read or main's runtime, never guessed (verify: Pick
+  cases that can fail; cel-302). TEST walks them as written, may add, never drops one.
+  Writing them before the code keeps them about what was asked, not what got built.
 - **A task that hooks into a dependency's runtime** (a framework's workflow, a bundler's
   transform, the shape a model must answer in) is followed by a driver live check of the real
   thing (CEL-80's found two bugs no test could). **A task that computes from rows another
