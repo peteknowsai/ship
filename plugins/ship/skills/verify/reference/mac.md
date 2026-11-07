@@ -12,8 +12,10 @@ borrowed Mac VM, a clean headless Mac with none of his logins, apps or permissio
 `scripts/mac-vm.sh` in the pipeline skill runs it, unsandboxed, from the ship's worktree,
 which holds the slot:
 
-1. `borrow --wait` with a 600000 ms timeout, since it waits up to 8 minutes for a slot. It
-   prints `SLOT=<n>`, and borrowing again from the same worktree hands back that slot.
+1. `borrow --wait` as a background Bash call: it first waits up to 20 minutes for the load
+   to fall under the core count (`wait-load.sh`), then up to 8 for a slot, past the tool's
+   10-minute limit. It prints `SLOT=<n>`, and borrowing again from the same worktree hands
+   back that slot.
 2. Build the branch's app against a localhost port of the worktree's server, never a
    `*.localhost` name on :80, which the VM can't take.
 3. `put <n> <app>`, `tunnel <n> <port>`, then drive it through `run <n> '<cmd>'` with
@@ -35,8 +37,8 @@ What the VM taught:
   `dismiss-notification <i>` from `list-notifications` needs `--expected-title`.
 - The app's first load can raise macOS's "find devices on local networks" prompt over its
   window, and it swallows what's typed next (cel-139's first sign-in code): snapshot before
-  typing, and Allow it from the keyboard, `agent-desktop press tab --headed` then `press space
-  --headed`: app-look's clicks on Allow went unheard at 2x and 1.875x of the shot. `type`
+  typing, and Allow it from the keyboard, `agent-desktop press tab --headed`, a snapshot to see Allow
+  focused and not Don't Allow, then `press space --headed`: app-look's clicks on Allow went unheard at 2x and 1.875x of the shot. `type`
   takes `<ref> "<text>"` and has no `--app`.
 - Never `osascript` there: its Automation prompt hangs the command.
 

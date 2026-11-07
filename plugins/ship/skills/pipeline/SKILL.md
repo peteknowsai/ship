@@ -601,7 +601,8 @@ Wonder read where Sizing says.
   builds rewrites tracked files under Muse's read. An absorb that touched the repo's
   `CLAUDE.md` / `AGENTS.md` can change the contract: reread it. Review against a stale fork
   reviews other ships' work as reversions.
-- **Start TEST's dev server now** (TEST: Keep it running), before either reader starts.
+- **Start TEST's dev server now** (TEST: Keep it running), before either reader starts, its
+  dev build output cleared first after an absorb, as LAND's rerun says.
 - **Both readers read the branch at once, from `reference/branch-review-brief.md`** filled
   and written to a file first, so a reader that dies is respawned from it: the Opus subagent
   (`model: "opus"`), launched first, and Wonder (`muse.py review`, background). Both briefs
@@ -750,7 +751,7 @@ Landing variants.
      absorb, one plain call, right for a merge or a rebase) overlap what the QA run walked or measured reruns those steps on the merged
      tree (the server restarted on it, its dev build output cleared first where the repo's
      checks file names it, or a preview's new build: app-look's server looped /sign-in after
-     its third merge until `.next` went); an overlap of only tests,
+     its third merge until `.next/dev` and `.next/cache` went); an overlap of only tests,
      or imports that still name the same code, keeps the pass, and the PR says so.
    - The full gates once, if the tree changed since their last full run, with the dev server
      stopped and any simulator shut; a repo whose land script gates the merge runs only what

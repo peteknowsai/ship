@@ -117,6 +117,10 @@ wipe() {  # wipe <vm>: its connection, then the VM. Lume's delete leaves a --det
 }
 borrow() {
   local n waited=0
+  # A boot at a load far over the core count times out (app-look: twice at 117 to 146 on 18),
+  # so wait for it first, holding no slot a sibling could take meanwhile.
+  bash "$(dirname "${BASH_SOURCE[0]}")/wait-load.sh" "${MAC_VM_LOAD_WAIT_S:-1200}" >&2 ||
+    { echo "the load stayed over the core count; no slot was taken" >&2; exit 1; }
   until n=$(take); do
     [ "${1:-}" = --wait ] || { echo "every ship Mac VM is out:" >&2; status >&2; exit 3; }
     [ $waited -lt 480 ] || { echo "no Mac VM came free in 8 min:" >&2; status >&2; exit 3; }
@@ -126,10 +130,6 @@ borrow() {
   # A slot whose holder is gone or two hours idle still has its clone running: stop that too.
   for o in $(seq 1 $slots); do [ "$o" = "$n" ] || [ ! -L "$dir/slots/$o" ] || held "$o" || give_back "$o"; done
   wipe "$name"
-  # A boot at a load far over the core count times out (app-look: twice at 117 to 146 on 18).
-  if ! bash "$(dirname "${BASH_SOURCE[0]}")/wait-load.sh" "${MAC_VM_LOAD_WAIT_S:-1200}" >&2; then
-    give_back "$n"; echo "the load stayed over the core count; slot $n is free again" >&2; exit 1
-  fi
   if ! { lume clone "$base" "$name" >/dev/null && boot "$name"; }; then
     give_back "$n"; echo "slot $n did not boot; it is free again" >&2; exit 1
   fi
@@ -286,15 +286,14 @@ EOF
   rm -rf "$t/a"
   check "a slot whose worktree is gone is free again" "$(me c borrow)" "SLOT=1 IP=192.168.64.9"
   check "borrowing again recycles your own slot" "$(me c borrow)" "SLOT=1 IP=192.168.64.9"
-  check "a load over the cores gives the slot back" "$(tc=0 tw=0 me c borrow 2>&1 | tail -1)" "the load stayed over the core count; slot 1 is free again"
-  check "and the next borrow boots it" "$(me c borrow)" "SLOT=1 IP=192.168.64.9"
+  check "a load over the cores takes no slot" "$(tc=0 tw=0 me c borrow 2>&1 | tail -1)" "the load stayed over the core count; no slot was taken"
   ln -sfn "$t/b|$(( $(date +%s) - stale - 1 ))" "$t/cfg/slots/2"
   check "a slot unused past the limit is free" "$(me c status | sed -n 2p)" "slot 2: free"
   me c borrow >/dev/null
   check "a borrow stops the stale slot's clone" "$([ -L "$t/cfg/slots/2" ] || grep -c '^delete ship-mac-2 --force$' "$t/lume.log")" 2
   me c return 1
   check "return frees the slot" "$(me c status | sed -n 1p)" "slot 1: free"
-  check "every borrow and return deletes the old clone" "$(grep -c '^delete ship-mac-1 --force$' "$t/lume.log")" 8
+  check "every borrow and return deletes the old clone" "$(grep -c '^delete ship-mac-1 --force$' "$t/lume.log")" 5
   me c run 7 true >/dev/null 2>&1 && out=0 || out=$?
   check "a slot past the two is refused" "$out" 2
   me c view 2 >/dev/null
