@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""numbers.py <transcript.jsonl> <number>...: where each number came from.
+"""numbers.py <transcript.jsonl> <number>[@word]...: where each number came from.
 
 After a compaction, every number a PR body or card states is rechecked against recorded
 output. A number counts only where something the session didn't write showed it: a tool
@@ -11,8 +11,10 @@ the call that printed it had the number in it. Order alone can't tell: muse-spac
 20000 was `s.length>20000` in a script, hours before its fuzz printed 20000 runs. A line of
 this script's own report never counts, wherever it turns up. A match stops at digits, so 97%
 is not 197%. A number the session worked out in its head, such as a sum, may be in no
-output, so check its parts. Prints the nearest three sources per number; exit 1 when one has
-none. The recap prints the transcript's path.
+output, so check its parts. A short number matches noise, such as a clock time or a line
+number: 43@test counts a 43 only with a word starting "test" among the three on either side,
+as plain-bot-names' vitest line had and its ps listing didn't. Prints the newest three sources
+per number; exit 1 when one has none. The recap prints the transcript's path.
 numbers.py --selftest
 """
 import json, re, sys
@@ -69,7 +71,9 @@ def words(s):
 
 
 def find(path, nums):
-    pats = {n: re.compile(r'(?<!\d)(?<!\d[.,])' + re.escape(n) + r'(?!\d)(?![.,]\d)') for n in nums}
+    near = {n: n.partition('@')[2].lower() for n in nums}
+    pats = {n: re.compile(r'(?<!\d)(?<!\d[.,])' + re.escape(n.partition('@')[0]) + r'(?!\d)(?![.,]\d)')
+            for n in nums}
     hits = {n: [] for n in nums}
     echoes = {n: 0 for n in nums}
     seen = {n: set() for n in nums}  # the words the session wrote beside each number
@@ -82,6 +86,8 @@ def find(path, nums):
                     seen[n].update([('<',) + tuple(before[-k:]) for k in range(1, len(before) + 1)]
                                    + [('>',) + tuple(after[:k]) for k in range(1, len(after) + 1)])
                 elif REPORT.match(text, text.rfind('\n', 0, m.start()) + 1):
+                    continue
+                elif near[n] and not any(w.startswith(near[n]) for w in before + after):
                     continue
                 elif (('<',) + tuple(before) in seen[n] or ('>',) + tuple(after) in seen[n]
                         if before or after else p.search(call)):
@@ -133,6 +139,8 @@ def selftest():
         note('peer', 'ran PACK=swain 16/16'),
         {'type': 'user', 'isCompactSummary': True, 'origin': {'kind': 'human'}, 'message': {'content': 'summary says 55%'}},
         {'type': 'attachment', 'attachment': {'type': 'queued_command', 'prompt': 'reader: 42 findings'}},
+        result('      Tests  43 passed'), result('STARTED Sat Nov  7 09:26:43 2026'),
+        result('41-- **A repo\n43-  which merges'), result('elapsed 0:43'),  # plain-bot-names' noise
         result('run 7 old'), result('run 7 mid'), result('run 7 a'), result('run 7 new'),
         ran('e1', {'command': 'echo 61,280 97%'}), result('61,280 97%', 'e1'),  # what it just typed, printed back
     ]
@@ -140,7 +148,8 @@ def selftest():
     with os.fdopen(fd, 'w') as f:
         f.write('not json\n[]\n' + '\n'.join(json.dumps(r) for r in rows) + '\n')
     try:
-        nums = ['97%', '61,280', '1,280', '$15.32', '83%', '42', '7', '16/16', '55%', '20000', '820', '4.39:1']
+        nums = ['97%', '61,280', '1,280', '$15.32', '83%', '42', '7', '16/16', '55%', '20000', '820', '4.39:1',
+                '43', '43@test', '43@build']
         hits, echoes = find(path, nums)
         assert hits['16/16'] == ['ran PACK=swain 16/16'], hits['16/16']   # another session; not its own file read back
         assert hits['820'] == [] and echoes['820'] == 1, hits['820']       # 820ms, from the file it wrote
@@ -154,6 +163,9 @@ def selftest():
         assert hits['4.39:1'] == [] and echoes['4.39:1'] == 1, hits['4.39:1']
         assert hits['42'] == ['reader: 42 findings'], hits['42']           # a background report
         assert hits['7'] == ['run 7 mid', 'run 7 a', 'run 7 new'], hits['7']  # the newest three
+        assert len(hits['43']) == 3 and 'Tests' not in ' '.join(hits['43']), hits['43']  # noise crowds it out
+        assert hits['43@test'] == ['      Tests  43 passed'], hits['43@test']  # the word picks the source
+        assert hits['43@build'] == [], hits['43@build']
         with contextlib.redirect_stdout(io.StringIO()) as out:
             rc = main(['numbers.py', path, '97%', '83%'])
         assert rc == 1 and "83%: in no output the session didn't write, only its own words read back" in out.getvalue(), out.getvalue()
