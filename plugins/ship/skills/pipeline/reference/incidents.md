@@ -445,3 +445,7 @@ history is in git, and nothing calls those engines now.
   can't reproduce, a voice path no walk reached, a localhost broken by a shared sign-in
   cookie); `verify` ran by its bare name and was refused; two runs built before the plan
   review landed; and the plan and branch reviews found real bugs in every run.
+- **`muse.py` writes `last.md` only after its frame loop ends**, so a wrapper killed after
+  Wonder's turn completed, by a session restart, leaves no `last.md` (save-files-to-mac,
+  2026-11-09). The answer is still in `<out-dir>/events.jsonl`: the last `item/completed`
+  agentMessage whose `messagePhase` is `finalAnswer`.
