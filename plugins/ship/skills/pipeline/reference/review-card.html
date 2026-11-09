@@ -8,10 +8,11 @@
   /ship review card: every SELF-DIRECTED and GATED ship, on a pass and on a park. EXPRESS
   has none; its result: line carries the proof shots' paths.
 
-  What it is: what Pete reviews, never the raw diff. The meta, one screen, PM-framed, a
-  17-pr-writeup for a PM and never a file tour: what it does, what's already checked, what
-  only he can confirm. It is the record of what landed and the proof, not a gate, so Pete
-  approving the QA on a live walk doesn't replace it.
+  What it is: what Pete reviews, never the raw diff. One screen, PM-framed, never a file
+  tour: what he can now do, the shots that prove it, and a "needs you" box only when
+  something does. Everything else is the record, folded shut under "For the record" (Pete,
+  2026-11-09: cards ran 550 to 900 words in seven sections). It is the record of what landed
+  and the proof, not a gate, so Pete approving the QA on a live walk doesn't replace it.
 
   Where: the docs home beside the repo's earlier cards (cells-app:
   specs/qa/<date>-<slug>/review.html; a repo with none yet: <docs home>/reviews/<slug>.html),
@@ -27,17 +28,12 @@
   origin/<base>:<path>` into the job's tmp from a script file, shots too), which closes the
   ship's other tabs. On a park, `show.sh ... review` the worktree's copy.
 
-  Slots:
-    WHAT YOU GOT      plain-English bullets of what now works.
+  Slots, open:
+    WHAT YOU CAN NOW DO  up to five plain-English bullets of what now works.
     PROOF IT WORKS    the QA run's captioned shots, start then action then success, one or more
                       on each device walked (browser, phone, Mac), with the verdict on top. Non-visual: demo or test output.
-    ALREADY CHECKED   gates green, the QA script walked end to end, a committed e2e spec by
-                      name, the last `smoke: branch` result line; and what was NOT
-                      touched (schema, money, public surfaces).
-    FLAGGED           the QA run's taste notes, if any, else delete the card. Reports, not
-                      work: one Pete wants changed becomes a follow-up.
-    ONLY YOU          the one or two things that need his eye, on the preview or localhost.
-    WHAT NEXT         the follow-ups (SKILL.md RETRO). Most rounds have none: delete the card.
+    NEEDS YOU         the one or two things only his eye or hands can settle, on the preview
+                      or localhost. Nothing does: delete the card.
     WHERE IT IS       the live links landing deploys (the contract's live:), or the preview
                       links and localhost when parked; the branch-built native app (the IOS
                       or MAC line: device and bundle, or the .app path) so he can open what
@@ -46,6 +42,13 @@
                       card is committed before the merge, or what it waits on.
     PR_URL            from `gh pr view <#> -R <owner/repo> --json url -q .url`, never typed:
                       a typed one named the wrong owner for cells-app.
+  Slots, folded under "For the record":
+    ALREADY CHECKED   gates green, the QA script walked end to end, a committed e2e spec by
+                      name, the last `smoke: branch` result line; and what was NOT
+                      touched (schema, money, public surfaces).
+    FLAGGED           the QA run's taste notes, if any. Reports, not work.
+    FILED             the follow-ups ship filed (SKILL.md RETRO), at most two, each with its
+                      ticket link. Most rounds have none.
 -->
 <style>
   :root{--page:#f5f5f7;--card:#fff;--ink:#1d1d1f;--slate:#515154;--mut:#6e6e73;
@@ -78,6 +81,8 @@
   .cand{border-left:3px solid var(--slate);padding:2px 0 2px 14px;margin:10px 0}
   .cand .t{font-weight:700;margin:0}
   .cand .w{color:var(--slate);font-size:14px;margin:2px 0 0}
+  details.card summary{cursor:pointer;color:var(--mut);font-weight:700;font-size:12px;letter-spacing:.14em;text-transform:uppercase}
+  details.card h2{margin:18px 0 10px}
   .dest{display:inline-block;border-radius:5px;padding:1px 8px;font-size:11px;font-weight:700;
     letter-spacing:.04em;text-transform:uppercase;margin-left:8px;vertical-align:1px;
     background:#ececf0;color:var(--slate);border:1px solid var(--line)}
@@ -97,7 +102,7 @@
   <p class="sub">What shipped, in plain terms.</p>
 
   <div class="card shipped">
-    <h2>What you got</h2>
+    <h2>What you can now do</h2>
     <ul>{{SHIPPED_BULLETS}}</ul>
   </div>
 
@@ -112,34 +117,10 @@
     </div>
   </div>
 
-  <div class="card">
-    <h2>Already checked for you</h2>
-    {{CHECKED_PILLS}}
-    <p style="margin:10px 0 0;font-size:14px;color:var(--slate)">{{RISK_NOTE}}</p>
-  </div>
-
-  <!-- FLAGGED: only with taste notes from the QA run, else delete this card -->
-  <div class="card">
-    <h2>Flagged</h2>
-    <ul>{{FLAGGED_ITEMS}}</ul>
-    <p style="margin:10px 0 0;font-size:14px;color:var(--slate)">Reports, not work. Name the ones to fix and each becomes a follow-up; the rest stay notes.</p>
-  </div>
-
+  <!-- NEEDS YOU: only when something does, else delete this card -->
   <div class="card">
     <h2>{{CONFIRM_HEADING}}</h2>
     {{CONFIRM_ITEMS}}
-  </div>
-
-  <!-- WHAT NEXT: only with real follow-ups, else delete this card. Each .cand: what it is,
-       one plain line on why it's worth doing, and its kind: "Quick ship", or
-       "Ticket · <column>" from the repo's board: (cells-app: Ready, Backlog or Icebox). -->
-  <div class="card">
-    <h2>What we should do next</h2>
-    <div class="cand">
-      <p class="t">{{CAND_1_TITLE}}<span class="dest">{{CAND_1_DEST}}</span></p>
-      <p class="w">{{CAND_1_WHY}}</p>
-    </div>
-    <p style="margin:12px 0 0;font-size:14px;color:var(--slate)">Say <b>ship 1</b> to run a quick ship now, or <b>file them</b> (or name which) to put the tickets on the board.</p>
   </div>
 
   <!-- WHERE IT IS: one li per link; drop a row that has nothing -->
@@ -153,6 +134,21 @@
   </div>
 
   <div class="verdict">{{LANDING_STATUS}}</div>
+
+  <!-- FOR THE RECORD: folded shut. Drop a block that has nothing. -->
+  <details class="card">
+    <summary>For the record</summary>
+    <h2>Already checked</h2>
+    {{CHECKED_PILLS}}
+    <p style="margin:10px 0 0;font-size:14px;color:var(--slate)">{{RISK_NOTE}}</p>
+    <h2>Flagged</h2>
+    <ul>{{FLAGGED_ITEMS}}</ul>
+    <h2>Filed for later</h2>
+    <div class="cand">
+      <p class="t"><a href="{{FILED_1_URL}}">{{FILED_1_TITLE}}</a><span class="dest">{{FILED_1_COLUMN}}</span></p>
+      <p class="w">{{FILED_1_WHAT_BREAKS}}</p>
+    </div>
+  </details>
 </div>
 </body>
 </html>

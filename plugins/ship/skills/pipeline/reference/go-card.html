@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>📋 {{SLUG}} · plan</title>
 <!--
-  /ship plan card (GATED ships only; SELF-DIRECTED and EXPRESS render none).
+  /ship plan card: a GATED ship with a call for Pete. A GATED ship with none renders no card
+  and says one line in chat; SELF-DIRECTED and EXPRESS render none.
 
   Where: specs/plans/go-card-<slug>.html in the docs home. Commit it, then
   `scripts/show.sh <root> <slug> plan <file>`.
@@ -13,23 +14,22 @@
   What it is: the meta of the plan, one screen, the only thing Pete reads before a build
   starts. A 16-implementation-plan boiled down to what he says go on; the execution plan
   is written after his go, and he never reads it. In this order:
-    1. The storyboard: the locked page embedded half scale in one glance, linked.
+    1. Your call, on top, since the card is the call: one to three, each a plain-language
+       tradeoff that changes what he gets, saying what he'd see either way, with ship's pick
+       worded so "yes" takes it. A technical choice with a clear pick is ship's: take it and
+       log it. Never offer to phase the work. Anything Pete must create himself (an OAuth
+       app, an account, a key) is always a call, beside the setup an agent can do alone
+       where one exists.
+    2. The storyboard: the locked page embedded half scale in one glance, linked.
        A non-visual ship drops this card.
-    2. What gets built: one plain-English line per piece of work, in build order, five to
+    3. What gets built: one plain-English line per piece of work, in build order, five to
        twelve lines. Never files, never task numbers.
-    3. Ponytail cut: what was dropped as waste, and why. Never a frame Pete locked.
-    4. Your call: one to three calls, each a plain-language tradeoff that changes what he
-       gets, saying what he'd see either way, with ship's pick worded so "yes" takes it.
-       A technical choice with a clear pick is ship's: take it and log it. Never offer to
-       phase the work. Anything Pete must create himself (an OAuth app, an account, a key)
-       is always a call, beside the setup an agent can do alone where one exists.
+    4. Ponytail cut: what was dropped as waste, and why. Never a frame Pete locked.
     5. Risk: one line.
     6. Go: one line.
 
-  No calls: keep the card and set Your call to the one NO_CALLS line below, and the go
-  line to "Building now; nothing here waits on you." The card is shown, not waited on:
-  no gate:2 marker, one chat line ("plan card: no calls, building"), straight on.
-  With calls: gate:2, the gate notification, `needs input:` ("go?"), and a hard stop.
+  The card is the call: gate:2, the gate notification, `needs input:` ("go?"), and a hard
+  stop.
 
   Any other section with nothing in it is deleted, never shown empty.
 -->
@@ -55,7 +55,6 @@
   .call .opts{color:var(--slate);font-size:14px;margin:0 0 5px}
   .rec{display:inline-block;font-size:13px;background:#f3ead6;color:#7a5a18;
     border:1px solid #e7d6ad;border-radius:6px;padding:2px 9px;font-weight:600}
-  .nocalls{margin:0;color:var(--slate);font-size:15px}
   .risk{font-weight:600;font-size:14px}
   .board{position:relative;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--page)}
   .board iframe{display:block;border:0;width:1240px;height:1400px;transform:scale(.5);transform-origin:0 0;pointer-events:none}
@@ -70,32 +69,9 @@
 <body>
 <div class="wrap">
   <h1>The plan</h1>
-  <p class="sub">The storyboard you locked, and what gets built from it.</p>
+  <p class="sub">One call for you, then what gets built from the storyboard you locked.</p>
 
-  <!-- 1. STORYBOARD: the iframe's height is the storyboard's; set .board's height to half. -->
-  <div class="card">
-    <h2>The storyboard</h2>
-    <div class="board" style="height:700px">
-      <iframe src="{{STORYBOARD_RELATIVE_PATH}}" title="locked storyboard"></iframe>
-      <a class="open" href="{{STORYBOARD_RELATIVE_PATH}}">open it</a>
-    </div>
-  </div>
-
-  <!-- 2. WHAT GETS BUILT -->
-  <div class="card">
-    <h2>What gets built</h2>
-    <p class="scope">{{SCOPE_ONE_LINE}}</p>
-    <ol class="punch">{{PUNCH_LIST_ITEMS}}</ol>
-  </div>
-
-  <!-- 3. CUT -->
-  <div class="card cut">
-    <h2>Ponytail cut</h2>
-    <ul>{{CUT_LIST_ITEMS}}</ul>
-  </div>
-
-  <!-- 4. YOUR CALL: one .call block per call, or, with none, only the NO_CALLS line:
-       <p class="nocalls">No calls: the storyboard settled everything, so this card is shown, not waited on.</p> -->
+  <!-- 1. YOUR CALL: one .call block per call -->
   <div class="card">
     <h2>Your call</h2>
     <div class="call">
@@ -105,6 +81,28 @@
     </div>
   </div>
 
+  <!-- 2. STORYBOARD: the iframe's height is the storyboard's; set .board's height to half. -->
+  <div class="card">
+    <h2>The storyboard</h2>
+    <div class="board" style="height:700px">
+      <iframe src="{{STORYBOARD_RELATIVE_PATH}}" title="locked storyboard"></iframe>
+      <a class="open" href="{{STORYBOARD_RELATIVE_PATH}}">open it</a>
+    </div>
+  </div>
+
+  <!-- 3. WHAT GETS BUILT -->
+  <div class="card">
+    <h2>What gets built</h2>
+    <p class="scope">{{SCOPE_ONE_LINE}}</p>
+    <ol class="punch">{{PUNCH_LIST_ITEMS}}</ol>
+  </div>
+
+  <!-- 4. CUT -->
+  <div class="card cut">
+    <h2>Ponytail cut</h2>
+    <ul>{{CUT_LIST_ITEMS}}</ul>
+  </div>
+
   <!-- 5. RISK -->
   <div class="card">
     <h2>Risk</h2>
@@ -112,7 +110,7 @@
     <p style="margin:4px 0 0;font-size:14px;color:var(--slate)">{{RISK_NOTE}}</p>
   </div>
 
-  <!-- 6. GO: "go · or change something?" with calls; "Building now; nothing here waits on you." without -->
+  <!-- 6. GO: "go · or change something?" -->
   <div class="go">{{GO_LINE}}</div>
   <p class="foot">Storyboard: <code>{{STORYBOARD_PATH}}</code></p>
 </div>

@@ -24,6 +24,9 @@ clock alone.
   route.py log task=<n> status=parked note=<why> ...
                                  a plan task Pete let the ship land without; it counts as
                                  logged and stays out of the report's build times
+  route.py log snag=<what, in a sentence> ...
+                                 a small thing the run hit, logged where it once sent a
+                                 retro; never a BUILD task, and report lists the last ten
   route.py adopt <n>[,<n>...]    from the worktree, mark tasks an earlier session built as done,
                                  with no ledger row, since their time and first pass are its own
   route.py readers repo=<r> ship=<s>
@@ -32,7 +35,8 @@ clock alone.
                                  being down) and, run from the worktree, every plan task
                                  is logged built or parked and its branch adds the review
                                  card; exit 1 naming what's missing
-  route.py report                the ledger as a table by engine, then the readers'
+  route.py report                the ledger as a table by engine, then the readers', then
+                                 the snags
   route.py --selftest
 
 Opus 5.5 only (Pete, 2026-10-24): the driver builds every task in its own loop, so `plan`
@@ -443,7 +447,9 @@ def report():
     everything = rows()
     reviews = [r for r in everything if 'review' in r]
     recalls = [r for r in everything if 'recall' in r]
-    tasks = [r for r in everything if 'review' not in r and 'recall' not in r and r.get('status') != 'parked']
+    snags = [r for r in everything if 'snag' in r]
+    tasks = [r for r in everything if 'review' not in r and 'recall' not in r and 'snag' not in r
+             and r.get('status') != 'parked']
 
     def mean(group, key):
         values = [r[key] for r in group if isinstance(r.get(key), (int, float)) and not isinstance(r[key], bool)]
@@ -481,6 +487,9 @@ def report():
         none = sum(1 for r in recalls if r.get('used') == 0)
         lines += ['', f"decision recall: {len(recalls)} ships used {used} of {shown} shown"
                       f" ({100 * used // shown if shown else 0}%); {none} used none"]
+    if snags:  # what a run logs where it used to send a retro; the maintainer's daily batch reads these
+        lines += ['', f"snags: {len(snags)} on {len({(r.get('repo'), r.get('ship')) for r in snags})} ships; the last ten:"]
+        lines += [f"  {str(r.get('ts'))[:10]} {r.get('repo')}/{r.get('ship')}: {r['snag']}" for r in snags[-10:]]
     return '\n'.join(lines)
 
 
@@ -554,6 +563,11 @@ def selftest():
         log(['repo=ship', 'ship=b', 'recall=6', 'used=0'])
         check('recall rows get one line and never join the BUILD table',
               'decision recall: 2 ships used 2 of 12 shown (16%); 1 used none' in report())
+        build_table = report().split('reader')[0]
+        log(['repo=ship', 'ship=a', 'snag=the smoke waited four minutes on a cold server'])
+        check('a snag row gets its own lines and never joins the BUILD table',
+              report().split('reader')[0] == build_table
+              and 'snags: 1 on 1 ships' in report() and 'ship/a: the smoke waited four minutes' in report())
         check("a ship's second recall row is refused",
               'already logged' in refused(log, ['repo=ship', 'ship=a', 'recall=6', 'used=3']))
         check('task=review is refused, pointing at review=',

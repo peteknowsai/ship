@@ -35,12 +35,14 @@
   frame and nothing else, :root tokens resolve, and a hover, an open menu or a tab inside
   one frame works. Clicking an artboard's name opens it alone at full size.
   Round N: set data-round on <body> and the round in <title>, redraw in place, delete
-  frames Pete killed (never grey them out). Questions are grilling's: every open one,
-  Q1, Q2…, each naming its frames, with your pick worded so "yes" takes it. Each sits right
-  under the row of the first frame it names, numbered in page order; one about no frame
-  goes at the top of the board. Never a list at the foot. Answered ones go; new ones
-  continue the numbers. They are the ones a designer would bring, never a recommendation
-  dressed as a question, and they live on the page: chat never repeats them.
+  frames Pete killed (never grey them out). Questions are grilling's, at most three
+  a round: the forks whose answer most changes what Pete gets, Q1, Q2…, each drawn as a
+  .flow.options row with your pick marked and worded so "yes" takes it, the question right
+  under its frames. Answered ones go; new ones continue the numbers. They are the ones a
+  designer would bring, never a recommendation dressed as a question. Every other open call
+  you make yourself and list in "Calls I made" at the foot, coded C1, C2…, a line each: what
+  you chose and what the other way was, so Pete can overrule one by its code. Both live on
+  the page: chat never repeats them.
 
   The rest of the contract:
     - The product's sheet: a repo that ships one links it by relative path from the docs
@@ -132,11 +134,10 @@
         <p class="cap">{{FRAME_3_WHAT_IS_NEW}}</p>
       </figure>
     </div>
-    <!-- This row's questions, right under its frames. "yes" takes every pick; Pete answers the rest by number. -->
-    <div class="q"><p><span class="tag">Q1</span>{{QUESTION_1}} <span class="on">· A3</span></p><span class="pick">I'd pick: <b>{{PICK_1}}</b></span></div>
   </section>
 
-  <!-- An open call, drawn: sibling directions of one screen, no arrows. Drop when none. -->
+  <!-- A question, drawn: sibling directions of one screen, no arrows, the question under them.
+       At most three of these a round. "yes" takes every pick; Pete answers the rest by number. -->
   <section class="flow options">
     <h2>B · {{OPEN_CALL}} · pick one</h2>
     <div class="boards">
@@ -149,11 +150,18 @@
         <p class="cap">{{OPTION_2_WHAT_IS_DIFFERENT}}</p>
       </figure>
     </div>
-    <div class="q"><p><span class="tag">Q2</span>{{QUESTION_2}} <span class="on">· B1, B2</span></p><span class="pick">I'd pick: <b>{{PICK_2}}</b></span></div>
+    <div class="q"><p><span class="tag">Q1</span>{{QUESTION_1}} <span class="on">· B1, B2</span></p><span class="pick">I'd pick: <b>{{PICK_1}}</b></span></div>
   </section>
 </main>
 
 <section class="notes">
+  <!-- The calls ship made instead of asking. Drop when none. -->
+  <details>
+    <summary>Calls I made</summary>
+    <ul>
+      <li><b>C1</b> {{CALL_1_WHAT_I_CHOSE}}, not {{CALL_1_THE_OTHER_WAY}}</li>
+    </ul>
+  </details>
   <details>
     <summary>For the record</summary>
     <ul>

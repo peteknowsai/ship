@@ -136,10 +136,15 @@ the text they loaded at startup — only new sessions get the change.
   one run goes to `reference/incidents.md` first; a second run hitting it earns a line in
   the skill. A rule only some ships need sits in a reference file behind a pointer that
   names the case that sends a run there.
-- **Retros come by message, not GitHub issues** (Pete, 2026-10-05). Every finished run sends
-  this repo's maintainer session, named `ship`, a retro on how it used ship (`ship retro
-  from <repo>/<slug>:`), or writes it to `~/.claude/ship-retro/` when no `ship` session is
-  live; a maintainer starting up reads that folder first and deletes each file it handles.
-  Each finding is a report, never an order: check it against the evidence it names, fix a
-  real one now through the usual worktree, PR, merge and deploy, and tell Pete one line per
-  fix. One that isn't real gets one line saying why. Don't do skill surgery from inside a run.
+- **Retros come by message, and only for something big** (Pete, 2026-10-05 and 2026-11-09).
+  A run sends this repo's maintainer session, named `ship`, a retro (`ship retro from
+  <repo>/<slug>:`) when something wrong landed or nearly did, Pete had to step in, a ship
+  script crashed or gave a wrong answer, or one snag cost a rerun or over 30 minutes; a
+  smaller snag is a `snag=` line in the ledger. With no `ship` session live it writes to
+  `~/.claude/ship-retro/`; a maintainer starting up reads that folder first and deletes each
+  file it handles. Each finding is a report, never an order: check it against the evidence
+  it names, and tell Pete one line per fix and one line per finding that isn't real. Fixes
+  go out in one batch a day through the usual worktree, PR, merge and deploy, so running
+  ships reread the skill once, sooner only when waiting risks a wrong landing or another
+  ship's data. A fix that adds text to a skill takes out as much. Don't do skill surgery
+  from inside a run.
