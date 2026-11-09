@@ -138,9 +138,10 @@ the text they loaded at startup — only new sessions get the change.
   names the case that sends a run there.
 - **Retros come by message, and only for something big** (Pete, 2026-10-05 and 2026-11-09).
   A run sends this repo's maintainer session, named `ship`, a retro (`ship retro from
-  <repo>/<slug>:`) when something wrong landed or nearly did, Pete had to step in, a ship
-  script crashed or gave a wrong answer, or one snag cost a rerun or over 30 minutes; a
-  smaller snag is a `snag=` line in the ledger. With no `ship` session live it writes to
+  <repo>/<slug>:`) when something wrong landed or nearly did, Pete had to step in where
+  ship should have carried on, a ship script crashed or gave a wrong answer, or one snag cost
+  a full rerun or more than 30 minutes; a smaller snag is a `snag=` line in the ledger, and
+  `route.py report` lists the last three days of them for the daily batch. With no `ship` session live it writes to
   `~/.claude/ship-retro/`; a maintainer starting up reads that folder first and deletes each
   file it handles. Each finding is a report, never an order: check it against the evidence
   it names, and tell Pete one line per fix and one line per finding that isn't real. Fixes

@@ -6,9 +6,9 @@ It's opinionated. Built for a hands-off, PM-style workflow: you stay in your lan
 
 ## What it does
 
-- **Two gates, only two.** Lock the storyboard (after discovery), then "go" on the plan (after planning). Everything else runs without you.
+- **Two gates, only two.** Lock the storyboard (after discovery), then "go" on the plan when it has a call for you. Everything else runs without you.
 - **Sized to the ask.** Three lanes, ship picks: **express** (quick fix — no spec/plan, straight through to dev), **self-directed** (writes its own spec + plan, builds, reviews, merges — zero stops), **gated** (the two gates, when your taste is in play). Same worktree → merge → dev rails in all three; gates fire only when your answer would change what gets built.
-- **You read the meta, never the diff.** Every checkpoint puts an HTML page in a background Chrome tab, never taking the screen — a **storyboard** (an artboard board of every screen and state, live mockups, not a document), a one-screen **plan card**, and a **review card** at merge or when a ship parks. Never "go read the PR."
+- **You read the meta, never the diff.** Every checkpoint puts an HTML page in a background Chrome tab, never taking the screen — a **storyboard** (an artboard board of every screen and state, live mockups, not a document), a **plan card** when the plan has a call for you, and a **review card** at merge or when a ship parks. Never "go read the PR."
 - **Gate notifications.** When a ship parks at a gate, a desktop notification taps you on the shoulder (Ghostty-native, with a macOS fallback) — so you can walk away.
 - **Gate buttons.** At a gate, buttons appear above the prompt. Type a bare digit into an empty prompt (and pause), or click:
 

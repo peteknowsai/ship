@@ -255,6 +255,10 @@ def log(pairs):
     if 'task' in row and not re.fullmatch(r'\d+[a-z]?(,\d+[a-z]?)*', str(row['task'])):
         raise SystemExit(f"route log: task={row['task']} isn't a plan task (3, 3b or 5,6); "
                          "a reader's tally is review=<engine> stage=<plan|branch> real= false= nits=")
+    if 'snag' in row and (not isinstance(row['snag'], str) or not row['snag'].strip() or not row.get('repo')
+                          or not row.get('ship') or {'task', 'review', 'recall'} & set(row)):
+        raise SystemExit('route log: a snag is repo=<r> ship=<slug> snag="<what, in a sentence>" and '
+                         'nothing that counts a task, a read or a recall')
     if row.get('status') == 'parked' and ('task' not in row or 'note' not in row):
         raise SystemExit("route log: a parked task needs task=<n> and note=<why it wasn't built>")
     if 'task' in row and 'review' not in row and 'note' not in row and row.get('repo') and row.get('ship'):
@@ -488,8 +492,10 @@ def report():
         lines += ['', f"decision recall: {len(recalls)} ships used {used} of {shown} shown"
                       f" ({100 * used // shown if shown else 0}%); {none} used none"]
     if snags:  # what a run logs where it used to send a retro; the maintainer's daily batch reads these
-        lines += ['', f"snags: {len(snags)} on {len({(r.get('repo'), r.get('ship')) for r in snags})} ships; the last ten:"]
-        lines += [f"  {str(r.get('ts'))[:10]} {r.get('repo')}/{r.get('ship')}: {r['snag']}" for r in snags[-10:]]
+        recent = [r for r in snags if (logged_at(r) or 0) >= time.time() - 3 * 86400]
+        lines += ['', f"snags: {len(snags)} on {len({(r.get('repo'), r.get('ship')) for r in snags})} ships; "
+                      f"the last three days' {len(recent)}:"]
+        lines += [f"  {str(r.get('ts'))[:10]} {r.get('repo')}/{r.get('ship')}: {r['snag']}" for r in recent]
     return '\n'.join(lines)
 
 
@@ -565,9 +571,15 @@ def selftest():
               'decision recall: 2 ships used 2 of 12 shown (16%); 1 used none' in report())
         build_table = report().split('reader')[0]
         log(['repo=ship', 'ship=a', 'snag=the smoke waited four minutes on a cold server'])
-        check('a snag row gets its own lines and never joins the BUILD table',
-              report().split('reader')[0] == build_table
-              and 'snags: 1 on 1 ships' in report() and 'ship/a: the smoke waited four minutes' in report())
+        open(ledger_path(), 'a').write(json.dumps({'ts': '2019-12-01T00:00:00', 'repo': 'ship', 'ship': 'old',
+                                                   'snag': 'a snag from long ago'}) + '\n')
+        check('a snag row gets its own lines and never joins the BUILD table; an old one is counted, not listed',
+              report().split('reader')[0] == build_table and "snags: 2 on 2 ships; the last three days' 1:" in report()
+              and 'ship/a: the smoke waited four minutes' in report() and 'long ago' not in report())
+        check('a snag that names a task, has no ship or says nothing is refused',
+              all('a snag is' in refused(log, bad) for bad in (
+                  ['repo=ship', 'ship=a', 'task=1', 'snag=flaky smoke'], ['repo=ship', 'snag=flaky smoke'],
+                  ['repo=ship', 'ship=a', 'snag='], ['repo=ship', 'ship=a', 'snag=42'])))
         check("a ship's second recall row is refused",
               'already logged' in refused(log, ['repo=ship', 'ship=a', 'recall=6', 'used=3']))
         check('task=review is refused, pointing at review=',

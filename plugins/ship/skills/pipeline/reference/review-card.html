@@ -30,10 +30,12 @@
 
   Slots, open:
     WHAT YOU CAN NOW DO  up to five plain-English bullets of what now works.
-    PROOF IT WORKS    the QA run's captioned shots, start then action then success, one or more
-                      on each device walked (browser, phone, Mac), with the verdict on top. Non-visual: demo or test output.
-    NEEDS YOU         the one or two things only his eye or hands can settle, on the preview
-                      or localhost. Nothing does: delete the card.
+    PROOF IT WORKS    the before and after shot for each device walked (browser, phone, Mac;
+                      a new surface: its start and its success), captioned, with the verdict
+                      on top. Non-visual: demo or test output.
+    NEEDS YOU         what only his eye or hands can settle, on the preview or localhost;
+                      what the run couldn't confirm; a call of his the build reversed.
+                      Nothing does: delete the card.
     WHERE IT IS       the live links landing deploys (the contract's live:), or the preview
                       links and localhost when parked; the branch-built native app (the IOS
                       or MAC line: device and bundle, or the .app path) so he can open what
@@ -46,9 +48,11 @@
     ALREADY CHECKED   gates green, the QA script walked end to end, a committed e2e spec by
                       name, the last `smoke: branch` result line; and what was NOT
                       touched (schema, money, public surfaces).
-    FLAGGED           the QA run's taste notes, if any. Reports, not work.
-    FILED             the follow-ups ship filed (SKILL.md RETRO), at most two, each with its
-                      ticket link. Most rounds have none.
+    THE WALK          the QA run's other captioned shots, in order.
+    FLAGGED           the QA run's taste notes that ask nothing of him. Reports, not work.
+    FILED             the follow-ups ship filed (SKILL.md TEST), at most two, each with its
+                      ticket link; a third, or any in a repo with no board, as a plain line.
+                      Most rounds have none.
 -->
 <style>
   :root{--page:#f5f5f7;--card:#fff;--ink:#1d1d1f;--slate:#515154;--mut:#6e6e73;
@@ -106,7 +110,7 @@
     <ul>{{SHIPPED_BULLETS}}</ul>
   </div>
 
-  <!-- PROOF: the QA run's shots, one beat block per screenshot -->
+  <!-- PROOF: the before and after shot per device, one beat block each -->
   <div class="card">
     <h2>Proof it works <span class="vpill">{{VERDICT}}</span></h2>
     <div class="storyboard">
@@ -119,7 +123,7 @@
 
   <!-- NEEDS YOU: only when something does, else delete this card -->
   <div class="card">
-    <h2>{{CONFIRM_HEADING}}</h2>
+    <h2>Needs you</h2>
     {{CONFIRM_ITEMS}}
   </div>
 
@@ -141,6 +145,13 @@
     <h2>Already checked</h2>
     {{CHECKED_PILLS}}
     <p style="margin:10px 0 0;font-size:14px;color:var(--slate)">{{RISK_NOTE}}</p>
+    <h2>The walk</h2>
+    <div class="storyboard">
+      <figure class="beat">
+        <img src="{{WALK_1_SRC}}" alt="{{WALK_1_CAP}}">
+        <figcaption>{{WALK_1_CAP}}</figcaption>
+      </figure>
+    </div>
     <h2>Flagged</h2>
     <ul>{{FLAGGED_ITEMS}}</ul>
     <h2>Filed for later</h2>

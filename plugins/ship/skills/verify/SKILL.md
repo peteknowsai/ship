@@ -455,5 +455,6 @@ either: it names the changed files in the hand-back.
 
 Return to the caller: `VERDICT`, `UNWALKED`, `EVIDENCE` (the ordered screenshot + caption storyboard),
 `SHOTS`, `TASTE` notes, and the crystallized spec path (or none). In ship they go on the review card:
-the storyboard becomes "Proof it works," the taste notes "Flagged." Pete reviews proof, not
+its before and after shots become "Proof it works" with the rest folded under "The walk," the
+taste notes "Flagged," and what the run couldn't confirm "Needs you." Pete reviews proof, not
 faith.
