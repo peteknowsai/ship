@@ -1,6 +1,6 @@
 ---
 name: pipeline
-description: Use for any code change in a product/web repo, quick fix to full feature. Ship sizes the ceremony itself and stops only when Pete's taste or a risky merge is in play. Explicit verbs pin the process, "/ship express <tweak>" and "/ship design <idea>"; anything else sizes itself. EXPRESS (a tweak, no spec or plan, straight to a tested merge), SELF-DIRECTED (writes its own plan, builds, reviews, tests and merges with no stops), or GATED (a storyboard and a plan card Pete answers), and a gate fires only when Pete's answer would change what gets built. Auto-triggers on change requests; you never type it. Do NOT use for a question or pure analysis. Never edit main directly.
+description: Use for any code change in a product/web repo, quick fix to full feature. Ship sizes the ceremony itself and stops only when Pete's taste or a risky merge is in play. Explicit verbs pin the process, "/ship express <tweak>" and "/ship design <idea>"; anything else sizes itself. EXPRESS (a tweak, no spec or plan, straight to a tested merge), SELF-DIRECTED (writes its own plan, builds, reviews, tests and merges with no stops), or GATED (a storyboard Pete locks, and a plan card when it has a call for him), and a gate fires only when Pete's answer would change what gets built. Auto-triggers on change requests; you never type it. Do NOT use for a question or pure analysis. Never edit main directly.
 ---
 
 # /ship — idea to merged, in one command
@@ -45,7 +45,7 @@ or the auto-trigger, sizes itself. Every verb rides the same rails.
 - **`/ship express <tweak>`** pins EXPRESS. It pins ceremony down, never safety: a money
   path or a taste call promotes per the mid-flight rule regardless.
 - **`/ship design <idea>`** pins GATED and the full design workshop (storyboard, rounds,
-  lock, plan card, go, plan, build). Pete is saying taste is in play; never downgrade it,
+  lock, a plan card when it has a call, plan, build). Pete is saying taste is in play; never downgrade it,
   however mechanical the work looks. With no card key, in a repo whose `board:` names one,
   stage 0 files its card before the fork (Pete, 2026-11-06).
 - **A claude.ai/share link** is Pete's own conversation: read it at once, headless, since
@@ -406,10 +406,14 @@ one with uncommitted work, one a live session holds (wt's 💬), or one under tw
   teardown, and a count from memory is a guess (company-pack). A call marked `[stale]`
   gives a retired engine a ship job, and this skill's text wins over it.
 - **Grill on the storyboard, never in chat.** Call the Skill tool with
-  `mattpocock-skills:grilling` for how to ask: each round asks every question open now,
-  numbered Q1, Q2…, each with your pick worded so "yes" takes it, and recon answers the facts.
-  Nothing is asked before round 1: where an answer would change what to draw, draw your pick
-  and ask under it.
+  `mattpocock-skills:grilling` for how to ask, and recon answers the facts. A round asks at
+  most three questions, the ones whose answer most changes what Pete gets, each a fork drawn
+  as an options row (two frames, or two plain cards when nothing is visual) with your pick
+  marked and worded so "yes" takes it. Every other open call
+  you make yourself and list in one collapsed "Calls I made" block, a line each, coded C1,
+  C2… so he can overrule one (Pete, 2026-11-09: rounds ran to 13 questions). Nothing is asked
+  before round 1: where an answer would change what to draw, draw your pick as one of the
+  round's forks.
 - **Recon is a read-only Opus subagent; synthesis stays with the driver.** Its brief: a reuse
   audit (grep the whole repo, data layer included, for every core noun the feature
   introduces); the liveness of any existing surface the design lands on (current design
@@ -458,7 +462,7 @@ one with uncommitted work, one a live session holds (wt's 💬), or one under tw
   Every frame in it ships and nothing else does. Log the direction (Working rules), then PLAN.
 - **Smaller shapes.** A trivial visual change may collapse to one frame and one confirm,
   never zero on GATED. A non-visual GATED ship gates on a one-screen board: the lead, the one
-  question that matters, depth collapsed. When Pete asks to take a frame into pen (Pencil),
+  question that matters as two plain cards, depth collapsed. When Pete asks to take a frame into pen (Pencil),
   harvest the result back before the lock. A design of record on another branch is copied
   into this branch at PLAN, and every brief points at the copy (CEL-146's frames were
   trimmed under it).
@@ -467,13 +471,14 @@ one with uncommitted work, one a live session holds (wt's 💬), or one under tw
 
 - `stage.sh <root> plan`. `ponytail` is the waste critic: it cuts reinvention and gold
   plating, never a frame Pete locked.
-- **GATED renders the plan card** from `reference/go-card.html`, whose comment holds its
-  rules: the locked storyboard first, then the work list, the cut list, his calls, risk, go.
-  Calls are plain language and only ones that change what he gets. Commit it, `show.sh … plan`
-  it. **With a call** it is gate 2: `stage.sh <root> gate:2`, `needs input:` ("go?"), a hard
-  stop; after his "go", `stage.sh <root> plan` again. **With none** it is shown, not waited
-  on: one line ("plan card: no calls, building"), no marker, straight on. SELF-DIRECTED and
-  EXPRESS render no card.
+- **GATED renders the plan card only when it has a call for Pete**, from
+  `reference/go-card.html`, whose comment holds its rules: his calls first, then the
+  locked storyboard, the work list, the cut list, risk, go. Calls are plain language and only ones
+  that change what he gets. Commit it, `show.sh … plan` it, `stage.sh <root> gate:2`, `needs
+  input:` ("go?"), a hard stop; after his "go", `stage.sh <root> plan` again. **With no call
+  there is no card**: one chat line naming what gets built and what was cut, no marker,
+  straight on (Pete, 2026-11-09: 8 of 29 cards asked him anything). SELF-DIRECTED and EXPRESS
+  render no card.
 - **Anything Pete must create himself** (an OAuth app, an account, a key) is a call on the
   card, or on a cardless lane a stop now (`stage.sh <root> gate:input`, `needs input:`),
   never a surprise at TEST (cc-bridge's GitHub app swapped for Cloudflare Access once asked).
@@ -722,8 +727,25 @@ Wonder read where Sizing says.
   line, the run lands, and `result:` and the PR name it as his.
 - **The review card**, SELF-DIRECTED and GATED, on a pass or a park: `reference/
   review-card.html`, whose comment says where it goes, what each slot holds, and that it is
-  committed before the merge with the shots it shows. `LANDING_STATUS` says "Tested · landing
-  on main" or what it waits on. EXPRESS has none; its `result:` names the proof shots.
+  committed before the merge with the shots it shows. Open, it shows only what he can now do,
+  the before and after shot for each device walked (a new surface: its start and its
+  success), a "needs you" box when something does, and where it is; the rest is folded shut.
+  Needs you holds what only his eye or hands can settle, what the run couldn't confirm, and a
+  call of his the build reversed.
+  `LANDING_STATUS` says "Tested · landing on main" or what it waits on. EXPRESS has none; its
+  `result:` names the proof shots.
+- **Follow-ups are filed before the card is rendered**, on a park too, so it carries their
+  links. A follow-up is a defect the run found outside the spec's scope: never a specced
+  surface left unbuilt, an improvement or an idea. A check the repo lacks that would have
+  caught a mistake this run made counts (a mechanical rule gets a check, never a standards
+  line), and a gap an earlier run already listed is not news. Ship files at most two, the two
+  that hurt most, itself and unasked (Pete, 2026-11-09; a repo rule that waits for his "file
+  them" is older and loses), where the repo's `board:` keeps someday work (cells-app: Icebox;
+  a board with no such column: its backlog). Each gets one plain line on what breaks, a link
+  to this PR, and any measurement it rests on pasted or at a durable path with the sha it was
+  measured on, since main can fix it first (muse-icons' 4.39:1 caption was 7.09:1 once #499
+  landed). A third defect, and every one in a repo with no board, is a plain line on the
+  card's folded list and in `result:`. Never gate the merge or `result:` on any of it.
 - **Screenshots** live in verify's `<shots-root>/.ship-shots/<slug>/` (its `SHOTS:`), never
   committed; any brief that screenshots or hands the browser a file (an `evaluate_script`
   `sourcePath`, a sign-in script; recon's walk of the live product included) gets that
@@ -864,50 +886,28 @@ Landing variants.
      script that ran it. Restart a `worker:` once idle (rare-cases). Ship never runs a
      production deploy or pushes a production database by hand, and never makes Pete run
      one; an integration lane or a promotion is rare-cases.
-7. **Close out.** On a design ship, the retro carries step 1's recall count. `show.sh …
-   review <file> done` the landed card.
+7. **Close out.** `show.sh … review <file> done` the landed card.
    Run RETRO, then end with `result:`: what shipped, one sentence, the live links, `· retro
-   sent` when it was, then the follow-ups. Only a landing earns `result:`.
+   sent` when it was, then the follow-ups (TEST). Only a landing earns `result:`.
 
-### 7 · RETRO — what the run teaches  → no marker
+### 7 · RETRO — only what's big  → no marker
 
-**Ship gets a retro.** The running agent never edits this skill; the fix belongs to the
-maintainer, the session named `ship` in this plugin's repo (Pete, 2026-10-05). Look back
-from the transcript, not memory, at how you used ship: a rule that was unclear, contradicted
-another, changed nothing or that you broke, and every time Pete stepped in where ship should
-have carried on (steering); a mistake one of ship's scripts could have caught, or a check
-that misfired; something ship never handed you or the QA run that cost a round; a rule found
-too late; a step a script or narrower command would make cheaper. `ListAgents`, then
-`SendMessage` the peer named `ship` (never yourself): `ship retro from <repo>/<slug>:` and
-each finding as one line with what happened, the gap, the fix you'd make and its evidence (a
-file:line, a turn, a QA step). A clean run sends `…: clean`. Fire and forget. No `ship`
-session live: write the same text to `~/.claude/ship-retro/<date>-<repo>-<slug>.md`. Never
-invent a lesson. The maintainer files a one-run lesson in `reference/incidents.md`; a second
-run hitting it earns a line here.
+**Ship gets a retro for four things** (Pete, 2026-11-09: every run sent one, none came back
+clean, and the skill changed under running ships daily). Look back from the transcript, not
+memory, for:
+- something wrong landed, or nearly did;
+- Pete had to step in where ship should have carried on;
+- a ship script crashed or gave a wrong answer;
+- one snag cost a full rerun or more than 30 minutes.
 
-**The repo gets a retro too**: a mistake one of its checks could have caught (a lint rule, a
-type, a test, a CI job; a mechanical rule gets a check, never a standards line), information
-the run lacked (a log nobody tailed), a file it took long to find that a pointer in its
-`CLAUDE.md` would have saved, an expensive call a script would replace. A repo with no
-tests, lint or CI at all is one. Each real one is a follow-up. A gap an earlier run already listed is not news.
-
-**Follow-ups** are work outside the spec's scope the run threw off, never a specced surface
-left unbuilt. Keep a running list, never invent one, never gate the merge on it. Each gets
-one plain line on why it's worth doing, and a kind:
-- **Quick ship**: the whole change visible, no taste call, one sitting. Pete says "ship <n>"
-  and it runs as EXPRESS.
-- **Ticket**, in the column the repo's `board:` gives its need (cells-app: Ready for an agent
-  to build alone, Backlog with the ask written on it for Pete's OK or a design call, Icebox
-  for someday), never a column for work in flight. Pete says "file them" (or names which) and
-  each lands with its why and a link to this PR, and any measurement it rests on pasted or at
-  a durable path.
-
-Either kind resting on a measurement names the sha it was measured on, since main can fix it
-first (muse-icons' 4.39:1 caption was 7.09:1 once #499 landed).
-
-They go on the review card under "What we should do next", or under `result:` as a numbered
-list. Ship fixes found in its own retro go to the maintainer, never this list. Don't gate
-`result:` on any of it.
+Each is a finding for the maintainer, the session named `ship` in this plugin's repo, since
+the running agent never edits this skill. `ListAgents`, then `SendMessage` that peer (never
+yourself): `ship retro from <repo>/<slug>:` and each finding as one line with what happened,
+the gap, the fix you'd make and its evidence (a file:line, a turn, a QA step). Fire and
+forget. No `ship` session live: write the same text to
+`~/.claude/ship-retro/<date>-<repo>-<slug>.md`. Anything smaller is one ledger line and no
+message, `route.py log repo= ship= snag="<what, in a sentence>"`, and a run with neither
+sends nothing. Never invent a lesson.
 
 ## Every stop
 
@@ -920,7 +920,7 @@ the tasks in `.ship-done`), since a stop's marker counts as waiting on him until
 |---|---|---|---|
 | Storyboard round (GATED) | `gate:1` | ✋ storyboard? and the page | reactions, or "lock it" |
 | Plan card with a call | `gate:2` | ✋ go? and the card | "go", or the call |
-| A step only his login can do, a thing only he can create, a genuine fork mid-BUILD, or an answer built on from a relay (cel-262's white blink reversed his locked "no blink"), which the review card flags | `gate:input` | the exact step, or the fork and ship's pick | "done", or the pick |
+| A step only his login can do, a thing only he can create, a genuine fork mid-BUILD, or an answer built on from a relay (cel-262's white blink reversed his locked "no blink"), which the review card puts under Needs you | `gate:input` | the exact step, or the fork and ship's pick | "done", or the pick |
 | Money path, any repo, `land: auto` included | `gate:test` | ✋ try it, then merge main? | "merge main" |
 | One-way door (not on `land: auto`) | `gate:test` | ✋ try it, then merge main? | "merge main" |
 | A change he said he'd try or see first, a copy change included (not on `land: auto`) | `gate:test` | ✋ try it, then merge main? | "merge main" |

@@ -83,7 +83,8 @@ then landed on the rerun).
 failed test, or an unhandled error with every test otherwise passing, only in files the diff
 never touched, with no timeout and no set that moves) runs the same command once more,
 keeping the first run's output, never loosened. That rerun comes once per ship: green goes
-on, with the first red, its file and its output path a follow-up in the `result:` line; a
+on, with the first red, its file and its output path in the `result:` line, and a
+follow-up (TEST) when it is one of the two that hurt most; a
 second such red, in any file at any stage, is a real red to root-cause (cel-312 and cel-333:
 an unhandled `ReferenceError` from a ProseMirror timer after cells-app's
 `test/fileRoundTrip.test.ts`, which failed 1 of 5 run alone; cel-333's second land-pr run
@@ -235,8 +236,8 @@ release wherever main deploys.
 ## `board:`
 
 Where the repo's tickets live, how to file one, and what each column means (cells-app's
-names them and says which a ship may file into). Default: none, and follow-ups stay in the
-`result:` message.
+names them and says which a ship may file into). Default: none, and follow-ups stay on
+the review card's folded list and in the `result:` message.
 
 ## `ship: no`
 
