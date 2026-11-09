@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>🔎 ship · pipeline review</title>
+<!--
+  A review of the /ship pipeline, asked for by Pete on 2026-11-09. Not a storyboard and not a
+  plan card: a decision page. His five questions are the five sections, each answered in one
+  line, then a picture, then the change. Depth sits in <details>.
+  Numbers: 112 cells-app ships, 2026-10-26 to 2026-11-09, read from session transcripts and
+  ~/.claude/ship-ledger.jsonl. Medians. The scripts that made them are named under Evidence.
+-->
+<style>
+  :root{--page:#f5f5f7;--card:#fff;--ink:#1d1d1f;--slate:#515154;--mut:#86868b;
+    --line:#e3e3e8;--amber:#c8892b;--grn:#3f7d4e;--red:#b4543a;
+    --s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a;--wait:#c9c9cf;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--page);color:var(--ink);
+    font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    -webkit-font-smoothing:antialiased;padding:40px 16px}
+  .wrap{max-width:760px;margin:0 auto}
+  .kick{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut);font-weight:700}
+  h1{font-size:34px;line-height:1.2;margin:6px 0 4px;font-weight:600}
+  .sub{color:var(--slate);margin:0 0 20px;font-size:16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin:14px 0}
+  .q{margin:0 0 4px;text-transform:uppercase;color:var(--mut);font-weight:700;font-size:12px;letter-spacing:.14em}
+  .a{font-size:20px;line-height:1.35;margin:0 0 14px;font-weight:600}
+  p{margin:8px 0}
+  ul{margin:6px 0 0;padding-left:18px} li{margin:4px 0}
+  .small{font-size:13px;color:var(--mut)}
+  .slate{color:var(--slate)}
+  code{font:13px ui-monospace,SFMono-Regular,Menlo,monospace;background:#f1f1f4;padding:1px 5px;border-radius:4px}
+
+  .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0 6px}
+  .tile{border:1px solid var(--line);border-radius:10px;padding:12px}
+  .tile b{display:block;font-size:24px;line-height:1.15;font-weight:600}
+  .tile span{font-size:13px;color:var(--slate);line-height:1.35;display:block;margin-top:4px}
+
+  .chg{border-left:3px solid var(--amber);padding:8px 0 8px 14px;margin:16px 0 4px}
+  .chg h3{margin:0 0 4px;font-size:17px;line-height:1.35}
+  .chg h3 i{font-style:normal;display:inline-block;min-width:22px;height:22px;line-height:22px;text-align:center;
+    background:var(--amber);color:#fff;border-radius:11px;font-size:13px;margin-right:8px}
+  .chg p{margin:4px 0;color:var(--slate);font-size:15px}
+  .where{display:inline-block;font-size:12px;background:#f1f1f4;color:var(--slate);border-radius:6px;padding:1px 8px;margin-top:4px}
+  .yours{background:#f3ead6;color:#7a5a18;border:1px solid #e7d6ad}
+
+  /* bar lists: the chart and its table in one */
+  .lanes{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin:6px 0 4px}
+  .lane h4{margin:0 0 8px;font-size:14px;font-weight:600}
+  .lane h4 span{font-weight:400;color:var(--mut)}
+  .row{display:grid;grid-template-columns:104px 1fr 34px;gap:8px;align-items:center;font-size:13px;margin:3px 0}
+  .row .n{color:var(--slate);white-space:nowrap}
+  .row .v{text-align:right;font-variant-numeric:tabular-nums}
+  .track{height:12px}
+  .bar{height:12px;border-radius:0 4px 4px 0;min-width:2px}
+  .m{background:var(--s1)} .c{background:var(--s2)} .l{background:var(--s3)} .w{background:var(--wait)}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--slate);margin:10px 0 0}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+
+  .cols{display:flex;align-items:flex-end;gap:10px;height:132px;margin:10px 0 0;padding-top:18px}
+  .col{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%}
+  .col .b{width:100%;max-width:56px;background:var(--s1);border-radius:4px 4px 0 0;min-height:2px}
+  .col .val{font-size:13px;font-variant-numeric:tabular-nums;margin-bottom:3px}
+  .colx{display:flex;gap:10px;margin-top:5px}
+  .colx span{flex:1;text-align:center;font-size:12px;color:var(--mut)}
+
+  /* landing flow */
+  .flow{margin:10px 0}
+  .flow h4{margin:12px 0 6px;font-size:14px;font-weight:600}
+  .steps{display:flex;flex-wrap:wrap;gap:6px;align-items:stretch}
+  .st{flex:1 1 118px;border:1px solid var(--line);border-radius:8px;padding:8px 9px;font-size:13px;line-height:1.3;background:#fafafb}
+  .st b{display:block;font-size:11px;color:var(--mut);font-weight:700;letter-spacing:.06em}
+  .st.twice{border-color:#e9b9a6;background:#fdf3ef}
+  .st.gone{opacity:.35;text-decoration:line-through}
+  .loop{font-size:13px;color:var(--red);margin:6px 0 0}
+
+  /* before and after mock pages */
+  .ba{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:12px 0 2px}
+  .mock{border:1px solid var(--line);border-radius:10px;background:var(--page);padding:10px}
+  .mock>b{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);margin-bottom:8px}
+  .pg{background:#fff;border:1px solid var(--line);border-radius:7px;padding:9px;min-height:104px}
+  .frs{display:flex;gap:5px;margin-bottom:8px}
+  .fr{flex:1;height:44px;border:1px solid #d6d6dc;border-radius:5px;background:linear-gradient(#f4f4f7,#e9e9ee);
+    font-size:10px;color:var(--mut);display:flex;align-items:flex-end;justify-content:center;padding-bottom:3px}
+  .fr.pick{border:2px solid var(--amber);color:#7a5a18;font-weight:700}
+  .ln{height:5px;border-radius:3px;background:#e2e2e7;margin:4px 0}
+  .w9{width:92%}.w7{width:74%}.w5{width:52%}.w3{width:34%}
+  .sec{font-size:9px;letter-spacing:.1em;color:var(--mut);font-weight:700;margin:7px 0 2px;text-transform:uppercase}
+  .qq{font-size:11px;font-weight:700;margin:6px 0 1px}
+  .fold{font-size:11px;color:var(--slate);border-top:1px solid var(--line);margin-top:8px;padding-top:6px}
+  .chat{font:12px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--slate);background:#f6f6f8;border-radius:6px;padding:7px 8px;margin-top:4px}
+  .cap{font-size:13px;color:var(--slate);margin:6px 0 0}
+
+  table{border-collapse:collapse;width:100%;font-size:14px;margin:8px 0 0}
+  th{text-align:left;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);padding:6px 8px 6px 0;border-bottom:1px solid var(--line)}
+  td{vertical-align:top;padding:8px 8px 8px 0;border-bottom:1px solid var(--line)}
+  td:first-child{font-weight:600;white-space:nowrap}
+  td.fix{color:var(--slate)}
+  details{margin:10px 0 0}
+  summary{cursor:pointer;color:var(--slate);font-size:14px;font-weight:600}
+  .go{font-size:18px;font-weight:600;margin:0}
+  @media (max-width:640px){.tiles{grid-template-columns:1fr 1fr}.lanes,.ba{grid-template-columns:1fr}
+    td:first-child{white-space:normal}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="kick">ship · pipeline review · 2026-11-09</div>
+<h1>Ship, top to bottom</h1>
+<p class="sub">Your five questions, two weeks of ships, eight changes. Approved 2026-11-09: you said "yes to all".</p>
+
+<div class="card">
+  <p class="a" style="margin-bottom:6px">No check is wasted. The time goes to doing the same check twice, and your
+  reading goes to pages that mostly ask things you'd say yes to.</p>
+  <div class="tiles">
+    <div class="tile"><b>142 min</b><span>a planned cells-app ship. Building is 32 of them.</span></div>
+    <div class="tile"><b>84 to 92%</b><span>of ships where review changed the code</span></div>
+    <div class="tile"><b>37 to 64%</b><span>of ships where the test walk changed the code</span></div>
+    <div class="tile"><b>75</b><span>changes merged into ship itself last week</span></div>
+  </div>
+  <p class="small">112 cells-app ships, Oct 26 to Nov 9, from their session logs and ship's ledger. Medians.</p>
+</div>
+
+<div class="card">
+  <p class="q">You asked: are we doing too much testing?</p>
+  <p class="a">No. Every kind of check keeps finding real problems. What repeats is the gates and the landing.</p>
+  <div class="lanes">
+    <div class="lane">
+      <h4>Planned ship <span>· 54 ships · 142 min</span></h4>
+      <div class="row" title="Figure out: 10 min"><span class="n">Figure out</span><div class="track"><div class="bar m" style="width:20%"></div></div><span class="v">10</span></div>
+      <div class="row" title="Plan: 13 min"><span class="n">Plan</span><div class="track"><div class="bar m" style="width:26%"></div></div><span class="v">13</span></div>
+      <div class="row" title="Build: 32 min"><span class="n">Build</span><div class="track"><div class="bar m" style="width:64%"></div></div><span class="v">32</span></div>
+      <div class="row" title="Review: 30 min"><span class="n">Review</span><div class="track"><div class="bar c" style="width:60%"></div></div><span class="v">30</span></div>
+      <div class="row" title="Test: 31 min"><span class="n">Test</span><div class="track"><div class="bar c" style="width:62%"></div></div><span class="v">31</span></div>
+      <div class="row" title="Land: 21 min"><span class="n">Land</span><div class="track"><div class="bar l" style="width:42%"></div></div><span class="v">21</span></div>
+      <div class="row" title="After the merge: 11 min"><span class="n">After the merge</span><div class="track"><div class="bar l" style="width:22%"></div></div><span class="v">11</span></div>
+    </div>
+    <div class="lane">
+      <h4>Design ship <span>· 45 ships · 156 min</span></h4>
+      <div class="row" title="Design: 22 min"><span class="n">Design</span><div class="track"><div class="bar m" style="width:44%"></div></div><span class="v">22</span></div>
+      <div class="row" title="Plan: 23 min"><span class="n">Plan</span><div class="track"><div class="bar m" style="width:46%"></div></div><span class="v">23</span></div>
+      <div class="row" title="Build: 50 min"><span class="n">Build</span><div class="track"><div class="bar m" style="width:100%"></div></div><span class="v">50</span></div>
+      <div class="row" title="Review: 34 min"><span class="n">Review</span><div class="track"><div class="bar c" style="width:68%"></div></div><span class="v">34</span></div>
+      <div class="row" title="Test: 43 min"><span class="n">Test</span><div class="track"><div class="bar c" style="width:86%"></div></div><span class="v">43</span></div>
+      <div class="row" title="Land: 6 min"><span class="n">Land</span><div class="track"><div class="bar l" style="width:12%"></div></div><span class="v">6</span></div>
+      <div class="row" title="After the merge: 12 min"><span class="n">After the merge</span><div class="track"><div class="bar l" style="width:24%"></div></div><span class="v">12</span></div>
+      <div class="row" title="Waiting on you: 34 min"><span class="n">Waiting on you</span><div class="track"><div class="bar w" style="width:68%"></div></div><span class="v">34</span></div>
+    </div>
+  </div>
+  <div class="legend"><span><i style="background:var(--s1)"></i>making it</span><span><i style="background:var(--s2)"></i>checking it</span><span><i style="background:var(--s3)"></i>landing it</span><span><i style="background:var(--wait)"></i>waiting on you</span></div>
+  <p class="cap">Minutes per stage. A plan read finds 12 real problems and each branch reader 5, so all three checks stay.</p>
+  <div class="chg">
+    <h3><i>1</i>Run the full gates twice a ship</h3>
+    <p>Today: at the pre-flight, after every sync with main, and at landing. A median ship syncs twice. After: at the
+    pre-flight and on the merged tree at landing. A sync gets the quick changed-files run.</p>
+    <span class="where">ship plugin</span>
+  </div>
+</div>
+
+<div class="card">
+  <p class="q">You asked: how does all this get merged back in?</p>
+  <p class="a">Through one queue, and too often twice. 42 of 118 cells-app ships ran the landing script 3 or more times.</p>
+  <div class="flow">
+    <h4>Today</h4>
+    <div class="steps">
+      <div class="st"><b>1</b>Test walk passes</div>
+      <div class="st twice"><b>2</b>Ship merges main in, reruns checks</div>
+      <div class="st"><b>3</b>Waits for the queue</div>
+      <div class="st twice"><b>4</b>Script merges main in again, runs every gate</div>
+      <div class="st twice"><b>5</b>Main moved? It quits: "run it again"</div>
+      <div class="st"><b>6</b>Merge</div>
+      <div class="st"><b>7</b>Main restarts and smokes</div>
+    </div>
+    <p class="loop">↺ Step 5 sent a ship back to step 3 about 46 times in two weeks, a full gate run each time.</p>
+    <h4>After</h4>
+    <div class="steps">
+      <div class="st"><b>1</b>Test walk passes</div>
+      <div class="st gone"><b>2</b>Ship merges main in</div>
+      <div class="st"><b>3</b>Waits for the queue</div>
+      <div class="st"><b>4</b>Script merges main in, runs every gate once</div>
+      <div class="st"><b>5</b>Main moved? It retries itself</div>
+      <div class="st"><b>6</b>Merge</div>
+      <div class="st"><b>7</b>Main restarts and smokes</div>
+    </div>
+  </div>
+  <div class="chg">
+    <h3><i>2</i>Land once</h3>
+    <ul class="slate" style="font-size:15px">
+      <li>the script retries itself when main moves, and skips the gates when only docs or tests moved</li>
+      <li>the rules say every pull request lands through the script. Today three texts say three things</li>
+      <li>ship stops merging main in by hand right before it</li>
+      <li>the script waits for GitHub to show the pushed commit before reading it</li>
+    </ul>
+    <span class="where">cells-app, as one ship there</span>
+  </div>
+</div>
+
+<div class="card">
+  <p class="q">You said: the retro at the end feels like too much</p>
+  <p class="a">It is. All 110 retros reported something and none came back clean, so ship changes after every ship.</p>
+  <h4 style="margin:0;font-size:14px">Changes merged into ship, by week</h4>
+  <div class="cols" role="img" aria-label="Changes merged into ship by week: 5, 27, 57, 33, 27, 75">
+    <div class="col" title="Week of Sep 28: 5"><span class="val">5</span><div class="b" style="height:6.7%"></div></div>
+    <div class="col" title="Week of Oct 5: 27"><span class="val">27</span><div class="b" style="height:36%"></div></div>
+    <div class="col" title="Week of Oct 12: 57"><span class="val">57</span><div class="b" style="height:76%"></div></div>
+    <div class="col" title="Week of Oct 19: 33"><span class="val">33</span><div class="b" style="height:44%"></div></div>
+    <div class="col" title="Week of Oct 26: 27"><span class="val">27</span><div class="b" style="height:36%"></div></div>
+    <div class="col" title="Week of Nov 2: 75"><span class="val">75</span><div class="b" style="height:100%"></div></div>
+  </div>
+  <div class="colx"><span>Sep 28</span><span>Oct 5</span><span>Oct 12</span><span>Oct 19</span><span>Oct 26</span><span>Nov 2</span></div>
+  <p class="cap">Ship asks each run five ways to find a lesson, so each run finds one. The text every ship loads changed
+  71 times in 14 days.</p>
+  <div class="chg">
+    <h3><i>3</i>Retros report big things only</h3>
+    <ul class="slate" style="font-size:15px">
+      <li>something wrong landed, or nearly did</li>
+      <li>you had to step in where ship should have carried on</li>
+      <li>a ship script crashed or gave a wrong answer</li>
+      <li>one snag cost a full rerun or more than 30 minutes</li>
+    </ul>
+    <p>Anything smaller is one ledger line and no message. I fix in one batch a day, and a fix that adds text to a
+    skill takes out as much.</p>
+    <span class="where">ship plugin, and how I work as maintainer</span>
+  </div>
+  <div class="ba">
+    <div class="mock"><b>Today, every ship</b><div class="pg">
+      <div class="chat">ship retro from cells-app/cel-362:</div>
+      <div class="qq">1.</div><div class="ln w9"></div><div class="ln w7"></div>
+      <div class="qq">2.</div><div class="ln w9"></div><div class="ln w5"></div>
+      <div class="qq">3.</div><div class="ln w7"></div><div class="ln w9"></div>
+      <div class="qq">4.</div><div class="ln w9"></div><div class="ln w3"></div>
+      <div class="fold">then a fix, a reader and a deploy for each</div>
+    </div></div>
+    <div class="mock"><b>After, most ships</b><div class="pg">
+      <div class="chat">snag="smoke needed the server restarted first"</div>
+      <div class="fold">One ledger line. A second ship hitting it makes it a fix.</div>
+    </div></div>
+  </div>
+</div>
+
+<div class="card">
+  <p class="q">You said: I'm saying yes to a lot, and there's a lot to read</p>
+  <p class="a">There is. A design ship puts 1,400 to 2,900 words in front of you outside the mockups, and 3 plan
+  cards in 4 ask nothing.</p>
+
+  <div class="chg">
+    <h3><i>4</i>A storyboard asks at most 3 questions a round</h3>
+    <p>Rounds carry up to 13 today. Each one left is a real fork, drawn as two frames with my pick marked. The rest I
+    decide and list, folded shut, for you to overrule.</p>
+    <span class="where">ship plugin</span>
+  </div>
+  <div class="ba">
+    <div class="mock"><b>Today</b><div class="pg">
+      <div class="frs"><div class="fr">frame</div><div class="fr">frame</div><div class="fr">frame</div></div>
+      <div class="qq">Q1</div><div class="ln w9"></div><div class="ln w7"></div>
+      <div class="qq">Q2</div><div class="ln w9"></div>
+      <div class="qq">Q3</div><div class="ln w7"></div><div class="ln w5"></div>
+      <div class="qq">Q4</div><div class="ln w9"></div>
+      <div class="qq">Q5 … Q13</div><div class="ln w9"></div><div class="ln w9"></div><div class="ln w7"></div>
+    </div></div>
+    <div class="mock"><b>After</b><div class="pg">
+      <div class="frs"><div class="fr">frame</div><div class="fr">frame</div><div class="fr">frame</div></div>
+      <div class="qq">Q1 · Does the price show before sign-up?</div>
+      <div class="frs"><div class="fr">A · after</div><div class="fr pick">B · before ✓</div></div>
+      <div class="fold">▸ 9 calls I made</div>
+    </div></div>
+  </div>
+  <p class="cap">You do weigh in here: a median answer is 14 words and only 16% are a bare yes. So the rounds stay.</p>
+
+  <div class="chg">
+    <h3><i>5</i>A plan card only when it asks something</h3>
+    <p>With a call, the card is the call, drawn. With none, one line in chat.</p>
+    <span class="where">ship plugin</span>
+  </div>
+  <div class="ba">
+    <div class="mock"><b>Today, 290 to 622 words</b><div class="pg">
+      <div class="sec">Storyboard</div><div class="frs"><div class="fr"></div></div>
+      <div class="sec">What gets built</div><div class="ln w9"></div><div class="ln w7"></div><div class="ln w9"></div><div class="ln w5"></div>
+      <div class="sec">Ponytail cut</div><div class="ln w7"></div><div class="ln w5"></div>
+      <div class="sec">Your call</div><div class="ln w5"></div>
+      <div class="sec">Risk</div><div class="ln w7"></div>
+    </div></div>
+    <div class="mock"><b>After, 3 times in 4</b><div class="pg">
+      <div class="chat">plan: no calls, building</div>
+      <div class="fold">The other 1 in 4: one question, drawn like Q1 above.</div>
+    </div></div>
+  </div>
+
+  <div class="chg">
+    <h3><i>6</i>The review card fits one screen</h3>
+    <p>Today: 550 to 900 words in 7 sections, and about 2 follow-ups that each want an answer. After: what you can now
+    do, the before and after shots, and a "needs you" box only when something does. Follow-ups stop at 2, defects
+    only, filed to Icebox unasked.</p>
+    <span class="where">ship plugin, and one line in cells-app's rules</span>
+  </div>
+  <div class="ba">
+    <div class="mock"><b>Today</b><div class="pg">
+      <div class="sec">What changed</div><div class="ln w9"></div><div class="ln w7"></div>
+      <div class="frs"><div class="fr"></div><div class="fr"></div><div class="fr"></div></div>
+      <div class="sec">How it was tested</div><div class="ln w9"></div><div class="ln w9"></div>
+      <div class="sec">Readers</div><div class="ln w7"></div>
+      <div class="sec">Flagged</div><div class="ln w9"></div>
+      <div class="sec">Follow-ups · file them?</div><div class="ln w9"></div><div class="ln w7"></div>
+    </div></div>
+    <div class="mock"><b>After</b><div class="pg">
+      <div class="qq">You can now share a home by link.</div>
+      <div class="frs"><div class="fr">before</div><div class="fr pick">after</div></div>
+      <div class="fold">▸ the record: tests, readers, declined findings</div>
+    </div></div>
+  </div>
+</div>
+
+<div class="card">
+  <p class="q">You asked: what Anthropic says about prompting 5.2, and whether our prompts conflict</p>
+  <p class="a">5.2 follows written rules closely, so a stale rule or a bare "never" costs more than it did. We have both.</p>
+  <ul>
+    <li>Anthropic's pick is Opus 5.5 as the daily driver and Fable 5.2 for the hardest work or as a reviewer. Your new
+    default is Fable 5.2, so ships groom launches now drive on it while ship's text says Opus.</li>
+    <li>It says cautions pile up and 5.2 obeys them all. The text a cells-app ship always loads says "never" 227 times.</li>
+    <li>It says start at high effort. You chose xhigh through next week, so the text that still says high is the stale side.</li>
+  </ul>
+
+  <div class="chg">
+    <h3><i>7</i>Engines: Opus 5.5 drives, Fable 5.2 reads, Wonder on trial</h3>
+    <p>Fable 5.2 takes the fresh Opus reader's seat now. Your idea is Fable as the only reader, and I'd get there in
+    two steps: for 20 ships Wonder still reads beside it, and the ledger counts the real finds only Wonder made. Few,
+    and Wonder, its wrapper and the stand-in rule go. Many, and it stays. Groom names the model at launch, so your
+    default can move without moving ships.</p>
+    <span class="where yours">changes your Oct 24 rule, so this is the one to say no to</span>
+  </div>
+
+  <div class="chg">
+    <h3><i>8</i>Clean the instructions</h3>
+    <p>Fix the conflicts below, delete expired rules, and give each "never" that stays its scope and reason. Ship's is
+    one pull request from me. For cells-app, Zero and your global file I open them and you merge.</p>
+    <span class="where">ship plugin · cells-app · your global file · Zero</span>
+  </div>
+
+  <table>
+    <tr><th>cells-app</th><th>One text says</th><th>Another says</th></tr>
+    <tr><td>Landing</td><td>Rules: the landing script is for pull requests built elsewhere.</td><td>A memory note and ship's skill: every pull request goes through it.</td></tr>
+    <tr><td>Network folder</td><td>Its own rules file, from Sep 24: squash-merge on green, then <code>npm run deploy</code> to every live deployment.</td><td>The main rules: the landing script, and dev deploys only. That command no longer exists.</td></tr>
+    <tr><td>Smoke</td><td>Rules: one smoke per landing, no reruns.</td><td>Two memory notes: rerun it once.</td></tr>
+    <tr><td>iPhone fixes</td><td>Rules: proven on the phone. A simulator alone doesn't count.</td><td>Ship: a locked phone stops nothing, the simulator walks it.</td></tr>
+  </table>
+  <details>
+    <summary>Seven more conflicts, smaller</summary>
+    <table>
+      <tr><th>Where</th><th>One text says</th><th>Another says</th></tr>
+      <tr><td>cells-app<br>old engines</td><td>Rules still carry a <code>gate:codex</code> stage, Codex pull requests that land on green and "the Astra QA run". Four memory notes too.</td><td>Your global file: no Codex, no Astra.</td></tr>
+      <tr><td>cells-app<br>checks file</td><td>It is 103 KB.</td><td>Ship's limit, set yesterday, is 40 KB.</td></tr>
+      <tr><td>cells-app<br>follow-ups</td><td>Rules: filed once you say "file them".</td><td>A memory note: file Icebox cards unasked. Change 6 picks Icebox, unasked.</td></tr>
+      <tr><td>cells-app<br>memory</td><td>"Weekly pace gate off, week of 10-20", and "Astra in Fable's place".</td><td>Groom paces to the weekly quota. Astra is gone.</td></tr>
+      <tr><td>Your global file</td><td>"Opus 5.5 writes all code" at high effort, and a Fable 5.1 window that ended Oct 29.</td><td>Your saved default: Fable 5.2 at xhigh.</td></tr>
+      <tr><td>Zero</td><td>"Coding tasks go to Fable and Opus subagents", Oct 14.</td><td>Ship: the driver builds in its own loop.</td></tr>
+      <tr><td>Groom</td><td>"Never more than 10" ships at once.</td><td>"Cap running ships at 4", lower in the same skill. I'd keep 4.</td></tr>
+    </table>
+    <p class="small">No conflicts in the other repos' instruction files. One of my
+    own memory notes about your statusline was wrong, and I fixed it today.</p>
+  </details>
+  <details>
+    <summary>The rest of Anthropic's 5.2 advice, against what we do</summary>
+    <table>
+      <tr><th>Anthropic says</th><th>Where we stand</th></tr>
+      <tr><td style="white-space:normal;font-weight:400">Check which model your subagents run on.</td><td>Today two ships each launched a "fable" plan reader. One got Fable 5.2 and one got the older 5.1.</td></tr>
+      <tr><td style="white-space:normal;font-weight:400">Use xhigh where you've measured a gain.</td><td>76 of 112 recent ships ran on xhigh. They reread about twice the context of the ships on high. The switch came the same week as other changes, so that is a hint, not proof.</td></tr>
+      <tr><td style="white-space:normal;font-weight:400">Finish the whole task. Report in plain words for a reader who lost the thread.</td><td>Your global file says both. Ship repeats them, and I'd cut ship's copy.</td></tr>
+      <tr><td style="white-space:normal;font-weight:400">Say clearly which actions an approval covers.</td><td>Ship's stops already name the word that passes each one, such as "merge main".</td></tr>
+      <tr><td style="white-space:normal;font-weight:400">Telling it that it owns the code makes it tidy things nobody asked for.</td><td>Ship says nothing like that. Leave it out.</td></tr>
+      <tr><td style="white-space:normal;font-weight:400">Style rules followed to the letter can make prose choppy.</td><td>Your voice rules are strict. Nothing to change yet, but worth watching on 5.2.</td></tr>
+    </table>
+    <p class="small">The launch page you linked has no prompting advice. It links to "Prompting Claude Fable 5.2", which I read in full.</p>
+  </details>
+</div>
+
+<div class="card">
+  <p class="q">Approved 2026-11-09</p>
+  <p class="go">You said "yes to all". Where each change lives:</p>
+  <p class="slate">3, 4, 5 and 6 are ship #356. 1, 7 and ship's half of 8 are ship #357. 2 and cells-app's half of 8 are one cells-app ship that stops for your "merge main". Your global file and groom are claude-home #4, and Zero is zero #22: both are yours to merge.</p>
+  <details>
+    <summary>What I looked at and set aside</summary>
+    <ul class="slate" style="font-size:15px">
+      <li><b>Starting the test walk while the readers read.</b> Review changes the code on most ships, so the walk would run twice.</li>
+      <li><b>Splitting the skill by stage.</b> Tool output fills a ship's context, not the skill's text.</li>
+      <li><b>Dropping to one reader today.</b> Wonder's findings were unique 41 times in 85, the Opus reader's 120 in 297, and an Opus stand-in's 73 in 208, so one reader alone gets about 60% of what two get. Change 7 measures Fable 5.2 first.</li>
+      <li><b>Fable 5.2 as an advisor to an Opus driver.</b> Anthropic's docs say that can bill to usage credits on some plans.</li>
+    </ul>
+  </details>
+  <details>
+    <summary>Evidence and its limits</summary>
+    <ul class="slate" style="font-size:15px">
+      <li>Stage times come from each session's stage markers. Each stage is its own median, so a column doesn't add up to the total. A few ships may sit in the wrong lane.</li>
+      <li>Reader numbers come from ship's ledger since Oct 24: 107 plan reads, 164 branch reads, about 6% false alarms, 858 tasks with 64% green on the first gate run.</li>
+      <li>Landing counts come from the text the script prints in session logs, so they can count a line twice. All 199 merges to cells-app's main had a pull request, and roughly 4 in 10 went around the queue.</li>
+      <li>Change 1 comes from reading the rules. I couldn't count full gate runs from the logs.</li>
+      <li>The Nov 5 review, <code>specs/designs/2026-11-05-ship-review.html</code>, cut dead engine code and shrank the main skill from 105 KB to 73 KB. In the week to Nov 9 the test skill grew 43% and the incident file 32%.</li>
+      <li>Scripts are in this session's job folder: <code>timeline2.py</code>, <code>summ2.py</code>, <code>landpr.py</code>, <code>retros.py</code>, <code>htmltext.py</code>, <code>effort.py</code>.</li>
+    </ul>
+  </details>
+</div>
+
+</div>
+</body>
+</html>
