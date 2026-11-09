@@ -6,7 +6,7 @@ shapes, contract keys, card rules and reader briefs sit in its `reference/`.
 `route.py --selftest` checks the task counter and build ledger (`route.py gate` records
 each check, `log` fills a task's time and first pass from them, `readers` refuses a landing
 until every plan task is logged built or parked, both branch readers are logged and the
-branch carries its review card),
+branch carries its review card, `report` counts the 20-ship trial of Wonder beside Fable 5.2),
 `decisions.py --selftest` the per-repo decision log (`decisions.py stale` lists calls that
 give a retired engine a ship job), `muse.py --selftest` the Muse Code wrapper (Wonder Full's
 read-only plan and branch reviews), `bash plugins/ship/hooks/ship-recap.sh

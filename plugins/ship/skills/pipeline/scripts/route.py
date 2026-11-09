@@ -14,7 +14,7 @@ each task row then fills what the driver didn't pass, never a guess:
 So commit the task, then log it, and run each check as one `gate` call (the scoped gate
 script is one command), so a red run is one fix round. Review and recall rows leave the
 clock alone.
-  route.py log review=<opus|wonder> stage=<plan|branch> real=<n> false=<n> only=<n> ...
+  route.py log review=<fable|opus|wonder> stage=<plan|branch> real=<n> false=<n> only=<n> ...
                                  append one reader's tally for the ship: findings that
                                  were real, false alarms, and real ones another reader
                                  missed; it never counts as a BUILD task
@@ -30,17 +30,17 @@ clock alone.
   route.py adopt <n>[,<n>...]    from the worktree, mark tasks an earlier session built as done,
                                  with no ledger row, since their time and first pass are its own
   route.py readers repo=<r> ship=<s>
-                                 exit 0 once both branch readers are logged for the ship
-                                 (a wonder row whose note starts "out" counts, for Muse
-                                 being down) and, run from the worktree, every plan task
+                                 exit 0 once both branch readers are logged for the ship,
+                                 Wonder and a Claude reader, fable or opus (a wonder row
+                                 whose note starts "out" counts, for Muse being down) and, run from the worktree, every plan task
                                  is logged built or parked and its branch adds the review
                                  card; exit 1 naming what's missing
   route.py report                the ledger as a table by engine, then the readers', then
                                  the snags
   route.py --selftest
 
-Opus 5.5 only (Pete, 2026-10-24): the driver builds every task in its own loop, so `plan`
-ranks nothing. The Fable window and the pools are in git history (`git log -S FABLE_UNTIL`).
+Opus 5.5 drives (Pete, 2026-10-24) and builds every task in its own loop, so `plan` ranks
+nothing. Fable 5.2 reads beside Wonder since 2026-11-09, and `report` counts that trial. The Fable window and the pools are in git history (`git log -S FABLE_UNTIL`).
 The ledger is ~/.claude/ship-ledger.jsonl, or SHIP_LEDGER.
 """
 import json
@@ -337,6 +337,10 @@ def logged(repo, ship, tasks):
     return None
 
 
+READERS = ('wonder', 'fable', 'opus')
+TRIAL_FROM, TRIAL_SHIPS = '2026-11-09', 20  # Pete: Wonder stays or goes on what only it found over 20 ships
+
+
 def readers(pairs):
     """Exit 0 once every saved plan task is logged, built or parked, the ship's ledger holds
     both branch readers, logged since the branch's first commit, and the branch adds its
@@ -362,23 +366,24 @@ def readers(pairs):
             return 1
     since = branch_start(root)
     seen = {r['review'] for r in rows() if (r.get('repo'), r.get('ship')) == (want['repo'], want['ship'])
-            and r.get('review') in ('wonder', 'opus')
+            and r.get('review') in READERS
             and r.get('stage', 'branch') == 'branch'  # main's text logged branch reads with no stage
             and (since is None or logged_at(r) is None or logged_at(r) >= since)}  # a reused slug's old rows
-    missing = [name for name in ('wonder', 'opus') if name not in seen]
+    # the Claude reader is whichever of Fable and Opus didn't drive (Pete, 2026-11-09)
+    missing = [name for name, held in (('wonder', {'wonder'}), ('fable', {'fable', 'opus'})) if not held & seen]
     if missing:
         ship = str(want['ship'])
         key = lambda slug: (re.match(r'[a-z]+-\d+', slug) or [slug])[0]  # cel-302 of cel-302-usage-deny
         akin = lambda slug: (slug.startswith(ship + '-') or ship.startswith(slug + '-')
                              or key(slug) == key(ship) or bare_slug(slug) == bare_slug(ship))
         near = sorted({str(r['ship']) for r in rows() if r.get('repo') == want['repo'] and r.get('ship')
-                       and str(r['ship']) != ship and r.get('review') in ('wonder', 'opus')
+                       and str(r['ship']) != ship and r.get('review') in READERS
                        and r.get('stage', 'branch') == 'branch'
                        and (since is None or logged_at(r) is None or logged_at(r) >= since)
                        and akin(str(r['ship']))})
         print(f"route readers: {want['ship']} has no {' or '.join(missing)} branch row since the branch "
               "began; log the read (review=<reader> stage=branch real= false= nits=) before landing, "
-              "review=wonder stage=branch note=out:<exit> when Muse was down, or review=opus "
+              "review=wonder stage=branch note=out:<exit> when Muse was down, or review=fable "
               "stage=branch note=skipped:budget when Pete capped spend"
               + (f"; branch reads also sit under ship={', '.join(near)}: if they are this ship's "
                  f"own, log them again under ship={ship}, never borrow another ship's" if near else ''),
@@ -485,6 +490,21 @@ def report():
             minutes = f'{sum(secs) / len(secs) / 60:.1f}' if secs else '-'
             lines.append(f"{name:8} {len(group):>5} {total('real'):>5} {total('false'):>5} {total('only'):>7} "
                          f"{total('owned'):>5} {minutes:>8}")
+        # the trial: ships whose branch Fable 5.2 and Wonder both read, and what each found alone
+        pairs = {}
+        for r in reads:
+            if str(r.get('ts', ''))[:10] >= TRIAL_FROM and reader(r) in ('fable', 'wonder') \
+                    and '5.2' in str(r.get('model', '5.2')).replace('-', '.'):
+                pairs.setdefault((r.get('repo'), r.get('ship')), []).append(r)
+        on_branch = lambda group, name: any(r['review'] == name and r.get('stage', 'branch') == 'branch' for r in group)
+        trial = [group for group in pairs.values() if on_branch(group, 'fable') and on_branch(group, 'wonder')]
+        if trial:
+            alone = lambda name, stage: sum(r['only'] for group in trial for r in group if r['review'] == name
+                                            and r.get('stage', 'branch') == stage and isinstance(r.get('only'), int))
+            lines += ['', f"Wonder trial: {len(trial)} of {TRIAL_SHIPS} ships read by Fable 5.2 and Wonder. Real findings "
+                          f"only Wonder made: {alone('wonder', 'branch')} on branches, {alone('wonder', 'plan')} on "
+                          f"plans; only Fable: {alone('fable', 'branch')} and {alone('fable', 'plan')}"
+                          + ('. The count is in: take it to Pete' if len(trial) >= TRIAL_SHIPS else '')]
     if recalls:  # does decision recall earn its keep? (Pete, 2026-10-28)
         count = lambda key: sum(r[key] for r in recalls if isinstance(r.get(key), int) and not isinstance(r[key], bool))
         shown, used = count('recall'), count('used')
@@ -614,6 +634,19 @@ def selftest():
         log(['repo=ship', 'ship=m', 'review=opus', 'stage=branch', 'real=3'])
         check('a wonder row marked out counts when Muse was down', readers(['repo=ship', 'ship=m']) == 0)
         check('readers needs repo and ship', 'repo=' in refused(readers, ['ship=m']))
+        log(['repo=ship', 'ship=f', 'review=fable', 'stage=branch', 'real=3', 'only=2'])
+        check('a Claude reader alone is not both readers', readers(['repo=ship', 'ship=f']) == 1)
+        log(['repo=ship', 'ship=f', 'review=wonder', 'stage=branch', 'real=2', 'only=1'])
+        log(['repo=ship', 'ship=f', 'review=wonder', 'stage=plan', 'real=4', 'only=3'])
+        check('Fable and Wonder on the branch are both readers', readers(['repo=ship', 'ship=f']) == 0)
+        log(['repo=ship', 'ship=g', 'review=fable', 'stage=branch', 'real=5', 'only=5', 'model=claude-fable-5-1'])
+        log(['repo=ship', 'ship=g', 'review=wonder', 'stage=branch', 'real=1', 'only=1'])
+        log(['repo=ship', 'ship=h', 'review=fable', 'stage=plan', 'real=6', 'only=6'])
+        log(['repo=ship', 'ship=h', 'review=wonder', 'stage=plan', 'real=6', 'only=6'])
+        check("the trial counts a ship both read on the branch, its plan rows too, never an older Fable's or a "
+              "plan-only pair, nor the Opus and outage rows above",
+              'Wonder trial: 1 of 20 ships read by Fable 5.2 and Wonder. Real findings only Wonder made: 1 on '
+              'branches, 3 on plans; only Fable: 2 and 0' in report())
 
         # the review card and the branch's own rows: readers, run from the worktree
         cards = os.path.join(tmp, 'cards')

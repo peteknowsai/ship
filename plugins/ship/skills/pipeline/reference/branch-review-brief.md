@@ -1,7 +1,7 @@
 # Branch review brief
 
-The brief REVIEW hands both branch readers: the Opus subagent (`model: "opus"`) and Wonder
-(`muse.py review`). Write it to a file in the job's tmp before either starts, so a reader
+The brief REVIEW hands both branch readers: the Fable subagent (`model: "fable"`; Opus
+where Fable drives) and Wonder (`muse.py review`). Write it to a file in the job's tmp before either starts, so a reader
 that dies is respawned from the file rather than from memory (ttowns-pack). Neither reader
 sees the other's findings.
 
@@ -33,8 +33,8 @@ you read it whole, in a clean context, with the spec.
 [Spec or storyboard path. The repo's ship contract. Anything this branch's shape calls for:
 money, secrets, data the change deletes or migrates.]
 
-[A stateful rule (an id handed on, an order kept, an undo): this paragraph goes in the Opus
-reader's copy of the brief only, a file of its own, since muse.py tells Wonder to write no
+[A stateful rule (an id handed on, an order kept, an undo): this paragraph goes in the
+subagent reader's copy of the brief only, a file of its own, since muse.py tells Wonder to write no
 file. "Write your own seeded fuzz of [the rule] from its invariants, to a scratch folder
 outside the worktree, never a copy of the writer's. Don't run it: another reader is reading
 the tree, and a test run can write inside it. Return its path, its seed and the invariant."
@@ -50,4 +50,5 @@ class-id-followups the reader's fuzz passed 300 seeds and failed 28 of 30 on eac
 broken lookups the writer's tests only partly caught).]
 
 Return findings as file:line, the failure scenario (the inputs or state that go wrong, and
-what happens), and a severity (blocker, should-fix, nit). Report; never fix.
+what happens), and a severity (blocker, should-fix, nit). Open the report with the model
+you are running on, as your own instructions name it. Report; never fix.

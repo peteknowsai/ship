@@ -12,10 +12,10 @@ here the first time a stage uses it. An absorb that touched the repo's `CLAUDE.m
 The commands that must pass: tests, typecheck, production build. Default: whatever you can
 find.
 
-**Full or scoped.** Full gates run at BUILD's pre-flight, after an absorb that changed the
-tree (REVIEW's runs before either reader starts), and at LAND's step 1 when the tree changed
-since their last full run. Every other check,
-each BUILD task and each TEST fix round, runs them **scoped**: the typecheck plus only the
+**Full or scoped.** Full gates run twice a ship (Pete, 2026-11-09: a median ship synced
+twice and ran them after each): at BUILD's pre-flight, and at LAND's step 1 on the merged tree
+when it changed since their last full run. Every other check, each BUILD task, each TEST fix
+round and each absorb of main, runs them **scoped**: the typecheck plus only the
 tests the uncommitted change touches, by the contract's `scoped <cmd>` if it names one, else
 the test runner's changed mode through the repo's own test script, so its pretest hooks run
 (`npm test -- --changed`, `-- --onlyChanged` for jest; cells-app's bare `vitest run
@@ -32,7 +32,10 @@ test computes, to code it loads (`import(pathToFileURL(...))`, a bundler's outpu
 it reads through fs (a pack's JSON, a catalogue): only the full runs reach those, so a
 repo's contract names such tests and a scoped green isn't read as covering them (cel-261's
 planted throw in `lib/routines.ts` failed 147 files scoped and 150 in full; the 3 more were
-cells-app's bundle tests).
+cells-app's bundle tests). **An absorb's scoped run** covers what main brought: the typecheck,
+plus the runner's changed mode from the branch's head before the absorb (`npm test --
+--changed <sha>`), or every test when the absorb changed a `package.json` or the test config
+(vitest's rerun triggers).
 
 **How a gate runs.** With the Bash sandbox off, as are smokes and dev servers: they bind
 ports and fetch fonts and packages by design, and under the sandbox they fail with `listen

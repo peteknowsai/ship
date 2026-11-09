@@ -62,7 +62,7 @@ RETIRED = [
     ('Astra', '2026-10-22', r'\bastra\b'),
     ('Sol', '2026-10-22', r'\bsol\b'),  # Spark isn't here: it's a live product model (Muse Spark) in cells-app
     ('Sonnet', '2026-10-24', r'\bsonnet\b'),
-    ('Fable', '2026-10-29', r'\bfable\b'),
+    ('Fable', '2026-10-29', r'\bfable\b'),  # 5.1's build window; 5.2 reads since 2026-11-09, which no call that old means
     ('SubQ', '2026-11-03', r'\bsubq\b'),
     ('quota pacing', '2026-11-05', r'quota\.py|\bquota[ -](?:pac|pool|window)|\bpac\w*\b.{0,30}\bquota'),  # not a product's billing quota
     ('the shipboard', '2026-11-05', r'shipboard|board\.cells\.md'),
