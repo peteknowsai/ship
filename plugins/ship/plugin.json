@@ -1,6 +1,6 @@
 {
   "name": "ship",
-  "description": "/ship — idea to merged in one command: worktree, discover, plan, build, review, test, land, stopping only where Pete's taste or a risky merge is in play. HTML storyboard (live mockups), plan card and review card in background Chrome tabs, gate notifications and buttons, a stage-aware status line. Opus 5.5 builds; Muse Wonder and Opus read the plan and branch; ship tests its own work in a browser or simulator and lands on a pass. Bundles verify.",
+  "description": "/ship — idea to merged in one command: worktree, discover, plan, build, review, test, land, stopping only where Pete's taste or a risky merge is in play. HTML storyboard (live mockups), plan card and review card in background Chrome tabs, gate notifications and buttons, a stage-aware status line. Opus 5.5 builds; Fable 5.2 and Muse Wonder read the plan and branch; ship tests its own work in a browser or simulator and lands on a pass. Bundles verify.",
   "author": {
     "name": "Pete McCarthy"
   },

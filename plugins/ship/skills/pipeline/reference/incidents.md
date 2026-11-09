@@ -345,7 +345,7 @@ no `convex.json` shares dev by default and stays quiet (homezero).
   the case a finding named. It gets one delta read before TEST: the other lab's reader
   where the lane has one, else the lane's reader in a fresh context; the branch brief with
   `git diff <sha before the fix>..HEAD` as the diff and the findings it fixed in place of
-  the plan's tasks; logged `review=<wonder|opus> stage=delta`, which `route.py readers`
+  the plan's tasks; logged `review=<wonder|fable|opus> stage=delta`, which `route.py readers`
   doesn't count as a branch read. Its findings join the triage file.
 - **A stateful rule that keeps drawing findings has a hole the readers can't size.** Reads
   two, three and four of the same ship each found one more move sequence that lost an id,
