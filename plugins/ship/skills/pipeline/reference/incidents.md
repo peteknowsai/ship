@@ -165,9 +165,11 @@ export at a time ("already requested or in progress"), so two worktrees copying 
 once queue; `branch-db.py` waits its turn. The clobbering entry below is
 why `shared-dev` is now an opt-out. A ship that never ran `up` ran its dev server and smoke
 on shared dev until TEST (save-files-to-mac, 2026-11-09; safer-mac-control was at build 7
-of 12 the same day with none), so `stage.sh` now runs `branch-db.py check` at every stage
-after the first and prints one line while no app-dir has a copy. EXPRESS has no flip
-between the fork and `test`, so its pre-flight is still on the driver.
+of 12 the same day with none), so `branch-db.py check` now prints one line while no app-dir
+has a copy: `stage.sh` runs it at each flip after stage 0's, and `route.py` at each task it
+logs, since BUILD's markers skip `stage.sh`. EXPRESS has neither between the fork and
+`test`, so its pre-flight is still on the driver. A Convex repo with no `backend:` line and
+no `convex.json` shares dev by default and stays quiet (homezero).
 
 - **`launchctl bootstrap` right after `bootout` fails with "5: Input/output error"**
   (2026-10-14): the old job is still tearing down. Under `set -e` it killed an install

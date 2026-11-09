@@ -84,6 +84,9 @@ def mark_build(start, task=None, total=None):
     path = stage_marker(start)
     if not path:
         return
+    # BUILD's markers never pass through stage.sh, so its check for a copy still owed runs here too.
+    subprocess.run([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'branch-db.py'),
+                    'check', os.path.dirname(path)], stdout=sys.stderr)
     current = re.match(r'build:(\d+):(\d+)', open(path).read().strip())
     if total is not None and not current:  # a re-route mid-build keeps the count
         open(path, 'w').write(f'build:0:{total}')
