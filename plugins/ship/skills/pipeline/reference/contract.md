@@ -23,19 +23,20 @@ the test runner's changed mode through the repo's own test script, so its pretes
 runner picks the tests, never the driver: a gate script takes no list of test files.
 eca-finder's v1 API ship named its files by hand and missed
 `tests/convex/catalogApi.test.ts`, which `--changed` picks up on that diff, until
-pre-flight's full run went red (2026-11-03). Six ships each running cells-app's full 3.5
-minutes per task pushed the load past 150 and timed out load-sensitive tests; the scoped run
-took 2 to 7 seconds on seven real changes and caught every failing file the full run did on
-two planted bugs, 31 of 31 and 21 of 21 (2026-11-03). A scoped run that finds no tests for a
+pre-flight's full run went red (2026-11-03). Six ships running cells-app's full suite per
+task pushed the load past 150; the scoped run took seconds and caught every failing file the
+full run did on two planted bugs (2026-11-03). A scoped run that finds no tests for a
 diff with code in it is a miss to check, not a pass. A scoped run never follows a path a
 test computes, to code it loads (`import(pathToFileURL(...))`, a bundler's output) or data
 it reads through fs (a pack's JSON, a catalogue): only the full runs reach those, so a
 repo's contract names such tests and a scoped green isn't read as covering them (cel-261's
 planted throw in `lib/routines.ts` failed 147 files scoped and 150 in full; the 3 more were
-cells-app's bundle tests). **An absorb's scoped run** covers what main brought: the typecheck,
-plus the runner's changed mode from the branch's head before the absorb (`npm test --
---changed <sha>`), or every test when the absorb changed a `package.json` or the test config
-(vitest's rerun triggers).
+cells-app's bundle tests). **An absorb's scoped run** covers what main brought, from the
+sha `git rev-parse HEAD` printed before the absorb (after a rebase `HEAD@{1}` is the wrong
+commit, and the run tests nothing): the typecheck, plus the contract's `scoped` command given
+that sha, else the runner's changed mode from it (`npm test -- --changed <sha>`; jest's `--
+--changedSince <sha>`). Every test runs when the absorb changed a `package.json` or the test
+config (vitest's rerun triggers), or the runner has no changed mode.
 
 **How a gate runs.** With the Bash sandbox off, as are smokes and dev servers: they bind
 ports and fetch fonts and packages by design, and under the sandbox they fail with `listen

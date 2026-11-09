@@ -392,11 +392,12 @@ run it **scoped** to what the fix touched: the typecheck, plus the tests that co
 changed files (the contract's `scoped` command, else the runner's changed mode through the
 repo's test script so its pretest hooks run, `npm test -- --changed` or `-- --onlyChanged` for
 jest; a scoped run that finds none for a code change is a miss to check, not a pass, and one
-never follows a path a test computes to the code or data it reads: contract.md `gates:`). In ship, the final full run can wait for
-LAND's step 1, which runs it when the tree changed since the last one. Stop the worktree's dev server
+never follows a path a test computes to the code or data it reads: contract.md `gates:`).
+Stop the worktree's dev server
 before a production build (`next build` and `next dev` both write `.next`) and restart it
-after. In ship, BUILD's pre-flight is
-the first run, so skip it then unless the tree changed since. Run the repo's `tsc` / lint / unit / existing e2e as a regression sweep — and **run what the
+after. **In ship both full runs are the pipeline's**, BUILD's pre-flight before the walk and
+LAND's step 1 on the merged tree after it, so the sweep here runs only scoped (Pete,
+2026-11-09). Run the repo's `tsc` / lint / unit / existing e2e as a regression sweep — and **run what the
 DEPLOY workflow runs, not just the test gate.** If deploy does a build/typecheck the test job
 skips (`next build`, `flue build`, an app-level tsc that vitest never touches), run it locally
 here. The host also builds from less than your tree: an ignore file (`.vercelignore`) drops

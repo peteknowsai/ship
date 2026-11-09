@@ -2,7 +2,8 @@
 
 The brief PLAN hands both plan readers, the Fable subagent (Opus where Fable drives) and
 Wonder. Copy it into a file in the job's tmp, fill the brackets, and add any check this plan's
-shape calls for. Neither reader sees the other's findings.
+shape calls for. Neither reader sees the other's findings, and the report opens with the
+model the reader is running on.
 
 ---
 

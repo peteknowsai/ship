@@ -367,6 +367,7 @@ def readers(pairs):
     since = branch_start(root)
     seen = {r['review'] for r in rows() if (r.get('repo'), r.get('ship')) == (want['repo'], want['ship'])
             and r.get('review') in READERS
+            and not str(r.get('note', '')).startswith('for:')  # a stand-in sits in Wonder's seat, which its out row holds
             and r.get('stage', 'branch') == 'branch'  # main's text logged branch reads with no stage
             and (since is None or logged_at(r) is None or logged_at(r) >= since)}  # a reused slug's old rows
     # the Claude reader is whichever of Fable and Opus didn't drive (Pete, 2026-11-09)
@@ -492,15 +493,13 @@ def report():
                          f"{total('owned'):>5} {minutes:>8}")
         # the trial: ships whose branch Fable 5.2 and Wonder both read, and what each found alone
         pairs = {}
-        for r in reads:
+        for r in reads:  # a ship's last row per reader and stage, so a read logged twice counts once
             if str(r.get('ts', ''))[:10] >= TRIAL_FROM and reader(r) in ('fable', 'wonder') \
-                    and '5.2' in str(r.get('model', '5.2')).replace('-', '.'):
-                pairs.setdefault((r.get('repo'), r.get('ship')), []).append(r)
-        on_branch = lambda group, name: any(r['review'] == name and r.get('stage', 'branch') == 'branch' for r in group)
-        trial = [group for group in pairs.values() if on_branch(group, 'fable') and on_branch(group, 'wonder')]
+                    and '5.2' in str(r.get('model', '5.2')).replace('-', '.') and isinstance(r.get('only'), int):
+                pairs.setdefault((r.get('repo'), r.get('ship')), {})[(r['review'], r.get('stage', 'branch'))] = r
+        trial = [group for group in pairs.values() if ('fable', 'branch') in group and ('wonder', 'branch') in group]
         if trial:
-            alone = lambda name, stage: sum(r['only'] for group in trial for r in group if r['review'] == name
-                                            and r.get('stage', 'branch') == stage and isinstance(r.get('only'), int))
+            alone = lambda name, stage: sum(group[(name, stage)]['only'] for group in trial if (name, stage) in group)
             lines += ['', f"Wonder trial: {len(trial)} of {TRIAL_SHIPS} ships read by Fable 5.2 and Wonder. Real findings "
                           f"only Wonder made: {alone('wonder', 'branch')} on branches, {alone('wonder', 'plan')} on "
                           f"plans; only Fable: {alone('fable', 'branch')} and {alone('fable', 'plan')}"
@@ -643,8 +642,21 @@ def selftest():
         log(['repo=ship', 'ship=g', 'review=wonder', 'stage=branch', 'real=1', 'only=1'])
         log(['repo=ship', 'ship=h', 'review=fable', 'stage=plan', 'real=6', 'only=6'])
         log(['repo=ship', 'ship=h', 'review=wonder', 'stage=plan', 'real=6', 'only=6'])
-        check("the trial counts a ship both read on the branch, its plan rows too, never an older Fable's or a "
-              "plan-only pair, nor the Opus and outage rows above",
+        log(['repo=ship', 'ship=f', 'review=fable', 'stage=branch', 'real=3', 'only=2', 'note=logged again'])
+        log(['repo=ship', 'ship=i', 'review=fable', 'stage=branch', 'real=1', 'only=1'])
+        log(['repo=ship', 'ship=i', 'review=wonder', 'stage=branch', 'note=out:5'])
+        log(['repo=ship', 'ship=i', 'review=opus', 'stage=branch', 'real=2', 'only=2', 'note=for:wonder'])
+        check('with Muse out, the Claude reader and the outage row are both readers', readers(['repo=ship', 'ship=i']) == 0)
+        log(['repo=ship', 'ship=j', 'review=wonder', 'stage=branch', 'note=out:5'])
+        log(['repo=ship', 'ship=j', 'review=opus', 'stage=branch', 'real=2', 'note=for:wonder'])
+        check("a stand-in doesn't fill the Claude reader's seat", readers(['repo=ship', 'ship=j']) == 1)
+        log(['repo=ship', 'ship=n', 'review=fable', 'stage=branch', 'real=1'])
+        log(['repo=ship', 'ship=n', 'review=wonder', 'stage=branch', 'real=1', 'only=1'])
+        for name in ('fable', 'wonder'):
+            open(ledger_path(), 'a').write(json.dumps({'ts': '2026-11-08T23:00:00', 'repo': 'ship', 'ship': 'k',
+                                                       'review': name, 'stage': 'branch', 'real': 9, 'only': 9}) + '\n')
+        check("the trial counts a ship both read on the branch, its plan rows too and a read logged twice once; never "
+              "an older Fable's read, a plan-only pair, an outage, a row with no only= or a pair from before it began",
               'Wonder trial: 1 of 20 ships read by Fable 5.2 and Wonder. Real findings only Wonder made: 1 on '
               'branches, 3 on plans; only Fable: 2 and 0' in report())
 
