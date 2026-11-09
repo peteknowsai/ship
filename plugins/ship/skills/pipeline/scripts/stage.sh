@@ -24,6 +24,9 @@ case "$here" in */plugins/cache/ship/ship/*)
   fi
 esac
 echo "$root: $2"
+# On a copy backend the worktree stays on shared dev until branch-db.py up finishes; stage 0's
+# flip comes before that, and every later one up to the landing says so while it is still true.
+case "$2" in discover|landed) ;; *) python3 "$(dirname "$0")/branch-db.py" check "$root" >&2 || true ;; esac
 # gh's -R, read from origin at every stage: typed from memory it named the Vercel team.
 r=$(git -C "$root" remote get-url origin 2>/dev/null | sed -nE 's#/+$##; s#\.git$##; s#^.*github\.com(:[0-9]+)?[:/]([^/]+/[^/]+)$#\2#p') || true
 [ -z "$r" ] || echo "gh -R $r (origin's)"

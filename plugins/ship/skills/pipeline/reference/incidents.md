@@ -163,7 +163,13 @@ Node actions run on the Mac. Measured on homebody: about 95 seconds, 5,790 docum
 needs a folder with a package.json even with `--deployment`. A deployment runs one snapshot
 export at a time ("already requested or in progress"), so two worktrees copying dev at
 once queue; `branch-db.py` waits its turn. The clobbering entry below is
-why `shared-dev` is now an opt-out.
+why `shared-dev` is now an opt-out. A ship that never ran `up` ran its dev server and smoke
+on shared dev until TEST (save-files-to-mac, 2026-11-09; safer-mac-control was at build 7
+of 12 the same day with none), so `branch-db.py check` now prints one line while no app-dir
+has a copy: `stage.sh` runs it at each flip after stage 0's, and `route.py` at each task it
+logs, since BUILD's markers skip `stage.sh`. EXPRESS has neither between the fork and
+`test`, so its pre-flight is still on the driver. A Convex repo with no `backend:` line and
+no `convex.json` shares dev by default and stays quiet (homezero).
 
 - **`launchctl bootstrap` right after `bootout` fails with "5: Input/output error"**
   (2026-10-14): the old job is still tearing down. Under `set -e` it killed an install
@@ -441,3 +447,7 @@ history is in git, and nothing calls those engines now.
   can't reproduce, a voice path no walk reached, a localhost broken by a shared sign-in
   cookie); `verify` ran by its bare name and was refused; two runs built before the plan
   review landed; and the plan and branch reviews found real bugs in every run.
+- **`muse.py` writes `last.md` only after its frame loop ends**, so a wrapper killed after
+  Wonder's turn completed, by a session restart, leaves no `last.md` (save-files-to-mac,
+  2026-11-09). The answer is still in `<out-dir>/events.jsonl`: the last `item/completed`
+  agentMessage whose `messagePhase` is `finalAnswer`.
