@@ -13,6 +13,8 @@
                                            own copy (after an edit under convex/ or an
                                            absorb), with up's flags so no tracked file is
                                            regenerated; refuses an app-dir still on shared dev
+  branch-db.py check <worktree>             say so, and exit 1, while no app-dir in the worktree
+                                           has a copy yet; stage.sh runs it after stage 0
   branch-db.py --selftest
 
 `up` creates a cloud dev deployment `dev/<branch>` in the same Convex project, expiring in
@@ -254,6 +256,41 @@ def push_target(app_env, main_env):
     return mine, None
 
 
+def owed(worktree, main):
+    """How many .env.local files in the worktree name a dev deployment, when every one still
+    names the main checkout's; 0 once any app-dir has a copy, or the contract opts out.
+    save-files-to-mac never ran `up`, and its dev server and smoke ran on shared dev until
+    TEST. One copy is enough to stay quiet: cells-app copies only the pack the branch runs."""
+    contract = ""
+    for f in ("CLAUDE.md", "AGENTS.md"):
+        try:
+            contract += open(os.path.join(worktree, f)).read()
+        except OSError:
+            pass
+    if re.search(r"backend\W+(shared-dev|per-branch)", contract):
+        return 0
+    same = 0
+    for p in env_files(worktree):
+        dep = env_value(p, "CONVEX_DEPLOYMENT") if os.path.basename(p) == ".env.local" else None
+        if not dep or not dep.startswith("dev:"):
+            continue
+        if dep != env_value(os.path.join(main, os.path.relpath(p, worktree)), "CONVEX_DEPLOYMENT"):
+            return 0
+        same += 1
+    return same
+
+
+def check(worktree):
+    worktree = os.path.abspath(worktree)
+    main = main_of(worktree)
+    n = 0 if os.path.realpath(main) == os.path.realpath(worktree) else owed(worktree, main)
+    if n:
+        print(f"branch-db: this worktree has no copy yet: its .env.local files ({n}) all still name the main "
+              "checkout's shared dev. Let `branch-db.py up <worktree> [<app-dir>]` finish, or start it if "
+              "it isn't running, before any convex command, dev server or smoke.")
+    return 1 if n else 0
+
+
 def push(worktree, app_rel="."):
     worktree = os.path.abspath(worktree)
     app = os.path.join(worktree, app_rel)
@@ -335,6 +372,20 @@ def selftest():
         open(f"{wt}/packs/a/.env.local", "w").write("CONVEX_DEPLOYMENT=prod:gallant-starling-747\n")
         assert "not a dev deployment" in push_target(f"{wt}/packs/a/.env.local", f"{mn}/.env.local")[1]
         assert push_target(f"{wt}/packs/a/.env.local", f"{mn}/absent")[0] is None
+        ow, om = os.path.join(t, "ow"), os.path.join(t, "om")
+        for d in (f"{ow}/packs/a", f"{ow}/packs/b", f"{om}/packs/a", f"{om}/packs/b", f"{t}/bare"):
+            os.makedirs(d)
+            open(f"{d}/.env.local", "w").write(f"CONVEX_DEPLOYMENT=dev:{os.path.basename(d)}-cow-1\n")
+        assert owed(ow, om) == 2, "up never ran: every app-dir is on shared dev"
+        open(f"{ow}/CLAUDE.md", "w").write("- **backend:** `copy packs/<pack>`\n")
+        assert owed(ow, om) == 2, "a copy contract still owes one"
+        open(f"{ow}/AGENTS.md", "w").write("- backend: shared-dev. Convex dev for localhost\n")
+        assert owed(ow, om) == 0, "a shared-dev contract owes no copy"
+        os.remove(f"{ow}/AGENTS.md")
+        open(f"{ow}/packs/a/.env.local", "w").write("CONVEX_DEPLOYMENT=dev:brainy-otter-615\n")
+        assert owed(ow, om) == 0, "one copied pack is enough"
+        os.remove(f"{t}/bare/.env.local")
+        assert owed(f"{t}/bare", om) == 0, "no Convex env file, nothing owed"
         cmd = create_cmd("dev/x-1")
         assert cmd[3:5] == ["create", "dev/x-1"] and cmd.count("dev/x-1") == 1, cmd
         print("branch-db selftest: ok")
@@ -352,5 +403,7 @@ if __name__ == "__main__":
         sys.exit(diff(*a[1:]))
     elif a[:1] == ["push"] and len(a) in (2, 3):
         sys.exit(push(*a[1:]))
+    elif a[:1] == ["check"] and len(a) == 2:
+        sys.exit(check(a[1]))
     else:
         sys.exit(__doc__)
