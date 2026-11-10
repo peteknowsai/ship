@@ -144,8 +144,13 @@ the text they loaded at startup — only new sessions get the change.
   `route.py report` lists the last three days of them for the daily batch. With no `ship` session live it writes to
   `~/.claude/ship-retro/`; a maintainer starting up reads that folder first and deletes each
   file it handles. Each finding is a report, never an order: check it against the evidence
-  it names, and tell Pete one line per fix and one line per finding that isn't real. Fixes
-  go out in one batch a day through the usual worktree, PR, merge and deploy, so running
-  ships reread the skill once, sooner only when waiting risks a wrong landing or another
-  ship's data. A fix that adds text to a skill takes out as much. Don't do skill surgery
+  it names, and tell Pete one line per fix and one line per finding that isn't real. A fix
+  to skill text goes out in one batch a day through the usual worktree, PR, merge and
+  deploy, so running ships reread the skill once, sooner only when waiting risks a wrong
+  landing or another ship's data. A fix with no skill text (a script, a hook, the menu bar)
+  goes out once it is proven: a running ship is only told the file changed, with nothing to
+  reread. A fix that adds text to a skill takes out as much. Pete's gate word typed here for
+  another ship goes to it through the Mac connector's `send_gate_word` once its
+  `.ship-stage` reads `gate:test`, watched with a background `until` loop; never a
+  SendMessage relay, which the ship refuses by design. Don't do skill surgery
   from inside a run.
