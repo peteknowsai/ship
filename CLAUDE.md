@@ -147,16 +147,17 @@ the text they loaded at startup — only new sessions get the change.
   it names, and tell Pete one line per fix and one line per finding that isn't real. A fix
   to skill text goes out in one batch a day through the usual worktree, PR, merge and
   deploy, so running ships reread the skill once, sooner only when waiting risks a wrong
-  landing or another ship's data. A fix that leaves every command, argument, exit code and
-  output the skills name as they were (a script's insides, the menu bar) goes out once it is
-  proven: running ships move onto a new copy's scripts at their next `stage.sh`, and nothing
-  they read changes. A fix that adds text to a skill takes out as much. Don't do
-  skill surgery from inside a run.
+  landing or another ship's data. A fix that makes a script do what the skill text already
+  says, with its commands, arguments and the files it keeps unchanged, goes out once it is
+  proven, since a running ship picks it up with no rule to reread; a fix that also changes
+  skill text waits for the batch whole. A fix that adds text to a skill takes out as much.
+  Don't do skill surgery from inside a run.
 - **Pete's "merge main" for another ship, typed here** (2026-11-09, cells-app land-once).
   Ships refuse a SendMessage relay by design (cel-278 landed on one), and the skill keeps no
-  other path, since a ship can't tell a sent word from his typing. This session sends it with
-  the Mac connector's `send_gate_word`, his exact words only (never "looks good" read as a
-  landing), to the session `get_session` shows working in that ship's worktree, once its
-  `.ship-stage` reads `gate:test` for the change he asked about, watched with a background
-  `until` loop. Any other word, a second ship at `gate:test`, or a ship that left its gate and
-  came back goes back to him first.
+  other path, since a ship can't tell a sent word from his typing. Only the maintainer session
+  named `ship`, in this main checkout, sends it, never a ship run on this repo. It notes the
+  head of that ship's branch when he says the word, then sends his exact words (never "looks
+  good" read as a landing) with the Mac connector's `send_gate_word` to the session
+  `get_session` shows in that ship's worktree, once its `.ship-stage` reads `gate:test` on that
+  same head, watched with a background `until` loop. A moved head, a second ship at
+  `gate:test`, or any other word goes back to him first.
