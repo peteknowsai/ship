@@ -243,8 +243,9 @@ worktree:
   by `out=<out-dir>` on Wonder's row (route.py reads muse.py's `seconds` file there) and by
   `seconds=` from a subagent's reported duration on its own; and `recall=<shown> used=<n>`
   on design ships. `route.py readers repo= ship=` exits 1 until every plan task is logged
-  built or parked, both branch readers are logged since the branch began and the branch adds
-  its review card. `route.py report` compares engines and readers and counts the Wonder trial.
+  built or parked, both branch readers are logged since the branch began, the branch adds its
+  review card and no line it adds names its own worktree. `route.py report` compares engines
+  and readers and counts the Wonder trial.
 
 **Browser work runs on the chrome-devtools MCP** (headless, a fresh profile per session): the
 pre-flight, the QA run, grounding in the live product. A subagent loads those tools with one
@@ -817,11 +818,10 @@ Landing variants.
      overlap (cel-139 carried spike #243's docs commit).
    - Stop the worktree's dev server with the repo's stop command, from the worktree; then
      `listener.sh <port> 1` must find nothing (one still there stops by its process group).
-   - `route.py readers repo=<r> ship=<slug>` exits 0 (SELF-DIRECTED and GATED): every plan
-     task built or parked, both branch readers logged and the review card committed; a
-     parked task it names goes in the PR body. `git fetch origin` once more: main moved
-     during these steps sends the run back to this step's first bullet, the absorb and all it
-     owes (feed-imagery's 206 s smoke let #495 land between). Push.
+   - `route.py readers repo=<r> ship=<slug>` exits 0 (SELF-DIRECTED and GATED), or names what
+     to fix; a parked task it names goes in the PR body. `git fetch origin` once more: main
+     moved during these steps sends the run back to this step's first bullet, the absorb and
+     all it owes (feed-imagery's 206 s smoke let #495 land between). Push.
 2. **GitHub agrees.** `scripts/wait-head.sh <o/r> <#>`, since a head GitHub hasn't caught up
    to answers stale (#492's 0 s "conflicts with main"): exit 1 is a head still not the pushed
    one, so check the push landed (`git ls-remote origin <branch>`), and one a land script

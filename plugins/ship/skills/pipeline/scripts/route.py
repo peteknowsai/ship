@@ -33,8 +33,9 @@ clock alone.
                                  exit 0 once both branch readers are logged for the ship,
                                  Wonder and a Claude reader, fable or opus (a wonder row
                                  whose note starts "out" counts, for Muse being down) and, run from the worktree, every plan task
-                                 is logged built or parked and its branch adds the review
-                                 card; exit 1 naming what's missing
+                                 is logged built or parked, its branch adds the review card
+                                 and no line it adds names the worktree itself; exit 1
+                                 naming what's missing
   route.py report                the ledger as a table by engine, then the readers', then
                                  the snags
   route.py --selftest
@@ -343,9 +344,9 @@ TRIAL_FROM, TRIAL_SHIPS = '2026-11-09', 20  # Pete: Wonder stays or goes on what
 
 def readers(pairs):
     """Exit 0 once every saved plan task is logged, built or parked, the ship's ledger holds
-    both branch readers, logged since the branch's first commit, and the branch adds its
-    review card; else 1 naming what's missing. Run from the
-    worktree or the session the ship's marker points at."""
+    both branch readers, logged since the branch's first commit, the branch adds its review
+    card and no line it adds names its own worktree; else 1 naming what's missing. Run from
+    the worktree or the session the ship's marker points at."""
     want = pairs_to_row(pairs, 'readers')
     if not want.get('repo') or not want.get('ship'):
         raise SystemExit('route readers: give repo=<repo> ship=<slug>')
@@ -393,6 +394,12 @@ def readers(pairs):
     if card_missing(want['ship'], root):
         print(f"route readers: this branch adds no review card for {want['ship']}; commit it "
               "(LAND step 1) before the push", file=sys.stderr)
+        return 1
+    named = names_worktree(root)
+    if named:
+        print(f"route readers: {', '.join(named)} names this worktree's own path, which teardown removes, so "
+              "it fails in every other checkout; resolve the path from the file's own location, rerun "
+              "what reads it and commit", file=sys.stderr)
         return 1
     parked = sorted({f"{r['task']} ({r.get('note')})" for r in rows() if r.get('status') == 'parked'
                      and (r.get('repo'), r.get('ship')) == (want['repo'], want['ship'])})
@@ -451,6 +458,31 @@ def card_missing(ship, root='.'):
     cut = lambda f: f.replace(ship.lower() if ship.lower() in f else bare.lower(), '')  # fix-review
     return not any(f.endswith('.html') and sid.search(f) and 'review' in cut(f)
                    for f in (line.lower() for line in added.stdout.splitlines()))
+
+
+def names_worktree(root='.'):
+    """The files where the branch at `root` adds a line naming its own linked worktree, a path
+    teardown removes: cells-app #515 landed a reader's fuzz rooted at its worktree, and it
+    failed in every other checkout once that was gone (1 of 150 merged PRs had such a line).
+    Empty in a main checkout, whose path outlives the branch, and when git can't tell."""
+    top = git_at(root, 'rev-parse', '--show-toplevel').stdout.strip()
+    base = base_ref(root)
+    if not top or not base or not os.path.isfile(os.path.join(top, '.git')):  # a linked worktree's .git is a file
+        return []
+    diff = subprocess.run(['git', '-C', root, 'diff', '--unified=0', f'{base}...HEAD'],
+                          capture_output=True, text=True, errors='replace').stdout
+    own = re.compile(re.escape(top) + r'(?![\w.-])')  # feature-x is not feature-x-2
+    found, name, head = [], None, True
+    for line in diff.split('\n'):
+        if line.startswith('diff --git '):
+            name, head = None, True
+        elif line.startswith('@@'):
+            head = False
+        elif head and line.startswith('+++ '):  # only before a file's first hunk: a line of code may begin ++
+            name = line[6:]
+        elif not head and line.startswith('+') and name not in found and own.search(line):
+            found.append(name)
+    return found
 
 
 def report():
@@ -721,6 +753,39 @@ def selftest():
             g('switch', '-q', 'feature/cel-9-thing')
             check('with the card, a branch row with no stage (main\'s rows) counts as a branch read',
                   readers(['repo=ship', 'ship=cel-9-thing']) == 0)
+        finally:
+            os.chdir(plain)
+
+        # a line the branch adds that names its own worktree, which teardown removes
+        open(os.path.join(cards, 'here.ts'), 'w').write(f'const root = "{os.path.realpath(cards)}";\n')
+        commit([], 'names the main checkout')
+        check("a main checkout's own path outlives the branch, so it is no finding", names_worktree(cards) == [])
+        wt = os.path.join(tmp, 'wt-x')
+        g('worktree', 'add', '-q', '-b', 'feature/wt-x', wt, 'main')
+        wt = os.path.realpath(wt)
+        gw = lambda *a: subprocess.run(['git', '-C', wt, *a], check=True, capture_output=True,
+                                       env={**os.environ, 'GIT_AUTHOR_DATE': '@1577836800 +0000'})
+
+        def put(name, text):
+            os.makedirs(os.path.dirname(os.path.join(wt, name)), exist_ok=True)
+            open(os.path.join(wt, name), 'w').write(text)
+            gw('add', '-A')
+            gw('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '-m', name)
+        put('specs/qa/2026-11-09-wt-x/review.html', 'x\n')
+        put('src/ok.ts', f'const a = "{wt}-2/x", b = "{os.path.realpath(cards)}";\n++ {wt}-2\n')
+        os.chdir(wt)
+        try:
+            log(['repo=ship', 'ship=wt-x', 'review=wonder', 'stage=branch', 'real=1'])
+            log(['repo=ship', 'ship=wt-x', 'review=opus', 'stage=branch', 'real=1'])
+            check("a sibling worktree's path and the main checkout's are not the branch's own",
+                  names_worktree(wt) == [] and readers(['repo=ship', 'ship=wt-x']) == 0)
+            put('test/fuzz.test.ts', f'const ROOT = process.env.FUZZ_ROOT ?? "{wt}";\n')
+            put('test/later.test.ts', f'++ a line of code that begins ++\nconst at = "{wt}/src";\n')
+            hint = io.StringIO()
+            with contextlib.redirect_stderr(hint):
+                code = readers(['repo=ship', 'ship=wt-x'])
+            check('readers refuses a branch that adds lines naming its own worktree, and names each file',
+                  code == 1 and 'test/fuzz.test.ts, test/later.test.ts names' in hint.getvalue())
         finally:
             os.chdir(plain)
 
