@@ -135,7 +135,7 @@ wipe() {  # wipe <vm>: its connection, then the VM. Lume's delete leaves a --det
   done
   case "$(info "$1" status)" in
     ""|stopped) lume delete "$1" --force >/dev/null 2>&1 || true ;;
-    *) echo "$1 would not stop and is still running: lume stop $1 --force" >&2 ;;
+    *) echo "$1 still runs after lume stop and kill -9 (pid $(runpid "$1" | tr '\n' ' ')): end it by hand" >&2 ;;
   esac
 }
 borrow() {
@@ -169,7 +169,7 @@ mine_up() {  # the first start clones the base; every later one boots the same k
   local i
   case "$(info "$mine" status)" in
     running) for i in $(seq 60); do sshv "$mine" true 2>/dev/null && return 0; sleep 2; done; return 1 ;;
-    "") lume clone "$base" "$mine" >/dev/null || return 1 ;;
+    "") [ -d "$lumedir/$mine" ] || lume clone "$base" "$mine" >/dev/null || return 1 ;;  # an unreadable answer isn't "not made"
   esac
   boot "$mine"
 }
@@ -271,13 +271,14 @@ EOF
 }
 
 selftest() {
-  t=$(cd "$(mktemp -d)" && pwd -P); trap 'kill $(cat "$t"/pid.* 2>/dev/null) 2>/dev/null; rm -rf "$t"' EXIT
+  t=$(cd "$(mktemp -d)" && pwd -P); trap 'kill -9 $(ls "$t" | sed -n "s/^cmd\.//p") 2>/dev/null || true; rm -rf "$t"' EXIT
   mkdir -p "$t/bin" "$t/cfg"
   cat > "$t/bin/lume" <<EOF
 #!/bin/sh
 echo "\$@" >> $t/lume.log
 case "\$1" in  # a VM is made by clone, running from run, stopped by stop, gone after delete
-  get) s=; [ -f $t/made.\$2 ] && s=\$(cat $t/state.\$2 2>/dev/null || echo stopped)
+  get) [ -f $t/garble.\$2 ] && { rm $t/garble.\$2; echo "not json"; exit 0; }  # garble.<vm>: one unreadable answer
+       s=; [ -f $t/made.\$2 ] && s=\$(cat $t/state.\$2 2>/dev/null || echo stopped)
        # lost.<vm>: lume can't vouch for a running VM, "load" with its log line ahead of the JSON
        [ -f $t/lost.\$2 ] && { s=stopped; grep -q load $t/lost.\$2 && echo "[2026-11-10T00:07:01Z] INFO: Could not verify VNC-disabled session marker; preserving it name=\$2"; }
        ip=; [ "\$s" = running ] && ip=192.168.64.9
@@ -291,8 +292,15 @@ exit 0
 EOF
   # A shutdown inside Pete's VM ends the process that runs it, as it does on the real one.
   printf '#!/bin/sh\necho "$*" >> %s/ssh.log\ncase "$*" in *shutdown*) echo stopped > %s/state.pete-mac; kill $(cat %s/pid.pete-mac 2>/dev/null) 2>/dev/null ;; esac\nexit 0\n' "$t" "$t" "$t" > "$t/bin/ssh"
-  # The stand-in pgrep answers only from pid.<vm>, so no check here can see or end a real VM.
-  printf '#!/bin/sh\nfor f in %s/pid.*; do [ -f "$f" ] || continue; case "$*" in *"lume run ${f##*/pid.}("*) p=$(cat "$f"); kill -0 "$p" 2>/dev/null && echo "$p" ;; esac; done\nexit 0\n' "$t" > "$t/bin/pgrep"
+  # The stand-in pgrep matches the real pattern against the fake processes' command lines in
+  # cmd.<pid>, and nothing else, so no check here can see or end a real VM.
+  cat > "$t/bin/pgrep" <<'EOF'
+#!/bin/bash
+t=$(cd "$(dirname "$0")/.." && pwd); p=${!#}
+for f in "$t"/cmd.*; do [ -f "$f" ] || continue; n=${f##*/cmd.}
+  kill -0 "$n" 2>/dev/null && grep -Eq -- "$p" "$f" && echo "$n"; done
+exit 0
+EOF
   chmod +x "$t/bin/lume" "$t/bin/ssh" "$t/bin/pgrep"
   for w in a b c; do git init -q "$t/$w"; done
   me() { (cd "$t/$1" && SHIP_MAC_SLOTS=${ts:-2} SHIP_MAC_DIR=$t/cfg PATH="$t/bin:$PATH" WAIT_LOAD_CORES=${tc:-100000} MAC_VM_LOAD_WAIT_S=${tw:-1200} SHIP_MAC_LUME_DIR=$t/lume MAC_VM_LEASES=$t/leases bash "$self" "${@:2}"); }
@@ -351,28 +359,40 @@ EOF
   me c view mine >/dev/null
   check "view mine opens Pete's VM" "$(grep -c '^attach pete-mac --display native$' "$t/lume.log")" 1
   # Lume answers "stopped" for a VM that is running (cel-380): the process and the lease say so.
-  lost() { (sleep 300 >/dev/null 2>&1 & echo $! > "$t/pid.$1"); echo "$2" > "$t/lost.$1"; }
+  # fake <name> <command line> [stubborn]: a process that stands in for one; stubborn ignores TERM.
+  fake() { local p; p=$(if [ -n "${3:-}" ]; then (trap '' TERM; exec sleep 300) >/dev/null 2>&1 & else sleep 300 >/dev/null 2>&1 & fi; echo $!)
+    echo "$2" > "$t/cmd.$p"; echo "$p" > "$t/pid.$1"; }
+  lost() { echo "$2" > "$t/lost.$1"; }
+  alive() { kill -0 "$(cat "$t/pid.$1")" 2>/dev/null && echo alive || echo ended; }
+  run=/x/lume.app/Contents/MacOS/lume\ run
+  fake pete-mac "$run pete-mac --display none --vnc disabled"; lost pete-mac gone
+  fake wrapper "/bin/zsh -c lume run ship-mac-1 --display none"; fake longer "$run ship-mac-10 --display none"
   me b borrow >/dev/null; mkdir -p "$t/lume/ship-mac-1"
   echo '{"macAddress":"0A:a2:5c:2d:6f:02"}' > "$t/lume/ship-mac-1/config.json"
   mkdir -p "$t/lume/pete-mac"; echo '{"macAddress":"26:6f:a2:67:c4:6a"}' > "$t/lume/pete-mac/config.json"
-  printf '{\n\tip_address=192.168.64.%s\n\thw_address=1,%s\n\tname=a}\n\tlease=0x%s\n}\n' 7 a:a2:5c:2d:6f:2 69100000 \
-    3 a:a2:5c:2d:6f:2 69000000 8 a:a2:5c:2d:6f:3 69200000 6 26:6f:a2:67:c4:6a 69300000 > "$t/leases"
-  lost ship-mac-1 load
+  printf '{\n\tip_address=192.168.64.%s\n\thw_address=1,%s\n\tname=a}\n\tlease=0x%s\n}\n' 3 a:a2:5c:2d:6f:2 69000000 \
+    7 a:a2:5c:2d:6f:2 69100000 5 a:a2:5c:2d:6f:2 68f00000 8 a:a2:5c:2d:6f:3 69200000 6 26:6f:a2:67:c4:6a 69300000 > "$t/leases"
+  fake ship-mac-1 "$run ship-mac-1 --display none --vnc disabled" stubborn; lost ship-mac-1 load
   check "a running VM lume can't vouch for under load still takes commands" "$(me b run 1 true 2>&1 && echo yes)" yes
-  check "at the address its network card leased last" "$(tail -1 "$t/ssh.log" | grep -c 'lume@192.168.64.7 ')" 1
+  check "at the address its network card leased newest" "$(tail -1 "$t/ssh.log" | grep -c 'lume@192.168.64.7 ')" 1
   echo gone > "$t/lost.ship-mac-1"
   check "and so does one whose record lume lost for good" "$(me b run 1 true 2>&1 && echo yes)" yes
   me b return 1
-  check "return ends a VM lume lost before it frees the slot" "$(kill -0 "$(cat "$t/pid.ship-mac-1")" 2>/dev/null && echo alive || echo ended)" ended
+  check "return ends a VM lume lost, one that ignores TERM too, before it frees the slot" "$(alive ship-mac-1)" ended
   check "and frees it" "$(me c status | sed -n 1p)" "slot 1: free"
-  rm -f "$t/lost.ship-mac-1" "$t/pid.ship-mac-1"; lost pete-mac gone; out=$(grep -c '^run pete-mac ' "$t/lume.log")
+  check "a ship's return leaves Pete's running VM and lookalike processes alone" "$(alive pete-mac) $(alive wrapper) $(alive longer)" "alive alive alive"
+  rm -f "$t/lost.ship-mac-1"; out=$(grep -c '^run pete-mac ' "$t/lume.log")
   me c mine up >/dev/null
   check "Pete's running VM is never started a second time, whatever lume says" "$(grep -c '^run pete-mac ' "$t/lume.log")" "$out"
   check "status still shows it running" "$(me c status | tail -1)" "mine: running"
   me c mine down
-  check "and mine down shuts it down from inside" "$(grep -c 'shutdown' "$t/ssh.log"):$(kill -0 "$(cat "$t/pid.pete-mac")" 2>/dev/null && echo alive || echo ended)" "2:ended"
-  echo load > "$t/lost.pete-mac"
+  check "and mine down shuts it down from inside" "$(grep -c 'shutdown' "$t/ssh.log"):$(alive pete-mac)" "2:ended"
+  lost pete-mac load
   check "a stopped VM reads as stopped past lume's log line" "$(me c status | tail -1)" "mine: stopped"
+  rm "$t/lost.pete-mac"; touch "$t/garble.pete-mac"; out=$(grep -c '^clone ship-mac-base pete-mac$' "$t/lume.log")
+  me c mine up >/dev/null
+  check "an unreadable answer from lume never clones over Pete's kept VM" "$(grep -c '^clone ship-mac-base pete-mac$' "$t/lume.log")" "$out"
+  me c mine down
   [ $fail = 0 ] && echo "mac-vm.sh selftest ok" || exit 1
 }
 

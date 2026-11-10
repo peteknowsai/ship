@@ -69,20 +69,20 @@ runner's changed mode shows: a query that found nothing right after a re-render)
 pass alone, it's load: both runs and the `uptime` load figure go in the commit or the
 `result:` line, and it isn't root-caused. A scoped run picked each file because it imports
 the diff, so there a file passes as load only when its time alone is under half its limit;
-nearer the limit, the diff may be what slowed it, and it's a real red. A failure in a file
-the diff touched is a real red. A second red on load waits, in the
+nearer the limit, the diff may be what slowed it, and it's a real red. A second red on load waits, in the
 background, for `scripts/wait-load.sh` (sandbox off) to see the 1-minute load fall under the
-core count; its exit 1 is a load still high after its limit, so wait again (cel-315). No test
-is skipped or deselected to get past. A limit goes up only for a file slow by design
-(SKILL.md, BUILD's Discipline): one that timed out in both runs and takes over half its limit
-alone gets 25 times that time as its own, both numbers in the commit and the PR (land-once
-lost three landing runs to an untouched 3.5 s fuzz at vitest's 5 s). route.py counts every red run as a fix round, so a
+core count; its exit 1 is a load still high after its limit, so wait again (cel-315). Nothing is
+skipped, deselected or loosened to get past but one test: untouched, importing nothing the
+diff changed, red in two loaded runs, and green in three runs alone at a load under the core
+count, the slowest over half its limit. It is slow by design (SKILL.md, BUILD's Discipline)
+and gets 25 times that slowest time as its own limit, the times in the commit and the PR
+(land-once: a 3.5 s fuzz at vitest's 5 s cost three landing runs). Any other file red on
+load a third time is a bug to root-cause. route.py counts every red run as a fix round, so a
 task's first `route.py log` after a load red passes `fix_rounds=` counting only the real
 reds, and `gates_first_pass=true` when its first run's only red was load; a `note=` re-log
-carries neither (cel-301's scoped run timed out two untouched files at load 80 to 390).
+carries neither (cel-301).
 The contract's own landing script (cells-app's land-pr.sh) is the same: rerun the failed
-files alone, and when they pass, run it again (CEL-226: two untouched files red at a load
-near 150, landed on the rerun).
+files alone, and when they pass, run it again (CEL-226).
 
 **Red in an untouched file, not a timeout.** A red that Red under load doesn't cover (a
 failed test, or an unhandled error with every test otherwise passing, only in files the diff

@@ -207,8 +207,8 @@ post Pete the one line.
 
 **The readers: neither is the writer.** A reader shares the blind spots of code its own
 model wrote and goes easy on it (Pete, 2026-10-14). The Claude reader's brief says to assume
-the writer was wrong at every seam. It starts with no `name`: a named subagent's report
-comes back cut at 4,000 characters (connections-page). Its report opens
+the writer was wrong at every seam. Every Claude reader, a stand-in too, starts with no `name`:
+a named subagent's report comes back cut at 4,000 characters (connections-page). Each report opens
 with the model it ran on, and one that isn't Fable 5.2 (an older session's `fable` meant
 5.1) gets `model=<what it said>` on its row, which keeps it out of the trial's count. Wonder
 runs as `scripts/muse.py review <worktree> <brief> <out-dir>`, a background Bash call:
