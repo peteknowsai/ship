@@ -33,8 +33,9 @@ clock alone.
                                  exit 0 once both branch readers are logged for the ship,
                                  Wonder and a Claude reader, fable or opus (a wonder row
                                  whose note starts "out" counts, for Muse being down) and, run from the worktree, every plan task
-                                 is logged built or parked and its branch adds the review
-                                 card; exit 1 naming what's missing
+                                 is logged built or parked, its branch adds the review card
+                                 and no line it adds names the worktree itself; exit 1
+                                 naming what's missing
   route.py report                the ledger as a table by engine, then the readers', then
                                  the snags
   route.py --selftest
@@ -343,9 +344,9 @@ TRIAL_FROM, TRIAL_SHIPS = '2026-11-09', 20  # Pete: Wonder stays or goes on what
 
 def readers(pairs):
     """Exit 0 once every saved plan task is logged, built or parked, the ship's ledger holds
-    both branch readers, logged since the branch's first commit, and the branch adds its
-    review card; else 1 naming what's missing. Run from the
-    worktree or the session the ship's marker points at."""
+    both branch readers, logged since the branch's first commit, the branch adds its review
+    card and no line it adds names its own worktree; else 1 naming what's missing. Run from
+    the worktree or the session the ship's marker points at."""
     want = pairs_to_row(pairs, 'readers')
     if not want.get('repo') or not want.get('ship'):
         raise SystemExit('route readers: give repo=<repo> ship=<slug>')
@@ -393,6 +394,14 @@ def readers(pairs):
     if card_missing(want['ship'], root):
         print(f"route readers: this branch adds no review card for {want['ship']}; commit it "
               "(LAND step 1) before the push", file=sys.stderr)
+        return 1
+    named = names_worktree(root)
+    if named:
+        print(f"route readers: {', '.join(named)} name{'' if len(named) > 1 else 's'} this worktree's own "
+              "path, which teardown removes: code that reads it fails in every other checkout, and a doc's "
+              "link to it goes dead. `git grep -n -F \"$(git rev-parse --show-toplevel)\"` lists the lines. "
+              "In code, resolve the path from the file's own location and rerun what reads it; in a doc, "
+              "write it relative to the repo; then commit", file=sys.stderr)
         return 1
     parked = sorted({f"{r['task']} ({r.get('note')})" for r in rows() if r.get('status') == 'parked'
                      and (r.get('repo'), r.get('ship')) == (want['repo'], want['ship'])})
@@ -451,6 +460,35 @@ def card_missing(ship, root='.'):
     cut = lambda f: f.replace(ship.lower() if ship.lower() in f else bare.lower(), '')  # fix-review
     return not any(f.endswith('.html') and sid.search(f) and 'review' in cut(f)
                    for f in (line.lower() for line in added.stdout.splitlines()))
+
+
+def names_worktree(root='.'):
+    """The files where the branch at `root` adds a line naming its own linked worktree, a path
+    teardown removes: cells-app #515 landed a reader's fuzz rooted at its worktree, and it
+    failed in every other checkout once that was gone. Empty in a checkout that outlives the
+    branch (a main checkout, a submodule) and when git can't tell. Not seen: the path spelled
+    through a symlink, ~ or $HOME, and a file git calls binary. EXPRESS ships never run this."""
+    top = git_at(root, 'rev-parse', '--show-toplevel').stdout.strip()
+    base = base_ref(root)
+    dirs = {os.path.realpath(os.path.join(top, d)) for d in
+            git_at(top, 'rev-parse', '--git-dir', '--git-common-dir').stdout.splitlines()} if top else ()
+    if not base or len(dirs) != 2:  # only a linked worktree has a git dir apart from the shared one
+        return []
+    diff = subprocess.run(['git', '-C', root, '-c', 'core.quotePath=false', 'diff', '--unified=0', '--no-color',
+                           '--no-ext-diff', '--no-textconv', '--src-prefix=a/', '--dst-prefix=b/',
+                           f'{base}...HEAD'], capture_output=True).stdout.decode('utf-8', 'replace')
+    own = re.compile(re.escape(top) + r'(?![\w-]|\.\w)')  # feature-x is not feature-x-2 or feature-x.2
+    found, name, head = [], None, True
+    for line in diff.split('\n'):  # decoded by hand: text=True would also break a line at a lone \r
+        if line.startswith('diff --git '):
+            name, head = None, True
+        elif line.startswith('@@'):
+            head = False
+        elif head and line.startswith('+++ '):  # only before a file's first hunk: a line of code may begin ++
+            name = line[6:].rstrip('\t')  # git ends a name that holds a space with a tab
+        elif not head and line.startswith('+') and name not in found and own.search(line):
+            found.append(name)
+    return found
 
 
 def report():
@@ -721,6 +759,49 @@ def selftest():
             g('switch', '-q', 'feature/cel-9-thing')
             check('with the card, a branch row with no stage (main\'s rows) counts as a branch read',
                   readers(['repo=ship', 'ship=cel-9-thing']) == 0)
+        finally:
+            os.chdir(plain)
+
+        # a line the branch adds that names its own worktree, which teardown removes
+        open(os.path.join(cards, 'here.ts'), 'w').write(f'const root = "{os.path.realpath(cards)}";\n')
+        commit([], 'names the main checkout')
+        check("a main checkout's own path outlives the branch, so it is no finding", names_worktree(cards) == [])
+        wt = os.path.join(os.path.realpath(tmp), 'wt-x')
+        g('switch', '-q', 'main')
+        for name in ('gone.ts', 'kept.ts'):  # main named the path before the branch began
+            open(os.path.join(cards, name), 'w').write(f'const at = "{wt}";\n')
+        commit([], 'main names the path')
+        g('worktree', 'add', '-q', '-b', 'feature/wt-x', wt, 'main')
+        gw = lambda *a: subprocess.run(['git', '-C', wt, *a], check=True, capture_output=True,
+                                       env={**os.environ, 'GIT_AUTHOR_DATE': '@1577836800 +0000'})
+
+        def put(name, text):
+            os.makedirs(os.path.dirname(os.path.join(wt, name)), exist_ok=True)
+            open(os.path.join(wt, name), 'w', newline='').write(text)
+            gw('add', '-A')
+            gw('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '-m', name)
+        put('specs/qa/2026-11-09-wt-x/review.html', 'x\n')
+        put('src/ok.ts', f'const a = "{wt}-2/x", b = "{wt}.2/x", c = "{os.path.realpath(cards)}";\n++ {wt}-2\n')
+        os.remove(os.path.join(wt, 'gone.ts'))
+        put('src/drop.ts', 'the branch drops gone.ts\n')
+        open(os.path.join(cards, 'kept.ts'), 'w').write('const at = "elsewhere";\n')  # edited, not removed:
+        commit([], 'main moves on and takes the path out of kept.ts')  # git would pair a removal with gone.ts as a rename
+        os.chdir(wt)
+        try:
+            log(['repo=ship', 'ship=wt-x', 'review=wonder', 'stage=branch', 'real=1'])
+            log(['repo=ship', 'ship=wt-x', 'review=opus', 'stage=branch', 'real=1'])
+            check("no finding: a sibling worktree's path, the main checkout's, a line the branch removes "
+                  "and one main dropped since the branch began",
+                  names_worktree(wt) == [] and readers(['repo=ship', 'ship=wt-x']) == 0)
+            put('test/fuzz.test.ts', f'const ROOT = process.env.FUZZ_ROOT ?? "{wt}";\n')
+            put('test/later.test.ts', f'++ a line of code that begins ++\nconst at = "{wt}/src";\n')
+            put('notes/cr file.md', f'old Mac line ends\rsee {wt}.\r')
+            hint = io.StringIO()
+            with contextlib.redirect_stderr(hint):
+                code = readers(['repo=ship', 'ship=wt-x'])
+            check('readers refuses a branch that adds lines naming its own worktree, in code or a doc, and '
+                  'names each file',
+                  code == 1 and 'notes/cr file.md, test/fuzz.test.ts, test/later.test.ts name this' in hint.getvalue())
         finally:
             os.chdir(plain)
 
