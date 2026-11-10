@@ -362,8 +362,7 @@ no `convex.json` shares dev by default and stays quiet (homezero).
   branch adds or slows whose time alone, times 25, passes the runner's default timeout gets
   its own of that size when it's written, since load slows a run that much (cel-303's land
   run at 446 on 18 cores), and cel-284's 500-case fuzz ran 3.1 s alone and timed out at
-  vitest's 5 s at load 130; an untouched test's timeout is never raised to get past a red
-  (contract.md `gates:`).
+  vitest's 5 s at load 130; an untouched test's limit: contract.md, Red under load.
 - **A QA case can press a control main doesn't have.** cel-332's plan copied the card's
   acceptance criteria as cases: the phone's long-press strip showed no chosen mark, and
   neither app let you react to your own line, which cost a fix round and a step rewritten

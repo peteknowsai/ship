@@ -28,16 +28,34 @@ base=ship-mac-base
 slots=${SHIP_MAC_SLOTS:-1}  # Apple allows two macOS VMs running on one Mac, and Virtualization
 mine=pete-mac               # enforces it: one for ships, one Pete's own, kept between uses
 stale=$((2 * 3600))  # a slot unused this long, or whose worktree is gone, can be taken again
+lumedir=${SHIP_MAC_LUME_DIR:-$HOME/.lume}
 
 vm() { echo "ship-mac-$1"; }
-info() { lume get "$1" -f json 2>/dev/null | jq -r "(if type == \"array\" then .[0] else . end).$2 // empty" 2>/dev/null; }
+# Lume 0.6.1 answers "stopped" for a running VM when it can't check its own record under load, and
+# for good once anyone runs `lume run` on it a second time: that clears the first run's lock and
+# record, and the VM runs on (cel-380, where a return then freed the slot under a live VM). So the
+# process that runs a VM outranks lume's answer, and its address then comes from the DHCP leases.
+runpid() { pgrep -f "^[^ ]*lume run $1( |\$)" || true; }
+leased() {  # leased <vm>: the address its network card leased last. Leases drop each octet's leading zero.
+  local mac; mac=$(jq -r '.macAddress // empty' "$lumedir/$1/config.json" 2>/dev/null | tr A-F a-f | sed -E 's/(^|:)0/\1/g') || true
+  [ -n "$mac" ] || return 0
+  awk -F= -v m="1,$mac" '$1 ~ /ip_address/ { ip = $2 } $1 ~ /hw_address/ { hw = $2 } $1 ~ /lease/ { t = $2 }
+    /^}/ { if (hw == m && t >= best) { best = t; out = ip }; ip = hw = t = "" }
+    END { if (out != "") print out }' "${MAC_VM_LEASES:-/var/db/dhcpd_leases}" 2>/dev/null || true
+}
+info() {  # info <vm> status|ipAddress. Lume logs to stdout, ahead of its JSON.
+  local v; v=$(lume get "$1" -f json 2>/dev/null | sed '/^\[20[0-9][0-9]-/d' | jq -r "(if type == \"array\" then .[0] else . end).$2 // empty" 2>/dev/null) || true
+  case "$2:$v" in status:running|ipAddress:?*) echo "$v"; return 0 ;; esac
+  if [ -z "$(runpid "$1")" ]; then [ -z "$v" ] || echo "$v"
+  elif [ "$2" = status ]; then echo running
+  else leased "$1"; fi
+}
 ipof() { info "$1" ipAddress; }
 sshv() {  # sshv <vm> <args...>: one control connection per VM, kept until return, so tunnels ride it
   local name=$1 ip alias=ship-mac kh=$dir/known_hosts strict=yes; shift
   ip=$(ipof "$name" || true)
-  # Under load lume's answer can come back empty for a running VM (app-look's retry worked).
-  [ -n "$ip" ] || { sleep "${MAC_VM_RETRY_S:-3}"; ip=$(ipof "$name" || true); }
-  [ -n "$ip" ] || { echo "$name isn't running" >&2; return 255; }
+  # The moment a ship is tempted to start it by hand, which is how cel-380's VM was lost.
+  [ -n "$ip" ] || { echo "$name isn't running. Start one with mac-vm.sh (borrow, or mine up), never a hand-typed lume run: run twice, a VM is lost to lume" >&2; return 255; }
   # Pete's VM keeps its host key across base rebuilds, which replace the clones' shared one.
   [ "$name" = "$mine" ] && { alias=$mine; kh=$dir/known_hosts.mine; strict=accept-new; }
   ssh -i "$key" -o IdentitiesOnly=yes -o BatchMode=yes -o HostKeyAlias="$alias" -o CheckHostIP=no \
@@ -109,7 +127,12 @@ boot() {  # boot <vm>: headless, then wait for ssh and the logged-in desktop. Ca
 }
 
 wipe() {  # wipe <vm>: its connection, then the VM. Lume's delete leaves a --detach VM running,
+  local sig p
   close "$1"; lume stop "$1" --force >/dev/null 2>&1 || true  # so only a stopped one is deleted.
+  for sig in TERM TERM TERM KILL KILL; do  # lume can't stop a VM it lost; its process stops on TERM
+    p=$(runpid "$1"); [ -n "$p" ] || break
+    kill -$sig $p 2>/dev/null || true; sleep 1
+  done
   case "$(info "$1" status)" in
     ""|stopped) lume delete "$1" --force >/dev/null 2>&1 || true ;;
     *) echo "$1 would not stop and is still running: lume stop $1 --force" >&2 ;;
@@ -158,7 +181,7 @@ capture() {  # capture <vm> <out.png>: its whole screen, saved on this Mac
 grant_offline() {  # the base's last step, on its stopped disk, where nothing running can write it back
   local whole rc=0
   [ "$(info "$base" status)" = stopped ] || { echo "$base is running or missing; stop it first" >&2; return 1; }
-  whole=$(hdiutil attach -imagekey diskimage-class=CRawDiskImage -nomount -nobrowse "$HOME/.lume/$base/disk.img" 2>/dev/null |
+  whole=$(hdiutil attach -imagekey diskimage-class=CRawDiskImage -nomount -nobrowse "$lumedir/$base/disk.img" 2>/dev/null |
     awk '$2 == "GUID_partition_scheme" {print $1; exit}')  # its lines come in any order
   [ -n "$whole" ] || { echo "could not attach the base's disk" >&2; return 1; }
   write_offline "$whole" || rc=$?
@@ -248,26 +271,31 @@ EOF
 }
 
 selftest() {
-  t=$(cd "$(mktemp -d)" && pwd -P); trap 'rm -rf "$t"' EXIT
+  t=$(cd "$(mktemp -d)" && pwd -P); trap 'kill $(cat "$t"/pid.* 2>/dev/null) 2>/dev/null; rm -rf "$t"' EXIT
   mkdir -p "$t/bin" "$t/cfg"
   cat > "$t/bin/lume" <<EOF
 #!/bin/sh
 echo "\$@" >> $t/lume.log
 case "\$1" in  # a VM is made by clone, running from run, stopped by stop, gone after delete
   get) s=; [ -f $t/made.\$2 ] && s=\$(cat $t/state.\$2 2>/dev/null || echo stopped)
+       # lost.<vm>: lume can't vouch for a running VM, "load" with its log line ahead of the JSON
+       [ -f $t/lost.\$2 ] && { s=stopped; grep -q load $t/lost.\$2 && echo "[2026-11-10T00:07:01Z] INFO: Could not verify VNC-disabled session marker; preserving it name=\$2"; }
        ip=; [ "\$s" = running ] && ip=192.168.64.9
        echo "{\\"ipAddress\\":\\"\$ip\\",\\"status\\":\\"\$s\\"}" ;;
   clone) touch $t/made.\$3 ;;
   run) echo running > $t/state.\$2 ;;
-  stop) echo stopped > $t/state.\$2 ;;
+  stop) [ -f $t/lost.\$2 ] || echo stopped > $t/state.\$2 ;;
   delete) rm -f $t/made.\$2 $t/state.\$2 ;;
 esac
 exit 0
 EOF
-  printf '#!/bin/sh\ncase "$*" in *shutdown*) echo stopped > %s/state.pete-mac ;; esac\nexit 0\n' "$t" > "$t/bin/ssh"
-  chmod +x "$t/bin/lume" "$t/bin/ssh"
+  # A shutdown inside Pete's VM ends the process that runs it, as it does on the real one.
+  printf '#!/bin/sh\necho "$*" >> %s/ssh.log\ncase "$*" in *shutdown*) echo stopped > %s/state.pete-mac; kill $(cat %s/pid.pete-mac 2>/dev/null) 2>/dev/null ;; esac\nexit 0\n' "$t" "$t" "$t" > "$t/bin/ssh"
+  # The stand-in pgrep answers only from pid.<vm>, so no check here can see or end a real VM.
+  printf '#!/bin/sh\nfor f in %s/pid.*; do [ -f "$f" ] || continue; case "$*" in *"lume run ${f##*/pid.}("*) p=$(cat "$f"); kill -0 "$p" 2>/dev/null && echo "$p" ;; esac; done\nexit 0\n' "$t" > "$t/bin/pgrep"
+  chmod +x "$t/bin/lume" "$t/bin/ssh" "$t/bin/pgrep"
   for w in a b c; do git init -q "$t/$w"; done
-  me() { (cd "$t/$1" && SHIP_MAC_SLOTS=${ts:-2} SHIP_MAC_DIR=$t/cfg PATH="$t/bin:$PATH" WAIT_LOAD_CORES=${tc:-100000} MAC_VM_LOAD_WAIT_S=${tw:-1200} MAC_VM_RETRY_S=0 bash "$self" "${@:2}"); }
+  me() { (cd "$t/$1" && SHIP_MAC_SLOTS=${ts:-2} SHIP_MAC_DIR=$t/cfg PATH="$t/bin:$PATH" WAIT_LOAD_CORES=${tc:-100000} MAC_VM_LOAD_WAIT_S=${tw:-1200} SHIP_MAC_LUME_DIR=$t/lume MAC_VM_LEASES=$t/leases bash "$self" "${@:2}"); }
   local fail=0 out
   check() { if [ "$2" = "$3" ]; then echo "ok   $1"; else echo "FAIL $1: got '$2', want '$3'"; fail=1; fi; }
   check "first borrow gets slot 1" "$(me a borrow)" "SLOT=1 IP=192.168.64.9"
@@ -322,6 +350,29 @@ EOF
   check "no borrow or return touches Pete's VM" "$(grep -c -E '^(delete|stop) pete-mac' "$t/lume.log")" 0
   me c view mine >/dev/null
   check "view mine opens Pete's VM" "$(grep -c '^attach pete-mac --display native$' "$t/lume.log")" 1
+  # Lume answers "stopped" for a VM that is running (cel-380): the process and the lease say so.
+  lost() { (sleep 300 >/dev/null 2>&1 & echo $! > "$t/pid.$1"); echo "$2" > "$t/lost.$1"; }
+  me b borrow >/dev/null; mkdir -p "$t/lume/ship-mac-1"
+  echo '{"macAddress":"0A:a2:5c:2d:6f:02"}' > "$t/lume/ship-mac-1/config.json"
+  mkdir -p "$t/lume/pete-mac"; echo '{"macAddress":"26:6f:a2:67:c4:6a"}' > "$t/lume/pete-mac/config.json"
+  printf '{\n\tip_address=192.168.64.%s\n\thw_address=1,%s\n\tname=a}\n\tlease=0x%s\n}\n' 7 a:a2:5c:2d:6f:2 69100000 \
+    3 a:a2:5c:2d:6f:2 69000000 8 a:a2:5c:2d:6f:3 69200000 6 26:6f:a2:67:c4:6a 69300000 > "$t/leases"
+  lost ship-mac-1 load
+  check "a running VM lume can't vouch for under load still takes commands" "$(me b run 1 true 2>&1 && echo yes)" yes
+  check "at the address its network card leased last" "$(tail -1 "$t/ssh.log" | grep -c 'lume@192.168.64.7 ')" 1
+  echo gone > "$t/lost.ship-mac-1"
+  check "and so does one whose record lume lost for good" "$(me b run 1 true 2>&1 && echo yes)" yes
+  me b return 1
+  check "return ends a VM lume lost before it frees the slot" "$(kill -0 "$(cat "$t/pid.ship-mac-1")" 2>/dev/null && echo alive || echo ended)" ended
+  check "and frees it" "$(me c status | sed -n 1p)" "slot 1: free"
+  rm -f "$t/lost.ship-mac-1" "$t/pid.ship-mac-1"; lost pete-mac gone; out=$(grep -c '^run pete-mac ' "$t/lume.log")
+  me c mine up >/dev/null
+  check "Pete's running VM is never started a second time, whatever lume says" "$(grep -c '^run pete-mac ' "$t/lume.log")" "$out"
+  check "status still shows it running" "$(me c status | tail -1)" "mine: running"
+  me c mine down
+  check "and mine down shuts it down from inside" "$(grep -c 'shutdown' "$t/ssh.log"):$(kill -0 "$(cat "$t/pid.pete-mac")" 2>/dev/null && echo alive || echo ended)" "2:ended"
+  echo load > "$t/lost.pete-mac"
+  check "a stopped VM reads as stopped past lume's log line" "$(me c status | tail -1)" "mine: stopped"
   [ $fail = 0 ] && echo "mac-vm.sh selftest ok" || exit 1
 }
 

@@ -207,7 +207,8 @@ post Pete the one line.
 
 **The readers: neither is the writer.** A reader shares the blind spots of code its own
 model wrote and goes easy on it (Pete, 2026-10-14). The Claude reader's brief says to assume
-the writer was wrong at every seam. Its report opens
+the writer was wrong at every seam. It starts with no `name`: a named subagent's report
+comes back cut at 4,000 characters (connections-page). Its report opens
 with the model it ran on, and one that isn't Fable 5.2 (an older session's `fable` meant
 5.1) gets `model=<what it said>` on its row, which keeps it out of the trial's count. Wonder
 runs as `scripts/muse.py review <worktree> <brief> <out-dir>`, a background Bash call:
@@ -634,8 +635,8 @@ Wonder read where Sizing says.
   (screendrop-worker rebuilt one from the transcript). Then one row per reader: `route.py log
   repo= ship= review=<fable|opus> stage=branch real= false= only= nits= seconds=` and the same for
   `review=wonder` with `out=<out-dir>` in place of `seconds=`, where `real` counts this
-  reader's real findings and `only` those of them the other missed. Muse out: `review=wonder stage=branch note=out:<exit>`, plus the
-  stand-in's own `review=opus … note=for:wonder` row.
+  reader's real findings and `only` those of them the other missed. Muse out: both rows
+  from The readers.
 - **Fix what's real**, each fix run against the cases the issue or spec names before it's
   committed (two readers' fixes added up to a guard that undid eca-finder's loose deck), with
   the gates scoped through `route.py gate`. A fix that rebuilds the rule a finding was
