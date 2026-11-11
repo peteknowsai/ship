@@ -93,6 +93,14 @@ These are facts, not process — the process lives in SKILL.md.
 - **A dirty main checkout may hold another session's uncommitted work.** Never ff or
   deploy from it — deploying would ship their unfinished work and miss your merge. Use a
   throwaway worktree pinned to `origin/main` for the deploy step.
+- **A file written in main before the fork and copied, not moved, into the worktree**
+  (cel-401-comal-pack, 2026-11-10): the design page, drawn while the session was still a
+  chat, stayed untracked in cells-app's main checkout. Once #534 landed that path, the twin
+  stopped local-pack.sh's `merge --ff-only`, main kept serving the old commit unsmoked, and
+  land-pr exited 1. Such a file goes over with `mv`. When main's move still stops on an
+  untracked file the branch adds, a copy this session wrote is removed and the move rerun
+  (`local-pack.sh <pack> --restart` in cells-app); anyone else's waits for Pete, named in
+  `result:`.
 - **A pre-existing sibling worktree (Zero's convention) is not ship's to tear down** —
   the session and its dev server live there. Merge with `-R <owner/repo>` without
   `--delete-branch`, delete the remote branch explicitly, leave the worktree.
@@ -409,16 +417,9 @@ Two runs lost 40 commands to split-and-retry, and two more lost about ten each
 
 ## Dispatch
 
-Lessons from handing work to a subagent or another engine, kept where they hold for any
-worker. From 2026-08 to 2026-10 ship also built and tested through Codex models; that
-history is in git, and nothing calls those engines now.
+Lessons from handing work to a subagent, kept where they hold for any worker; the history
+of building through other engines is in git.
 
-- **A worker in a sandbox can't bind a loopback port**, so any test that starts a local
-  server fails inside its run with `listen EPERM` or `EADDRINUSE` on port 0 (cells,
-  2026-09-19: `loopback.test.ts`, `bridgeWorkflows.test.ts`, in all seven runs). It is never
-  the task's fault and never worth a fix round. Tell the worker in the brief which tests
-  those are so it reports and moves on, and treat the driver's own gate run, outside the
-  sandbox, as the only real one.
 - **A reader that exits 0 without writing its result did not run** (2026-09): a review hit
   an unrelated skill-loading error and stopped in seconds. A missing or empty result file
   is never a clean bill; a plain retry of the identical command produced five genuine
@@ -441,11 +442,6 @@ history is in git, and nothing calls those engines now.
   behavior change invalidates an assertion in a test file outside the list — two of three
   dispatches stopped mid-run to ask permission, each costing a resume round-trip. Briefs
   say so up front: test files whose assertions the change invalidates are always in scope.
-- **The first two days of multi-engine builds, read from nine ship sessions** (2026-09-24
-  to 26): Pete found at TEST what the walk skipped (a right-click menu synthetic events
-  can't reproduce, a voice path no walk reached, a localhost broken by a shared sign-in
-  cookie); `verify` ran by its bare name and was refused; two runs built before the plan
-  review landed; and the plan and branch reviews found real bugs in every run.
 - **`muse.py` writes `last.md` only after its frame loop ends**, so a wrapper killed after
   Wonder's turn completed, by a session restart, leaves no `last.md` (save-files-to-mac,
   2026-11-09). The answer is still in `<out-dir>/events.jsonl`: the last `item/completed`
