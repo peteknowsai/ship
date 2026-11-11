@@ -97,8 +97,10 @@ These are facts, not process — the process lives in SKILL.md.
   (cel-401-comal-pack, 2026-11-10): the design page, drawn while the session was still a
   chat, stayed untracked in cells-app's main checkout. Once #534 landed that path, the twin
   stopped local-pack.sh's `merge --ff-only`, main kept serving the old commit unsmoked, and
-  land-pr exited 1. Such a file goes over with `mv`; at LAND, a byte-identical untracked twin
-  in main goes before the pull, and one that differs is someone's work, so the pull waits.
+  land-pr exited 1. Such a file goes over with `mv`. When main's move still stops on an
+  untracked file the branch adds, a copy this session wrote is removed and the move rerun
+  (`local-pack.sh <pack> --restart` in cells-app); anyone else's waits for Pete, named in
+  `result:`.
 - **A pre-existing sibling worktree (Zero's convention) is not ship's to tear down** —
   the session and its dev server live there. Merge with `-R <owner/repo>` without
   `--delete-branch`, delete the remote branch explicitly, leave the worktree.
@@ -315,13 +317,6 @@ no `convex.json` shares dev by default and stays quiet (homezero).
   app's part of a shared frame is its own tests, under its own switch where the diff changed its
   files (muse-icons edited four packs' `skin.css`; `PACK=swain` runs `skin.test.ts`), never a
   step (verify: Write qa.md).
-
-- **A frame passed on the part the change built** (cel-400-hello-intros, 2026-11-10): QA
-  passed Swain's and Yonder's new read cards against their frames while the line above each,
-  drawn by the intro shell, repeated the question just answered where the frames drew an
-  answer. Picking the review card's shots caught it, costing a fix commit and two re-walks.
-  A step compares every line of text its frame draws, the lines around
-  the change included: the frame's `innerText` beside the page's.
 
 - **Safari won't load local CSS into a storyboard's srcdoc frames over file://**
   (2026-10-13). When Pete wants a storyboard in Safari, serve its folder over http
