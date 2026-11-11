@@ -178,9 +178,12 @@ def gate(argv, start=None):
         raise SystemExit(f"route gate: {argv[0]!r} runs as one program name; pass its words "
                          "separately (route.py gate npm run typecheck), or put a multi-step gate in "
                          "a script file and run route.py gate bash <file>")
+    # A script's status is its last command's, so `npm test | tail` read green over a red suite
+    # (CEL-180; cel-64-android's absorb, with only `set -e`): bash gates run with -e and pipefail.
+    strict = os.path.basename(argv[0]) == 'bash'
     began = time.time()
     try:
-        code = subprocess.call(argv)
+        code = subprocess.call([argv[0], '-e', '-o', 'pipefail', *argv[1:]] if strict else argv)
     except OSError as error:
         print(f'route gate: {argv[0]}: {error.strerror}', file=sys.stderr)
         code = 127
@@ -191,6 +194,9 @@ def gate(argv, start=None):
     # the verdict last and on stderr, after the row: a `| tail` can't hide it (cel-263 reran a
     # suite to read one), and a closed stdout pipe can't cost the row
     verdict = 'PASS' if code == 0 else f'FAIL (exit {code})'
+    if code and strict:
+        verdict += (' under -e -o pipefail, where a grep that matches nothing or a head that stops '
+                    "reading fails too: filter with grep -E 'FAIL|Test Files|Tests ' | tail")
     print(f"route gate: {verdict} {' '.join(argv)[:120]} ({time.time() - began:.0f}s)", file=sys.stderr)
     return code
 
@@ -926,6 +932,16 @@ def selftest():
               'separately' in refused(gate, ['npm run typecheck'])
               and open(os.path.join(repo, '.ship-gates')).read() == rows_before)
         check('gate ends on its own verdict line', gate_out.getvalue().startswith('route gate: FAIL (exit 3) '))
+        piped, piped_out = os.path.join(repo, 'piped.sh'), io.StringIO()
+        with contextlib.redirect_stderr(piped_out):
+            open(piped, 'w').write('false | true\nexit 0\n')  # green unless both -e and pipefail
+            red = gate(['bash', piped], start=repo)
+            red_row = json.loads(open(os.path.join(repo, '.ship-gates')).read().splitlines()[-1])
+            open(piped, 'w').write('true | true\n')
+            green = gate(['bash', piped], start=repo)
+        check('a bash gate fails on a red command behind a pipe, records the command as typed, passes a green one',
+              red == 1 and red_row['ok'] is False and red_row['cmd'] == f'bash {piped}' and green == 0
+              and 'pipefail' in piped_out.getvalue())
         os.remove(stage)
         plan(shipped)
         check('outside a ship no marker appears', not os.path.exists(stage))
