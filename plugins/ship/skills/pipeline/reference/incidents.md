@@ -93,6 +93,12 @@ These are facts, not process — the process lives in SKILL.md.
 - **A dirty main checkout may hold another session's uncommitted work.** Never ff or
   deploy from it — deploying would ship their unfinished work and miss your merge. Use a
   throwaway worktree pinned to `origin/main` for the deploy step.
+- **A file written in main before the fork and copied, not moved, into the worktree**
+  (cel-401-comal-pack, 2026-11-10): the design page, drawn while the session was still a
+  chat, stayed untracked in cells-app's main checkout. Once #534 landed that path, the twin
+  stopped local-pack.sh's `merge --ff-only`, main kept serving the old commit unsmoked, and
+  land-pr exited 1. Such a file goes over with `mv`; at LAND, a byte-identical untracked twin
+  in main goes before the pull, and one that differs is someone's work, so the pull waits.
 - **A pre-existing sibling worktree (Zero's convention) is not ship's to tear down** —
   the session and its dev server live there. Merge with `-R <owner/repo>` without
   `--delete-branch`, delete the remote branch explicitly, leave the worktree.
@@ -310,6 +316,13 @@ no `convex.json` shares dev by default and stays quiet (homezero).
   files (muse-icons edited four packs' `skin.css`; `PACK=swain` runs `skin.test.ts`), never a
   step (verify: Write qa.md).
 
+- **A frame passed on the part the change built** (cel-400-hello-intros, 2026-11-10): QA
+  passed Swain's and Yonder's new read cards against their frames while the line above each,
+  drawn by the intro shell, repeated the question just answered where the frames drew an
+  answer. Picking the review card's shots caught it, costing a fix commit and two re-walks.
+  A step compares every line of text its frame draws, the lines around
+  the change included: the frame's `innerText` beside the page's.
+
 - **Safari won't load local CSS into a storyboard's srcdoc frames over file://**
   (2026-10-13). When Pete wants a storyboard in Safari, serve its folder over http
   (`python3 -m http.server`) and open that; Chrome is fine with file://.
@@ -409,16 +422,9 @@ Two runs lost 40 commands to split-and-retry, and two more lost about ten each
 
 ## Dispatch
 
-Lessons from handing work to a subagent or another engine, kept where they hold for any
-worker. From 2026-08 to 2026-10 ship also built and tested through Codex models; that
-history is in git, and nothing calls those engines now.
+Lessons from handing work to a subagent, kept where they hold for any worker; the history
+of building through other engines is in git.
 
-- **A worker in a sandbox can't bind a loopback port**, so any test that starts a local
-  server fails inside its run with `listen EPERM` or `EADDRINUSE` on port 0 (cells,
-  2026-09-19: `loopback.test.ts`, `bridgeWorkflows.test.ts`, in all seven runs). It is never
-  the task's fault and never worth a fix round. Tell the worker in the brief which tests
-  those are so it reports and moves on, and treat the driver's own gate run, outside the
-  sandbox, as the only real one.
 - **A reader that exits 0 without writing its result did not run** (2026-09): a review hit
   an unrelated skill-loading error and stopped in seconds. A missing or empty result file
   is never a clean bill; a plain retry of the identical command produced five genuine
@@ -441,11 +447,6 @@ history is in git, and nothing calls those engines now.
   behavior change invalidates an assertion in a test file outside the list — two of three
   dispatches stopped mid-run to ask permission, each costing a resume round-trip. Briefs
   say so up front: test files whose assertions the change invalidates are always in scope.
-- **The first two days of multi-engine builds, read from nine ship sessions** (2026-09-24
-  to 26): Pete found at TEST what the walk skipped (a right-click menu synthetic events
-  can't reproduce, a voice path no walk reached, a localhost broken by a shared sign-in
-  cookie); `verify` ran by its bare name and was refused; two runs built before the plan
-  review landed; and the plan and branch reviews found real bugs in every run.
 - **`muse.py` writes `last.md` only after its frame loop ends**, so a wrapper killed after
   Wonder's turn completed, by a session restart, leaves no `last.md` (save-files-to-mac,
   2026-11-09). The answer is still in `<out-dir>/events.jsonl`: the last `item/completed`
