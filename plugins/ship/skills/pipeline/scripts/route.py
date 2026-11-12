@@ -308,8 +308,8 @@ def log(pairs):
             row['routed'] = 'fable'
         # engine=fable goes on Fable's tasks and nowhere else, unless the row says why: CEL-222's
         # driver kept all three of Fable's. A fix round on tasks already logged, every one of them,
-        # is the driver's. A ship with no saved plan is held to nothing.
-        refix = 'note' in row and row.get('repo') and row.get('ship') \
+        # is the driver's, never a way to put fable on a task. A ship with no saved plan is held to nothing.
+        refix = 'note' in row and row.get('engine') != 'fable' and row.get('repo') and row.get('ship') \
             and all(logged(row['repo'], row['ship'], {t}) for t in named)
         if known and bool(fables) != (row.get('engine') == 'fable') and row.get('status') != 'parked' \
                 and not refix and not str(row.get('why', '')).strip():
@@ -1040,6 +1040,7 @@ def selftest():
             why = log(['repo=ship', 'ship=hard', 'task=5', 'engine=driver', 'why=Fable was out', 'fix_rounds=1'])
             easy = log(['repo=ship', 'ship=hard', 'task=1', 'engine=driver'])
             fix = refused(log, ['repo=ship', 'ship=hard', 'task=2', 'engine=driver', 'note=fix round'])
+            credit = refused(log, ['repo=ship', 'ship=hard', 'task=4', 'engine=fable', 'note=fix round'])
             cased = log(['repo=ship', 'ship=hard2', 'task=2', 'engine=Fable', 'note=another ship, same plan'])
             odd = log(['repo=ship', 'ship=hard2', 'task=6', 'engine=5'])
         finally:
@@ -1050,9 +1051,10 @@ def selftest():
               "mixing the two is refused",
               "Fable 5.2's" in noted and "Fable 5.2's" in blank and 'own row' in mixed and "isn't Fable 5.2's" in lent
               and "isn't Fable 5.2's" in ghost)
-        check("a note covers a fix round only when every task on the row was built before; engine=Fable is "
-              "fable's row, and an engine that is a number still reports",
-              "Fable 5.2's" in half and cased.get('engine') == 'fable' and odd.get('engine') == 5 and '\n5 ' in report())
+        check("a note covers a fix round only when every task on the row was built before, and never puts "
+              "fable on a driver's task; engine=Fable is fable's row, and an engine that is a number still reports",
+              "Fable 5.2's" in half and "isn't Fable 5.2's" in credit and cased.get('engine') == 'fable'
+              and odd.get('engine') == 5 and '\n5 ' in report())
         grown = open(plan_in).read().replace('### Task 3: t3 drop the (hard) label', '### Task 3: t3 (hard)')
         open(plan_in, 'w').write(grown)
         replanned = plan(plan_in)['tasks']

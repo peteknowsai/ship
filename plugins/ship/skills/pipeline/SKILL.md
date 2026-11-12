@@ -192,10 +192,10 @@ on 6 of 9 tasks in one ship). A subagent earns its seat for four jobs only:
 2. **A sweep whose answer is all the driver needs**: recon, an expert consult, a lookup.
 3. **Reading the rest of the ship never needs**: a wide mechanical migration that would crowd
    the driver, logged `engine=opus` with the reason in `note`.
-4. **Fable's hard tasks**: the ones `route.py plan` prints as `fable`, every other task
-   whose heading ends `(hard)`, the first included. A Fable 5.2 subagent (`model: "fable"`)
-   builds each, one at a time. Its row is `engine=fable`; `route.py log` refuses a row that
-   disagrees with the plan without `why=<reason>`, as when Fable is out.
+4. **Fable's hard tasks**: the ones `route.py plan` prints as `fable`, half of those whose
+   heading ends `(hard)`. A Fable 5.2 subagent (`model: "fable"`) builds each, one at a time.
+   Its row is `engine=fable`; `route.py log` refuses a row that disagrees with the plan
+   without `why=<reason>`, as when Fable is out.
 
 Speed is never the reason: Pete doesn't measure a ship by wall time. A subagent is an Agent
 tool call, which the harness tracks and wakes you for, never a `claude -p` process.
