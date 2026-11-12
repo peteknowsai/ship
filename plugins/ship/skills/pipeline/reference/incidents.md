@@ -60,15 +60,13 @@ These are facts, not process — the process lives in SKILL.md.
 - **`gh pr merge --delete-branch` run from inside the worktree fails** with `fatal: 'main'
   is already used by worktree …` after the PR has merged on GitHub, and the teardown never
   runs. LAND merges without the flag.
-- **A lane that borrowed `node_modules` by symlink committed the link** (cells,
-  2026-09-19). Five lane worktrees symlinked `agent/`, `web/` and
-  `electron/node_modules` to the main worktree's installs. The repo ignored
-  `node_modules/`, which matches a directory and not a link, so one lane's `git add -A`
-  tracked `agent/node_modules`, and merging that lane replaced the main worktree's real
-  install with a link pointing at itself. Typecheck and build then failed with exit 127
-  (`tsc: command not found`), which read as broken code. The fix was `git rm --cached`,
-  a reinstall, and dropping the slash from the ignore pattern. Exclude the links in
-  `info/exclude` before the first lane commit.
+- **A worktree that borrowed `node_modules` by symlink committed the link** (cells,
+  2026-09-19). The repo ignored `node_modules/`, which matches a directory and not a link,
+  so one `git add -A` tracked `agent/node_modules`, and merging it replaced the main
+  worktree's real install with a link pointing at itself. Typecheck and build then failed
+  with exit 127 (`tsc: command not found`), which read as broken code. The fix: `git rm
+  --cached`, a reinstall, the ignore pattern without its slash. Exclude the links in
+  `info/exclude` before the first commit.
 - **Squash merges from the GitHub UI don't satisfy `git branch --merged`** and don't
   delete the local branch. To prove a worktree landed, check
   `gh pr list --state merged --head <branch> --json number,headRefOid` against the
