@@ -2,112 +2,35 @@
 
 The Claude Code plugin behind `/ship` (marketplace `peteknowsai/ship`). Skills live in
 `plugins/ship/skills/` (`pipeline` is /ship itself, plus `verify`); the pipeline's rare
-shapes, contract keys, card rules and reader briefs sit in its `reference/`.
-`route.py --selftest` checks the task counter and build ledger (`route.py gate` records
-each check, `log` fills a task's time and first pass from them, `readers` refuses a landing
-until every plan task is logged built or parked, both branch readers are logged and the
-branch carries its review card, `report` counts the 20-ship trial of Wonder beside Fable 5.2),
-`decisions.py --selftest` the per-repo decision log (`decisions.py stale` lists calls that
-give a retired engine a ship job), `muse.py --selftest` the Muse Code wrapper (Wonder Full's
-read-only plan and branch reviews), `bash plugins/ship/hooks/ship-recap.sh
---selftest` the recap a ship prints into its context after each compaction, `branch-db.py --selftest` the copy of
-the Convex dev database each worktree gets, `icon-check.py --selftest` the
-pre-flight's check that every page has a browser icon and a Home Screen icon,
-`wait-head.sh --selftest` LAND's wait for GitHub to show the pushed head, `wait-load.sh --selftest` the wait for the load to fall under the core count (contract.md's
-Red under load, and every Mac VM borrow), `numbers.py --selftest` the after-compaction check of a number against the transcript's
-tool output, `carried.sh --selftest` LAND's check for commits this branch carries from another open
-PR, `what-changed.sh --selftest` the list of changed files and sections that stage.sh and the recap print
-when ship updates mid-run, and
-`mac-vm.sh --selftest` the bookkeeping of the headless Mac VM ships borrow to walk a
-Mac app with agent-desktop, and of Pete's own kept VM beside it (Lume; `mac-vm.sh base` rebuilds the base in ~30 min, run in the background). The bare
+shapes, contract keys, card rules and reader briefs sit in its `reference/`. The bare
 `/ship` slash command is a *personal* command at `~/.claude/commands/ship.md` (a thin
 dispatcher to `ship:pipeline`) — plugin commands are always namespaced `plugin:command`,
 so a command in this repo would surface as the awkward `/ship:ship`. Don't add one back.
 
-## ship-tabs — Chrome tab groups
+## Checks
 
-`chrome/ship-tabs/` is an unpacked Chrome extension Pete loads from this main checkout;
-it files every tab ship opens through `pipeline/scripts/show.sh` (tagged
-`#ship=<repo>/<slug>/<kind>`) into one of two groups per window, 📐 docs or 🧪 test, labels
-it with its kind, app and ship, and closes the tab it
-replaces; a five-minute sweep (`sweepPlan` in `rules.js`) also files untagged ship docs by
-their path, closes older copies of a page and ages out a worktree's pages after three days.
-Edits go live when he presses reload on it in `chrome://extensions`.
-`node chrome/ship-tabs/test.mjs` is its check. Its `--live` half launches Chrome for
-Testing with `open -g`; run it only when Pete is away from the screen, since he has had
-test windows fight him for focus. Never connect to his own Chrome over CDP: each
-connection pops an "Allow remote debugging?" dialog. It also draws the Share button on
-every ship doc (`share.js`, below); that needs its `nativeMessaging` permission.
-Its host permissions cover localhost, `*.vercel.app` previews and `https://*.mac.cells.md`,
-where apps live on Pete's tailnet (`homebody/` on his phone); a tab on a host it can't
-script still groups but goes unlabeled.
+Scripts under `plugins/ship/skills/pipeline/scripts/` and `plugins/ship/hooks/` check
+themselves with `--selftest`, and each header says what that covers; run the ones a change
+touches (`share.py` on `/usr/bin/python3`). The rest: `node chrome/ship-tabs/test.mjs`,
+`node share/worker/test.mjs`, `bash plugins/ship/statusline-test.sh`,
+`claude plugin test plugins/ship` and `~/.local/bin/ship-vms --selftest`.
 
-## ship-share — share.peteknowsai.xyz
+## Side systems
 
-Pete's Share button on a ship doc publishes it to a public, unlisted link for clients.
-Three pieces:
+Four systems ride along with the plugin. Each has notes in `.claude/rules/` that load when a
+session opens its files; read them before changing or debugging one.
 
-- `chrome/ship-tabs/share.js` draws the button in a shadow root on file:// ship docs and
-  asks the native host `com.pete.ship.share` to publish, copy, stop or report status.
-- `plugins/ship/skills/pipeline/scripts/share.py` is that host (`share-host.sh` runs it
-  on `/usr/bin/python3`, 3.9, with Chrome's bare PATH) and the CLI. It packs the page and
-  everything it loads from disk into one file, uploads it with the Keychain item
-  `ship-share`, copies the link, and keeps doc-to-link state in
-  `~/.config/ship-share/links.json`. `show.sh` calls `share.py republish` on every card it
-  opens, so a shared doc follows its redraws; a doc never shared is left alone.
-- `share/worker/` is the `ship-share` Worker and R2 bucket on PKAI at
-  `share.peteknowsai.xyz`. It keeps every changed upload as a version, serves the newest
-  at `/<id>/<name>` and `?v=<n>` for older ones, and draws the footer with the arrows at
-  serve time. The apex `peteknowsai.xyz` stays free. Redeploy with `npx wrangler deploy`
-  in that dir; the upload key is its `SHARE_TOKEN` secret, the same value as the
-  Keychain item. Never echo it.
-
-Checks: `/usr/bin/python3 plugins/ship/skills/pipeline/scripts/share.py --selftest`,
-`node share/worker/test.mjs`. The native host manifest is written by
-`share.py install <extension-id>` from this main checkout, so it outlives worktrees.
-Take a page down by hand with `share.py stop <key>` (keys are in links.json).
-
-## ship-vms — the Mac VMs in the menu bar
-
-`menubar/ship-vms.swift` is Pete's menu bar item for the Mac VMs. Apple lets two run at once, so
-ships get one slot, always a fresh clone, and Pete gets one VM of his own, `pete-mac`, kept between
-uses with his Apple Account and apps in it. Agents drive his VM only through his `my-mac` skill
-(claude-home), never a ship, since his messages are on its screen; `mine` refuses from a worktree
-with a `.ship-stage`, a tripwire for accidents rather than a lock. The icon counts the ship VMs in
-use, the menu lists the slot's holder from `mac-vm.sh status` and starts, opens or shuts down his
-VM (`mine up`, `view mine`, `mine down`), and a click on a held slot
-runs `mac-vm.sh view <n>`, which asks the VM's own headless `lume run` process to show its screen
-in a window. Closing or quitting that window only hides it; the VM keeps running. The catch: a
-viewed VM's Lume process then refuses to quit, so it holds up a logout or restart until its ship
-returns the slot or Pete shuts his VM down (`lume stop ship-mac-<n>` ends a ship's sooner, and its
-walk with it). A click
-while the slot is still booting says the VM isn't running yet. Only Pete's click opens one: a
-ship never runs `view`, and nothing but that rule stops it. A launchd agent (`md.cells.ship-vms`, plist in
-`menubar/`) starts it at login and calls mac-vm.sh in THIS main checkout, so a script change goes
-live on the next click. A change to the Swift file goes live only after `bash menubar/install.sh`
-from main, which rebuilds `~/.local/bin/ship-vms` and restarts the agent;
-`~/.local/bin/ship-vms --selftest` is its check.
-
-## Status line
-
-`plugins/ship/statusline.sh` is the one copy. Pete's `~/.claude/statusline.sh` is a symlink
-to it in THIS main checkout, so a merge goes live on the next refresh with no deploy step.
-Line 1 is where you are: ship stage, else `📁 repo  main` in the main checkout (amber `⚠`
-when it's off main) or `🌳 repo ⎇ branch` in a linked worktree; `🚢 N` counts worktrees
-with a live `.ship-stage`, and `✋ N wait on you · oldest 3d` counts those whose marker is a
-`gate:*` stop. Line 2 is model, effort, context, then Anthropic quota, `O 2% · F 2% ↻5d`,
-from its OAuth usage endpoint (token from the Keychain entry under `$USER`). Gray numbers
-with a trailing `?` mean that cache is over 30 minutes old,
-so a dead token can't pass off old numbers as live. `bash plugins/ship/statusline-test.sh`
-is its check.
-
-The gate buttons are a Claude Code mod, `plugins/ship/hooks/register.ts`, loaded from
-`hooks/hooks.json`'s `modules`. It reads the marker the way statusline.sh does, and the
-last page per kind that `show.sh` keeps in `.ship-shown/`. Checks: `claude plugin test
-plugins/ship` and `show.sh --selftest`. `claude plugin validate plugins/ship` checks
-nothing here, because the manifest isn't in `.claude-plugin/`: validate a copy that has
-one to see the mod's hooks and calls. Like the skills, a merge reaches sessions only
-after the cache deploy below, and only sessions started after it.
+- **ship-tabs**, `.claude/rules/ship-tabs.md`: the Chrome extension in `chrome/ship-tabs/`
+  that files ship's tabs into groups. Never connect to Pete's own Chrome over CDP, and run
+  `test.mjs --live` only when he is away from the screen.
+- **ship-share**, `.claude/rules/ship-share.md`: his Share button, `share.py` and the Worker
+  in `share/worker/` behind share.peteknowsai.xyz. Never echo the upload key.
+- **ship-vms**, `.claude/rules/ship-vms.md`: the menu bar item in `menubar/` and
+  `mac-vm.sh`. Never run `mac-vm.sh view`; Pete's own VM, `pete-mac`, is driven only through
+  his `my-mac` skill.
+- **Status line and gate buttons**, `.claude/rules/status-line.md`:
+  `plugins/ship/statusline.sh` and `plugins/ship/hooks/`. `~/.claude/statusline.sh` is a
+  symlink to the repo copy, so a merge is live on the next refresh.
 
 ## Deploying skill changes
 
