@@ -178,9 +178,8 @@ its pre-flight is still on the driver. A Convex repo with no `backend:` line and
 
 - **`launchctl bootstrap` right after `bootout` fails with "5: Input/output error"**
   (2026-10-14): the old job is still tearing down. Under `set -e` it killed an install
-  script before its last plist was written, and an installer's own rollback hit it too and
-  left the app down. Restarting a launchd service: bootout, poll until `launchctl print
-  gui/$UID/<label>` fails, then bootstrap, retrying once on error 5.
+  script before its last plist was written. Restarting a launchd service: bootout, poll
+  until `launchctl print gui/$UID/<label>` fails, then bootstrap, retrying once on error 5.
 
 - **Main is production, so the build does the production push (2026-09-24, cells-app).**
   A manual "network deploy after merge" step was forgotten or run from the wrong checkout;
@@ -207,13 +206,13 @@ its pre-flight is still on the driver. A Convex repo with no `backend:` line and
   added. Per-branch preview backends exist for this; the shared dev deploy runs only
   from the main checkout.
 - **A red `smoke: main` reading "Could not find public function" can be a shared dev
-  backend that lost its functions, not the merge** (cel-402-parenting-pack: two other ships
-  had hit it before the merge). The proof is the same error from before the merge, in a
-  sibling ship's smoke or the land script's log; without it, revert as LAND says. With it,
-  revert nothing: restore main's functions with the command the repo's contract or checks
-  file names for that, from the main checkout, then run `smoke: main` once more, land
-  script or not. With no command named, live functions that main lacks, or a production
-  backend, the `result:` line names the missing functions for Pete instead.
+  backend that lost its functions, not the merge** (cel-402-parenting-pack). Skipping the
+  revert takes proof: the same function refused by the same deployment before the merge, in
+  a sibling's smoke of main or the land script's log. With it, revert nothing, and tell Pete
+  in one line which backend lost which functions and since when. A restore the repo's
+  contract or checks file names for exactly this runs as written, then `smoke: main` once
+  more, a rerun this case adds; until that is green the `result:` line calls the landing
+  unverified. Without the proof, or for any other failure, revert as LAND says.
 - **The inherited `.env.local` is a loaded gun, and `--preview-name` does NOT override
   it.** `wt` reflinks the main checkout's env file into the worktree, carrying the SHARED
   dev deploy key; a per-command `export` doesn't survive to the next command. A bare

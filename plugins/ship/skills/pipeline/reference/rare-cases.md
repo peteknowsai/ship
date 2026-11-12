@@ -191,7 +191,7 @@ against a shared backend it changes clobbers it (incidents: Backends).
   re-push the preview (`npx convex deploy --preview-name <name-from-.env.local> -y`, from
   the worktree root: the branch name and the shell's leftover cwd have each sent a deploy
   to the wrong place).
-- Any absorb, REVIEW's or LAND's, whose commits touched `convex/`: re-deploy the preview
+- After any absorb the ship runs whose commits touched `convex/`: re-deploy the preview
   before any further verification. Function skew is invisible to tsc, vitest and the
   production build, and has hard-crashed a page after a green rebase.
 - LAND: deprovision it at teardown.
