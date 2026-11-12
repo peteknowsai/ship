@@ -207,12 +207,13 @@ its pre-flight is still on the driver. A Convex repo with no `backend:` line and
   from the main checkout.
 - **A red `smoke: main` reading "Could not find public function" can be a shared dev
   backend that lost its functions, not the merge** (cel-402-parenting-pack). Skipping the
-  revert takes proof: the same function refused by the same deployment before the merge, in
-  a sibling's smoke of main or the land script's log. With it, revert nothing, and tell Pete
-  in one line which backend lost which functions and since when. A restore the repo's
-  contract or checks file names for exactly this runs as written, then `smoke: main` once
-  more, a rerun this case adds; until that is green the `result:` line calls the landing
-  unverified. Without the proof, or for any other failure, revert as LAND says.
+  revert takes proof: the latest smoke of main from before the merge, a sibling's landing,
+  was refused the same function by the same deployment. With it, revert nothing, and tell
+  Pete in one line which backend refuses which function. A restore the repo's contract or
+  checks file names for exactly this runs as written, from a tree at `origin/main`; with
+  none named, none runs and the backend is Pete's. The `result:` line calls the landing
+  unverified unless a smoke of main has since run green. Without the proof, or for any
+  other failure, revert as LAND says.
 - **The inherited `.env.local` is a loaded gun, and `--preview-name` does NOT override
   it.** `wt` reflinks the main checkout's env file into the worktree, carrying the SHARED
   dev deploy key; a per-command `export` doesn't survive to the next command. A bare
