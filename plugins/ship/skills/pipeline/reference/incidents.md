@@ -161,20 +161,20 @@ These are facts, not process — the process lives in SKILL.md.
 
 Most entries below are about `backend: per-branch`, a database preview per branch. Since
 2026-10-14 a Convex repo defaults to `copy`: `branch-db.py` makes the worktree its own dev
-deployment with `convex deployment create dev/<branch> --expiration`, and copies dev into
-it. A local deployment was ruled out: it dies with `convex dev`, Stripe, Clerk and the
-phone can't reach it, and its Node actions run on the Mac. Measured on homebody: about 95 seconds, 5,790 documents and
-98 MB of stored files. The CLI can't delete a deployment, so the expiry is the cleanup.
-`convex env set` reads stdin; `--from-file <(...)` sees an empty file. `convex import`
+deployment with `convex deployment create dev/<branch> --expiration`, and copies dev into it. A
+local deployment was ruled out: it dies with `convex dev`, Stripe, Clerk and the phone can't
+reach it, and its Node actions run on the Mac. Measured on homebody: about 95 seconds, 5,790
+documents and 98 MB of stored files. The CLI can't delete a deployment, so the expiry is the
+cleanup. `convex env set` reads stdin; `--from-file <(...)` sees an empty file. `convex import`
 needs a folder with a package.json even with `--deployment`. A deployment runs one snapshot
-export at a time ("already requested or in progress"), so two worktrees copying dev at
-once queue; `branch-db.py` waits its turn. The clobbering entry below is
-why `shared-dev` is now an opt-out. A ship that never ran `up` ran its dev server and smoke
-on shared dev until TEST (save-files-to-mac, 2026-11-09), so `branch-db.py check` now prints one line while no app-dir
+export at a time ("already requested or in progress"), so two worktrees copying dev at once
+queue; `branch-db.py` waits its turn. The clobbering entry below is why `shared-dev` is now an
+opt-out. A ship that never ran `up` ran its dev server and smoke on shared dev until TEST
+(save-files-to-mac, 2026-11-09), so `branch-db.py check` now prints one line while no app-dir
 has a copy: `stage.sh` runs it at each flip after stage 0's, and `route.py` at each task it
-logs, since BUILD's markers skip `stage.sh`. EXPRESS has neither between the fork and
-`test`, so its pre-flight is still on the driver. A Convex repo with no `backend:` line and
-no `convex.json` shares dev by default and stays quiet (homezero).
+logs, since BUILD's markers skip `stage.sh`. EXPRESS has neither between the fork and `test`, so
+its pre-flight is still on the driver. A Convex repo with no `backend:` line and no
+`convex.json` shares dev by default and stays quiet (homezero).
 
 - **`launchctl bootstrap` right after `bootout` fails with "5: Input/output error"**
   (2026-10-14): the old job is still tearing down. Under `set -e` it killed an install
