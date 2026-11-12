@@ -164,8 +164,9 @@ the PR body's first lines. Messages between sessions are exempt.
   wait on background work with nothing else to do; his global rules on how turns end hold on
   every lane, where nobody says "continue".
 - **Pete's budget word outranks ship's defaults.** When he caps subagents or spend for a run,
-  skip the Claude reader, keep Wonder (no Claude quota), log each skip (`review=fable
-  stage=<plan|branch> note=skipped:budget`), and say what that skipped in `result:`.
+  skip the Claude reader and build Fable's tasks yourself (`why=budget`), keep Wonder (no
+  Claude quota), log each skip (`review=fable stage=<plan|branch> note=skipped:budget`), and
+  say what that skipped in `result:`.
 - **Log every durable call**, on any lane, that a stop or Pete mid-run settles (direction,
   scope cut, architecture or tool choice): `decisions.py log --file <json>`
   (`{"decision","rationale","source":"user"}`); a reversal is `decisions.py supersede <id>
@@ -192,9 +193,9 @@ on 6 of 9 tasks in one ship). A subagent earns its seat for four jobs only:
 3. **Reading the rest of the ship never needs**: a wide mechanical migration that would crowd
    the driver, logged `engine=opus` with the reason in `note`.
 4. **Fable's hard tasks**: `route.py plan` gives a Fable 5.2 subagent (`model: "fable"`)
-   every other task headed `(hard)`, the first included, one at a time in the worktree. Its
-   row is `engine=fable`; `route.py log` refuses another engine's without `why=<reason>`. A
-   session itself on Fable builds them in its own loop, logged the same.
+   every other task whose heading ends `(hard)`, the first included, one at a time in the
+   worktree. Its row is `engine=fable`; `route.py log` refuses another engine's without
+   `why=<reason>`, as when Fable is out.
 
 Speed is never the reason: Pete doesn't measure a ship by wall time. A subagent is an Agent
 tool call, which the harness tracks and wakes you for, never a `claude -p` process.
@@ -490,7 +491,7 @@ one with uncommitted work, one a live session holds (wt's 💬), or one under tw
   carries what a frame can't: copy as data, routes, behaviour, states, a11y, and for each UI
   task its frame (`<storyboard>.html#A3`). Each task is a `### Task N: <name>` heading, which
   `route.py plan` counts, and names its files, the signatures it adds, and its test cases,
-  brief-grade. A task where a stronger model changes the result is headed `(hard)`: an
+  brief-grade. A task where a stronger model changes the result ends its heading `(hard)`: an
   ordering or race, an auth or money boundary, a migration of live rows, an algorithm, a
   dependency's runtime, a cause not yet found. Wiring, copy and a state drawn from a frame
   are not. A change Pete asks for after go is an express round, not a re-plan.
@@ -563,9 +564,9 @@ one with uncommitted work, one a live session holds (wt's 💬), or one under tw
   half-edit). A Convex repo's briefs say `convex codegen` prints "Uploading functions" and
   deploys nothing. Never add scope by message mid-run: findings wait for its report and go
   back to the same worker (SendMessage) as the next round. Two wrong diffs and the driver
-  writes it, `verdict=redone`. Its report is checked against every message it was sent, each
-  fix item done. Silence is not a signal: if its work is in the tree and no report has
-  landed, review the diff and run the gates yourself.
+  writes it, `verdict=redone` on the builder's row. Its report is checked against every
+  message it was sent, each fix item done. Silence is not a signal: if its work is in the
+  tree and no report has landed, review the diff and run the gates yourself.
 - **A UI task matches its frame** (`specs/designs/<storyboard>.html#A3`, markup and CSS), and
   a subagent writing UI is told to read `~/.claude/skills/impeccable/reference/craft-floor.md`
   and the storyboard's three banned model defaults, since it doesn't get impeccable's hook.

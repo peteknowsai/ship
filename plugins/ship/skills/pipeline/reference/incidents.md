@@ -56,8 +56,7 @@ These are facts, not process — the process lives in SKILL.md.
 - **Landed worktrees piled up in cells, 82 GB of instances with them** (2026-09-24).
   Three held a later ship's branch because a session had switched branches inside a
   finished tree: cells names each instance after the branch, so every switch orphaned one.
-  Cells' `pre-remove` hook runs `make wt-clean` on every removal, and the launchd sweep
-  (`md.pete.wt-sweep`, the entry on fifteen worktrees) backs up a teardown that never ran.
+  Cells' `pre-remove` hook runs `make wt-clean` on every removal.
 - **Cross-repo `EnterWorktree` silently doesn't take.** It only adopts worktrees of the
   session's *primary* repo. Against any other repo the cwd never moves and the status
   line stays blind — the worktree and `.ship-stage` are real but invisible. Work by
