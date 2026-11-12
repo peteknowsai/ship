@@ -187,12 +187,13 @@ against a shared backend it changes clobbers it (incidents: Backends).
   confirm the first deploy's host is the preview: the inherited `.env.local` carries the
   shared key, and the `--preview-name` flag does not override it (incidents: Backends).
   From here on the preview's *name* comes from that file, never from the branch.
-- BUILD's pre-flight: when the branch touched `convex/`, re-push the preview (`npx convex
-  deploy --preview-name <name-from-.env.local> -y`, from the worktree root: the branch name
-  and the shell's leftover cwd have each sent a deploy to the wrong place).
-- REVIEW: when the absorbed commits touched `convex/`, re-deploy the preview before any
-  further verification. Function skew is invisible to tsc, vitest and the production build,
-  and has hard-crashed a page after a green rebase.
+- BUILD's pre-flight when the branch touched `convex/`, and any later commit there:
+  re-push the preview (`npx convex deploy --preview-name <name-from-.env.local> -y`, from
+  the worktree root: the branch name and the shell's leftover cwd have each sent a deploy
+  to the wrong place).
+- Any absorb, REVIEW's or LAND's, whose commits touched `convex/`: re-deploy the preview
+  before any further verification. Function skew is invisible to tsc, vitest and the
+  production build, and has hard-crashed a page after a green rebase.
 - LAND: deprovision it at teardown.
 
 ## Native app repos (`ios:`, `mac:`)

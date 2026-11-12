@@ -161,9 +161,7 @@ These are facts, not process — the process lives in SKILL.md.
 
 Most entries below are about `backend: per-branch`, a database preview per branch. Since
 2026-10-14 a Convex repo defaults to `copy`: `branch-db.py` makes the worktree its own dev
-deployment with `convex deployment create dev/<branch> --expiration`, the way Convex's
-docs recommend for agent worktrees, and copies dev into it. Pete's worktrees stepped on each
-other on one shared dev database, and test data piled up there. A local deployment was
+deployment with `convex deployment create dev/<branch> --expiration`, and copies dev into it. A local deployment was
 ruled out: it dies with `convex dev`, Stripe, Clerk and the phone can't reach it, and its
 Node actions run on the Mac. Measured on homebody: about 95 seconds, 5,790 documents and
 98 MB of stored files. The CLI can't delete a deployment, so the expiry is the cleanup.
@@ -172,8 +170,7 @@ needs a folder with a package.json even with `--deployment`. A deployment runs o
 export at a time ("already requested or in progress"), so two worktrees copying dev at
 once queue; `branch-db.py` waits its turn. The clobbering entry below is
 why `shared-dev` is now an opt-out. A ship that never ran `up` ran its dev server and smoke
-on shared dev until TEST (save-files-to-mac, 2026-11-09; safer-mac-control was at build 7
-of 12 the same day with none), so `branch-db.py check` now prints one line while no app-dir
+on shared dev until TEST (save-files-to-mac, 2026-11-09), so `branch-db.py check` now prints one line while no app-dir
 has a copy: `stage.sh` runs it at each flip after stage 0's, and `route.py` at each task it
 logs, since BUILD's markers skip `stage.sh`. EXPRESS has neither between the fork and
 `test`, so its pre-flight is still on the driver. A Convex repo with no `backend:` line and
@@ -209,12 +206,14 @@ no `convex.json` shares dev by default and stays quiet (homezero).
   schema reconciles the shared plane to this branch and drops indexes other branches
   added. Per-branch preview backends exist for this; the shared dev deploy runs only
   from the main checkout.
-- **A red `smoke: main` that reads "Could not find public function" for a function the
-  merge never touched is the backend, not the merge** (cel-402-parenting-pack; two other
-  ships saw it that hour): something had pushed an older function set over shared dev.
-  Compare the backend's function spec with the repo's, bring back what the live side lacks
-  the way the repo's contract or checks file says, with any step that removes functions
-  waiting for Pete, rerun the smoke, and revert nothing.
+- **A red `smoke: main` reading "Could not find public function" can be a shared dev
+  backend that lost its functions, not the merge** (cel-402-parenting-pack: two other ships
+  had hit it before the merge). The proof is the same error from before the merge, in a
+  sibling ship's smoke or the land script's log; without it, revert as LAND says. With it,
+  revert nothing: restore main's functions with the command the repo's contract or checks
+  file names for that, from the main checkout, then run `smoke: main` once more, land
+  script or not. With no command named, live functions that main lacks, or a production
+  backend, the `result:` line names the missing functions for Pete instead.
 - **The inherited `.env.local` is a loaded gun, and `--preview-name` does NOT override
   it.** `wt` reflinks the main checkout's env file into the worktree, carrying the SHARED
   dev deploy key; a per-command `export` doesn't survive to the next command. A bare
@@ -238,7 +237,7 @@ no `convex.json` shares dev by default and stays quiet (homezero).
   cwd-sensitive commands with the worktree root explicitly.
 - **An auth-gated surface 403s on localhost when its secret lives only on the deployed
   Workers** — the admin console rendered while every admin API route failed, and it read
-  as a broken feature (Pete reported "delete doesn't work"). Before presenting, put the
+  as a broken feature. Before presenting, put the
   gate secret in the worktree's env, or say plainly which paths can't be exercised
   locally.
 - **tsc + vitest green ≠ deployable.** Frameworks with their own production build
@@ -246,7 +245,7 @@ no `convex.json` shares dev by default and stays quiet (homezero).
   tests. Run the production build in the pre-flight.
 - **A dev server booted through a bounded pipe dies mid-verify.** `npm run dev 2>&1 |
   head -50` got SIGPIPE'd the moment `head` exited; the verifier reported "localhost
-  refused connection" and a full round was wasted. Detach with output redirected to a
+  refused connection". Detach with output redirected to a
   file (`nohup npm run dev > dev.log 2>&1 &`) and curl-probe before dispatching.
 - **A batch once merged 18 green PRs onto a dev lane that had been red for an hour.**
   A red deploy is unfinished work on every lane — watch to conclusion.
