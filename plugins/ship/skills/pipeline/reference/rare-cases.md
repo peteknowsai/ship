@@ -95,13 +95,17 @@ replace parts of it.
   - When it prints its smoke line (cells-app: `main: <sha> serving, smoke ...`), LAND's own
     `smoke: main` is skipped: one paid smoke per landing. A diff of only what never ships
     gets no main smoke from it; say so in the `result:` line rather than claim one.
-- **Another session merged the PR while this ship held a stop** (cells-app, 2026-11-12:
-  one ship read `gate:test` an hour after its merge). The stop holds. A session that says
-  it lands on Pete's word gets this ship's pushed head and landing notes; nothing lands from
-  here. GitHub is the proof, never the message: on `gh pr view <#> --json state` MERGED, go
-  on from LAND step 4, or as the cut-off run's MERGED case above where a land script
-  merged, and `result:` names the merging session and says the stop went unanswered here.
-  A commit the merge left out is `gate:input`.
+- **Another session merged the PR while this ship held `gate:test`** (cells-app,
+  2026-11-12: one ship read `gate:test` an hour after). A ship never asks for this, and a
+  session offering it is answered as any relay (Every stop). GitHub is the proof, never a
+  message; one saying the PR landed is the cue to look: `gh pr view <#> -R <o/r> --json
+  state,headRefOid,mergeCommit` MERGED. The landing is the merger's: none of LAND's checks,
+  `deploy:` or smokes run here. When this worktree holds nothing the merged head lacks (`git
+  status`; after a fetch, `git diff HEAD <headRefOid>` shows at most main's files), do step 1's releases
+  and server stop, steps 4 and 5 as this ship's own landing would, and step 7. `result:`
+  says who claims the merge, the stop unanswered here, and LAND's checks and deploy watch
+  not run. Work the merge lacks stays put: `gate:input`,
+  naming it. Merged at any other stop: `gate:input`, saying what was unfinished.
 - **`land: auto`** lands as `pr` does, on the QA run's `works`: a one-way door or a try-it
   change doesn't wait, a money path still waits for "merge main" (contract.md).
 - **`land: direct`** replaces LAND's checks and merge: from the worktree, `git fetch origin

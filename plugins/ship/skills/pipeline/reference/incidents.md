@@ -58,10 +58,8 @@ These are facts, not process — the process lives in SKILL.md.
   sees engagement), but when recon contradicts the fork: exit, `wt remove` the empty
   worktree, re-fork in the right repo, and narrate the move.
 - **`gh pr merge --delete-branch` run from inside the worktree fails** with `fatal: 'main'
-  is already used by worktree …`: the flag checks main out locally after the merge, the PR
-  has merged on GitHub, and the teardown never runs, stranding an orphan worktree. LAND
-  merges from the worktree without the flag, so nothing local runs, and deletes the branch
-  from the main checkout at step 5.
+  is already used by worktree …` after the PR has merged on GitHub, and the teardown never
+  runs. LAND merges without the flag.
 - **A lane that borrowed `node_modules` by symlink committed the link** (cells,
   2026-09-19). Five lane worktrees symlinked `agent/`, `web/` and
   `electron/node_modules` to the main worktree's installs. The repo ignored
@@ -71,8 +69,6 @@ These are facts, not process — the process lives in SKILL.md.
   (`tsc: command not found`), which read as broken code. The fix was `git rm --cached`,
   a reinstall, and dropping the slash from the ignore pattern. Exclude the links in
   `info/exclude` before the first lane commit.
-- **Tearing down a worktree before confirming its PR is `MERGEABLE`** strands the ship
-  with no worktree and no merge — that recovery is all manual. Pre-flight first.
 - **Squash merges from the GitHub UI don't satisfy `git branch --merged`** and don't
   delete the local branch. To prove a worktree landed, check
   `gh pr list --state merged --head <branch> --json number,headRefOid` against the
