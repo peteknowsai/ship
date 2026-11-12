@@ -294,10 +294,12 @@ def log(pairs):
     if 'task' in row and 'review' not in row:  # what `plan` said of the task: hard, and whose
         saved = beside_marker(os.getcwd(), '.ship-route.json')
         named = set(str(row['task']).split(','))
-        planned = [t for t in ((saved and read_route(saved)) or {}).get('tasks', [])
-                   if str(t.get('label', t.get('n'))) in named]
+        if isinstance(row.get('engine'), str):  # engine=Fable is fable's row, not a third engine's
+            row['engine'] = row['engine'].lower()
+        known = ((saved and read_route(saved)) or {}).get('tasks', [])
+        planned = [t for t in known if str(t.get('label', t.get('n'))) in named]
         fables = [t for t in planned if t.get('engine') == 'fable']
-        if fables and len(fables) < len(planned):
+        if fables and len(fables) < len(named) and row.get('status') != 'parked':
             raise SystemExit(f"route log: task={row['task']} mixes a task of Fable 5.2's with another's; "
                              "log each on its own row")
         if any(t.get('hard') for t in planned):
@@ -305,9 +307,11 @@ def log(pairs):
         if fables:
             row['routed'] = 'fable'
         # engine=fable goes on Fable's tasks and nowhere else, unless the row says why: CEL-222's
-        # driver kept all three of Fable's. A fix round on a task already logged is the driver's.
-        refix = 'note' in row and row.get('repo') and row.get('ship') and logged(row['repo'], row['ship'], named)
-        if planned and bool(fables) != (row.get('engine') == 'fable') and row.get('status') != 'parked' \
+        # driver kept all three of Fable's. A fix round on tasks already logged, every one of them,
+        # is the driver's. A ship with no saved plan is held to nothing.
+        refix = 'note' in row and row.get('repo') and row.get('ship') \
+            and all(logged(row['repo'], row['ship'], {t}) for t in named)
+        if known and bool(fables) != (row.get('engine') == 'fable') and row.get('status') != 'parked' \
                 and not refix and not str(row.get('why', '')).strip():
             raise SystemExit(
                 f"route log: task {row['task']} is Fable 5.2's (plan gave it every other hard task); log it "
@@ -561,7 +565,7 @@ def report():
         return f'{100 * sum(passed) // len(passed)}%' if passed else '-'
     groups = {}
     for row in tasks:
-        groups.setdefault(row.get('engine', '?'), []).append(row)
+        groups.setdefault(str(row.get('engine', '?')), []).append(row)  # engine=5 once sorted beside strings
     lines = [f"{'engine':7} {'tasks':>5} {'timed':>5} {'first pass':>10} {'fix rounds':>10} {'minutes':>8}"]
     for engine, group in sorted(groups.items()):
         minutes = mean(group, 'seconds')
@@ -1028,19 +1032,27 @@ def selftest():
             blank = refused(log, ['repo=ship', 'ship=hard', 'task=2', 'engine=driver', 'why='])
             mixed = refused(log, ['repo=ship', 'ship=hard', 'task=1,2', 'engine=fable'])
             lent = refused(log, ['repo=ship', 'ship=hard', 'task=6', 'engine=fable'])
+            ghost = refused(log, ['repo=ship', 'ship=hard', 'task=9', 'engine=fable'])
             built = log(['repo=ship', 'ship=hard', 'task=2', 'engine=fable', 'gates_first_pass=true', 'fix_rounds=0',
                          'verdict=redone'])
+            half = refused(log, ['repo=ship', 'ship=hard', 'task=2,5', 'engine=driver', 'note=fix round'])
             own = log(['repo=ship', 'ship=hard', 'task=4', 'engine=driver', 'gates_first_pass=false', 'fix_rounds=2'])
             why = log(['repo=ship', 'ship=hard', 'task=5', 'engine=driver', 'why=Fable was out', 'fix_rounds=1'])
             easy = log(['repo=ship', 'ship=hard', 'task=1', 'engine=driver'])
             fix = refused(log, ['repo=ship', 'ship=hard', 'task=2', 'engine=driver', 'note=fix round'])
+            cased = log(['repo=ship', 'ship=hard2', 'task=2', 'engine=Fable', 'note=another ship, same plan'])
+            odd = log(['repo=ship', 'ship=hard2', 'task=6', 'engine=5'])
         finally:
             os.chdir(plain)
         check("a task of Fable's logs as fable, or as another engine only with why=; a fix round is the driver's",
               "Fable 5.2's" in taken and built.get('routed') == 'fable' and why.get('routed') == 'fable' and fix == '')
         check("a note on a first row or an empty why= doesn't get past; fable on another's task or a row "
               "mixing the two is refused",
-              "Fable 5.2's" in noted and "Fable 5.2's" in blank and 'own row' in mixed and "isn't Fable 5.2's" in lent)
+              "Fable 5.2's" in noted and "Fable 5.2's" in blank and 'own row' in mixed and "isn't Fable 5.2's" in lent
+              and "isn't Fable 5.2's" in ghost)
+        check("a note covers a fix round only when every task on the row was built before; engine=Fable is "
+              "fable's row, and an engine that is a number still reports",
+              "Fable 5.2's" in half and cased.get('engine') == 'fable' and odd.get('engine') == 5 and '\n5 ' in report())
         grown = open(plan_in).read().replace('### Task 3: t3 drop the (hard) label', '### Task 3: t3 (hard)')
         open(plan_in, 'w').write(grown)
         replanned = plan(plan_in)['tasks']
