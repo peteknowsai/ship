@@ -2,6 +2,7 @@
 paths:
   - "menubar/**"
   - "plugins/ship/skills/pipeline/scripts/mac-vm.sh"
+  - "plugins/ship/skills/verify/reference/mac.md"
 ---
 
 # ship-vms — the Mac VMs in the menu bar
@@ -24,3 +25,5 @@ ship never runs `view`, and nothing but that rule stops it. A launchd agent (`md
 live on the next click. A change to the Swift file goes live only after `bash menubar/install.sh`
 from main, which rebuilds `~/.local/bin/ship-vms` and restarts the agent;
 `~/.local/bin/ship-vms --selftest` is its check.
+
+`mac-vm.sh base` rebuilds the base image in about 30 minutes, so run it in the background.

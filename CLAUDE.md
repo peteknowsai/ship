@@ -9,28 +9,39 @@ so a command in this repo would surface as the awkward `/ship:ship`. Don't add o
 
 ## Checks
 
-Scripts under `plugins/ship/skills/pipeline/scripts/` and `plugins/ship/hooks/` check
-themselves with `--selftest`, and each header says what that covers; run the ones a change
-touches (`share.py` on `/usr/bin/python3`). The rest: `node chrome/ship-tabs/test.mjs`,
+Most scripts under `plugins/ship/skills/pipeline/scripts/` and `plugins/ship/hooks/` carry a
+`--selftest`; run it for each one a change touches (`share.py` on `/usr/bin/python3`). Look
+for it in the header first: a script without one ignores the flag and runs for real
+(`share-host.sh` waits on stdin, `gate-notify.sh` can send a notification). The rest:
+`node chrome/ship-tabs/test.mjs`,
 `node share/worker/test.mjs`, `bash plugins/ship/statusline-test.sh`,
 `claude plugin test plugins/ship` and `~/.local/bin/ship-vms --selftest`.
 
 ## Side systems
 
-Four systems ride along with the plugin. Each has notes in `.claude/rules/` that load when a
-session opens its files; read them before changing or debugging one.
+Four systems ride along with the plugin, each with notes in `.claude/rules/`. A rule loads
+by itself only when the session's own checkout holds the file it opens. From a worktree at
+another path, which is how the maintainer works, Read the system's rule before the first edit
+to one of its files.
 
 - **ship-tabs**, `.claude/rules/ship-tabs.md`: the Chrome extension in `chrome/ship-tabs/`
-  that files ship's tabs into groups. Never connect to Pete's own Chrome over CDP, and run
-  `test.mjs --live` only when he is away from the screen.
+  that files the tabs `show.sh` opens into groups. Pete loads it from this main checkout, so
+  a merge is live once he presses reload on it in `chrome://extensions`. Never connect to his
+  own Chrome over CDP, and run `test.mjs --live` only when he is away from the screen.
 - **ship-share**, `.claude/rules/ship-share.md`: his Share button, `share.py` and the Worker
-  in `share/worker/` behind share.peteknowsai.xyz. Never echo the upload key.
+  in `share/worker/` behind share.peteknowsai.xyz. The Worker is live after `npx wrangler
+  deploy` in that dir, and `share.py install` runs only from this main checkout, so the
+  native host outlives worktrees. Never echo the upload key.
 - **ship-vms**, `.claude/rules/ship-vms.md`: the menu bar item in `menubar/` and
-  `mac-vm.sh`. Never run `mac-vm.sh view`; Pete's own VM, `pete-mac`, is driven only through
-  his `my-mac` skill.
+  `mac-vm.sh`. A script change is live on the next click, a Swift change only after `bash
+  menubar/install.sh` from main. Never run `mac-vm.sh view`; Pete's own VM, `pete-mac`, is
+  driven only through his `my-mac` skill.
 - **Status line and gate buttons**, `.claude/rules/status-line.md`:
-  `plugins/ship/statusline.sh` and `plugins/ship/hooks/`. `~/.claude/statusline.sh` is a
-  symlink to the repo copy, so a merge is live on the next refresh.
+  `plugins/ship/statusline.sh`, and the mod in `plugins/ship/hooks/` that draws the gate
+  buttons. Both read the stage marker `stage.sh` and `route.py` write. `~/.claude/statusline.sh`
+  is a symlink to the repo copy, so the status line is live on the next refresh; the gate
+  buttons, like the skills, only after the cache deploy below, in sessions started after it.
+  `claude plugin validate plugins/ship` checks nothing here.
 
 ## Deploying skill changes
 

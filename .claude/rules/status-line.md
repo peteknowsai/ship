@@ -3,6 +3,10 @@ paths:
   - "plugins/ship/statusline.sh"
   - "plugins/ship/statusline-test.sh"
   - "plugins/ship/hooks/**"
+  - "plugins/ship/plugin.json"
+  - "plugins/ship/skills/pipeline/scripts/stage.sh"
+  - "plugins/ship/skills/pipeline/scripts/route.py"
+  - "plugins/ship/skills/pipeline/scripts/show.sh"
 ---
 
 # Status line
@@ -24,4 +28,4 @@ last page per kind that `show.sh` keeps in `.ship-shown/`. Checks: `claude plugi
 plugins/ship` and `show.sh --selftest`. `claude plugin validate plugins/ship` checks
 nothing here, because the manifest isn't in `.claude-plugin/`: validate a copy that has
 one to see the mod's hooks and calls. Like the skills, a merge reaches sessions only
-after the cache deploy below, and only sessions started after it.
+after the cache deploy in CLAUDE.md, and only sessions started after it.

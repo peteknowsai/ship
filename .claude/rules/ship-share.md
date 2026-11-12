@@ -4,6 +4,7 @@ paths:
   - "chrome/ship-tabs/share.js"
   - "plugins/ship/skills/pipeline/scripts/share.py"
   - "plugins/ship/skills/pipeline/scripts/share-host.sh"
+  - "plugins/ship/skills/pipeline/scripts/show.sh"
 ---
 
 # ship-share — share.peteknowsai.xyz
