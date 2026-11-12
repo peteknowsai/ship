@@ -871,10 +871,10 @@ Landing variants.
      deploys nothing: say so, and never run a deploy for it, which would ship main's other
      unreleased commits.
    - **A failed build** leaves the old one live: fix forward on a new EXPRESS branch.
-     **Live but broken** (a 404, a red `smoke: main`): revert first, a `revert/<slug>`
-     worktree off main with `git revert <squash sha>`, its gates, the live load and a squash
-     merge; then fix forward on a new ship. Tell Pete in one line what broke and which ships
-     landed since the last green.
+     **Live but broken by the merge** (a 404, a red `smoke: main`): revert first, a
+     `revert/<slug>` worktree off main with `git revert <squash sha>`, its gates, the live
+     load and a squash merge; then fix forward on a new ship. Tell Pete in one line what
+     broke and which ships landed since the last green.
    - `smoke: main` once, after the watch (one rerun on a third party's network error); none after a land
      script that ran it. Restart a `worker:` once idle (rare-cases). Ship never runs a
      production deploy or pushes a production database by hand, and never makes Pete run

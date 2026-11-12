@@ -209,6 +209,12 @@ no `convex.json` shares dev by default and stays quiet (homezero).
   schema reconciles the shared plane to this branch and drops indexes other branches
   added. Per-branch preview backends exist for this; the shared dev deploy runs only
   from the main checkout.
+- **A red `smoke: main` that reads "Could not find public function" for a function the
+  merge never touched is the backend, not the merge** (cel-402-parenting-pack; two other
+  ships saw it that hour): something had pushed an older function set over shared dev.
+  Compare the backend's function spec with the repo's, bring back what the live side lacks
+  the way the repo's contract or checks file says, with any step that removes functions
+  waiting for Pete, rerun the smoke, and revert nothing.
 - **The inherited `.env.local` is a loaded gun, and `--preview-name` does NOT override
   it.** `wt` reflinks the main checkout's env file into the worktree, carrying the SHARED
   dev deploy key; a per-command `export` doesn't survive to the next command. A bare
@@ -219,15 +225,9 @@ no `convex.json` shares dev by default and stays quiet (homezero).
 - **The preview's name is whatever provisioning slugified it to**, not the branch name.
   `feature/desk-doorway` provisioned as `feature-desk-doorway`; passing the branch
   verbatim silently created a SECOND preview, so deploys and seeds went to one backend
-  while the browser read another — three verification rounds burned. Read the name from
+  while the browser read another. Read the name from
   the worktree's `.env.local` (`CONVEX_DEPLOYMENT=preview:<name>`) and use that
   everywhere; error loudly if it's absent.
-- **Convex previews hold stage-0 code and drift behind every `convex/` commit.**
-  Re-push before the pre-flight: `npx convex deploy --preview-name <name> -y`.
-- **Absorbing main can bring function skew the gates can't see.** A rebase pulled in a
-  new Convex function the branch's preview didn't have; tsc, vitest and `next build` were
-  all green and the page hard-crashed on the preview. After any sync whose diff touched
-  `convex/`, re-deploy the preview before further verification.
 - **A fresh verifier's unpinned CLI calls resolve to a different deployment than the app
   serves** — its seeds landed on one backend while localhost read another, and it
   reported the feature broken. Pin `--preview-name` / `--deployment` on every CLI call in
@@ -252,7 +252,7 @@ no `convex.json` shares dev by default and stays quiet (homezero).
   A red deploy is unfinished work on every lane — watch to conclusion.
 - **`gh run list --commit` matches only the full 40-char SHA.** Armed with a short SHA
   from `git log --oneline`, the deploy watch returned `[]` forever while the run existed
-  and succeeded — it timed out silently after 25 minutes. Use
+  and succeeded. Use
   `$(git rev-parse <short-sha>)`.
 - **Workflow concurrency can cancel your deploy run**; the superseding run's green reads
   as yours while the lane is mid-deploy. Watch the run for YOUR commit

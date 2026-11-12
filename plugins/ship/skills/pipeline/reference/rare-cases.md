@@ -192,7 +192,7 @@ against a shared backend it changes clobbers it (incidents: Backends).
   and the shell's leftover cwd have each sent a deploy to the wrong place).
 - REVIEW: when the absorbed commits touched `convex/`, re-deploy the preview before any
   further verification. Function skew is invisible to tsc, vitest and the production build,
-  and has hard-crashed a page after a green rebase (incidents: Backends).
+  and has hard-crashed a page after a green rebase.
 - LAND: deprovision it at teardown.
 
 ## Native app repos (`ios:`, `mac:`)
