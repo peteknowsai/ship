@@ -161,29 +161,25 @@ These are facts, not process — the process lives in SKILL.md.
 
 Most entries below are about `backend: per-branch`, a database preview per branch. Since
 2026-10-14 a Convex repo defaults to `copy`: `branch-db.py` makes the worktree its own dev
-deployment with `convex deployment create dev/<branch> --expiration`, the way Convex's
-docs recommend for agent worktrees, and copies dev into it. Pete's worktrees stepped on each
-other on one shared dev database, and test data piled up there. A local deployment was
-ruled out: it dies with `convex dev`, Stripe, Clerk and the phone can't reach it, and its
-Node actions run on the Mac. Measured on homebody: about 95 seconds, 5,790 documents and
-98 MB of stored files. The CLI can't delete a deployment, so the expiry is the cleanup.
-`convex env set` reads stdin; `--from-file <(...)` sees an empty file. `convex import`
+deployment with `convex deployment create dev/<branch> --expiration`, and copies dev into it. A
+local deployment was ruled out: it dies with `convex dev`, Stripe, Clerk and the phone can't
+reach it, and its Node actions run on the Mac. Measured on homebody: about 95 seconds, 5,790
+documents and 98 MB of stored files. The CLI can't delete a deployment, so the expiry is the
+cleanup. `convex env set` reads stdin; `--from-file <(...)` sees an empty file. `convex import`
 needs a folder with a package.json even with `--deployment`. A deployment runs one snapshot
-export at a time ("already requested or in progress"), so two worktrees copying dev at
-once queue; `branch-db.py` waits its turn. The clobbering entry below is
-why `shared-dev` is now an opt-out. A ship that never ran `up` ran its dev server and smoke
-on shared dev until TEST (save-files-to-mac, 2026-11-09; safer-mac-control was at build 7
-of 12 the same day with none), so `branch-db.py check` now prints one line while no app-dir
+export at a time ("already requested or in progress"), so two worktrees copying dev at once
+queue; `branch-db.py` waits its turn. The clobbering entry below is why `shared-dev` is now an
+opt-out. A ship that never ran `up` ran its dev server and smoke on shared dev until TEST
+(save-files-to-mac, 2026-11-09), so `branch-db.py check` now prints one line while no app-dir
 has a copy: `stage.sh` runs it at each flip after stage 0's, and `route.py` at each task it
-logs, since BUILD's markers skip `stage.sh`. EXPRESS has neither between the fork and
-`test`, so its pre-flight is still on the driver. A Convex repo with no `backend:` line and
-no `convex.json` shares dev by default and stays quiet (homezero).
+logs, since BUILD's markers skip `stage.sh`. EXPRESS has neither between the fork and `test`, so
+its pre-flight is still on the driver. A Convex repo with no `backend:` line and no
+`convex.json` shares dev by default and stays quiet (homezero).
 
 - **`launchctl bootstrap` right after `bootout` fails with "5: Input/output error"**
   (2026-10-14): the old job is still tearing down. Under `set -e` it killed an install
-  script before its last plist was written, and an installer's own rollback hit it too and
-  left the app down. Restarting a launchd service: bootout, poll until `launchctl print
-  gui/$UID/<label>` fails, then bootstrap, retrying once on error 5.
+  script before its last plist was written. Restarting a launchd service: bootout, poll
+  until `launchctl print gui/$UID/<label>` fails, then bootstrap, retrying once on error 5.
 
 - **Main is production, so the build does the production push (2026-09-24, cells-app).**
   A manual "network deploy after merge" step was forgotten or run from the wrong checkout;
@@ -209,6 +205,15 @@ no `convex.json` shares dev by default and stays quiet (homezero).
   schema reconciles the shared plane to this branch and drops indexes other branches
   added. Per-branch preview backends exist for this; the shared dev deploy runs only
   from the main checkout.
+- **A red `smoke: main` reading "Could not find public function" can be a shared dev
+  backend that lost its functions, not the merge** (cel-402-parenting-pack). Skipping the
+  revert takes proof: the latest smoke of main from before the merge, a sibling's landing,
+  was refused the same function by the same deployment. With it, revert nothing, and tell
+  Pete in one line which backend refuses which function. A restore the repo's contract or
+  checks file names for exactly this runs as written, from a tree at `origin/main`; with
+  none named, none runs and the backend is Pete's. The `result:` line calls the landing
+  unverified unless a smoke of main has since run green. Without the proof, or for any
+  other failure, revert as LAND says.
 - **The inherited `.env.local` is a loaded gun, and `--preview-name` does NOT override
   it.** `wt` reflinks the main checkout's env file into the worktree, carrying the SHARED
   dev deploy key; a per-command `export` doesn't survive to the next command. A bare
@@ -219,15 +224,9 @@ no `convex.json` shares dev by default and stays quiet (homezero).
 - **The preview's name is whatever provisioning slugified it to**, not the branch name.
   `feature/desk-doorway` provisioned as `feature-desk-doorway`; passing the branch
   verbatim silently created a SECOND preview, so deploys and seeds went to one backend
-  while the browser read another — three verification rounds burned. Read the name from
+  while the browser read another. Read the name from
   the worktree's `.env.local` (`CONVEX_DEPLOYMENT=preview:<name>`) and use that
   everywhere; error loudly if it's absent.
-- **Convex previews hold stage-0 code and drift behind every `convex/` commit.**
-  Re-push before the pre-flight: `npx convex deploy --preview-name <name> -y`.
-- **Absorbing main can bring function skew the gates can't see.** A rebase pulled in a
-  new Convex function the branch's preview didn't have; tsc, vitest and `next build` were
-  all green and the page hard-crashed on the preview. After any sync whose diff touched
-  `convex/`, re-deploy the preview before further verification.
 - **A fresh verifier's unpinned CLI calls resolve to a different deployment than the app
   serves** — its seeds landed on one backend while localhost read another, and it
   reported the feature broken. Pin `--preview-name` / `--deployment` on every CLI call in
@@ -238,7 +237,7 @@ no `convex.json` shares dev by default and stays quiet (homezero).
   cwd-sensitive commands with the worktree root explicitly.
 - **An auth-gated surface 403s on localhost when its secret lives only on the deployed
   Workers** — the admin console rendered while every admin API route failed, and it read
-  as a broken feature (Pete reported "delete doesn't work"). Before presenting, put the
+  as a broken feature. Before presenting, put the
   gate secret in the worktree's env, or say plainly which paths can't be exercised
   locally.
 - **tsc + vitest green ≠ deployable.** Frameworks with their own production build
@@ -246,13 +245,13 @@ no `convex.json` shares dev by default and stays quiet (homezero).
   tests. Run the production build in the pre-flight.
 - **A dev server booted through a bounded pipe dies mid-verify.** `npm run dev 2>&1 |
   head -50` got SIGPIPE'd the moment `head` exited; the verifier reported "localhost
-  refused connection" and a full round was wasted. Detach with output redirected to a
+  refused connection". Detach with output redirected to a
   file (`nohup npm run dev > dev.log 2>&1 &`) and curl-probe before dispatching.
 - **A batch once merged 18 green PRs onto a dev lane that had been red for an hour.**
   A red deploy is unfinished work on every lane — watch to conclusion.
 - **`gh run list --commit` matches only the full 40-char SHA.** Armed with a short SHA
   from `git log --oneline`, the deploy watch returned `[]` forever while the run existed
-  and succeeded — it timed out silently after 25 minutes. Use
+  and succeeded. Use
   `$(git rev-parse <short-sha>)`.
 - **Workflow concurrency can cancel your deploy run**; the superseding run's green reads
   as yours while the lane is mid-deploy. Watch the run for YOUR commit

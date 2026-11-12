@@ -874,7 +874,8 @@ Landing variants.
      **Live but broken** (a 404, a red `smoke: main`): revert first, a `revert/<slug>`
      worktree off main with `git revert <squash sha>`, its gates, the live load and a squash
      merge; then fix forward on a new ship. Tell Pete in one line what broke and which ships
-     landed since the last green.
+     landed since the last green. The one exception is a shared dev backend that had lost
+     its functions before the merge (incidents: Backends).
    - `smoke: main` once, after the watch (one rerun on a third party's network error); none after a land
      script that ran it. Restart a `worker:` once idle (rare-cases). Ship never runs a
      production deploy or pushes a production database by hand, and never makes Pete run
