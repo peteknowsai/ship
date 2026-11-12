@@ -173,23 +173,28 @@ the PR body's first lines. Messages between sessions are exempt.
 
 ## Engines and readers
 
-**Opus 5.5 drives; Fable 5.2 and Muse Wonder Full read** (Pete, 2026-11-09). The driver and
-every subagent that writes or sweeps (`model: "opus"`) run Opus 5.5; effort is Pete's setting,
-so a subagent call names none. **The Claude reader** of the plan and the branch is a fresh
-Fable 5.2 subagent (`model: "fable"`, logged `review=fable`), or Opus 5.5 (`review=opus`) where
-the session itself is on Fable. Wonder reads beside it for a 20-ship trial: the ledger counts the real findings only Wonder made, and Pete decides from
-that count whether it stays. Nothing else runs.
+**Opus 5.5 drives, Fable 5.2 builds half the hard tasks, and Fable and Muse Wonder Full
+read** (Pete, 2026-11-09 and 11-12). The driver runs Opus 5.5, and so does every subagent
+that isn't Fable's (`model: "opus"`); effort is Pete's setting, so a subagent call names
+none. **The Claude reader** of the plan and the branch is a fresh Fable 5.2 subagent
+(`model: "fable"`, logged `review=fable`), or Opus 5.5 (`review=opus`) where the session
+itself is on Fable. Wonder reads beside it for a 20-ship trial: the ledger counts the real
+findings only Wonder made, and Pete decides from that count whether it stays. Nothing else
+runs.
 
 **One loop does the work.** The driver builds, tests and fixes in its own context, where it
 reads the raw diff, test output and browser snapshot; a subagent hands back a summary, and a
 summary drops what the next step needed (briefs left the wiring between files to the driver
-on 6 of 9 tasks in one ship). A subagent earns its seat for three jobs only:
+on 6 of 9 tasks in one ship). A subagent earns its seat for four jobs only:
 1. **Fresh eyes**: the plan review and the branch review, where not having written it is the
    point.
 2. **A sweep whose answer is all the driver needs**: recon, an expert consult, a lookup.
 3. **Reading the rest of the ship never needs**: a wide mechanical migration that would crowd
-   the driver. It gets a brief, logs `engine=opus` with the reason in `note`, and the driver
-   reviews its diff and runs the gates as for its own.
+   the driver, logged `engine=opus` with the reason in `note`.
+4. **Fable's hard tasks**: `route.py plan` gives a Fable 5.2 subagent (`model: "fable"`)
+   every other task headed `(hard)`, the first included, one at a time in the worktree. Its
+   row is `engine=fable`; `route.py log` refuses another engine's without `why=<reason>`. A
+   session itself on Fable builds them in its own loop, logged the same.
 
 Speed is never the reason: Pete doesn't measure a ship by wall time. A subagent is an Agent
 tool call, which the harness tracks and wakes you for, never a `claude -p` process.
@@ -207,7 +212,8 @@ post Pete the one line.
 
 **The readers: neither is the writer.** A reader shares the blind spots of code its own
 model wrote and goes easy on it (Pete, 2026-10-14). The Claude reader's brief says to assume
-the writer was wrong at every seam. Every Claude reader, a stand-in too, starts with no `name`:
+the writer was wrong at every seam. Where Fable built, Fable still reads: the driver read
+that diff at BUILD, and Wonder does too. Every Claude reader, a stand-in too, starts with no `name`:
 a named subagent's report comes back cut at 4,000 characters (connections-page). Each report opens
 with the model it ran on, and one that isn't Fable 5.2 (an older session's `fable` meant
 5.1) gets `model=<what it said>` on its row, which keeps it out of the trial's count. Wonder
@@ -231,12 +237,12 @@ queued messages, 2026-10-14).
 
 **The ledger** (`~/.claude/ship-ledger.jsonl`) is kept by `scripts/route.py`, from the
 worktree:
-- `route.py plan <plan.md>` after PLAN: saves the tasks, starts the clock, marker to
-  `build:0:<M>`.
+- `route.py plan <plan.md>` after PLAN: saves the tasks and who builds each, starts the
+  clock, marker to `build:0:<M>`.
 - `route.py gate <cmd>` runs each check and records whether it passed, one call per check,
   the command as separate words (`route.py gate npm run typecheck`), never one quoted string;
   a pipeline goes in a script file, `route.py gate bash <file>`.
-- `route.py log repo=<r> ship=<slug> task=<n> engine=<driver|opus> verdict=<clean|fixed|redone>`
+- `route.py log repo=<r> ship=<slug> task=<n> engine=<driver|opus|fable> verdict=<clean|fixed|redone>`
   after each task's commit: it fills `seconds`, `gates_first_pass` and `fix_rounds` from the
   clock and the gate runs, and counts the task done. A number you don't have stays out (a
   third of the first 81 rows were round guesses).
@@ -484,7 +490,10 @@ one with uncommitted work, one a live session holds (wt's 💬), or one under tw
   carries what a frame can't: copy as data, routes, behaviour, states, a11y, and for each UI
   task its frame (`<storyboard>.html#A3`). Each task is a `### Task N: <name>` heading, which
   `route.py plan` counts, and names its files, the signatures it adds, and its test cases,
-  brief-grade. A change Pete asks for after go is an express round, not a re-plan.
+  brief-grade. A task where a stronger model changes the result is headed `(hard)`: an
+  ordering or race, an auth or money boundary, a migration of live rows, an algorithm, a
+  dependency's runtime, a cause not yet found. Wiring, copy and a state drawn from a frame
+  are not. A change Pete asks for after go is an express round, not a re-plan.
 - **The plan writes its `## QA cases`**: numbered steps TEST walks, each one thing a person
   does and what they should see, covering every frame, requirement and edge the spec names,
   and each a case that fails on main's code, a race fix's at every ordering it claims, the same
@@ -520,12 +529,12 @@ one with uncommitted work, one a live session holds (wt's 💬), or one under tw
 
 ### 3 · BUILD  → marker: `build:N:M` (N done of M)
 
-- **The driver builds every task itself, in plan order**, test first where the task names its
-  tests. Per task: read the diff, run the gates scoped through `route.py gate` (one call per
-  check, so a red is one fix round), commit, then `route.py log`. Build all M tasks in one
-  session; land only when the whole plan is built, or a task Pete lets go is logged
-  `status=parked note=<why>` and named in the PR body: `route.py readers` refuses while a task
-  is neither. A run that skipped `route.py plan` writes
+- **The driver builds every task but Fable's (Engines, job 4), in plan order**, test first
+  where the task names its tests. Per task: read the diff, run the gates scoped through
+  `route.py gate` (one call per check, so a red is one fix round), commit, then `route.py
+  log`. Build all M tasks in one session; land only when the whole plan is built, or a task
+  Pete lets go is logged `status=parked note=<why>` and named in the PR body: `route.py
+  readers` refuses while a task is neither. A run that skipped `route.py plan` writes
   `build:0:<M>` itself.
 - **Push at every milestone and hand Pete the links.** After a commit, push. With a per-push
   `preview:`, run it once the builds settle, never blocking the next task, and post one line
@@ -544,7 +553,7 @@ one with uncommitted work, one a live session holds (wt's 💬), or one under tw
   tightens the rule those writes followed, recheck every one (5 of 19 catalog links were
   wrong). A rule's first run over existing rows is a dry run: the list of what it would
   change, sorted by reason, read before any write.
-- **A subagent's task** (Engines, job 3) gets the standing boilerplate, each line from a
+- **A subagent's task** (Engines, jobs 3 and 4) gets the standing boilerplate, each line from a
   burned run (incidents: Dispatch): one task per brief with the plan's code pasted in, the
   exact test commands and the files it may touch; "do it, do not propose"; test files whose
   assertions the change invalidates are in scope; the final message is STATUS, TESTS,

@@ -54,13 +54,10 @@ These are facts, not process — the process lives in SKILL.md.
   under the main checkout and took the same file under the worktree. Hence verify tries
   the launch directory, then the worktree, then inline shots.
 - **Landed worktrees piled up in cells, 82 GB of instances with them** (2026-09-24).
-  Seven clean, merged worktrees sat for days, three holding a later ship's branch
-  because a session had switched branches inside a finished tree; cells names each
-  instance after the branch, so every switch orphaned one, and `wt remove` never ran
-  `make wt-clean` anyway. Teardown misses from many causes (a crashed session, a closed
-  terminal), so the backstop is `wt-sweep -f` hourly from launchd (`md.pete.wt-sweep`),
-  skipping any worktree under 12h old, dirty, or with a live session; cells' own
-  `pre-remove` hook runs `make wt-clean` on every removal.
+  Three held a later ship's branch because a session had switched branches inside a
+  finished tree: cells names each instance after the branch, so every switch orphaned one.
+  Cells' `pre-remove` hook runs `make wt-clean` on every removal, and the launchd sweep
+  (`md.pete.wt-sweep`, the entry on fifteen worktrees) backs up a teardown that never ran.
 - **Cross-repo `EnterWorktree` silently doesn't take.** It only adopts worktrees of the
   session's *primary* repo. Against any other repo the cwd never moves and the status
   line stays blind — the worktree and `.ship-stage` are real but invisible. Work by
@@ -334,12 +331,6 @@ its pre-flight is still on the driver. A Convex repo with no `backend:` line and
   "Grounded in the live product" proves a surface *renders*, not that it's *current* —
   classify liveness (on the current design system? reachable from primary nav? touched by
   recent commits?) and name the chosen surface explicitly in the spec.
-- **The first design artifact read as a document, not a design** (Pete, 2026-09-03: "it's
-  more of a document and less like working with a designer who gives me HTML which is
-  mostly just mockups of the app"). Round 1 had a TL;DR, research sections and a scope
-  contract with the comps somewhere below. DISCOVER now opens with a storyboard — frames
-  of the app at ship size, captions, the questions — and the spec is written after his
-  go, never before.
 - **Idealized-input tests hide writer/reader contract drift.** Unit tests over hand-built
   rows passed while the real ledger writers produced garbage for two of three metrics
   (one always 100%, one always null); only the adversarial review caught it. A task that
@@ -431,8 +422,6 @@ of building through other engines is in git.
   whoever drafts. One also committed its own result markdown into the repo, and a `--hard`
   reset cleaning that up ate an unstaged driver edit: a worker reports its result and
   never commits, and workers never run `git reset/checkout/stash`.
-- **A vague brief costs more than it saves** — the fix rounds eat the delegation savings
-  outright. Exact files, signatures, test cases, constraints, or write it inline.
 - **A read-only brief needs the driver to check it held** — nothing enforces read-only at
   the tool layer for a general subagent. A design-QA round briefed as judge-only applied
   its own fixes to a tree the driver believed was frozen. Eyeball `git status` after any

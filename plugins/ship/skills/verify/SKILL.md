@@ -226,10 +226,11 @@ runs of main and the branch, interleaved, and a peak confirmed with the heap cap
 timing, and the peak had gone down.
 
 **Seed, then read it back.** Before the walk, read each seeded record back through the
-same backend and stage the app's server uses, and print which one. Two cells-app runs
-seeded main's stage from a worktree because the script read `.env.local` before setting
-its origin, and the walk lost a round to "No alert by that id". Read back the model a bot
-turn will run on too, against the repo's checks file, before the first one: app-look's and
+same backend and stage the app's server uses, and print which one (two cells-app runs
+seeded main's stage and lost a round to "No alert by that id"). A script that reads through
+a CLI looks at one step's raw output before its parse is written, and parses only the reply
+(cel-439: a Node warning beside it broke jq, 7 of 20 passed). Read back the model a bot turn
+will run on too, against the repo's checks file, before the first one: app-look's and
 prompt-cache's test people ran on OpenRouter and Sonnet until Pete stepped in.
 
 **Run it** the way a person would, with real clicks, taps and keys:
