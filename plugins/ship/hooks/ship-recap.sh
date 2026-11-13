@@ -44,7 +44,7 @@ recap() {
       | "- plan " + (.plan // "path not saved") + ", "
         + ([.tasks[] | select(((.label // (.n|tostring)) as $l | $d | index($l)) or ((.n|tostring) as $n | $d | index($n)))] | length | tostring)
         + " of " + (.tasks | length | tostring) + " tasks logged",
-        (.tasks[] | "  " + (if (((.label // (.n|tostring)) as $l | $d | index($l)) or ((.n|tostring) as $n | $d | index($n))) then "done " else "todo " end) + .title)
+        (.tasks[] | "  " + (if (((.label // (.n|tostring)) as $l | $d | index($l)) or ((.n|tostring) as $n | $d | index($n))) then "done " else "todo " end) + (if .engine == "fable" then "[fable] " else "" end) + .title)
     ' "$route" 2>/dev/null)
     printf '%s\n' "$tasks"
   fi
@@ -68,7 +68,7 @@ selftest() {
   git checkout -q -b feature/x; git remote add origin ssh://git@github.com:22/acme/widget.git/
   echo a > a.txt && git add a.txt && git -c user.email=t@t -c user.name=t commit -q -m "task 1 lands"
   echo 'build:1:2' > .ship-stage; printf '1\n' > .ship-done
-  echo '{"plan":"/p/plan.md","tasks":[{"n":1,"label":"1","title":"Task 1: first"},{"n":2,"label":"2","title":"Task 2: second"}]}' > .ship-route.json
+  echo '{"plan":"/p/plan.md","tasks":[{"n":1,"label":"1","title":"Task 1: first"},{"n":2,"label":"2","title":"Task 2: second (hard)","hard":true,"engine":"fable"}]}' > .ship-route.json
   echo b > b.txt; echo n > next-env.d.ts
   out=$(printf '{"session_id":"","cwd":"%s","transcript_path":"/t/s.jsonl"}' "$tmp/repo" | SHIP_INSTALLED=/nonexistent recap)
   check() { if eval "$2"; then echo "  ok   $1"; else echo "  FAIL $1"; fails=$((fails+1)); fi; }
@@ -76,7 +76,7 @@ selftest() {
   check 'names origin'"'"'s GitHub repo for -R' '[[ "$out" == *"-R acme/widget (origin"* ]]'
   check 'names the transcript for numbers.py' '[[ "$out" == *"transcript: /t/s.jsonl (recheck a number with $plugin/skills/pipeline/scripts/numbers.py"* ]]'
   check 'names the stage and branch' '[[ "$out" == *"branch feature/x, stage build:1:2"* ]]'
-  check 'counts logged tasks and marks each' '[[ "$out" == *"1 of 2 tasks logged"* && "$out" == *"done Task 1: first"* && "$out" == *"todo Task 2: second"* ]]'
+  check 'counts logged tasks and marks each' '[[ "$out" == *"1 of 2 tasks logged"* && "$out" == *"done Task 1: first"* && "$out" == *"todo [fable] Task 2: second (hard)"* ]]'
   check 'lists the branch commits and uncommitted files, not ship files' '[[ "$out" == *"task 1 lands"* && "$out" == *"b.txt"* && "$out" != *".ship-done"* ]]'
   check 'marks build churn as noise, and only that' '[[ "$out" == *"next-env.d.ts (build noise"* && "$out" != *"b.txt (build"* ]]'
   mkdir -p "$tmp/cache/abc123"; cp -R "$plugin/skills" "$tmp/cache/abc123/skills"

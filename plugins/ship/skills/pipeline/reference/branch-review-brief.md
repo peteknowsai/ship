@@ -16,8 +16,8 @@ at that sha; a fix committed while you read is not yours to judge. The diff:
 base, so the brief names a branch, never a base sha typed from memory (cel-257's was a
 commit off).
 
-Assume the writer was wrong at every seam. One model wrote every line, one task at a time;
-you read it whole, in a clean context, with the spec.
+Assume the writer was wrong at every seam. It was written one task at a time, by one model
+or two; you read it whole, in a clean context, with the spec.
 
 1. **Clear the plan task by task.** [The plan's tasks, one line each.] For each, say whether
    the branch does what it says, with file:line.

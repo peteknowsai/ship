@@ -11,24 +11,15 @@ These are facts, not process — the process lives in SKILL.md.
   `withEve` reused it because the dying process still answered its 1 s probe. Delete
   that file before restarting a dev server in an Eve app.
 
-- **Fifteen worktrees sat in cells-app after their ships landed** (2026-09-27). A
-  session launched inside its worktree can't remove it, the sweep waited 12 hours and
-  skipped any tree with a live session, and build lanes never counted as landed because
-  they merge into their branch, not main. Now: `stage.sh <root> landed` at landing, a
-  SessionEnd hook (`wt-sweep --end`) that removes a landed tree as its session closes,
-  lanes removed right after they merge and swept when their changes are in the parent,
-  and the sweep every 10 minutes.
-
 - **A PR stacked on an unlanded branch stranded at "merge main"** (cells-app local-hosts,
-  2026-09-25). Pete said to build on top of feature/muse-chat, still a draft (#19), so
-  #24 took it as its base. At "merge main" #19 hadn't landed: reset onto origin/main,
-  cherry-pick our commits and the two of theirs we needed, force-push, retarget. Branch
-  off main and cherry-pick from the start.
+  2026-09-25): #24 took a draft's branch as its base, and the draft hadn't landed. The way
+  out: reset onto origin/main, cherry-pick our commits and the ones of theirs we need,
+  force-push, retarget.
 - **Removing the worktree a session was launched in locks the session out** (same
   landing). The session's launch directory was the worktree, so `ExitWorktree` was a
   no-op; after `wt remove` the guard refused every Bash command, a subagent inherited
-  the pin, and the only way out was recreating the directory by hand. Such a session
-  merges from the worktree and removes it last, or leaves it to `wt-sweep`.
+  the pin, and the only way out was recreating the directory by hand (rare-cases, Landing
+  variants).
   An entered worktree removed without `ExitWorktree` first does the same to the next ship
   in that session (eca-finder thin-search, 2026-10-26): its cwd pointed at a deleted
   folder, `EnterWorktree` refused with "not in a git repository", Bash kept resetting
@@ -54,13 +45,9 @@ These are facts, not process — the process lives in SKILL.md.
   under the main checkout and took the same file under the worktree. Hence verify tries
   the launch directory, then the worktree, then inline shots.
 - **Landed worktrees piled up in cells, 82 GB of instances with them** (2026-09-24).
-  Seven clean, merged worktrees sat for days, three holding a later ship's branch
-  because a session had switched branches inside a finished tree; cells names each
-  instance after the branch, so every switch orphaned one, and `wt remove` never ran
-  `make wt-clean` anyway. Teardown misses from many causes (a crashed session, a closed
-  terminal), so the backstop is `wt-sweep -f` hourly from launchd (`md.pete.wt-sweep`),
-  skipping any worktree under 12h old, dirty, or with a live session; cells' own
-  `pre-remove` hook runs `make wt-clean` on every removal.
+  Three held a later ship's branch because a session had switched branches inside a
+  finished tree: cells names each instance after the branch, so every switch orphaned one.
+  Cells' `pre-remove` hook runs `make wt-clean` on every removal.
 - **Cross-repo `EnterWorktree` silently doesn't take.** It only adopts worktrees of the
   session's *primary* repo. Against any other repo the cwd never moves and the status
   line stays blind — the worktree and `.ship-stage` are real but invisible. Work by
@@ -71,28 +58,21 @@ These are facts, not process — the process lives in SKILL.md.
   sees engagement), but when recon contradicts the fork: exit, `wt remove` the empty
   worktree, re-fork in the right repo, and narrate the move.
 - **`gh pr merge --delete-branch` run from inside the worktree fails** with `fatal: 'main'
-  is already used by worktree …`: the flag checks main out locally after the merge, the PR
-  has merged on GitHub, and the teardown never runs, stranding an orphan worktree. LAND
-  merges from the worktree without the flag, so nothing local runs, and deletes the branch
-  from the main checkout at step 5.
-- **A lane that borrowed `node_modules` by symlink committed the link** (cells,
-  2026-09-19). Five lane worktrees symlinked `agent/`, `web/` and
-  `electron/node_modules` to the main worktree's installs. The repo ignored
-  `node_modules/`, which matches a directory and not a link, so one lane's `git add -A`
-  tracked `agent/node_modules`, and merging that lane replaced the main worktree's real
-  install with a link pointing at itself. Typecheck and build then failed with exit 127
-  (`tsc: command not found`), which read as broken code. The fix was `git rm --cached`,
-  a reinstall, and dropping the slash from the ignore pattern. Exclude the links in
-  `info/exclude` before the first lane commit.
-- **Tearing down a worktree before confirming its PR is `MERGEABLE`** strands the ship
-  with no worktree and no merge — that recovery is all manual. Pre-flight first.
+  is already used by worktree …` after the PR has merged on GitHub, and the teardown never
+  runs. LAND merges without the flag.
+- **A worktree that borrowed `node_modules` by symlink committed the link** (cells,
+  2026-09-19). The repo ignored `node_modules/`, which matches a directory and not a link,
+  so one `git add -A` tracked `agent/node_modules`, and merging it replaced the main
+  worktree's real install with a link pointing at itself. Typecheck and build then failed
+  with exit 127 (`tsc: command not found`), which read as broken code. The fix: `git rm
+  --cached`, a reinstall, the ignore pattern without its slash. Exclude the links in
+  `info/exclude` before the first commit.
 - **Squash merges from the GitHub UI don't satisfy `git branch --merged`** and don't
   delete the local branch. To prove a worktree landed, check
   `gh pr list --state merged --head <branch> --json number,headRefOid` against the
   worktree's HEAD.
-- **A dirty main checkout may hold another session's uncommitted work.** Never ff or
-  deploy from it — deploying would ship their unfinished work and miss your merge. Use a
-  throwaway worktree pinned to `origin/main` for the deploy step.
+- **A dirty main checkout may hold another session's uncommitted work**: a deploy from it
+  ships their unfinished work and misses your merge (LAND steps 5 and 6).
 - **A file written in main before the fork and copied, not moved, into the worktree**
   (cel-401-comal-pack, 2026-11-10): the design page, drawn while the session was still a
   chat, stayed untracked in cells-app's main checkout. Once #534 landed that path, the twin
@@ -334,12 +314,6 @@ its pre-flight is still on the driver. A Convex repo with no `backend:` line and
   "Grounded in the live product" proves a surface *renders*, not that it's *current* —
   classify liveness (on the current design system? reachable from primary nav? touched by
   recent commits?) and name the chosen surface explicitly in the spec.
-- **The first design artifact read as a document, not a design** (Pete, 2026-09-03: "it's
-  more of a document and less like working with a designer who gives me HTML which is
-  mostly just mockups of the app"). Round 1 had a TL;DR, research sections and a scope
-  contract with the comps somewhere below. DISCOVER now opens with a storyboard — frames
-  of the app at ship size, captions, the questions — and the spec is written after his
-  go, never before.
 - **Idealized-input tests hide writer/reader contract drift.** Unit tests over hand-built
   rows passed while the real ledger writers produced garbage for two of three metrics
   (one always 100%, one always null); only the adversarial review caught it. A task that
@@ -431,8 +405,6 @@ of building through other engines is in git.
   whoever drafts. One also committed its own result markdown into the repo, and a `--hard`
   reset cleaning that up ate an unstaged driver edit: a worker reports its result and
   never commits, and workers never run `git reset/checkout/stash`.
-- **A vague brief costs more than it saves** — the fix rounds eat the delegation savings
-  outright. Exact files, signatures, test cases, constraints, or write it inline.
 - **A read-only brief needs the driver to check it held** — nothing enforces read-only at
   the tool layer for a general subagent. A design-QA round briefed as judge-only applied
   its own fixes to a tree the driver believed was frozen. Eyeball `git status` after any

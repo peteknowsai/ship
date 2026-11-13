@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Count a plan's BUILD tasks, and keep the ledger that judges how each was built.
 
-  route.py plan <plan.md>        list the plan's tasks; JSON on stdout, a table on stderr
+  route.py plan <plan.md>        list the plan's tasks and who builds each; JSON on stdout,
+                                 a table on stderr
   route.py gate <cmd> [args...]  run one gate command and record whether it passed
   route.py log key=value ...     append one task's outcome to the ledger
 Inside a ship, `plan` moves the stage marker to build:0:<tasks> and each `log` counts one
@@ -40,8 +41,13 @@ clock alone.
                                  the snags
   route.py --selftest
 
-Opus 5.5 drives (Pete, 2026-10-24) and builds every task in its own loop, so `plan` ranks
-nothing. Fable 5.2 reads beside Wonder since 2026-11-09, and `report` counts that trial. The Fable window and the pools are in git history (`git log -S FABLE_UNTIL`).
+Opus 5.5 drives (Pete, 2026-10-24) and builds in its own loop. Fable 5.2 builds half the hard
+tasks (Pete, 2026-11-12): `plan` gives it every other task whose heading ends (hard), the
+first included, and a re-plan keeps each task's builder; a task `log` marks the row hard, and
+refuses engine=fable anywhere but on Fable's tasks, or another engine on one of them, without
+why=<reason>; `report` puts the engines side by side on hard tasks. Fable 5.2 also reads
+beside Wonder since 2026-11-09, and `report` counts that trial. The October Fable window and
+the pools are in git history (`git log -S FABLE_UNTIL`).
 The ledger is ~/.claude/ship-ledger.jsonl, or SHIP_LEDGER.
 """
 import json
@@ -158,12 +164,28 @@ def plan(path, now=None):
         raise SystemExit(f'route: no "### Task" headings in {path}')
     where = os.path.dirname(os.path.abspath(path))
     out = [{'n': t['n'], 'label': t['label'], 'title': t['title']} for t in tasks]
-    for row in out:
-        print(f"{row['label']:4} {row['title'][:80]}", file=sys.stderr)
-    result = {'plan': os.path.abspath(path), 'tasks': out}  # ship-recap.sh names it after a compaction
     saved = beside_marker(where, '.ship-route.json')
+    old = (saved and read_route(saved)) or {}
+    # Fable 5.2 builds half the hard tasks (Pete, 2026-11-12): every other one, the first
+    # included, so a plan with a single hard task gives it to Fable. A re-plan keeps each
+    # task's builder by its label, and a hard task it adds goes to whoever has fewer, so
+    # nothing already handed out flips mid-build.
+    before = {str(t.get('label', t.get('n'))): t for t in old.get('tasks', []) if t.get('hard')}
+    hard = [r for r in out if re.search(r'\(hard\)\s*$', r['title'], re.I)]
+    placed = [r for r in hard if r['label'] in before]
+    for row in placed:
+        if before[row['label']].get('engine') == 'fable':
+            row['engine'] = 'fable'
+    for row in hard:
+        row['hard'] = True
+        if row['label'] not in before:
+            if 2 * sum(1 for r in placed if r.get('engine') == 'fable') <= len(placed):
+                row['engine'] = 'fable'
+            placed.append(row)
+    for row in out:
+        print(f"{row['label']:4} {row.get('engine', 'driver'):6} {row['title'][:80]}", file=sys.stderr)
+    result = {'plan': os.path.abspath(path), 'tasks': out}  # ship-recap.sh names it after a compaction
     if saved:
-        old = read_route(saved) or {}
         write_route(saved, {**result, 'anchor': old.get('anchor') or int(now or time.time())})
     mark_build(where, total=len(tasks))
     return result
@@ -269,6 +291,34 @@ def log(pairs):
                          'nothing that counts a task, a read or a recall')
     if row.get('status') == 'parked' and ('task' not in row or 'note' not in row):
         raise SystemExit("route log: a parked task needs task=<n> and note=<why it wasn't built>")
+    if 'task' in row and 'review' not in row:  # what `plan` said of the task: hard, and whose
+        saved = beside_marker(os.getcwd(), '.ship-route.json')
+        named = set(str(row['task']).split(','))
+        if isinstance(row.get('engine'), str):  # engine=Fable is fable's row, not a third engine's
+            row['engine'] = row['engine'].lower()
+        known = ((saved and read_route(saved)) or {}).get('tasks', [])
+        planned = [t for t in known if str(t.get('label', t.get('n'))) in named]
+        fables = [t for t in planned if t.get('engine') == 'fable']
+        if fables and len(fables) < len(named) and row.get('status') != 'parked':
+            raise SystemExit(f"route log: task={row['task']} mixes a task of Fable 5.2's with another's; "
+                             "log each on its own row")
+        if any(t.get('hard') for t in planned):
+            row['hard'] = True
+        if fables:
+            row['routed'] = 'fable'
+        # engine=fable goes on Fable's tasks and nowhere else, unless the row says why: CEL-222's
+        # driver kept all three of Fable's. A fix round on tasks already logged, every one of them,
+        # is the driver's, never a way to put fable on a task. A ship with no saved plan is held to nothing.
+        refix = 'note' in row and row.get('engine') != 'fable' and row.get('repo') and row.get('ship') \
+            and all(logged(row['repo'], row['ship'], {t}) for t in named)
+        if known and bool(fables) != (row.get('engine') == 'fable') and row.get('status') != 'parked' \
+                and not refix and not str(row.get('why', '')).strip():
+            raise SystemExit(
+                f"route log: task {row['task']} is Fable 5.2's (plan gave it every other hard task); log it "
+                "engine=fable, with verdict=redone if the driver rewrote it, or add why=<the reason another "
+                "engine built it>" if fables else
+                f"route log: task {row['task']} isn't Fable 5.2's by the plan; log who built it, or add "
+                "why=<the reason Fable built it>")
     if 'task' in row and 'review' not in row and 'note' not in row and row.get('repo') and row.get('ship'):
         earlier = logged(row['repo'], row['ship'], set(str(row['task']).split(',')))
         if earlier:
@@ -515,7 +565,7 @@ def report():
         return f'{100 * sum(passed) // len(passed)}%' if passed else '-'
     groups = {}
     for row in tasks:
-        groups.setdefault(row.get('engine', '?'), []).append(row)
+        groups.setdefault(str(row.get('engine', '?')), []).append(row)  # engine=5 once sorted beside strings
     lines = [f"{'engine':7} {'tasks':>5} {'timed':>5} {'first pass':>10} {'fix rounds':>10} {'minutes':>8}"]
     for engine, group in sorted(groups.items()):
         minutes = mean(group, 'seconds')
@@ -523,6 +573,19 @@ def report():
         timed = sum(1 for r in group if isinstance(r.get('seconds'), (int, float)))
         lines.append(f"{engine:7} {len(group):>5} {timed:>5} {first_pass(group):>10} "
                      f"{mean(group, 'fix_rounds'):>10} {minutes:>8}")
+    # The engines side by side on hard tasks only, since Fable's rows are all hard. Rough: the
+    # driver ran the gates on Fable's diff after reading it. A fix round logged again with a
+    # note is no second task.
+    hard = [r for r in tasks if r.get('hard') is True and 'note' not in r]
+    if hard:
+        parts = []
+        for name in sorted({str(r.get('engine', '?')) for r in hard}):
+            group = [r for r in hard if str(r.get('engine', '?')) == name]
+            redone = sum(1 for r in group if r.get('verdict') == 'redone')
+            parts.append(f"{name} {len(group)} ({first_pass(group)} first pass, "
+                         f"{mean(group, 'fix_rounds')} fix rounds, {redone} redone)")
+        kept = sum(1 for r in hard if r.get('routed') == 'fable' and r.get('engine') != 'fable')
+        lines += ['', f"hard tasks: {', '.join(parts)}; {kept} of Fable's built by another engine"]
     if reviews:
         lines += ['', f"{'reader':8} {'ships':>5} {'real':>5} {'false':>5} {'only it':>7} {'owned':>5} {'minutes':>8}"]
         note = lambda r: str(r.get('note', ''))
@@ -599,6 +662,13 @@ def selftest():
         check('plan lists every task and saves the plan path; nothing is routed or scored',
               result['plan'] == os.path.abspath(plan_md) and len(result['tasks']) == 9
               and not any('engine' in t or 'score' in t for t in result['tasks']))
+        hard_md = os.path.join(tmp, 'hard.md')
+        open(hard_md, 'w').write(''.join(f'### Task {n}: t{n}{mark}\n\nbody\n\n' for n, mark in
+                                         enumerate(['', ' (hard)', ' drop the (hard) label', ' (Hard)', ' (hard)', ''], 1)))
+        routed = plan(hard_md)['tasks']
+        check('Fable gets every other task whose heading ends (hard), the first included, and nothing else',
+              [t.get('engine') for t in routed] == [None, 'fable', None, None, 'fable', None]
+              and [t.get('hard') for t in routed] == [None, True, None, True, True, None])
         few = os.path.join(tmp, 'few.md')
         open(few, 'w').write('### Task list\n\nan overview, not a task\n\n' +
                              ''.join(f'### Task {n}: t\n\n```md\n### Task 99: an example inside a fence\n```\n\n'
@@ -949,6 +1019,53 @@ def selftest():
         os.remove(stage)
         plan(shipped)
         check('outside a ship no marker appears', not os.path.exists(stage))
+        fable_repo = os.path.join(tmp, 'fable-repo')
+        subprocess.run(['git', 'init', '-q', fable_repo], check=True)
+        open(os.path.join(fable_repo, '.ship-stage'), 'w').write('plan')
+        plan_in = os.path.join(fable_repo, 'plan.md')
+        open(plan_in, 'w').write(open(hard_md).read())
+        plan(plan_in)
+        os.chdir(fable_repo)
+        try:
+            taken = refused(log, ['repo=ship', 'ship=hard', 'task=2', 'engine=driver'])
+            noted = refused(log, ['repo=ship', 'ship=hard', 'task=2', 'engine=driver', 'note=mine'])
+            blank = refused(log, ['repo=ship', 'ship=hard', 'task=2', 'engine=driver', 'why='])
+            mixed = refused(log, ['repo=ship', 'ship=hard', 'task=1,2', 'engine=fable'])
+            lent = refused(log, ['repo=ship', 'ship=hard', 'task=6', 'engine=fable'])
+            ghost = refused(log, ['repo=ship', 'ship=hard', 'task=9', 'engine=fable'])
+            built = log(['repo=ship', 'ship=hard', 'task=2', 'engine=fable', 'gates_first_pass=true', 'fix_rounds=0',
+                         'verdict=redone'])
+            half = refused(log, ['repo=ship', 'ship=hard', 'task=2,5', 'engine=driver', 'note=fix round'])
+            own = log(['repo=ship', 'ship=hard', 'task=4', 'engine=driver', 'gates_first_pass=false', 'fix_rounds=2'])
+            why = log(['repo=ship', 'ship=hard', 'task=5', 'engine=driver', 'why=Fable was out', 'fix_rounds=1'])
+            easy = log(['repo=ship', 'ship=hard', 'task=1', 'engine=driver'])
+            fix = refused(log, ['repo=ship', 'ship=hard', 'task=2', 'engine=driver', 'note=fix round'])
+            credit = refused(log, ['repo=ship', 'ship=hard', 'task=4', 'engine=fable', 'note=fix round'])
+            cased = log(['repo=ship', 'ship=hard2', 'task=2', 'engine=Fable', 'note=another ship, same plan'])
+            odd = log(['repo=ship', 'ship=hard2', 'task=6', 'engine=5'])
+        finally:
+            os.chdir(plain)
+        check("a task of Fable's logs as fable, or as another engine only with why=; a fix round is the driver's",
+              "Fable 5.2's" in taken and built.get('routed') == 'fable' and why.get('routed') == 'fable' and fix == '')
+        check("a note on a first row or an empty why= doesn't get past; fable on another's task or a row "
+              "mixing the two is refused",
+              "Fable 5.2's" in noted and "Fable 5.2's" in blank and 'own row' in mixed and "isn't Fable 5.2's" in lent
+              and "isn't Fable 5.2's" in ghost)
+        check("a note covers a fix round only when every task on the row was built before, and never puts "
+              "fable on a driver's task; engine=Fable is fable's row, and an engine that is a number still reports",
+              "Fable 5.2's" in half and "isn't Fable 5.2's" in credit and cased.get('engine') == 'fable'
+              and odd.get('engine') == 5 and '\n5 ' in report())
+        grown = open(plan_in).read().replace('### Task 3: t3 drop the (hard) label', '### Task 3: t3 (hard)')
+        open(plan_in, 'w').write(grown)
+        replanned = plan(plan_in)['tasks']
+        check('a re-plan keeps each hard task its builder, and a hard task it adds goes to whoever has fewer',
+              [t.get('engine') for t in replanned] == [None, 'fable', None, None, 'fable', None]
+              and replanned[2].get('hard') is True)
+        check('a task row carries hard from the plan, and only a hard one does',
+              built.get('hard') is True and own.get('hard') is True and 'routed' not in own and 'hard' not in easy)
+        check('report compares the engines on hard tasks and counts the ones Fable lost',
+              "hard tasks: driver 2 (0% first pass, 1.5 fix rounds, 0 redone), fable 1 (100% first pass, "
+              "0.0 fix rounds, 1 redone); 1 of Fable's built by another engine" in report())
         os.chdir(here)
         check('a ship the self-test runs inside keeps its marker, its done list and its gate runs',
               ship_state() == before)
