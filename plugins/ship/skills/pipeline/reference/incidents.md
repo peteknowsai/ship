@@ -18,8 +18,8 @@ These are facts, not process — the process lives in SKILL.md.
 - **Removing the worktree a session was launched in locks the session out** (same
   landing). The session's launch directory was the worktree, so `ExitWorktree` was a
   no-op; after `wt remove` the guard refused every Bash command, a subagent inherited
-  the pin, and the only way out was recreating the directory by hand. Such a session
-  merges from the worktree and removes it last, or leaves it to `wt-sweep`.
+  the pin, and the only way out was recreating the directory by hand (rare-cases, Landing
+  variants).
   An entered worktree removed without `ExitWorktree` first does the same to the next ship
   in that session (eca-finder thin-search, 2026-10-26): its cwd pointed at a deleted
   folder, `EnterWorktree` refused with "not in a git repository", Bash kept resetting
@@ -71,9 +71,8 @@ These are facts, not process — the process lives in SKILL.md.
   delete the local branch. To prove a worktree landed, check
   `gh pr list --state merged --head <branch> --json number,headRefOid` against the
   worktree's HEAD.
-- **A dirty main checkout may hold another session's uncommitted work.** Never ff or
-  deploy from it — deploying would ship their unfinished work and miss your merge. Use a
-  throwaway worktree pinned to `origin/main` for the deploy step.
+- **A dirty main checkout may hold another session's uncommitted work**: a deploy from it
+  ships their unfinished work and misses your merge (LAND steps 5 and 6).
 - **A file written in main before the fork and copied, not moved, into the worktree**
   (cel-401-comal-pack, 2026-11-10): the design page, drawn while the session was still a
   chat, stayed untracked in cells-app's main checkout. Once #534 landed that path, the twin

@@ -101,13 +101,14 @@ replace parts of it.
   message; one saying it landed is the cue to look: `gh pr view <#> -R <o/r> --json
   state,mergeCommit` MERGED. The landing is the merger's, main, `deploy:` and smokes with
   it: this ship runs no LAND check and commits and pushes nothing. It cleans up only when
-  the merge is exactly this worktree: `git status --short` empty and, after a fetch, `git
-  merge-tree --write-tree <mergeCommit>^ HEAD` prints `<mergeCommit>^{tree}`'s hash. Then
-  only step 1's releases and server stop, steps 4 and 5 by this ship's own variant above
-  without the remote branch delete, main's pull or `deploy:`, and step 7. `result:` opens
-  with who claims the merge, the stop unanswered here, and LAND's checks and deploy watch
-  unrun. No match keeps the worktree: `gate:input`, naming what differs. Merged at any
-  other stop: `gate:input`, saying what was unfinished.
+  the merge is this HEAD on its base, nothing dropped or added: after a fetch, `git
+  merge-tree --write-tree <mergeCommit>^ HEAD` prints `<mergeCommit>^{tree}`'s hash, and
+  nothing is uncommitted but the review card, its shots and files the dev server rewrote.
+  Then only step 1's releases and server stop, steps 4 and 5 by this ship's own variant
+  above without the remote branch delete, main's pull or `deploy:`, and step 7's `result:`,
+  which opens with who claims the merge, the stop unanswered here, LAND's checks and deploy
+  watch unrun, and the card not in main. No match keeps the worktree: `gate:input`, naming
+  what differs. Merged at any other stop: `gate:input`, saying what was unfinished.
 - **`land: auto`** lands as `pr` does, on the QA run's `works`: a one-way door or a try-it
   change doesn't wait, a money path still waits for "merge main" (contract.md).
 - **`land: direct`** replaces LAND's checks and merge: from the worktree, `git fetch origin
