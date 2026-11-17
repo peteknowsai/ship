@@ -68,18 +68,18 @@ nothing lands untested. What scales is the ceremony before TEST, and you size it
 
 - **EXPRESS: a quick tweak or fix.** The whole diff is visible before you start and there is
   no money path. No spec, no plan, no cards, no stops: worktree, change, gates, pre-flight,
-  push and links, TEST, land on a pass, `result:`. No branch readers, except one Wonder read
-  (`muse.py review`) before TEST when the diff is text a model reads (a prompt, a tool
+  push and links, TEST, land on a pass, `result:`. No branch read, except one by the reader
+  (Engines and readers) before TEST when the diff is text a model reads (a prompt, a tool
   description) or acts on the machine (kills processes, deletes files, force-pushes):
-  CEL-181 and CEL-134 shipped one-reader bugs there. A text transform or row filter still
-  gets REVIEW's corpus run. A change to a function many callers share is SELF-DIRECTED,
+  CEL-181 and CEL-134 shipped bugs one read would have caught there. A text transform or
+  row filter still gets REVIEW's corpus run. A change to a function many callers share is SELF-DIRECTED,
   however small. A dab of `ponytail` (smallest diff), `impeccable` for anything visual. A
   diff of only docs skips the gates, pre-flight and app walk: TEST is verify's docs fact
   check. A diff of only tests, evals or test scripts is proven by its own green run, with
   nothing loosened that the PR doesn't name (CEL-231, CEL-256). The first Pete hears of an
   EXPRESS ship is its links.
 - **SELF-DIRECTED: real work with no taste question in it.** Write the machine-facing plan
-  you need, then build, run REVIEW's two readers and TEST, land, `result:`. No stops before
+  you need, then build, run REVIEW's read and TEST, land, `result:`. No stops before
   TEST and no plan card; the review card is the record.
 - **GATED: Pete's taste or direction is in play.** A new user-facing surface, visual
   identity, a product tradeoff, ambiguous scope, a money path.
@@ -133,7 +133,7 @@ the PR body's first lines. Messages between sessions are exempt.
   Commit messages and PR bodies are files too: `git commit -F`, `gh pr create --body-file`.
 - **Sandbox off** for anything that writes outside the worktree, the job's tmp included (the
   sandbox denies writes under `~/.claude/jobs`; the Write tool can), or binds a port: the fork,
-  `stage.sh` on a new worktree, `route.py log`, `muse.py`, `decisions.py` writes, anything
+  `stage.sh` on a new worktree, `route.py log`, `decisions.py` writes, anything
   that talks to GitHub (`gh`, `git push`, `git fetch`: the sandbox's proxy fails their TLS),
   any git command that rewrites the tree or makes a branch (the sandbox denies writes under
   `.claude/` and to `.git/config`, and CEL-213's rebase stopped halfway), a script that writes
@@ -164,9 +164,9 @@ the PR body's first lines. Messages between sessions are exempt.
   wait on background work with nothing else to do; his global rules on how turns end hold on
   every lane, where nobody says "continue".
 - **Pete's budget word outranks ship's defaults.** When he caps subagents or spend for a run,
-  skip the Claude reader and build Fable's tasks yourself (`why=budget`), keep Wonder (no
-  Claude quota), log each skip (`review=fable stage=<plan|branch> note=skipped:budget`), and
-  say what that skipped in `result:`.
+  skip the reader and build Fable's tasks yourself (`why=budget`), log each skip
+  (`review=fable stage=<plan|branch> note=skipped:budget`), and say in `result:` that no
+  fresh reader saw the plan or the branch.
 - **Log every durable call**, on any lane, that a stop or Pete mid-run settles (direction,
   scope cut, architecture or tool choice): `decisions.py log --file <json>`
   (`{"decision","rationale","source":"user"}`); a reversal is `decisions.py supersede <id>
@@ -174,14 +174,12 @@ the PR body's first lines. Messages between sessions are exempt.
 
 ## Engines and readers
 
-**Opus 5.5 drives, Fable 5.2 builds half the hard tasks, and Fable and Muse Wonder Full
-read** (Pete, 2026-11-09 and 11-12). The driver runs Opus 5.5, and so does every subagent
-that isn't Fable's (`model: "opus"`); effort is Pete's setting, so a subagent call names
-none. **The Claude reader** of the plan and the branch is a fresh Fable 5.2 subagent
-(`model: "fable"`, logged `review=fable`), or Opus 5.5 (`review=opus`) where the session
-itself is on Fable. Wonder reads beside it for a 20-ship trial: the ledger counts the real
-findings only Wonder made, and Pete decides from that count whether it stays. Nothing else
-runs.
+**Opus 5.5 drives, Fable 5.2 builds half the hard tasks, and Fable 5.2 reads** (Pete,
+2026-11-09, 11-12 and 11-16). The driver runs Opus 5.5, and so does every subagent that
+isn't Fable's (`model: "opus"`); effort is Pete's setting, so a subagent call names none.
+**The reader** of the plan and the branch is a fresh Fable 5.2 subagent (`model: "fable"`,
+logged `review=fable`), or Opus 5.5 (`review=opus`) where the session itself is on Fable.
+Nothing else runs: Muse Wonder, the second reader until 2026-11-16, is gone (Pete).
 
 **One loop does the work.** The driver builds, tests and fixes in its own context, where it
 reads the raw diff, test output and browser snapshot; a subagent hands back a summary, and a
@@ -211,30 +209,17 @@ done or todo, the branch's commits and uncommitted files: trust it over the summ
 the plan, this skill's section for the stage and any triage or QA file the stage wrote, and
 post Pete the one line.
 
-**The readers: neither is the writer.** A reader shares the blind spots of code its own
-model wrote and goes easy on it (Pete, 2026-10-14). The Claude reader's brief says to assume
-the writer was wrong at every seam. Where Fable built, Fable still reads: the driver read
-that diff at BUILD, and Wonder does too. Every Claude reader, a stand-in too, starts with no `name`:
-a named subagent's report comes back cut at 4,000 characters (connections-page). Each report opens
-with the model it ran on, and one that isn't Fable 5.2 (an older session's `fable` meant
-5.1) gets `model=<what it said>` on its row, which keeps it out of the trial's count. Wonder
-runs as `scripts/muse.py review <worktree> <brief> <out-dir>`, a background Bash call:
-read-only, findings in `<out-dir>/last.md`, `<out-dir>` in the job's tmp (muse.py refuses one
-inside the worktree).
-Any nonzero exit means Muse is out (5: its quota, with the reset; 2: a usage error, so read
-stderr; 6: the tree changed under it), and so does exit 0 with `last.md` missing or empty,
-which is never a clean read (incidents: Dispatch). At the branch read a fresh Opus subagent
-takes Wonder's brief, and both rows go in (REVIEW's triage): `review=wonder stage=branch
-note=out:<exit>` for the outage, which `route.py readers` asks for, and the stand-in's
-`review=opus … note=for:wonder`, so the ledger never credits Wonder with its read. At the plan
-read the Claude reader's stands alone and only the outage row goes in. `result:` says so. Nothing writes
-in the worktree while Muse reads, the gates, a build, a commit and a dev server's start
-included: `next build` and `next dev` rewrite the tracked `next-env.d.ts` (find-three-more,
-CEL-233), so a server TEST needs is up before the read starts. Gitignored files don't count.
-Muse runs only through `muse.py`, never a hand-typed `muse exec`. Readers report and never
-edit: one that rewrites breaks working code. A claim about how a dependency behaves at
-runtime is checked in its installed code (`node_modules/<pkg>/dist`), not its docs (Eve's
-queued messages, 2026-10-14).
+**The reader is never the writer.** A reader shares the blind spots of code its own model
+wrote and goes easy on it (Pete, 2026-10-14), so its brief says to assume the writer was
+wrong at every seam. Where Fable built, Fable still reads: the driver, another model, read
+that diff at BUILD. The reader starts with no `name`: a named subagent's report comes back
+cut at 4,000 characters (connections-page). Its report opens with the model it ran on, and
+one that isn't Fable 5.2 (an older session's `fable` meant 5.1) gets `model=<what it said>`
+on its row. Fable out (a usage limit): a fresh Opus 5.5 subagent takes its brief, logged
+`review=opus note=for:fable`, and `result:` says so. A reader reports and never edits: one
+that rewrites breaks working code. A claim about how a dependency behaves at runtime is
+checked in its installed code (`node_modules/<pkg>/dist`), not its docs (Eve's queued
+messages, 2026-10-14).
 
 **The ledger** (`~/.claude/ship-ledger.jsonl`) is kept by `scripts/route.py`, from the
 worktree:
@@ -247,13 +232,12 @@ worktree:
   after each task's commit: it fills `seconds`, `gates_first_pass` and `fix_rounds` from the
   clock and the gate runs, and counts the task done. A number you don't have stays out (a
   third of the first 81 rows were round guesses).
-- `review=<wonder|fable|opus> stage=<plan|branch> real= false= only= nits=` per reader, timed
-  by `out=<out-dir>` on Wonder's row (route.py reads muse.py's `seconds` file there) and by
-  `seconds=` from a subagent's reported duration on its own; and `recall=<shown> used=<n>`
-  on design ships. `route.py readers repo= ship=` exits 1 until every plan task is logged
-  built or parked, both branch readers are logged since the branch began, the branch adds its
-  review card and no line it adds names its own worktree. `route.py report` compares engines
-  and readers and counts the Wonder trial.
+- `review=<fable|opus> stage=<plan|branch> real= false= nits= seconds=` for each read, the
+  seconds from the subagent's reported duration; and `recall=<shown> used=<n>` on design
+  ships. `route.py readers repo= ship=` exits 1 until every plan task is logged built or
+  parked, the branch read is logged since the branch began, the branch adds its review card
+  and no line it adds names its own worktree. `route.py report` compares engines and
+  readers.
 
 **Browser work runs on the chrome-devtools MCP** (headless, a fresh profile per session): the
 pre-flight, the QA run, grounding in the live product. A subagent loads those tools with one
@@ -520,13 +504,12 @@ one with uncommitted work, one a live session holds (wt's 💬), or one under tw
 - **Consult an expert again** only for a question the plan raises that the storyboard didn't
   settle (schema shape, migration order, an auth boundary). On SELF-DIRECTED this is the
   lane's only consult.
-- **The Claude reader and Wonder read the plan before BUILD**, from
-  `reference/plan-review-brief.md` written to a file. The driver triages both: fix the plan
-  where real, decline nits and anything the spec doesn't ask for, and log a row each,
-  `route.py log repo= ship= review=<fable|opus> stage=plan real= false= only= nits= seconds=`
-  and `review=wonder … out=<out-dir>` (Muse out: `note=out:<exit>`, and the one read stands).
-  Nothing goes back to Pete unless it changes what gets built. Then `route.py plan`. No task
-  starts before both reads land, unless the plan names it a spike.
+- **The reader reads the plan before BUILD**, from `reference/plan-review-brief.md` written
+  to a file. The driver triages it: fix the plan where real, decline nits and anything the
+  spec doesn't ask for, and log `route.py log repo= ship= review=<fable|opus> stage=plan
+  real= false= nits= seconds=`. Nothing goes back to Pete unless it changes what gets built.
+  Then `route.py plan`. No task starts before the read lands, unless the plan names it a
+  spike.
 
 ### 3 · BUILD  → marker: `build:N:M` (N done of M)
 
@@ -610,45 +593,40 @@ one with uncommitted work, one a live session holds (wt's 💬), or one under tw
   `stage.sh <root> gate:input`, `needs input:` PM-framed with a pick, and keep building what
   it doesn't hold. Taste or direction promotes instead (Verbs and sizing).
 
-### 4 · REVIEW — two readers, then triage  → marker: `review`
+### 4 · REVIEW — a fresh read, then triage  → marker: `review`
 
 SELF-DIRECTED and GATED. EXPRESS runs only the sync with main below, then TEST, with its one
-Wonder read where Sizing says.
+read where Sizing says.
 
 - `stage.sh <root> review`. **Sync with main**: `git fetch origin`, note `git rev-parse HEAD`, absorb in the worktree
   in a call of its own (rebase, or merge if unsafe) and see it clean; rerun the repo's install
   when the absorb changed a lockfile or the workspace list; on `copy`, `branch-db.py push
   <worktree> [<app-dir>]` for each app-dir `up` copied (muse-core-loops hit a function its
   copy lacked); on `per-branch`, rare-cases' re-deploy. **When the absorb
-  changed the tree, the gates run scoped over what it brought, now, before either reader
+  changed the tree, the gates run scoped over what it brought, now, before the reader
   starts** (contract: `gates:`); the full run is LAND's, on the merged tree. An absorb that touched the repo's
   `CLAUDE.md` / `AGENTS.md` can change the contract: reread it. Review against a stale fork
   reviews other ships' work as reversions.
-- **Start TEST's dev server now** (TEST: Keep it running), before either reader starts, its
+- **Start TEST's dev server now** (TEST: Keep it running), before the reader starts, its
   dev build output cleared first after an absorb, as LAND's rerun says.
-- **Both readers read the branch at once, from `reference/branch-review-brief.md`** filled
-  and written to a file first, so a reader that dies is respawned from it: the Claude
-  reader, launched first, and Wonder (`muse.py review`, background). Both briefs
-  name the HEAD sha; neither sees the other's findings; no fix is committed until both are
-  back (card-quality-rank committed Wonder's fixes mid-read, and the other reader reported
-  its top finding as already fixed). Muse out: the stand-in reads Wonder's brief.
-- **Triage every finding from both.** Adversarial readers over-flag by design, and one both
-  reached alone is the strongest lead, never proof. Check each against the code. A review
+- **The reader reads the branch, from `reference/branch-review-brief.md`** filled and
+  written to a file first, so a reader that dies is respawned from it. The brief names the
+  HEAD sha, and nothing is committed until the read is back (card-quality-rank committed
+  fixes mid-read, and a reader reported its top finding as already fixed).
+- **Triage every finding.** An adversarial reader over-flags by design, so no finding is
+  proof: check each against the code. A review
   makes the branch correct, not bigger (Pete, 2026-11-01): decline a nit (style, naming, a
   comment that isn't wrong) and anything the spec doesn't ask for, unless it's security,
   money or data loss. Judgment calls go on the card or in `result:`.
 - **`git status` before the first fix**: dirt means a reader edited the tree, which nothing
   stops a subagent doing; its edits are thrown away, never committed (incidents: Dispatch).
 - **Write the triage to `<job tmp>/triage-<slug>.md` before the first fix**: one line per
-  finding, its reader, what it says, real, false or nit, and fixed or declined with why. It
-  outlives a compaction, and the ledger rows and the PR's Reviewed line come from it
-  (screendrop-worker rebuilt one from the transcript). Then one row per reader: `route.py log
-  repo= ship= review=<fable|opus> stage=branch real= false= only= nits= seconds=` and the same for
-  `review=wonder` with `out=<out-dir>` in place of `seconds=`, where `real` counts this
-  reader's real findings and `only` those of them the other missed. Muse out: both rows
-  from The readers.
+  finding, what it says, real, false or nit, and fixed or declined with why. It outlives a
+  compaction, and the ledger row and the PR's Reviewed line come from it (screendrop-worker
+  rebuilt one from the transcript). Then the row: `route.py log repo= ship=
+  review=<fable|opus> stage=branch real= false= nits= seconds=`.
 - **Fix what's real**, each fix run against the cases the issue or spec names before it's
-  committed (two readers' fixes added up to a guard that undid eca-finder's loose deck), with
+  committed (two fixes added up to a guard that undid eca-finder's loose deck), with
   the gates scoped through `route.py gate`. A fix that rebuilds the rule a finding was
   about, a fix to something that moves, a rule a later read still finds new cases in, or a
   read still out when TEST starts: incidents, Design & review.
@@ -709,9 +687,9 @@ Wonder read where Sizing says.
   counts (cel-313's first drafts each carried a slip of their own).
 - **`works`: write the PR body, then land.** Call the Skill tool with `mattpocock-skills:pr`
   and rewrite the tracker PR in its shape: Summary, Evidence (the QA result and its shots, the
-  test that went green), Merge Danger, and a last line per reader, `Reviewed: Wonder Full <n>
-  fixed, <n> declined, <n> wrong · Fable 5.2 …`, with each declined finding and why in a collapsed
-  list, all from the triage file. Every number anywhere comes from recorded output, rechecked
+  test that went green), Merge Danger, and a last line for the read, `Reviewed: Fable 5.2 <n>
+  fixed, <n> declined, <n> wrong`, with each declined finding and why in a collapsed list,
+  all from the triage file. Every number anywhere comes from recorded output, rechecked
   before posting; after a compaction, with `scripts/numbers.py <transcript> <n>...`, which
   counts one only where output the session didn't write showed it, never its own words read
   back (the recap names the transcript). Give each number a word that stood beside it on
