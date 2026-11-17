@@ -285,15 +285,9 @@ its pre-flight is still on the driver. A Convex repo with no `backend:` line and
 - **Safari won't load local CSS into a storyboard's srcdoc frames over file://**
   (2026-10-13). When Pete wants a storyboard in Safari, serve its folder over http
   (`python3 -m http.server`) and open that; Chrome is fine with file://.
-- **A plan once specced a fresh `events` table the repo already had** — three tasks got
-  rewritten mid-build. The reuse audit (grep the whole repo for every core noun,
-  data layer included) exists because of this.
 - **A hypothesized bug cause once produced a fix that would have made an agent fabricate
   data** — the real cause was a 500ing dependency. Bug-shaped asks get an empirical
   root-cause check before the spec commits to a cause.
-- **A run once designed against a repo's old cream mockups while the live product had
-  moved to a dark terminal UI** — caught at GATE 1, whole spec redone. The running app is
-  the design source of truth, never in-repo mockups.
 - **A deprecated page serves happily.** A feature was designed, approved and built onto a
   public route the repo had abandoned; Pete caught it mid-REVIEW and the work had to move.
   "Grounded in the live product" proves a surface *renders*, not that it's *current* —
@@ -321,7 +315,12 @@ its pre-flight is still on the driver. A Convex repo with no `backend:` line and
   touched, write a seeded property test before the next fix (random sequences of the inputs
   the findings used, one invariant), run the current code through it, fix the rule rather
   than the case, and commit the test with the fix. A delta read's finding that would rebuild
-  the rule again comes here, not to another delta read. The harness counts an effect inside
+  the rule again comes here, not to another delta read. A matcher of what people type
+  against what a provider writes (a typed address against a listing's) takes real pairs
+  before a fuzz: cel-460's fuzzes were written from its own rule and passed while seven
+  reads each found two or more real cases, and the dev data's homes waited for a QA case.
+  Run those pairs first, keep them as the test, and ask each reader for pairs to add. The
+  harness counts an effect inside
   the mock once it succeeds, or reads vitest's `mock.settledResults`, never an async mock's
   `mock.results`, which records a rejected call as type "return": hello-straight-in's first
   harness counted every failed tell as delivered and read green on broken code. A test the

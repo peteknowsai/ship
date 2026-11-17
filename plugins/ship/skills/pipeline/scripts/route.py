@@ -216,7 +216,7 @@ def gate(argv, start=None):
     # the verdict last and on stderr, after the row: a `| tail` can't hide it (cel-263 reran a
     # suite to read one), and a closed stdout pipe can't cost the row
     verdict = 'PASS' if code == 0 else f'FAIL (exit {code})'
-    if code and strict:
+    if strict:  # on a pass too: cel-460 saw no pipefail in its script and took its greens as unproven
         verdict += ' under -e -o pipefail' + (', a pipe closed early (head, grep -q or -m): '
                                               "hold the run's code before filtering (contract.md)"
                                               if code == 141 else '')
@@ -968,10 +968,10 @@ def selftest():
         open(piped, 'w').write('true | true\n')
         with contextlib.redirect_stderr(green_out):
             green = gate(['bash', piped], start=repo)
-        check('a shell gate fails on a red command behind a pipe, says how it ran, records it as typed; a green one passes',
+        check('a shell gate fails on a red command behind a pipe, records it as typed; a green one passes; both say how they ran',
               red == 1 and red_row['ok'] is False and red_row['cmd'] == f'/bin/bash {piped}'
               and 'under -e -o pipefail' in red_out.getvalue() and green == 0 and last_row()['ok'] is True
-              and green_out.getvalue().startswith('route gate: PASS bash '))
+              and green_out.getvalue().startswith('route gate: PASS under -e -o pipefail bash '))
         os.remove(stage)
         plan(shipped)
         check('outside a ship no marker appears', not os.path.exists(stage))

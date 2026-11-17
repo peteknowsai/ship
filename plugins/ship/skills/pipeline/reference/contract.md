@@ -43,9 +43,9 @@ ports and fetch fonts and packages by design, and under the sandbox they fail wi
 EPERM` or a fetch error that reads as a real red (CEL-147 lost a 7-minute suite to 27 of
 them). Each check goes through `route.py gate <cmd>`, which records the run for the ledger.
 A multi-step gate run goes in a script file written with the Write tool, then `route.py
-gate bash <file>`, since the worktree guard refuses long inline commands. That script
-starts with `set -euo pipefail`: without it, `npm test | tail -8` exits with tail's code,
-and CEL-180's script printed green over a failed test. Hold the runner's exit before any
+gate bash <file>`, since the worktree guard refuses long inline commands. The gate
+runs it with `-e` and pipefail, as its verdict says: alone, `npm test | tail -8` exits with
+tail's code (CEL-180's script printed green over a failed test). Hold the runner's exit before any
 filter, and filter with `grep -E` rather than `tail`, so a red names its failing test
 (browser-replay reran a 90-second suite only to read the name tail had cut): `rc=0; <test
 command> > <log> 2>&1 || rc=$?; grep -E 'FAIL|●|Test Files|Tests:? ' <log> || true; [ "$rc"
