@@ -316,12 +316,12 @@ its pre-flight is still on the driver. A Convex repo with no `backend:` line and
   the findings used, one invariant), run the current code through it, fix the rule rather
   than the case, and commit the test with the fix. A delta read's finding that would rebuild
   the rule again comes here, not to another delta read. A matcher of what people type
-  against what a provider writes (a typed address against a listing's) takes real pairs
-  before a fuzz: cel-460's fuzzes were written from its own rule and passed while seven
-  reads each found two or more real cases, and the dev data's homes waited for a QA case.
-  Run those pairs first, keep them as the test, and ask each reader for pairs to add. The
-  harness counts an effect inside
-  the mock once it succeeds, or reads vitest's `mock.settledResults`, never an async mock's
+  against what a provider writes (a typed address against a listing's) is tested on real
+  pairs before any fuzz: run the current code over every pair the dev data holds, keep them
+  as a test beside the property test, and ask each reader for pairs to add. cel-460's
+  fuzzes were written from its own rule and passed while seven reads each found two or more
+  real cases, the dev data's homes left for a QA case. The harness counts an effect
+  inside the mock once it succeeds, or reads vitest's `mock.settledResults`, never an async mock's
   `mock.results`, which records a rejected call as type "return": hello-straight-in's first
   harness counted every failed tell as delivered and read green on broken code. A test the
   branch adds or gives more work whose time alone, times 25, passes the runner's default timeout gets

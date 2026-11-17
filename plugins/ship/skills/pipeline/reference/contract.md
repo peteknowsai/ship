@@ -44,13 +44,14 @@ EPERM` or a fetch error that reads as a real red (CEL-147 lost a 7-minute suite 
 them). Each check goes through `route.py gate <cmd>`, which records the run for the ledger.
 A multi-step gate run goes in a script file written with the Write tool, then `route.py
 gate bash <file>`, since the worktree guard refuses long inline commands. The gate
-runs it with `-e` and pipefail, as its verdict says: alone, `npm test | tail -8` exits with
-tail's code (CEL-180's script printed green over a failed test). Hold the runner's exit before any
-filter, and filter with `grep -E` rather than `tail`, so a red names its failing test
+runs it with `-e` and pipefail, as its verdict says, so the script adds only `set -u`:
+without pipefail, `npm test | tail -8` exits with tail's code (CEL-180 printed green over
+a failed test). Hold the runner's exit before any filter, and filter with `grep -E` rather
+than `tail`, so a red names its failing test
 (browser-replay reran a 90-second suite only to read the name tail had cut): `rc=0; <test
 command> > <log> 2>&1 || rc=$?; grep -E 'FAIL|●|Test Files|Tests:? ' <log> || true; [ "$rc"
 = 0 ]`, which stops the script on red and goes on to the next gate on green. A typecheck or
-build filters for its own lines (`grep -E 'error' <log>`). A `|| true` on the test pipeline
+build filters for its own lines (`grep -E 'error' <log> || true`). A `|| true` on the test pipeline
 itself turned six red tests green (CEL-182, CEL-260). The log is where the PR body's numbers
 come from, so a runner that keeps its totals out of it is the repo's to fix, its script
 printing them: cells-app's `ios-test.sh` runs `xcodebuild -quiet` into a build folder every
