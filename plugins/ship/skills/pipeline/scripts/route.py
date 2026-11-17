@@ -271,6 +271,8 @@ def pairs_to_row(pairs, cmd):
         if not sep:
             raise SystemExit(f'route {cmd}: "{pair}" is not key=value')
         row[key] = coerce(value)
+    if isinstance(row.get('repo'), str):  # gh's owner/repo form split a ship's rows (cel-284, eve-1-0-upgrade)
+        row['repo'] = row['repo'].rstrip('/').rsplit('/', 1)[-1]
     return row
 
 
@@ -726,6 +728,10 @@ def selftest():
         log(['repo=ship', 'ship=w', 'review=opus', 'stage=branch', 'real=1', 'note=for:fable'])
         check("a read by the driver's model in the reader's place passes",
               readers(['repo=ship', 'ship=w']) == 0)
+        owned = log(['repo=someone/ship', 'ship=own', 'review=fable', 'stage=branch', 'real=1'])
+        check('a repo given with its owner is logged, and found, under its bare name',
+              owned['repo'] == 'ship' and readers(['repo=ship', 'ship=own']) == 0
+              and readers(['repo=someone/ship', 'ship=w']) == 0)
 
         # the review card and the branch's own rows: readers, run from the worktree
         cards = os.path.join(tmp, 'cards')
