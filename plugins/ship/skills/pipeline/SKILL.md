@@ -140,7 +140,8 @@ the PR body's first lines. Messages between sessions are exempt.
   under `.claude/` (the Edit and Write tools can; cel-285's merge of the checks skill could
   not), gates, smokes, `stack:` (its
   `vercel env pull` fails inside), dev servers, `tsx`, and anything that reaches a local server, since a sandboxed `curl` at
-  localhost reads as a dead server. Everything else stays in the sandbox.
+  localhost reads as a dead server. Everything else stays in the sandbox, unless the repo's
+  rule turns it off.
 - **`$TMPDIR` changes with the sandbox** (`/tmp/claude-<uid>` inside, `/var/folders/…/T`
   outside), so anything that crosses gets an absolute path under the job's tmp.
 - **Env files are given to the tool** (`tsx --env-file=.env.local`), never sourced. The
