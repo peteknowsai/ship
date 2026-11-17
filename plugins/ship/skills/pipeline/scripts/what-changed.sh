@@ -4,26 +4,42 @@
 # ship was updated rereads those instead of diffing by hand (ttowns-civic-feed, 2026-11-04).
 # Each heading carries its line in the new copy, so the Read tool opens the section there;
 # a computed `sed -n "${a},${b}p"` is refused by the worktree guard (cel-280).
+# Under each heading come the new copy's changed lines themselves, so the rule is in front of
+# the session whether or not it rereads: cel-272 was told twice that Working rules had changed,
+# read only its own stage's section, and started the Monitor the new lines ruled out.
 # what-changed.sh --selftest
 set -u
+per_section=12  # changed lines shown under one heading; the rest are counted
+in_all=120      # and under every heading together
 
 # Markdown headings, outside code fences: a skill's bash blocks are full of `# comment` lines.
 heads() { awk '/^(```|~~~)/ { f = !f; next } !f && /^#+ / { print }' "$1"; }
 
 sections() {  # the heading over each line of $2 that differs from $1, once each, in file order,
+              # with $2's changed lines under it (a deletion has none: its heading alone shows),
               # then any heading $1 had that $2 lost, so a deleted section is named, not its neighbour
   diff -U0 "$1" "$2" |
     awk '/^@@/ { split($3, r, ","); n = substr(r[1], 2); c = (2 in r) ? r[2] : 1
-                 if (c == 0) print (n < 1 ? 1 : n); for (i = n; i < n + c; i++) print i }' |
-    awk 'NR == FNR { at[$1] = 1; next }
+                 if (c == 0) print (n < 1 ? 1 : n), 0; for (i = n; i < n + c; i++) print i, 1 }' |
+    awk -v cap="$per_section" '
+         function more() { if (k > cap) print "      | (" k - cap " more changed lines in this section)"; k = 0 }
+         NR == FNR { at[$1] = 1; if ($2) show[$1] = 1; next }
          /^(```|~~~)/ { f = !f }
-         !f && /^#+ / { h = substr($0, 1, 72); hn = FNR }
-         FNR in at && !seen[hn]++ { print "    " (hn ? h " (line " hn ")" : "(before the first heading)") }' - "$2"
+         !f && /^#+ / { more(); h = substr($0, 1, 72); hn = FNR }
+         FNR in at { if (!seen[hn]++) print "    " (hn ? h " (line " hn ")" : "(before the first heading)")
+                     if (FNR in show && $0 ~ /[^ \t]/ && ++k <= cap) print "      | " substr($0, 1, 200) }
+         END { more() }' - "$2"
   awk 'NR == FNR { have[$0] = 1; next } !have[$0] { print "    gone: " substr($0, 1, 72) }' \
     <(heads "$2") <(heads "$1")
 }
 
-changes() {
+changes() {  # the listing, with no more than $in_all changed lines in it
+  listing "$1" "$2" | awk -v max="$in_all" '
+    /^      \| / && ++n > max { cut++; next } { print }
+    END { if (cut) print "  (" cut " more changed lines left out: read the sections named above)" }'
+}
+
+listing() {
   diff -rq "$1/skills" "$2/skills" 2>/dev/null | while IFS= read -r line; do
     case "$line" in
       Files\ *)
@@ -53,17 +69,26 @@ if [ "${1:-}" = --selftest ]; then
   printf 'first\n## S\nrest\n' > "$t/a/skills/verify/top.md"; printf '## S\nrest\n' > "$t/b/skills/verify/top.md"
   out=$(changes "$t/a" "$t/b")
   under() { printf "%s\n" "$out" | awk -v f="  $1" '$0 == f { on = 1; next } on && /^    / { print; next } { on = 0 }'; }
-  ok 'a changed SKILL.md is listed with only the section that changed' \
-     '[ "$(under pipeline/SKILL.md)" = "    ### 5 · LAND (line 7)" ]'
+  ok 'a changed SKILL.md is listed with only the section that changed, and its changed lines' \
+     '[ "$(under pipeline/SKILL.md)" = "$(printf "    ### 5 · LAND (line 7)\n      | merge first\n      | then smoke")" ]'
   ok 'an identical file is not listed' '! printf "%s" "$out" | grep -q "verify/SKILL.md"'
   ok 'a new and a removed file are named as such' \
      'printf "%s" "$out" | grep -qx "  new: pipeline/added.sh" && printf "%s" "$out" | grep -qx "  gone: pipeline/gone.md"'
   ok 'a line above every heading and a new heading both show, each once' \
-     '[ "$(under verify/notes.md)" = "$(printf "    (before the first heading)\n    ## B (line 5)")" ]'
+     '[ "$(under verify/notes.md)" = "$(printf "    (before the first heading)\n      | zero\n    ## B (line 5)\n      | ## B\n      | three")" ]'
   ok 'a deletion inside a section names it, a fenced # line is no heading, a deleted section is gone' \
-     '[ "$(under verify/edits.md)" = "$(printf "    ## Keep (line 1)\n    ## Notes (line 7)\n    ## Notes (line 9)\n    gone: ## Old")" ]'
+     '[ "$(under verify/edits.md)" = "$(printf "    ## Keep (line 1)\n      | c2\n    ## Notes (line 7)\n      | x2\n    ## Notes (line 9)\n      | y2\n    gone: ## Old")" ]'
   ok 'deleting line 1 names what now starts the file' '[ "$(under verify/top.md)" = "    ## S (line 1)" ]'
   ok 'two identical copies print nothing' '[ -z "$(changes "$t/a" "$t/a")" ]'
+  mkdir -p "$t/c/skills/pipeline" "$t/d/skills/pipeline"
+  printf '## One\nkeep\n## Two\nkeep\n' > "$t/c/skills/pipeline/SKILL.md"
+  { printf '## One\n'; for i in 1 2 3 4 5; do echo "new $i"; done; printf '\nkeep\n## Two\nkeep\nnew 6\n'; } > "$t/d/skills/pipeline/SKILL.md"
+  per_section=3; out=$(changes "$t/c" "$t/d"); per_section=12
+  ok 'a section shows its first changed lines and counts the rest, blank lines aside' \
+     '[ "$(under pipeline/SKILL.md)" = "$(printf "    ## One (line 1)\n      | new 1\n      | new 2\n      | new 3\n      | (2 more changed lines in this section)\n    ## Two (line 9)\n      | new 6")" ]'
+  in_all=2; out=$(changes "$t/c" "$t/d"); in_all=120
+  ok 'past the limit for the whole listing, headings still show and the lines left out are counted' \
+     '[ "$out" = "$(printf "  pipeline/SKILL.md\n    ## One (line 1)\n      | new 1\n      | new 2\n    ## Two (line 9)\n  (4 more changed lines left out: read the sections named above)")" ]'
   [ $fail = 0 ] && echo "what-changed self-test: 0 failed" || { echo "what-changed self-test: failed"; exit 1; }
   exit 0
 fi
