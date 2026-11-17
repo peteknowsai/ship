@@ -43,14 +43,15 @@ ports and fetch fonts and packages by design, and under the sandbox they fail wi
 EPERM` or a fetch error that reads as a real red (CEL-147 lost a 7-minute suite to 27 of
 them). Each check goes through `route.py gate <cmd>`, which records the run for the ledger.
 A multi-step gate run goes in a script file written with the Write tool, then `route.py
-gate bash <file>`, since the worktree guard refuses long inline commands. That script
-starts with `set -euo pipefail`: without it, `npm test | tail -8` exits with tail's code,
-and CEL-180's script printed green over a failed test. Hold the runner's exit before any
-filter, and filter with `grep -E` rather than `tail`, so a red names its failing test
+gate bash <file>`, since the worktree guard refuses long inline commands. The gate
+runs it with `-e` and pipefail, as its verdict says, so the script adds only `set -u`:
+without pipefail, `npm test | tail -8` exits with tail's code (CEL-180 printed green over
+a failed test). Hold the runner's exit before any filter, and filter with `grep -E` rather
+than `tail`, so a red names its failing test
 (browser-replay reran a 90-second suite only to read the name tail had cut): `rc=0; <test
 command> > <log> 2>&1 || rc=$?; grep -E 'FAIL|●|Test Files|Tests:? ' <log> || true; [ "$rc"
 = 0 ]`, which stops the script on red and goes on to the next gate on green. A typecheck or
-build filters for its own lines (`grep -E 'error' <log>`). A `|| true` on the test pipeline
+build filters for its own lines (`grep -E 'error' <log> || true`). A `|| true` on the test pipeline
 itself turned six red tests green (CEL-182, CEL-260). The log is where the PR body's numbers
 come from, so a runner that keeps its totals out of it is the repo's to fix, its script
 printing them: cells-app's `ios-test.sh` runs `xcodebuild -quiet` into a build folder every
@@ -70,8 +71,8 @@ pass alone, it's load: both runs and the `uptime` load figure go in the commit o
 `result:` line, and it isn't root-caused. A scoped run picked each file because it imports
 the diff, so there a file passes as load only when its time alone is under half its limit;
 nearer the limit, the diff may be what slowed it, and it's a real red. A second red on load waits, in the
-background, for `scripts/wait-load.sh` (sandbox off) to see the 1-minute load fall under the
-core count; its exit 1 is a load still high after its limit, so wait again (cel-315). Nothing is
+background, for `scripts/wait-load.sh --settled` (sandbox off) to see the load settle, the
+1-minute figure under the core count and the 5-minute under one and a half times it; its exit 1 is a load still high after its limit, so wait again (cel-315). Nothing is
 skipped or deselected to get past, and only one limit is loosened: an untouched test's that
 imports nothing the diff changed, red in two loaded runs and green in every run alone, three
 at a load under the core count, the slowest over half its limit. That test is slow by design
@@ -82,7 +83,9 @@ task's first `route.py log` after a load red passes `fix_rounds=` counting only 
 reds, and `gates_first_pass=true` when its first run's only red was load; a `note=` re-log
 carries neither (cel-301).
 The contract's own landing script (cells-app's land-pr.sh) is the same: rerun the failed
-files alone, and when they pass, run it again (CEL-226).
+files alone, and when they pass, run it again (CEL-226). Every run of it, the first too,
+starts after that wait: a suite begun the moment the 1-minute figure dips pushes the load
+back up (cel-500: red from 140, twice more at a 5-minute 31 and 42, green at 26).
 
 **Red in an untouched file, not a timeout.** A red that Red under load doesn't cover (a
 failed test, or an unhandled error with every test otherwise passing, only in files the diff
