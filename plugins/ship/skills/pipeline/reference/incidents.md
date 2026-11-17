@@ -390,17 +390,10 @@ Two runs lost 40 commands to split-and-retry, and two more lost about ten each
 
 ## Dispatch
 
-Lessons from handing work to a subagent, kept where they hold for any worker; the history
-of building through other engines is in git.
+Lessons from handing work to a subagent.
 
-- **A reader that exits 0 without writing its result did not run** (2026-09): a review hit
-  an unrelated skill-loading error and stopped in seconds. A missing or empty result file
-  is never a clean bill; a plain retry of the identical command produced five genuine
-  findings, two of them serious.
-- **Runs killed at a 2-minute timeout got mislogged as failures** — they were healthy
-  high-effort runs that hadn't written anything yet. **Slow is not failure; unknown is.**
-  Give a dispatch a generous window and check in rather than killing; escalate on a wrong
-  diff or a run with no sign of life, never on a slow one.
+- **A reader's report back in seconds, naming an error or showing no sign it read the
+  diff, is a rerun, never a clean bill** (2026-09: the retry found five, two serious).
 - **A worker has auto-opened PRs and committed unprompted** — git stays with the driver,
   whoever drafts. One also committed its own result markdown into the repo, and a `--hard`
   reset cleaning that up ate an unstaged driver edit: a worker reports its result and

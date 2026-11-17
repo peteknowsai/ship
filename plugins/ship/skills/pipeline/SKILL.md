@@ -157,7 +157,10 @@ the PR body's first lines. Messages between sessions are exempt.
   result goes in the next message (a wait beside a failed step ran out its whole timeout).
 - **A background or Monitor command reports nothing until its pipe flushes**: `grep
   --line-buffered`, never a bare `| grep` or `| cut`. A wait needs no loop: `gh pr checks <#>
-  -R <o/r> --watch`.
+  -R <o/r> --watch`. **A Monitor's shell is always sandboxed**, with no switch: nothing on
+  the Sandbox off list runs in one, and a repo that turns the sandbox off for every shell
+  call gets none. Wait on the background Bash call's completion and read its log with the
+  Read tool (cel-479's Monitor moved a landing's lock aside).
 - **While a run or a subagent works, work the non-tree list** (the card, the commit message,
   the ledger lines), and at a gate notify, then keep doing non-gated work. **A turn ends** at
   a stop (`needs input:`), at `result:`, when nothing can move without Pete, or while you
