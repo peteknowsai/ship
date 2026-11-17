@@ -227,10 +227,6 @@ its pre-flight is still on the driver. A Convex repo with no `backend:` line and
   head -50` got SIGPIPE'd the moment `head` exited; the verifier reported "localhost
   refused connection". Detach with output redirected to a
   file (`nohup npm run dev > dev.log 2>&1 &`) and curl-probe before dispatching.
-- **`gh run list --commit` matches only the full 40-char SHA.** Armed with a short SHA
-  from `git log --oneline`, the deploy watch returned `[]` forever while the run existed
-  and succeeded. Use
-  `$(git rev-parse <short-sha>)`.
 - **Workflow concurrency can cancel your deploy run**; the superseding run's green reads
   as yours while the lane is mid-deploy. Watch the run for YOUR commit
   (`gh run list --commit <sha>`), and artifact-check the lane before handing back a URL.
@@ -388,6 +384,10 @@ Two runs lost 40 commands to split-and-retry, and two more lost about ten each
 
 Lessons from handing work to a subagent.
 
+- **Two briefs left out the repo's shell rule** (cel-512's delta reader, cel-460's builder,
+  2026-11-16): the drivers ran every cells-app call with the sandbox off, as its memory
+  says, and each subagent's first call ran sandboxed and moved a landing's lock aside. A
+  rule worded as a fact reads as background, so the brief gives the order.
 - **A reader's report back in seconds, naming an error or showing no sign it read the
   diff, is a rerun, never a clean bill** (2026-09: the retry found five, two serious).
 - **A worker has auto-opened PRs and committed unprompted** — git stays with the driver,
