@@ -68,8 +68,8 @@ nothing lands untested. What scales is the ceremony before TEST, and you size it
 
 - **EXPRESS: a quick tweak or fix.** The whole diff is visible before you start and there is
   no money path. No spec, no plan, no cards, no stops: worktree, change, gates, pre-flight,
-  push and links, TEST, land on a pass, `result:`. No branch read, except one by the reader
-  (Engines and readers) before TEST when the diff is text a model reads (a prompt, a tool
+  push and links, TEST, land on a pass, `result:`. No branch read, except REVIEW's (its
+  brief, triage and row) before TEST when the diff is text a model reads (a prompt, a tool
   description) or acts on the machine (kills processes, deletes files, force-pushes):
   CEL-181 and CEL-134 shipped bugs one read would have caught there. A text transform or
   row filter still gets REVIEW's corpus run. A change to a function many callers share is SELF-DIRECTED,
@@ -164,9 +164,9 @@ the PR body's first lines. Messages between sessions are exempt.
   wait on background work with nothing else to do; his global rules on how turns end hold on
   every lane, where nobody says "continue".
 - **Pete's budget word outranks ship's defaults.** When he caps subagents or spend for a run,
-  skip the reader and build Fable's tasks yourself (`why=budget`), log each skip
-  (`review=fable stage=<plan|branch> note=skipped:budget`), and say in `result:` that no
-  fresh reader saw the plan or the branch.
+  skip the plan read and build Fable's tasks yourself (`why=budget`), and keep the branch
+  read unless his word rules out every subagent. Log each skip (`review=fable
+  stage=<plan|branch> note=skipped:budget`), and say in `result:` what no fresh reader saw.
 - **Log every durable call**, on any lane, that a stop or Pete mid-run settles (direction,
   scope cut, architecture or tool choice): `decisions.py log --file <json>`
   (`{"decision","rationale","source":"user"}`); a reversal is `decisions.py supersede <id>
@@ -209,15 +209,17 @@ done or todo, the branch's commits and uncommitted files: trust it over the summ
 the plan, this skill's section for the stage and any triage or QA file the stage wrote, and
 post Pete the one line.
 
-**The reader is never the writer.** A reader shares the blind spots of code its own model
-wrote and goes easy on it (Pete, 2026-10-14), so its brief says to assume the writer was
-wrong at every seam. Where Fable built, Fable still reads: the driver, another model, read
-that diff at BUILD. The reader starts with no `name`: a named subagent's report comes back
+**The reader is the model that didn't drive.** A reader shares the blind spots of code its
+own model wrote and goes easy on it (Pete, 2026-10-14), so its brief says to assume the
+writer was wrong at every seam. Fable's hard tasks are the exception: Fable reads its own
+there, so the driver's read of that diff at BUILD is the only one by another model. The
+reader starts with no `name`: a named subagent's report comes back
 cut at 4,000 characters (connections-page). Its report opens with the model it ran on, and
 one that isn't Fable 5.2 (an older session's `fable` meant 5.1) gets `model=<what it said>`
-on its row. Fable out (a usage limit): a fresh Opus 5.5 subagent takes its brief, logged
-`review=opus note=for:fable`, and `result:` says so. A reader reports and never edits: one
-that rewrites breaks working code. A claim about how a dependency behaves at runtime is
+on its row. The reader's model out (a usage limit): a fresh subagent on the driver's model
+takes the brief, logged under its own name with `note=for:<the one out>`, and `result:`
+says no other model read the branch. A reader reports and never edits: one that rewrites
+breaks working code. A claim about how a dependency behaves at runtime is
 checked in its installed code (`node_modules/<pkg>/dist`), not its docs (Eve's queued
 messages, 2026-10-14).
 
@@ -614,17 +616,17 @@ read where Sizing says.
   HEAD sha, and nothing is committed until the read is back (card-quality-rank committed
   fixes mid-read, and a reader reported its top finding as already fixed).
 - **Triage every finding.** An adversarial reader over-flags by design, so no finding is
-  proof: check each against the code. A review
-  makes the branch correct, not bigger (Pete, 2026-11-01): decline a nit (style, naming, a
-  comment that isn't wrong) and anything the spec doesn't ask for, unless it's security,
-  money or data loss. Judgment calls go on the card or in `result:`.
+  proof: check each against the code. A review makes the branch correct, not bigger (Pete,
+  2026-11-01): decline a nit (style, naming, a comment that isn't wrong) and anything the
+  spec doesn't ask for, unless it's security, money or data loss. Judgment calls go on the
+  card or in `result:`.
 - **`git status` before the first fix**: dirt means a reader edited the tree, which nothing
   stops a subagent doing; its edits are thrown away, never committed (incidents: Dispatch).
 - **Write the triage to `<job tmp>/triage-<slug>.md` before the first fix**: one line per
-  finding, what it says, real, false or nit, and fixed or declined with why. It outlives a
-  compaction, and the ledger row and the PR's Reviewed line come from it (screendrop-worker
-  rebuilt one from the transcript). Then the row: `route.py log repo= ship=
-  review=<fable|opus> stage=branch real= false= nits= seconds=`.
+  finding, its read (branch or delta), what it says, real, false or nit, and fixed or
+  declined with why. It outlives a compaction, and the ledger row and the PR's Reviewed line
+  come from it (screendrop-worker rebuilt one from the transcript). Then the row: `route.py
+  log repo= ship= review=<fable|opus> stage=branch real= false= nits= seconds=`.
 - **Fix what's real**, each fix run against the cases the issue or spec names before it's
   committed (two fixes added up to a guard that undid eca-finder's loose deck), with
   the gates scoped through `route.py gate`. A fix that rebuilds the rule a finding was
@@ -687,9 +689,10 @@ read where Sizing says.
   counts (cel-313's first drafts each carried a slip of their own).
 - **`works`: write the PR body, then land.** Call the Skill tool with `mattpocock-skills:pr`
   and rewrite the tracker PR in its shape: Summary, Evidence (the QA result and its shots, the
-  test that went green), Merge Danger, and a last line for the read, `Reviewed: Fable 5.2 <n>
-  fixed, <n> declined, <n> wrong`, with each declined finding and why in a collapsed list,
-  all from the triage file. Every number anywhere comes from recorded output, rechecked
+  test that went green), Merge Danger, and a last line for the read, `Reviewed: <the
+  reader's model> <n> fixed, <n> declined, <n> wrong` (`Reviewed: none, <why>` for a read
+  skipped), with each declined finding and why in a collapsed list, all from the triage
+  file. Every number anywhere comes from recorded output, rechecked
   before posting; after a compaction, with `scripts/numbers.py <transcript> <n>...`, which
   counts one only where output the session didn't write showed it, never its own words read
   back (the recap names the transcript). Give each number a word that stood beside it on

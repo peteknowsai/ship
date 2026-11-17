@@ -433,7 +433,8 @@ def readers(pairs):
                        and akin(str(r['ship']))})
         print(f"route readers: {want['ship']} has no fable or opus branch row since the branch "
               "began; log the read (review=<fable|opus> stage=branch real= false= nits=) before "
-              "landing, or review=fable stage=branch note=skipped:budget when Pete capped spend"
+              "landing, or review=fable stage=branch note=skipped:budget when Pete's budget word "
+              "ruled out every subagent"
               + (f"; branch reads also sit under ship={', '.join(near)}: if they are this ship's "
                  f"own, log them again under ship={ship}, never borrow another ship's" if near else ''),
               file=sys.stderr)
@@ -718,6 +719,13 @@ def selftest():
         check('readers needs repo and ship', 'repo=' in refused(readers, ['ship=m']))
         log(['repo=ship', 'ship=f', 'review=fable', 'stage=branch', 'note=skipped:budget'])
         check("a read skipped on Pete's budget word passes", readers(['repo=ship', 'ship=f']) == 0)
+        log(['repo=ship', 'ship=w', 'review=wonder', 'stage=branch', 'real=3', 'only=2'])
+        log(['repo=ship', 'ship=w', 'review=fable', 'stage=delta', 'real=1'])
+        check('an old Wonder read alone, or a delta read, is no branch read',
+              readers(['repo=ship', 'ship=w']) == 1)
+        log(['repo=ship', 'ship=w', 'review=opus', 'stage=branch', 'real=1', 'note=for:fable'])
+        check("a read by the driver's model in the reader's place passes",
+              readers(['repo=ship', 'ship=w']) == 0)
 
         # the review card and the branch's own rows: readers, run from the worktree
         cards = os.path.join(tmp, 'cards')
