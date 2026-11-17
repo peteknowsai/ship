@@ -137,10 +137,10 @@ the PR body's first lines. Messages between sessions are exempt.
   that talks to GitHub (`gh`, `git push`, `git fetch`: the sandbox's proxy fails their TLS),
   any git command that rewrites the tree or makes a branch (the sandbox denies writes under
   `.claude/` and to `.git/config`, and CEL-213's rebase stopped halfway), a script that writes
-  under `.claude/` (the Edit and Write tools can; cel-285's merge of the checks skill could
-  not), gates, smokes, `stack:` (its
+  under `.claude/` (the Edit and Write tools can), gates, smokes, `stack:` (its
   `vercel env pull` fails inside), dev servers, `tsx`, and anything that reaches a local server, since a sandboxed `curl` at
-  localhost reads as a dead server. Everything else stays in the sandbox.
+  localhost reads as a dead server. Everything else stays in the sandbox, unless the repo's
+  memory or instructions turn the sandbox off.
 - **`$TMPDIR` changes with the sandbox** (`/tmp/claude-<uid>` inside, `/var/folders/…/T`
   outside), so anything that crosses gets an absolute path under the job's tmp.
 - **Env files are given to the tool** (`tsx --env-file=.env.local`), never sourced. The
@@ -201,30 +201,28 @@ on 6 of 9 tasks in one ship). A subagent earns its seat for four jobs only:
 Speed is never the reason: Pete doesn't measure a ship by wall time. A subagent is an Agent
 tool call, which the harness tracks and wakes you for, never a `claude -p` process.
 **A brief** is the driver's envelope: the exact files and the wiring among them, signatures,
-test cases, constraints; call the Skill tool with `mattpocock-skills:writing-for-agents` once
-per run before the first. The driver reviews what comes back and runs the gates before
+test cases, constraints; call the Skill tool with `mattpocock-skills:writing-for-agents`
+once per run before the first. Every brief, a reader's and a recon's too, gives as orders
+the shell rules set by the repo's memory or instructions or by Pete, each with where it
+lives (incidents: Dispatch). The driver reviews what comes back and runs the gates before
 anything is committed, and owns git. One writer per tree.
 
 **Compaction is survivable by design.** A ship keeps its state on disk: the plan, a commit
 per task, the marker, `.ship-done`, the ledger, and in the job's tmp the triage file and the
 QA result. After each compaction `hooks/ship-recap.sh` prints the stage, the plan, each task
 done or todo, the branch's commits and uncommitted files: trust it over the summary, reread
-the plan, this skill's section for the stage and any triage or QA file the stage wrote, and
-post Pete the one line.
+the plan, the repo's shell rules, this skill's section for the stage and any triage or QA
+file the stage wrote, and post Pete the one line.
 
 **The reader is the model that didn't drive.** A reader shares the blind spots of code its
 own model wrote and goes easy on it (Pete, 2026-10-14), so its brief says to assume the
 writer was wrong at every seam. Fable's hard tasks are the exception: Fable reads its own
 there, so the driver's read of that diff at BUILD is the only one by another model. The
-reader starts with no `name`: a named subagent's report comes back
-cut at 4,000 characters (connections-page). Its report opens with the model it ran on, and
-one that isn't Fable 5.2 (an older session's `fable` meant 5.1) gets `model=<what it said>`
-on its row. The reader's model out (a usage limit): a fresh subagent on the driver's model
-takes the brief, logged under its own name with `note=for:<the one out>`, and `result:`
-says no other model read the branch. A reader reports and never edits: one that rewrites
-breaks working code. A claim about how a dependency behaves at runtime is
-checked in its installed code (`node_modules/<pkg>/dist`), not its docs (Eve's queued
-messages, 2026-10-14).
+reader starts with no `name`: a named subagent's report comes back cut at 4,000 characters
+(connections-page). The reader's model out (a usage limit): a fresh subagent on the driver's
+model takes the brief, logged under its own name with `note=for:<the one out>`, and
+`result:` says no other model read the branch. A reader reports and never edits: one that
+rewrites breaks working code.
 
 **The ledger** (`~/.claude/ship-ledger.jsonl`) is kept by `scripts/route.py`, from the
 worktree:
@@ -407,8 +405,8 @@ one with uncommitted work, one a live session holds (wt's 💬), or one under tw
   C2… so he can overrule one (Pete, 2026-11-09: rounds ran to 13 questions). Nothing is asked
   before round 1: where an answer would change what to draw, draw your pick as one of the
   round's forks.
-- **Recon is a read-only Opus subagent; synthesis stays with the driver.** Its brief: a reuse
-  audit (grep the whole repo, data layer included, for every core noun the feature
+- **Recon is a read-only Opus subagent; synthesis stays with the driver.** Its brief: the
+  repo's shell rules (Engines); a reuse audit (grep the whole repo, data layer included, for every core noun the feature
   introduces); the liveness of any existing surface the design lands on (current design
   system? reachable from primary nav? touched recently?), since a deprecated page serves
   happily; the ships in flight whose surfaces overlap (`git worktree list` and each
@@ -542,19 +540,20 @@ one with uncommitted work, one a live session holds (wt's 💬), or one under tw
   tightens the rule those writes followed, recheck every one (5 of 19 catalog links were
   wrong). A rule's first run over existing rows is a dry run: the list of what it would
   change, sorted by reason, read before any write.
-- **A subagent's task** (Engines, jobs 3 and 4) gets the standing boilerplate, each line from a
-  burned run (incidents: Dispatch): one task per brief with the plan's code pasted in, the
-  exact test commands and the files it may touch; "do it, do not propose"; test files whose
-  assertions the change invalidates are in scope; the final message is STATUS, TESTS,
-  CONCERNS, a longer report in a file in the worktree; it never commits and never runs `git
-  reset/checkout/stash`. A repo whose rules load by path (`.claude/rules/`) gets those files
-  named. A subagent never gets a copy of the env files (the Convex Stop hook would push its
-  half-edit). A Convex repo's briefs say `convex codegen` prints "Uploading functions" and
-  deploys nothing. Never add scope by message mid-run: findings wait for its report and go
-  back to the same worker (SendMessage) as the next round. Two wrong diffs and the driver
-  writes it, `verdict=redone` on the builder's row. Its report is checked against every
-  message it was sent, each fix item done. Silence is not a signal: if its work is in the
-  tree and no report has landed, review the diff and run the gates yourself.
+- **A subagent's task** (Engines, jobs 3 and 4) gets the standing boilerplate, each line
+  from a burned run (incidents: Dispatch): one task per brief with the plan's code pasted
+  in, the exact test commands and the files it may touch; "do it, do not propose"; test
+  files whose assertions the change invalidates are in scope; the final message is STATUS,
+  TESTS, CONCERNS, a longer report in a file in the worktree; it never commits and never
+  runs `git reset/checkout/stash`. The repo's shell rules go in as orders (Engines); a repo
+  whose rules load by path (`.claude/rules/`) gets those files named. A subagent never gets
+  a copy of the env files (the Convex Stop hook would push its half-edit). A Convex repo's
+  briefs say `convex codegen` prints "Uploading functions" and deploys nothing. Never add
+  scope by message mid-run: findings wait for its report and go back to the same worker
+  (SendMessage) as the next round. Two wrong diffs and the driver writes it,
+  `verdict=redone` on the builder's row. Its report is checked against every message it was
+  sent, each fix item done. Silence is not a signal: if its work is in the tree and no
+  report has landed, review the diff and run the gates yourself.
 - **A UI task matches its frame** (`specs/designs/<storyboard>.html#A3`, markup and CSS), and
   a subagent writing UI is told to read `~/.claude/skills/impeccable/reference/craft-floor.md`
   and the storyboard's three banned model defaults, since it doesn't get impeccable's hook.

@@ -227,17 +227,9 @@ its pre-flight is still on the driver. A Convex repo with no `backend:` line and
   head -50` got SIGPIPE'd the moment `head` exited; the verifier reported "localhost
   refused connection". Detach with output redirected to a
   file (`nohup npm run dev > dev.log 2>&1 &`) and curl-probe before dispatching.
-- **A batch once merged 18 green PRs onto a dev lane that had been red for an hour.**
-  A red deploy is unfinished work on every lane — watch to conclusion.
-- **`gh run list --commit` matches only the full 40-char SHA.** Armed with a short SHA
-  from `git log --oneline`, the deploy watch returned `[]` forever while the run existed
-  and succeeded. Use
-  `$(git rev-parse <short-sha>)`.
 - **Workflow concurrency can cancel your deploy run**; the superseding run's green reads
   as yours while the lane is mid-deploy. Watch the run for YOUR commit
   (`gh run list --commit <sha>`), and artifact-check the lane before handing back a URL.
-- **Two sessions once raced identical fixes to a red shared lane** and one ship was
-  thrown away. Check for an existing fix PR first; open a draft PR as the claim.
 - **A diff that `live:` puts out in two parts, one at the merge and one at a later release,
   can send the first at a page production doesn't have yet.** cel-361's websites went live
   at the merge with Sign up and "Ask to join" pointing at `app.homezero.md/sign-up`, an app
@@ -383,15 +375,16 @@ one plain command per call.
 - Quoted JSON on a command line (`decisions.py log '{…}'`): use `log --file <json>`.
 - `set -a && . ./.env.local`: give the tool the file instead (`tsx --env-file=.env.local`,
   `node --env-file=.env.local`).
-- A process substitution (`comm -12 <(…) <(…)`).
-
-Two runs lost 40 commands to split-and-retry, and two more lost about ten each
-(2026-10-05).
 
 ## Dispatch
 
 Lessons from handing work to a subagent.
 
+- **Three ships ran a sandboxed call where the repo's memory turns the sandbox off**
+  (cells-app, 2026-11-16), each moving a landing's lock aside: a reader and a builder whose
+  briefs left the rule out (cel-512, cel-460), and a driver after a compaction, on Working
+  rules' "stays in the sandbox" (cel-500). A rule worded as a fact reads as background and
+  a driver's bare order isn't Pete's, so a brief gives the order and where it lives.
 - **A reader's report back in seconds, naming an error or showing no sign it read the
   diff, is a rerun, never a clean bill** (2026-09: the retry found five, two serious).
 - **A worker has auto-opened PRs and committed unprompted** — git stays with the driver,
