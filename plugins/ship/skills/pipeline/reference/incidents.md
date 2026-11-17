@@ -227,8 +227,6 @@ its pre-flight is still on the driver. A Convex repo with no `backend:` line and
   head -50` got SIGPIPE'd the moment `head` exited; the verifier reported "localhost
   refused connection". Detach with output redirected to a
   file (`nohup npm run dev > dev.log 2>&1 &`) and curl-probe before dispatching.
-- **A batch once merged 18 green PRs onto a dev lane that had been red for an hour.**
-  A red deploy is unfinished work on every lane — watch to conclusion.
 - **`gh run list --commit` matches only the full 40-char SHA.** Armed with a short SHA
   from `git log --oneline`, the deploy watch returned `[]` forever while the run existed
   and succeeded. Use
@@ -236,8 +234,6 @@ its pre-flight is still on the driver. A Convex repo with no `backend:` line and
 - **Workflow concurrency can cancel your deploy run**; the superseding run's green reads
   as yours while the lane is mid-deploy. Watch the run for YOUR commit
   (`gh run list --commit <sha>`), and artifact-check the lane before handing back a URL.
-- **Two sessions once raced identical fixes to a red shared lane** and one ship was
-  thrown away. Check for an existing fix PR first; open a draft PR as the claim.
 - **A diff that `live:` puts out in two parts, one at the merge and one at a later release,
   can send the first at a page production doesn't have yet.** cel-361's websites went live
   at the merge with Sign up and "Ask to join" pointing at `app.homezero.md/sign-up`, an app

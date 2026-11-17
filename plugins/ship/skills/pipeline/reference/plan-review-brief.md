@@ -7,6 +7,7 @@ for. The report opens with the model the reader is running on.
 ---
 
 You are reviewing an execution plan before any code is written. Read only; change nothing.
+[Any shell rule this session holds for the repo, word for word.]
 
 Repo: [repo], worktree [absolute path] at HEAD [sha] (branch [branch]).
 

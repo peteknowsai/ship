@@ -201,8 +201,10 @@ on 6 of 9 tasks in one ship). A subagent earns its seat for four jobs only:
 Speed is never the reason: Pete doesn't measure a ship by wall time. A subagent is an Agent
 tool call, which the harness tracks and wakes you for, never a `claude -p` process.
 **A brief** is the driver's envelope: the exact files and the wiring among them, signatures,
-test cases, constraints; call the Skill tool with `mattpocock-skills:writing-for-agents` once
-per run before the first. The driver reviews what comes back and runs the gates before
+test cases, constraints, and every shell rule this session holds for the repo, word for word
+(cel-512's reader and cel-460's builder each ran a sandboxed call in cells-app, whose memory
+turns the sandbox off for every one); call the Skill tool with
+`mattpocock-skills:writing-for-agents` once per run before the first. The driver reviews what comes back and runs the gates before
 anything is committed, and owns git. One writer per tree.
 
 **Compaction is survivable by design.** A ship keeps its state on disk: the plan, a commit
