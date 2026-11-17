@@ -396,8 +396,8 @@ Two runs lost 40 commands to split-and-retry, and two more lost about ten each
 
 ## Dispatch
 
-Lessons from handing work to a subagent, kept where they hold for any worker; the history
-of building through other engines is in git.
+Lessons from handing work to a subagent; the history of building through other engines is
+in git.
 
 - **A worker has auto-opened PRs and committed unprompted** — git stays with the driver,
   whoever drafts. One also committed its own result markdown into the repo, and a `--hard`
