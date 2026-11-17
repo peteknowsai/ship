@@ -81,12 +81,6 @@ These are facts, not process — the process lives in SKILL.md.
   untracked file the branch adds, a copy this session wrote is removed and the move rerun
   (`local-pack.sh <pack> --restart` in cells-app); anyone else's waits for Pete, named in
   `result:`.
-- **A land script's fresh checkout holds only the installs it makes** (cells-app
-  explainer-command, 2026-11-16): a new test spawned a script that imported from
-  `filmmaker/node_modules`, a sub-package land-pr never installs. The worktree's gates
-  passed on its own install, and the landing went red: a full rerun. A test that reaches a
-  sub-package with its own `package.json` runs once before LAND in a fresh `git worktree
-  add` of the branch, with only the installs the land script makes.
 - **A pre-existing sibling worktree (Zero's convention) is not ship's to tear down** —
   the session and its dev server live there. Merge with `-R <owner/repo>` without
   `--delete-branch`, delete the remote branch explicitly, leave the worktree.
@@ -396,9 +390,10 @@ Two runs lost 40 commands to split-and-retry, and two more lost about ten each
 
 ## Dispatch
 
-Lessons from handing work to a subagent; the history of building through other engines is
-in git.
+Lessons from handing work to a subagent.
 
+- **A reader's report back in seconds, naming an error or showing no sign it read the
+  diff, is a rerun, never a clean bill** (2026-09: the retry found five, two serious).
 - **A worker has auto-opened PRs and committed unprompted** — git stays with the driver,
   whoever drafts. One also committed its own result markdown into the repo, and a `--hard`
   reset cleaning that up ate an unstaged driver edit: a worker reports its result and

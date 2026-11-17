@@ -60,7 +60,10 @@ replace parts of it.
     file convex-core imports (#398 landed `network:typecheck` red that way, and its test
     runs under `network:test`). So step 1 runs both whenever the branch changes code
     but has no such path, without checking what convex-core imports, or when an absorb
-    brought one; never on a diff of only what never ships.
+    brought one; never on a diff of only what never ships. land-pr's checkout gets only the
+    root `npm install`, so a test reaching a sub-package with its own `package.json`
+    (`filmmaker/`) passes in the worktree and goes red there (explainer-command): load
+    what it imports from one only where it's used.
   - Push everything first (it lands the PR's pushed head), put the final evidence in a
     commit message rather than only the PR body (its commit never reads the body), and stop
     the worktree's dev server and any simulator before it runs, since its suite is
