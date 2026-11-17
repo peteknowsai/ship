@@ -85,8 +85,8 @@ These are facts, not process — the process lives in SKILL.md.
   explainer-command, 2026-11-16): a new test spawned a script that imported from
   `filmmaker/node_modules`, a sub-package land-pr never installs. The worktree's gates
   passed on its own install, and the landing went red: a full rerun. A test that reaches a
-  sub-package with its own `package.json` runs once from a bare `git worktree add` of the
-  branch before LAND.
+  sub-package with its own `package.json` runs once before LAND in a fresh `git worktree
+  add` of the branch, with only the installs the land script makes.
 - **A pre-existing sibling worktree (Zero's convention) is not ship's to tear down** —
   the session and its dev server live there. Merge with `-R <owner/repo>` without
   `--delete-branch`, delete the remote branch explicitly, leave the worktree.
