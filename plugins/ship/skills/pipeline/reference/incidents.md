@@ -323,10 +323,10 @@ its pre-flight is still on the driver. A Convex repo with no `backend:` line and
   (eca-finder stable-class-ids, 2026-11-05: the first fix redesigned the id rule, and a read
   of it found 12 real, two high). A fix rebuilds the rule when it changes what the rule
   decides for inputs no finding named (a new state, a rewritten branch), not when it adds
-  the case a finding named. It gets one delta read before TEST: the other lab's reader
-  where the lane has one, else the lane's reader in a fresh context; the branch brief with
+  the case a finding named. It gets one delta read before TEST, by the reader in a fresh
+  context; the branch brief with
   `git diff <sha before the fix>..HEAD` as the diff and the findings it fixed in place of
-  the plan's tasks; logged `review=<wonder|fable|opus> stage=delta`, which `route.py readers`
+  the plan's tasks; logged `review=<fable|opus> stage=delta`, which `route.py readers`
   doesn't count as a branch read. Its findings join the triage file.
 - **A stateful rule that keeps drawing findings has a hole the readers can't size.** Reads
   two, three and four of the same ship each found one more move sequence that lost an id,
@@ -413,7 +413,3 @@ of building through other engines is in git.
   behavior change invalidates an assertion in a test file outside the list — two of three
   dispatches stopped mid-run to ask permission, each costing a resume round-trip. Briefs
   say so up front: test files whose assertions the change invalidates are always in scope.
-- **`muse.py` writes `last.md` only after its frame loop ends**, so a wrapper killed after
-  Wonder's turn completed, by a session restart, leaves no `last.md` (save-files-to-mac,
-  2026-11-09). The answer is still in `<out-dir>/events.jsonl`: the last `item/completed`
-  agentMessage whose `messagePhase` is `finalAnswer`.
