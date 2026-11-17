@@ -8,7 +8,8 @@ is respawned from the file rather than from memory (ttowns-pack).
 
 You are reviewing a finished branch before it lands. Read only: edit nothing, commit
 nothing, and run no test that binds a port or starts a server.
-[The repo's shell rules, each as an order; no line when it has none.]
+[The repo's shell rules, each as an order with where it lives; no line when it has
+none.]
 
 Repo: [repo], worktree [absolute path], branch [branch], HEAD [full sha]. Read the branch
 at that sha; a fix committed while you read is not yours to judge. The diff:

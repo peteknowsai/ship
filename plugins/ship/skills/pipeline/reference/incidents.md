@@ -375,19 +375,16 @@ one plain command per call.
 - Quoted JSON on a command line (`decisions.py log '{…}'`): use `log --file <json>`.
 - `set -a && . ./.env.local`: give the tool the file instead (`tsx --env-file=.env.local`,
   `node --env-file=.env.local`).
-- A process substitution (`comm -12 <(…) <(…)`).
-
-Two runs lost 40 commands to split-and-retry, and two more lost about ten each
-(2026-10-05).
 
 ## Dispatch
 
 Lessons from handing work to a subagent.
 
-- **Two briefs left out the repo's shell rule** (cel-512's delta reader, cel-460's builder,
-  2026-11-16): the drivers ran every cells-app call with the sandbox off, and each
-  subagent's first call ran sandboxed and moved a landing's lock aside. A rule worded as a
-  fact reads as background, so the brief gives the order.
+- **Three ships ran a sandboxed call where the repo's memory turns the sandbox off**
+  (cells-app, 2026-11-16), each moving a landing's lock aside: a reader and a builder whose
+  briefs left the rule out (cel-512, cel-460), and a driver after a compaction, on Working
+  rules' "stays in the sandbox" (cel-500). A rule worded as a fact reads as background and
+  a driver's bare order isn't Pete's, so a brief gives the order and where it lives.
 - **A reader's report back in seconds, naming an error or showing no sign it read the
   diff, is a rerun, never a clean bill** (2026-09: the retry found five, two serious).
 - **A worker has auto-opened PRs and committed unprompted** — git stays with the driver,
