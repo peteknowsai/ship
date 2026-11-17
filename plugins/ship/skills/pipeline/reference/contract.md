@@ -70,8 +70,8 @@ pass alone, it's load: both runs and the `uptime` load figure go in the commit o
 `result:` line, and it isn't root-caused. A scoped run picked each file because it imports
 the diff, so there a file passes as load only when its time alone is under half its limit;
 nearer the limit, the diff may be what slowed it, and it's a real red. A second red on load waits, in the
-background, for `scripts/wait-load.sh` (sandbox off) to see the 1-minute load fall under the
-core count; its exit 1 is a load still high after its limit, so wait again (cel-315). Nothing is
+background, for `scripts/wait-load.sh --settled` (sandbox off) to see the load settle, the
+1-minute figure under the core count and the 5-minute under one and a half times it; its exit 1 is a load still high after its limit, so wait again (cel-315). Nothing is
 skipped or deselected to get past, and only one limit is loosened: an untouched test's that
 imports nothing the diff changed, red in two loaded runs and green in every run alone, three
 at a load under the core count, the slowest over half its limit. That test is slow by design
@@ -83,9 +83,8 @@ reds, and `gates_first_pass=true` when its first run's only red was load; a `not
 carries neither (cel-301).
 The contract's own landing script (cells-app's land-pr.sh) is the same: rerun the failed
 files alone, and when they pass, run it again (CEL-226). Every run of it, the first too,
-starts after `wait-load.sh --settled`, which also wants the 5-minute load under one and a
-half times the cores: the suite pushes the load back up (cel-500: red from 140, twice more
-at a 5-minute 31 and 42, green at 26).
+starts after that wait: a suite begun the moment the 1-minute figure dips pushes the load
+back up (cel-500: red from 140, twice more at a 5-minute 31 and 42, green at 26).
 
 **Red in an untouched file, not a timeout.** A red that Red under load doesn't cover (a
 failed test, or an unhandled error with every test otherwise passing, only in files the diff

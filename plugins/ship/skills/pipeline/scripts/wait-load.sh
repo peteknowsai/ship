@@ -2,8 +2,8 @@
 # wait-load.sh [--settled] [<max seconds>]: returns once the 1-minute load average is under the
 # core count, the bar contract.md's Red under load sets before a rerun and mac-vm.sh sets before a
 # boot (app-look's VM failed to boot twice at load 117 to 146 on 18 cores, and booted at 16).
-# --settled also wants the 5-minute average under one and a half times the cores, the bar before
-# a landing script's gates: a suite started the moment the 1-minute figure dips pushes the load
+# --settled also wants the 5-minute average under settled_factor times the cores, the bar before
+# a suite that takes minutes: one started the moment the 1-minute figure dips pushes the load
 # back up (cel-500's landing went red at a 5-minute 31 and 42 on 18 cores, and green at 26).
 # Every ship used to write this loop itself. Prints the load as it waits, exit 1 when it is
 # still over after <max seconds> (default 1800). Run it as a background Bash call.
@@ -12,9 +12,10 @@ set -euo pipefail
 
 cores=${WAIT_LOAD_CORES:-$(sysctl -n hw.ncpu 2>/dev/null || true)}
 every=${WAIT_LOAD_EVERY:-30}
+settled_factor=1.5  # rests on three starts: green at 1.47 times the cores, red at 1.70 and 2.36
 loads() {  # the 1- and 5-minute figures; WAIT_LOAD_SEQ is a file of them, a line per check, for the test
   if [ -n "${WAIT_LOAD_SEQ:-}" ]; then sed -n "${1}p" "$WAIT_LOAD_SEQ"
-  else sysctl -n vm.loadavg 2>/dev/null | awk '{print $2, $3}'; fi
+  else LC_ALL=C sysctl -n vm.loadavg 2>/dev/null | awk '{print $2, $3}'; fi
 }
 read_fail() { echo "wait-load: couldn't read the load (the sandbox blocks sysctl: run it with the sandbox off)" >&2; exit 2; }
 
@@ -25,8 +26,8 @@ wait_load() {
     read -r l f _ <<<"$out"
     [[ "$l" =~ $num ]] || read_fail
     if [ "$settled" = 1 ]; then [[ "$f" =~ $num ]] || read_fail; five=", 5-minute $f"; fi
-    if awk -v l="$l" -v f="${f:-0}" -v c="$cores" -v s="$settled" \
-        'BEGIN { exit !(l + 0 < c + 0 && (!s || f + 0 < c * 1.5)) }'; then
+    if awk -v l="$l" -v f="${f:-0}" -v c="$cores" -v s="$settled" -v k="$settled_factor" \
+        'BEGIN { exit !(l + 0 < c + 0 && (!s || f + 0 < c * k)) }'; then
       if [ "$settled" = 1 ]; then echo "load $l$five, settled on $cores cores"
       else echo "load $l, under $cores cores"; fi
       return 0
@@ -46,10 +47,9 @@ selftest() {
   if WAIT_LOAD_SEQ=$t/seq WAIT_LOAD_CORES=18 WAIT_LOAD_EVERY=1 bash "$0" 1 2>/dev/null; then
     echo "wait-load selftest: FAILED (a load that stays high should time out)"; return 1
   fi
-  printf '18\n' > "$t/seq"
-  if WAIT_LOAD_SEQ=$t/seq WAIT_LOAD_CORES=18 WAIT_LOAD_EVERY=0 bash "$0" 0 2>/dev/null; then
-    echo "wait-load selftest: FAILED (a load equal to the cores is not under them)"; return 1
-  fi
+  printf '18\n' > "$t/seq"; rc=0
+  WAIT_LOAD_SEQ=$t/seq WAIT_LOAD_CORES=18 WAIT_LOAD_EVERY=0 bash "$0" 0 2>/dev/null || rc=$?
+  [ "$rc" = 1 ] || { echo "wait-load selftest: FAILED (a load equal to the cores is not under them, rc $rc)"; return 1; }
   printf '\n' > "$t/seq"; rc=0
   WAIT_LOAD_SEQ=$t/seq WAIT_LOAD_CORES=18 WAIT_LOAD_EVERY=0 bash "$0" 5 2>/dev/null || rc=$?
   [ "$rc" = 2 ] || { echo "wait-load selftest: FAILED (an empty reading must not pass, rc $rc)"; return 1; }
@@ -61,20 +61,23 @@ selftest() {
   [ "$out" = "load 15.53, 5-minute 26.48, settled on 18 cores" ] || { echo "wait-load selftest: FAILED (--settled said: $out)"; return 1; }
   out=$(WAIT_LOAD_SEQ=$t/seq WAIT_LOAD_CORES=18 WAIT_LOAD_EVERY=0 bash "$0" 60 2>/dev/null) || { echo "wait-load selftest: FAILED (without --settled the 5-minute figure must not count)"; return 1; }
   [ "$out" = "load 17.98, under 18 cores" ] || { echo "wait-load selftest: FAILED (without --settled said: $out)"; return 1; }
-  printf '10 27\n' > "$t/seq"
-  if WAIT_LOAD_SEQ=$t/seq WAIT_LOAD_CORES=18 WAIT_LOAD_EVERY=0 bash "$0" --settled 0 2>/dev/null; then
-    echo "wait-load selftest: FAILED (a 5-minute load at one and a half times the cores is not under it)"; return 1
-  fi
+  printf '10 27\n' > "$t/seq"; rc=0
+  WAIT_LOAD_SEQ=$t/seq WAIT_LOAD_CORES=18 WAIT_LOAD_EVERY=0 bash "$0" --settled 0 2>/dev/null || rc=$?
+  [ "$rc" = 1 ] || { echo "wait-load selftest: FAILED (a 5-minute load at one and a half times the cores is not under it, rc $rc)"; return 1; }
+  rc=0; WAIT_LOAD_SEQ=$t/seq WAIT_LOAD_CORES=18 WAIT_LOAD_EVERY=0 bash "$0" 60 --settled >/dev/null 2>&1 || rc=$?
+  [ "$rc" = 2 ] || { echo "wait-load selftest: FAILED (--settled after the seconds must be refused, not dropped, rc $rc)"; return 1; }
   printf '10\n' > "$t/seq"; rc=0
   WAIT_LOAD_SEQ=$t/seq WAIT_LOAD_CORES=18 WAIT_LOAD_EVERY=0 bash "$0" --settled 5 2>/dev/null || rc=$?
   [ "$rc" = 2 ] || { echo "wait-load selftest: FAILED (--settled with no 5-minute reading must not pass, rc $rc)"; return 1; }
   echo "wait-load selftest: ok"
 }
 
+usage() { echo "usage: wait-load.sh [--settled] [<max seconds>] | --selftest" >&2; exit 2; }
 settled=0
 if [ "${1:-}" = --settled ]; then settled=1; shift; fi
+[ $# -le 1 ] || usage
 case "${1:-}" in
   --selftest) selftest ;;
-  *[!0-9]*) echo "usage: wait-load.sh [--settled] [<max seconds>] | --selftest" >&2; exit 2 ;;
+  *[!0-9]*) usage ;;
   *) [[ "$cores" =~ ^[0-9]+$ ]] || read_fail; wait_load "${1:-1800}" ;;
 esac
