@@ -155,9 +155,11 @@ the PR body's first lines. Messages between sessions are exempt.
   cells-app's is `homezero-md/cells-app`, and `pkai` is its Vercel team.
 - **Calls sent together all run**, even when the first fails, so a call that needs another's
   result goes in the next message (a wait beside a failed step ran out its whole timeout).
-- **A background or Monitor command reports nothing until its pipe flushes**: `grep
-  --line-buffered`, never a bare `| grep` or `| cut`. A wait needs no loop: `gh pr checks <#>
-  -R <o/r> --watch`.
+- **A background command reports nothing until its pipe flushes**: `grep --line-buffered`,
+  never a bare `| grep` or `| cut`. A wait needs no loop: `gh pr checks <#> -R <o/r>
+  --watch`. **A Monitor's shell is always sandboxed**, with no switch: a command the list
+  above runs with the sandbox off, a landing included, is waited on as a background Bash
+  call, by its completion (cel-479's Monitor on a landing's log took its lock).
 - **While a run or a subagent works, work the non-tree list** (the card, the commit message,
   the ledger lines), and at a gate notify, then keep doing non-gated work. **A turn ends** at
   a stop (`needs input:`), at `result:`, when nothing can move without Pete, or while you
