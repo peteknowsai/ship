@@ -82,7 +82,10 @@ task's first `route.py log` after a load red passes `fix_rounds=` counting only 
 reds, and `gates_first_pass=true` when its first run's only red was load; a `note=` re-log
 carries neither (cel-301).
 The contract's own landing script (cells-app's land-pr.sh) is the same: rerun the failed
-files alone, and when they pass, run it again (CEL-226).
+files alone, and when they pass, run it again (CEL-226). Every run of it, the first too,
+starts after `wait-load.sh --settled`, which also wants the 5-minute load under one and a
+half times the cores: the suite pushes the load back up (cel-500: red from 140, twice more
+at a 5-minute 31 and 42, green at 26).
 
 **Red in an untouched file, not a timeout.** A red that Red under load doesn't cover (a
 failed test, or an unhandled error with every test otherwise passing, only in files the diff
