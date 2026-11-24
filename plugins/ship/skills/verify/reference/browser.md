@@ -79,4 +79,6 @@ A Claude Code mod or a CLI screen: run it in a detached tmux session (`tmux new-
 then `send-keys` and `capture-pane -p` for each step) against a scratch repo, with a stub
 `open` first on `PATH` so nothing reaches Pete's screen. A `claude --plugin-dir` load writes
 `tsconfig.json` and `.claude-plugin/types` into the plugin folder; delete them before
-committing.
+committing. An app whose server Pete's own copy shares (Rex, a multiplexer) gets a private
+instance for the walk, on its own socket and state dir, never his: padkey's stand-in tabs
+opened in his Rex mid-work.

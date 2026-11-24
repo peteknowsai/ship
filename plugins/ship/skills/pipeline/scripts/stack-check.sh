@@ -15,7 +15,37 @@
 #            workflow's own queue callbacks are refused without it, and a session started
 #            on a deployment that lacked it never wakes again
 # Exit 1 when anything is crossed. Uses the vercel CLI's own login (or VERCEL_TOKEN).
+#   stack-check.sh --selftest
 set -uo pipefail
+# The first vercel on PATH that has `env pull --project`. Two can be installed, and cel-569's
+# shell found one from before the option ahead of a newer one: all 24 clerk rows read crossed.
+pick_vercel() {
+  local v found help
+  found=$(type -aP vercel 2>/dev/null | awk '!seen[$0]++')
+  while IFS= read -r v; do
+    [ -n "$v" ] || continue
+    help=$("$v" env pull --help 2>&1 </dev/null)  # held, not piped: grep -q closing the pipe reads as a failure under pipefail
+    case "$help" in *--project*) echo "$v"; return 0 ;; esac
+  done <<<"$found"
+  found=${found//$'\n'/, }
+  echo "no vercel on PATH has 'env pull --project' (found: ${found:-none}): install a current vercel CLI" >&2
+  return 1
+}
+if [ "${1:-}" = --selftest ]; then
+  t=$(mktemp -d); trap 'rm -rf "$t"' EXIT; mkdir "$t/old" "$t/new" "$t/none"
+  printf '#!/bin/sh\necho "  --environment <TARGET>"\n' > "$t/old/vercel"
+  printf '#!/bin/sh\necho "  --project <NAME_OR_ID>"; yes | head -20000\n' > "$t/new/vercel"
+  chmod +x "$t/old/vercel" "$t/new/vercel"
+  fail=0; ok() { if eval "$2"; then echo "  ok   $1"; else echo "  FAIL $1"; fail=1; fi; }
+  with() { PATH="$1:/usr/bin:/bin" pick_vercel 2>&1; }
+  ok 'an older vercel ahead on PATH is passed over, and a long help text is no failure' \
+     '[ "$(with "$t/old:$t/new")" = "$t/new/vercel" ]'
+  ok 'only an older vercel: no pick, and the message names it' \
+     'out=$(with "$t/old"); [ $? = 1 ] && grep -q "found: $t/old/vercel)" <<<"$out"'
+  ok 'no vercel at all: no pick' 'out=$(with "$t/none"); [ $? = 1 ] && grep -q "found: none" <<<"$out"'
+  [ $fail = 0 ] && echo "stack-check self-test: 0 failed" || echo "stack-check self-test: failed"
+  exit $fail
+fi
 scope=""
 prod=main
 [ "${1:-}" = --scope ] && { scope=$2; shift 2; }
@@ -27,6 +57,7 @@ token=${VERCEL_TOKEN:-$(jq -r .token "$auth" 2>/dev/null)}
 api() { curl -s -H "Authorization: Bearer $token" "https://api.vercel.com$1"; }
 team=$(api "/v2/teams/$scope" | jq -r '.id // empty')
 [ -n "$team" ] || { echo "no Vercel team '$scope' for this login" >&2; exit 2; }
+vercel=$(pick_vercel) || exit 2
 tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
 bad=0
 say() {
@@ -89,7 +120,7 @@ for arg in "$@"; do
     file="$tmp/$project.$target"
     # a failed pull is a cross naming the pull, never "no key": cel-139's sandboxed pulls said
     # live Homebody's Production had none, though the API lists it
-    if ! pulled=$(vercel env pull "$file" --environment "$target" --project "$project" --scope "$scope" --yes 2>&1); then
+    if ! pulled=$("$vercel" env pull "$file" --environment "$target" --project "$project" --scope "$scope" --yes 2>&1); then
       say clerk ✗ "$target env not pulled: $({ grep -i -m1 error || tail -1; } <<<"$pulled" | cut -c1-90)"; continue
     fi
     pk=$(grep -E '^NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=' "$file" 2>/dev/null | cut -d= -f2- | tr -d '"')

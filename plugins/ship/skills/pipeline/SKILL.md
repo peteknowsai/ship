@@ -835,9 +835,10 @@ Landing variants.
    session's own folder, leave it to `wt-sweep`. If `ExitWorktree` answers that no session is
    active, `cd <main checkout>` after this step, so the next ship's `EnterWorktree` takes.
 5. **Tidy the branch and main**: `git -C <main> push origin --delete feature/<slug>` (a
-   "remote ref does not exist" means the repo already deleted it); `git -C <main> pull
-   --ff-only`, and `git -C <main> branch -D feature/<slug>` if it lingers (a squash rewrites
-   the commits, so git calls it unmerged). A dirty main checkout holds another session's
+   "remote ref does not exist" means the repo already deleted it); `git -C <main> fetch`
+   then `merge --ff-only origin/main` (a `pull` wants an upstream), and `git -C <main>
+   branch -D feature/<slug>` if it lingers (a squash rewrites the commits, so git calls it
+   unmerged). A dirty main checkout holds another session's
    work: skip the pull. When the guard still refuses git against main, leave the pull to the
    next session there and say so in `result:`. Then `rm -f <worktree>/.ship-stage
    <worktree>/.ship-route.json ~/.claude/ship-active/$CLAUDE_CODE_SESSION_ID` where they

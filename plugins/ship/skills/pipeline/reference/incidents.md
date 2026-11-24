@@ -232,6 +232,10 @@ its pre-flight is still on the driver. A Convex repo with no `backend:` line and
   another ship put on main but not out counts too. Anything but 2xx parks
   (`stage.sh <root> gate:input`, `needs input:`) offering two passes, the app part landed
   and released before the links as Check the wiring lands a removal, or "merge now".
+- **A claim about what a page loads is true of the build, not the live domain**
+  (www-peteknowsai, 2026-11-17): the preview loaded no script, the docs said so, and the
+  custom domain's Cloudflare zone adds an email-decode script and an analytics beacon. Word
+  it about the build, or list the live page's requests first.
 
 ## Design & review
 
@@ -285,14 +289,6 @@ its pre-flight is still on the driver. A Convex repo with no `backend:` line and
 - **Safari won't load local CSS into a storyboard's srcdoc frames over file://**
   (2026-10-13). When Pete wants a storyboard in Safari, serve its folder over http
   (`python3 -m http.server`) and open that; Chrome is fine with file://.
-- **A hypothesized bug cause once produced a fix that would have made an agent fabricate
-  data** — the real cause was a 500ing dependency. Bug-shaped asks get an empirical
-  root-cause check before the spec commits to a cause.
-- **A deprecated page serves happily.** A feature was designed, approved and built onto a
-  public route the repo had abandoned; Pete caught it mid-REVIEW and the work had to move.
-  "Grounded in the live product" proves a surface *renders*, not that it's *current* —
-  classify liveness (on the current design system? reachable from primary nav? touched by
-  recent commits?) and name the chosen surface explicitly in the spec.
 - **Idealized-input tests hide writer/reader contract drift.** Unit tests over hand-built
   rows passed while the real ledger writers produced garbage for two of three metrics
   (one always 100%, one always null); only the adversarial review caught it. A task that
