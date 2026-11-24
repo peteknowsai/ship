@@ -392,12 +392,13 @@ def logged(repo, ship, tasks):
 
 
 def parked_tasks(repo, ship):
-    """Each task whose newest ledger row parks it, with that row's note. A task parked and
-    built later is built: cel-570's task 14 waited on a sibling ship, was built four hours
+    """Each task whose newest park or build row parks it, with that row's note. A task parked
+    and built later is built: cel-570's task 14 waited on a sibling ship, was built four hours
     on, and readers still told the PR body to name it."""
     newest = {}
     for r in rows():  # the ledger keeps the order things were logged in
-        if (r.get('repo'), r.get('ship')) == (repo, ship) and 'task' in r and 'review' not in r:
+        if (r.get('repo'), r.get('ship')) == (repo, ship) and 'task' in r and 'review' not in r \
+                and (r.get('status') == 'parked' or 'engine' in r):  # a note alone builds nothing
             for task in str(r['task']).split(','):
                 newest[task] = r
     return sorted(f"{task} ({r.get('note')})" for task, r in newest.items() if r.get('status') == 'parked')
@@ -949,22 +950,23 @@ def selftest():
             left = [str(t.get('label', t.get('n'))) for t in read_route(os.path.join(repo, '.ship-route.json'))['tasks']
                     if str(t.get('label', t.get('n'))) not in done]
             no_note = refused(log, ['repo=ship', 'ship=routed', f'task={left[0]}', 'status=parked'])
-            for t in left:
-                at(t0 + 40000, ['repo=ship', 'ship=routed', f'task={t}', 'status=parked', 'note=needs the Mac'])
+            at(t0 + 40000, ['repo=ship', 'ship=routed', f"task={','.join(left)}", 'status=parked', 'note=needs the Mac'])
             parked_clock = read_route(os.path.join(repo, '.ship-route.json'))['anchor'] == t0 + 40000
             all_parked = parked_tasks('ship', 'routed')
             built_later = refused(log, ['repo=ship', 'ship=routed', f'task={left[0]}', 'engine=driver'])
             still_parked = parked_tasks('ship', 'routed')
+            at(t0 + 40001, ['repo=ship', 'ship=routed', f'task={left[1]}', 'note=still waiting'])
+            noted = parked_tasks('ship', 'routed')
             with contextlib.redirect_stderr(todo_after):
                 readers(['repo=ship', 'ship=routed'])
         finally:
             os.chdir(plain)
         check('readers refuses while a plan task is neither built nor parked; a parked one needs its '
               'note, restarts the clock, can still be logged built, and then clears it and is no '
-              'longer named as parked, while the others still are',
+              'longer named as parked, while the other on its row still is, a later note on it or not',
               len(left) > 1 and todo_code == 1 and parked_clock and built_later == ''
               and all_parked == sorted(f'{t} (needs the Mac)' for t in left)
-              and still_parked == sorted(f'{t} (needs the Mac)' for t in left[1:])
+              and still_parked == sorted(f'{t} (needs the Mac)' for t in left[1:]) == noted
               and f'plan task {left[0]}' in todo_before.getvalue()
               and 'note=<why' in no_note and 'neither built' not in todo_after.getvalue())
         last = open(os.path.join(repo, '.ship-gates')).read().splitlines()[-1]
