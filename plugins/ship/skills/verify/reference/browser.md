@@ -75,8 +75,10 @@ Chrome dialog swallowed every click and only the screen showed it.
 
 ## A terminal UI
 
-A Claude Code mod or a CLI screen: run it in a detached tmux session (`tmux new-session -d`,
-then `send-keys` and `capture-pane -p` for each step) against a scratch repo, with a stub
-`open` first on `PATH` so nothing reaches Pete's screen. A `claude --plugin-dir` load writes
-`tsconfig.json` and `.claude-plugin/types` into the plugin folder; delete them before
-committing.
+A Claude Code mod or a CLI screen: run it in a detached tmux session on its own server
+(`tmux -L <slug> new-session -d`, then `send-keys` and `capture-pane -p` for each step, each
+with `-L <slug>`) against a scratch repo, with a stub `open` first on `PATH` so nothing
+reaches Pete's screen. A `claude --plugin-dir` load writes `tsconfig.json` and
+`.claude-plugin/types` into the plugin folder; delete them before committing. An app whose
+server Pete's own copy shares (Rex) gets a private instance, its socket and state dir moved
+by the flags its `--help` names, never his: padkey's stand-in tabs opened in his Rex.

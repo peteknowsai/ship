@@ -71,7 +71,8 @@ replace parts of it.
   - A red of only files the diff never touched, under load: contract.md `gates:`, Red under
     load, which covers this script.
   - Run it from the worktree in place of LAND's checks and merge, after `wait-head.sh`
-    (LAND step 2), then tear down as
+    (LAND step 2), and each run of it after `scripts/wait-load.sh --settled` (sandbox off, in
+    the background), then tear down as
     written (`wt remove`, the remote branch if the script left it, `git branch -D`, the
     marker).
   - It merges in whatever main took while the PR waited in its queue, gated but never
