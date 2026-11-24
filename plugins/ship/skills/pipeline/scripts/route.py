@@ -391,6 +391,18 @@ def logged(repo, ship, tasks):
     return None
 
 
+def parked_tasks(repo, ship):
+    """Each task whose newest ledger row parks it, with that row's note. A task parked and
+    built later is built: cel-570's task 14 waited on a sibling ship, was built four hours
+    on, and readers still told the PR body to name it."""
+    newest = {}
+    for r in rows():  # the ledger keeps the order things were logged in
+        if (r.get('repo'), r.get('ship')) == (repo, ship) and 'task' in r and 'review' not in r:
+            for task in str(r['task']).split(','):
+                newest[task] = r
+    return sorted(f"{task} ({r.get('note')})" for task, r in newest.items() if r.get('status') == 'parked')
+
+
 READERS = ('fable', 'opus')  # the reader is whichever of the two didn't drive (Pete, 2026-11-09)
 
 
@@ -453,10 +465,9 @@ def readers(pairs):
               "In code, resolve the path from the file's own location and rerun what reads it; in a doc, "
               "write it relative to the repo; then commit", file=sys.stderr)
         return 1
-    parked = sorted({f"{r['task']} ({r.get('note')})" for r in rows() if r.get('status') == 'parked'
-                     and (r.get('repo'), r.get('ship')) == (want['repo'], want['ship'])})
+    parked = parked_tasks(want['repo'], want['ship'])  # why is the note's to say, not this line's
     print(f"route readers: {want['ship']} has its branch read logged and its card"
-          + (f"; parked on Pete's word, so the PR body names them: {', '.join(parked)}" if parked else ''),
+          + (f"; parked, so the PR body names them: {', '.join(parked)}" if parked else ''),
           file=sys.stderr)
     return 0
 
@@ -941,14 +952,19 @@ def selftest():
             for t in left:
                 at(t0 + 40000, ['repo=ship', 'ship=routed', f'task={t}', 'status=parked', 'note=needs the Mac'])
             parked_clock = read_route(os.path.join(repo, '.ship-route.json'))['anchor'] == t0 + 40000
+            all_parked = parked_tasks('ship', 'routed')
             built_later = refused(log, ['repo=ship', 'ship=routed', f'task={left[0]}', 'engine=driver'])
+            still_parked = parked_tasks('ship', 'routed')
             with contextlib.redirect_stderr(todo_after):
                 readers(['repo=ship', 'ship=routed'])
         finally:
             os.chdir(plain)
         check('readers refuses while a plan task is neither built nor parked; a parked one needs its '
-              'note, restarts the clock, can still be logged built, and then clears it',
-              left and todo_code == 1 and parked_clock and built_later == ''
+              'note, restarts the clock, can still be logged built, and then clears it and is no '
+              'longer named as parked, while the others still are',
+              len(left) > 1 and todo_code == 1 and parked_clock and built_later == ''
+              and all_parked == sorted(f'{t} (needs the Mac)' for t in left)
+              and still_parked == sorted(f'{t} (needs the Mac)' for t in left[1:])
               and f'plan task {left[0]}' in todo_before.getvalue()
               and 'note=<why' in no_note and 'neither built' not in todo_after.getvalue())
         last = open(os.path.join(repo, '.ship-gates')).read().splitlines()[-1]
