@@ -412,7 +412,7 @@ one with uncommitted work, one a live session holds (wt's 💬), or one under tw
   happily; the ships in flight whose surfaces overlap (`git worktree list` and each
   `.ship-stage`), whose sessions you ask (ListAgents, SendMessage) before round 1; and every
   count from an API total (`gh api search/issues` `total_count`), never a `--limit` list's
-  length. The spec names the chosen surface (incidents: Design).
+  length. The spec names the chosen surface.
 - **A bug-shaped request gets an empirical root-cause check**: reproduce it or read the
   runtime evidence, never spec from a hypothesis. When the measurement contradicts the card,
   the measurement wins, and the PR and card say so (CEL-74). A bug in saved state isn't
@@ -835,15 +835,15 @@ Landing variants.
    session's own folder, leave it to `wt-sweep`. If `ExitWorktree` answers that no session is
    active, `cd <main checkout>` after this step, so the next ship's `EnterWorktree` takes.
 5. **Tidy the branch and main**: `git -C <main> push origin --delete feature/<slug>` (a
-   "remote ref does not exist" means the repo already deleted it); `git -C <main> fetch`
-   then `merge --ff-only origin/main` (a `pull` wants an upstream), and `git -C <main>
-   branch -D feature/<slug>` if it lingers (a squash rewrites the commits, so git calls it
-   unmerged). A dirty main checkout holds another session's
-   work: skip the pull. When the guard still refuses git against main, leave the pull to the
-   next session there and say so in `result:`. Then `rm -f <worktree>/.ship-stage
-   <worktree>/.ship-route.json ~/.claude/ship-active/$CLAUDE_CODE_SESSION_ID` where they
-   remain, deprovision a per-branch backend, remove a native branch app (rare-cases), and
-   check `git worktree list`: zero ship-made worktrees remain, or teardown failed and is
+   "remote ref does not exist" means the repo already deleted it); `git -C <main> pull
+   --ff-only origin main`, and `git -C <main> branch -D feature/<slug>` if it lingers (a
+   squash rewrites the commits, so git calls it unmerged). A dirty main checkout holds
+   another session's work: skip the pull. When the guard still refuses git against main,
+   leave the pull to the next session there and say so in `result:`. Then `rm -f
+   <worktree>/.ship-stage <worktree>/.ship-route.json
+   ~/.claude/ship-active/$CLAUDE_CODE_SESSION_ID` where they remain, deprovision a
+   per-branch backend, remove a native branch app (rare-cases), and check `git worktree
+   list`: zero ship-made worktrees remain, or teardown failed and is
    recovered before `result:`.
 6. **Watch the deploy.** `deploy:` runs now, once, from the main checkout once step 5 pulled
    it, else from a throwaway worktree pinned to `origin/main` (`git -C <main> worktree add

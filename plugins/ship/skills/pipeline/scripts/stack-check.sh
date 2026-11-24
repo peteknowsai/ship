@@ -24,21 +24,25 @@ pick_vercel() {
   found=$(type -aP vercel 2>/dev/null | awk '!seen[$0]++')
   while IFS= read -r v; do
     [ -n "$v" ] || continue
-    help=$("$v" env pull --help 2>&1 </dev/null)  # held, not piped: grep -q closing the pipe reads as a failure under pipefail
+    # held, not piped: the CLI exits 2 for --help and grep -q closes the pipe early, and
+    # either one fails a pipe under pipefail
+    help=$("$v" env pull --help 2>&1 </dev/null)
     case "$help" in *--project*) echo "$v"; return 0 ;; esac
   done <<<"$found"
   found=${found//$'\n'/, }
-  echo "no vercel on PATH has 'env pull --project' (found: ${found:-none}): install a current vercel CLI" >&2
+  echo "stack-check did not run, so this is no pass: no vercel on PATH has 'env pull --project' (found: ${found:-none}). Put a current vercel CLI first on PATH, then rerun" >&2
   return 1
 }
 if [ "${1:-}" = --selftest ]; then
-  t=$(mktemp -d); trap 'rm -rf "$t"' EXIT; mkdir "$t/old" "$t/new" "$t/none"
-  printf '#!/bin/sh\necho "  --environment <TARGET>"\n' > "$t/old/vercel"
-  printf '#!/bin/sh\necho "  --project <NAME_OR_ID>"; yes | head -20000\n' > "$t/new/vercel"
+  t=$(mktemp -d "${TMPDIR:-/tmp}/stack-check.XXXXXX") || exit 1
+  trap 'rm -rf "$t"' EXIT; mkdir "$t/old" "$t/new" "$t/none"
+  # both stubs exit 2, as the real CLI does for --help
+  printf '#!/bin/sh\necho "  --environment <TARGET>"; exit 2\n' > "$t/old/vercel"
+  printf '#!/bin/sh\necho "  --project <NAME_OR_ID>"; yes | head -20000; exit 2\n' > "$t/new/vercel"
   chmod +x "$t/old/vercel" "$t/new/vercel"
   fail=0; ok() { if eval "$2"; then echo "  ok   $1"; else echo "  FAIL $1"; fail=1; fi; }
   with() { PATH="$1:/usr/bin:/bin" pick_vercel 2>&1; }
-  ok 'an older vercel ahead on PATH is passed over, and a long help text is no failure' \
+  ok 'an older vercel ahead on PATH is passed over; a long help text and exit 2 are no failure' \
      '[ "$(with "$t/old:$t/new")" = "$t/new/vercel" ]'
   ok 'only an older vercel: no pick, and the message names it' \
      'out=$(with "$t/old"); [ $? = 1 ] && grep -q "found: $t/old/vercel)" <<<"$out"'
@@ -50,7 +54,7 @@ scope=""
 prod=main
 [ "${1:-}" = --scope ] && { scope=$2; shift 2; }
 [ "${1:-}" = --production-branch ] && { prod=$2; shift 2; }
-[ -n "$scope" ] && [ $# -gt 0 ] || { sed -n '3p' "$0"; exit 2; }
+[ -n "$scope" ] && [ $# -gt 0 ] || { sed -n '4p' "$0"; exit 2; }
 auth="$HOME/Library/Application Support/com.vercel.cli/auth.json"
 [ -f "$auth" ] || auth="$HOME/.local/share/com.vercel.cli/auth.json"
 token=${VERCEL_TOKEN:-$(jq -r .token "$auth" 2>/dev/null)}

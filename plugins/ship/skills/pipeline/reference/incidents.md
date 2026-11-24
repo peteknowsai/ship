@@ -235,7 +235,8 @@ its pre-flight is still on the driver. A Convex repo with no `backend:` line and
 - **A claim about what a page loads is true of the build, not the live domain**
   (www-peteknowsai, 2026-11-17): the preview loaded no script, the docs said so, and the
   custom domain's Cloudflare zone adds an email-decode script and an analytics beacon. Word
-  it about the build, or list the live page's requests first.
+  it about the site's own code: what the host adds shows only on the live domain, after the
+  merge.
 
 ## Design & review
 
